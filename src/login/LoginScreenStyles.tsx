@@ -54,6 +54,9 @@ export const styles = StyleSheet.create({
       },
     }),
   },
+  continueWithGooglePressed: {
+    backgroundColor: '#33494c',
+  },
   google: {
     width: 16,
     height: 16,
@@ -86,6 +89,9 @@ export const styles = StyleSheet.create({
     borderWidth: 2,
     borderStyle: 'solid',
     borderColor: '#FFFFFF',
+  },
+  continueWithApplePressed: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   apple: {
     width: 18,

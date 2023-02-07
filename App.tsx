@@ -2,6 +2,7 @@ import { useFonts } from 'expo-font';
 import { useCallback, useEffect, useState } from 'react';
 import { LoginScreen } from './src/login/LoginScreen';
 import { SplashScreen } from './src/splash/SplashScreen';
+import * as Linking from 'expo-linking';
 
 /**
  * The allowed identifiers for screens
@@ -28,6 +29,11 @@ export default function App() {
     'OpenSans-SemiBold': require('./assets/fonts/OpenSans-SemiBold.ttf'),
     'OpenSans-SemiBoldItalic': require('./assets/fonts/OpenSans-SemiBoldItalic.ttf'),
   });
+
+  (async () => {
+    const initialUrl = await Linking.getInitialURL();
+    console.log('initialUrl', initialUrl);
+  })();
 
   useEffect(() => {
     if (!fontsLoaded) {

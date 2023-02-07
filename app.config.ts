@@ -23,6 +23,7 @@ module.exports = {
       },
     },
     android: {
+      package: 'com.oseh.frontendapp',
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#FFFFFF',
@@ -35,6 +36,11 @@ module.exports = {
       rootBackendUrl: process.env.ROOT_BACKEND_URL,
       rootWebsocketUrl: process.env.ROOT_WEBSOCKET_URL,
       rootFrontendUrl: process.env.ROOT_FRONTEND_URL,
+      environment: process.env.ENVIRONMENT,
+      eas: {
+        projectId: 'ca696af6-0efc-46f2-857c-a0eb920dc1df',
+      },
     },
+    plugins: ['./plugins/fix-rn-32931.js'],
   },
 };
