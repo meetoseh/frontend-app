@@ -8,33 +8,44 @@
     "web": "cross-env REACT_APP_ENVIRONMENT=$ENVIRONMENT REACT_APP_LOGIN_URL=$LOGIN_URL REACT_APP_ROOT_BACKEND_URL=$ROOT_BACKEND_URL REACT_APP_ROOT_WEBSOCKET_URL=$ROOT_WEBSOCKET_URL REACT_APP_AUTH_DOMAIN=$AUTH_DOMAIN REACT_APP_AUTH_CLIENT_ID=$AUTH_CLIENT_ID REACT_APP_PUBLIC_URL=$ROOT_FRONTEND_URL expo start --web"
   },
   "dependencies": {
+    "@craftzdog/react-native-buffer": "^6.0.5",
     "@react-native-async-storage/async-storage": "~1.17.3",
     "cross-env": "^7.0.3",
     "expo": "~47.0.12",
     "expo-constants": "~14.0.2",
     "expo-crypto": "~12.0.0",
+    "expo-dev-client": "~2.0.1",
     "expo-file-system": "~15.1.1",
     "expo-font": "~11.0.1",
     "expo-linking": "~3.3.0",
     "expo-secure-store": "~12.0.0",
+    "expo-splash-screen": "~0.17.5",
     "expo-status-bar": "~1.4.2",
+    "expo-system-ui": "~2.0.1",
     "expo-web-browser": "~12.0.0",
     "react": "18.1.0",
     "react-dom": "18.1.0",
     "react-native": "0.70.5",
+    "react-native-quick-base64": "^2.0.5",
     "react-native-ssl-pinning": "^1.5.7",
     "react-native-svg": "13.4.0",
     "react-native-url-polyfill": "^1.3.0",
-    "react-native-web": "~0.18.9",
-    "expo-splash-screen": "~0.17.5",
-    "expo-system-ui": "~2.0.1",
-    "expo-dev-client": "~2.0.1"
+    "react-native-web": "~0.18.9"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9",
     "@types/react": "~18.0.14",
     "@types/react-native": "~0.70.6",
+    "@typescript-eslint/eslint-plugin": "^5.51.0",
+    "@typescript-eslint/parser": "^5.51.0",
+    "eslint": "^8.33.0",
+    "eslint-plugin-react": "^7.32.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-native": "^4.0.0",
     "typescript": "^4.6.3"
+  },
+  "eslintConfig": {
+    "extends": "universe/native"
   },
   "private": true
 }

@@ -5,6 +5,7 @@ import { retrieveSecurePaginated } from '../lib/retrieveSecurePaginated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiFetch } from '../lib/apiFetch';
 import { AppState, NativeEventSubscription } from 'react-native';
+import { Buffer } from '@craftzdog/react-native-buffer';
 
 /**
  * The user attributes that are available when a user is logged in. When
@@ -151,7 +152,7 @@ export const LoginContext: React.Context<LoginContextValue> = createContext(defa
 /**
  * The expected props to the LoginProvider
  */
-type LoginProviderProps = {};
+type LoginProviderProps = object;
 
 /**
  * Extracts the user attributes from the given token response by inspecting
@@ -523,11 +524,9 @@ export const LoginProvider = ({
       } catch (e) {
         console.log('error fetching tokens', e);
       } finally {
-        if (!active) {
-          return;
+        if (active) {
+          tokenLock.current = null;
         }
-
-        tokenLock.current = null;
       }
     }
   }, []);
@@ -633,11 +632,9 @@ export const LoginProvider = ({
       } catch (e) {
         console.log('error fetching tokens', e);
       } finally {
-        if (!active) {
-          return;
+        if (active) {
+          tokenLock.current = null;
         }
-
-        tokenLock.current = null;
       }
     }
   }, [authTokens, wrappedSetAuthTokens]);

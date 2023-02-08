@@ -4,17 +4,17 @@ import Constants from 'expo-constants';
 /**
  * The base url for simple http requests to the backend
  */
-export const HTTP_API_URL: string = Constants.expoConfig!.extra!.rootBackendUrl!;
+export const HTTP_API_URL: string = Constants.expoConfig!.extra!.rootBackendUrl!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
 
 /**
  * The base url for websocket requests to the backend
  */
-export const HTTP_WEBSOCKET_URL: string = Constants.expoConfig!.extra!.rootWebsocketUrl!;
+export const HTTP_WEBSOCKET_URL: string = Constants.expoConfig!.extra!.rootWebsocketUrl!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
 
 /**
  * The base url for the web frontend
  */
-export const HTTP_FRONTEND_URL: string = Constants.expoConfig!.extra!.rootFrontendUrl!;
+export const HTTP_FRONTEND_URL: string = Constants.expoConfig!.extra!.rootFrontendUrl!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
 
 /**
  * A basic wrapper around fetch that prefixes absolute paths with the correct

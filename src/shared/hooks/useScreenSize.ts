@@ -9,7 +9,7 @@ export const useScreenSize = (): ScaledSize => {
   const [screenSize, setScreenSize] = useState<ScaledSize>(Dimensions.get('screen'));
 
   useEffect(() => {
-    const onScreenSizeChange = ({ window, screen }: { window: ScaledSize; screen: ScaledSize }) => {
+    const onScreenSizeChange = ({ screen }: { window: ScaledSize; screen: ScaledSize }) => {
       setScreenSize(screen);
     };
 

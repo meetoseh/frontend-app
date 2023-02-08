@@ -1,4 +1,4 @@
-import { PropsWithChildren, ReactElement, useMemo } from 'react';
+import { PropsWithChildren, ReactElement, ReactNode, useMemo } from 'react';
 import { StatusBar, Text, TextProps, View } from 'react-native';
 import { styles } from './ErrorBannerStyles';
 
@@ -6,7 +6,7 @@ import { styles } from './ErrorBannerStyles';
  * A basic error banner that displays a red background. Typically used with ErrorBannerText
  * @returns
  */
-export const ErrorBanner = ({ children }: PropsWithChildren<{}>): ReactElement => {
+export const ErrorBanner = ({ children }: { children?: ReactNode | undefined }): ReactElement => {
   const containerStyle = useMemo(() => {
     const top = StatusBar.currentHeight ?? 0;
     return Object.assign({}, styles.container, { top });

@@ -2,18 +2,25 @@ import { useFonts } from 'expo-font';
 import { useCallback, useEffect, useState } from 'react';
 import { LoginScreen } from './src/login/LoginScreen';
 import { SplashScreen } from './src/splash/SplashScreen';
-import * as Linking from 'expo-linking';
+import { LoginProvider } from './src/shared/contexts/LoginContext';
 
 /**
  * The allowed identifiers for screens
  */
 export type ScreenId = 'splash' | 'login';
 
+export default function App() {
+  return (
+    <LoginProvider>
+      <AppInner />
+    </LoginProvider>
+  );
+}
 /**
  * Entry point into the application. Selects a screen to render, providing it
  * with the ability to switch screens.
  */
-export default function App() {
+const AppInner = () => {
   const [screen, setScreen] = useState<ScreenId>('splash');
   const [fontsLoaded] = useFonts({
     'OpenSans-Bold': require('./assets/fonts/OpenSans-Bold.ttf'),
@@ -30,11 +37,6 @@ export default function App() {
     'OpenSans-SemiBoldItalic': require('./assets/fonts/OpenSans-SemiBoldItalic.ttf'),
   });
 
-  (async () => {
-    const initialUrl = await Linking.getInitialURL();
-    console.log('initialUrl', initialUrl);
-  })();
-
   useEffect(() => {
     if (!fontsLoaded) {
       setScreen('splash');
@@ -44,7 +46,9 @@ export default function App() {
     setScreen('login');
   }, [fontsLoaded]);
 
-  const doNothing = useCallback(() => {}, []);
+  const doNothing = useCallback(() => {
+    // do nothing
+  }, []);
 
   if (screen === 'splash') {
     return <SplashScreen />;
@@ -54,4 +58,4 @@ export default function App() {
   }
 
   throw new Error(`Unknown screen: ${screen}`);
-}
+};
