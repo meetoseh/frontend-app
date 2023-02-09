@@ -1,5 +1,5 @@
-import { PropsWithChildren, ReactElement, ReactNode, useMemo } from 'react';
-import { StatusBar, Text, TextProps, View } from 'react-native';
+import { PropsWithChildren, ReactElement, ReactNode, useCallback, useMemo, useState } from 'react';
+import { Pressable, StatusBar, StyleProp, Text, TextProps, ViewStyle } from 'react-native';
 import { styles } from './ErrorBannerStyles';
 
 /**
@@ -7,12 +7,24 @@ import { styles } from './ErrorBannerStyles';
  * @returns
  */
 export const ErrorBanner = ({ children }: { children?: ReactNode | undefined }): ReactElement => {
-  const containerStyle = useMemo(() => {
+  const [dismissed, setDismissed] = useState(false);
+  const containerStyle: StyleProp<ViewStyle> = useMemo(() => {
+    if (dismissed) {
+      return { display: 'none' };
+    }
     const top = StatusBar.currentHeight ?? 0;
     return Object.assign({}, styles.container, { top });
+  }, [dismissed]);
+
+  const dismiss = useCallback(() => {
+    setDismissed(true);
   }, []);
 
-  return <View style={containerStyle}>{children}</View>;
+  return (
+    <Pressable style={containerStyle} onPress={dismiss}>
+      {children}
+    </Pressable>
+  );
 };
 
 /**

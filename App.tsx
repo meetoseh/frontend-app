@@ -1,13 +1,14 @@
 import { useFonts } from 'expo-font';
-import { useCallback, useEffect, useState } from 'react';
+import { ReactElement, useCallback, useContext, useEffect, useState } from 'react';
 import { LoginScreen } from './src/login/LoginScreen';
 import { SplashScreen } from './src/splash/SplashScreen';
-import { LoginProvider } from './src/shared/contexts/LoginContext';
+import { LoginContext, LoginProvider } from './src/shared/contexts/LoginContext';
+import { IntroductoryJourneyScreen } from './src/journey/IntroductoryJourneyScreen';
 
 /**
  * The allowed identifiers for screens
  */
-export type ScreenId = 'splash' | 'login';
+export type ScreenId = 'splash' | 'login' | 'introductory-journey';
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
  * with the ability to switch screens.
  */
 const AppInner = () => {
+  const loginContext = useContext(LoginContext);
   const [screen, setScreen] = useState<ScreenId>('splash');
   const [fontsLoaded] = useFonts({
     'OpenSans-Bold': require('./assets/fonts/OpenSans-Bold.ttf'),
@@ -36,25 +38,41 @@ const AppInner = () => {
     'OpenSans-SemiBold': require('./assets/fonts/OpenSans-SemiBold.ttf'),
     'OpenSans-SemiBoldItalic': require('./assets/fonts/OpenSans-SemiBoldItalic.ttf'),
   });
+  const [error, setError] = useState<ReactElement | null>(null);
 
   useEffect(() => {
-    if (!fontsLoaded) {
+    if (!fontsLoaded || loginContext.state === 'loading') {
       setScreen('splash');
       return;
     }
 
-    setScreen('login');
-  }, [fontsLoaded]);
+    if (loginContext.state === 'logged-out') {
+      setScreen('login');
+      return;
+    }
+
+    setScreen('introductory-journey');
+  }, [fontsLoaded, loginContext.state]);
+
+  const setErrorAndDoNothing = useCallback((error?: ReactElement | null) => {
+    if (error === undefined) {
+      error = null;
+    }
+    setError(error);
+  }, []);
 
   const doNothing = useCallback(() => {
-    // do nothing
+    // do nothing; for things not yet implemented
   }, []);
 
   if (screen === 'splash') {
-    return <SplashScreen />;
+    return <SplashScreen type="wordmark" />;
   }
   if (screen === 'login') {
-    return <LoginScreen onLogin={doNothing} />;
+    return <LoginScreen onLogin={doNothing} initialError={error} />;
+  }
+  if (screen === 'introductory-journey') {
+    return <IntroductoryJourneyScreen onFinished={setErrorAndDoNothing} />;
   }
 
   throw new Error(`Unknown screen: ${screen}`);

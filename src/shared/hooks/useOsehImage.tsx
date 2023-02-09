@@ -354,6 +354,14 @@ export const useOsehImageState = ({
         return best;
       });
 
+      if (
+        bestItem.width !== desiredImageSize.width ||
+        bestItem.height !== desiredImageSize.height
+      ) {
+        console.log(
+          `image size mismatch for ${playlist.uid}; wanted ${desiredImageSize.width}x${desiredImageSize.height} but got ${bestItem.width}x${bestItem.height}`
+        );
+      }
       setItem(bestItem);
     }
   }, [playlist, displayWidth, displayHeight]);

@@ -22,6 +22,11 @@ type LoginScreenProps = {
    * @param onboard True if the user should be directed through the onboarding flow, false otherwise
    */
   onLogin: (onboard: boolean) => void;
+
+  /**
+   * If specified, acts as the initial error message to display.
+   */
+  initialError: ReactElement | null;
 };
 
 const prepareLink = async (
@@ -59,14 +64,14 @@ const prepareLink = async (
  *
  * This assumes that fonts have already been loaded. Requires the login context.
  */
-export const LoginScreen = ({ onLogin }: LoginScreenProps): ReactElement => {
+export const LoginScreen = ({ onLogin, initialError }: LoginScreenProps): ReactElement => {
   const loginContext = useContext(LoginContext);
   const dims = useScreenSize();
   const [pressingGoogle, setPressingGoogle] = useState(false);
   const [pressingApple, setPressingApple] = useState(false);
   const [goingToGoogle, setGoingToGoogle] = useState(false);
   const [goingToApple, setGoingToApple] = useState(false);
-  const [error, setError] = useState<ReactElement | null>(null);
+  const [error, setError] = useState<ReactElement | null>(initialError);
 
   const onGooglePressIn = useCallback(() => {
     setPressingGoogle(true);
