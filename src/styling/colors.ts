@@ -4,10 +4,12 @@ export const WHITE = '#FFFFFF';
  * being pressed.
  */
 export const TRANSPARENT_WHITE = 'rgba(255, 255, 255, 0.2)';
+export const TRANSPARENT_BLACK = 'rgba(0, 0, 0, 0.2)';
 export const PRIMARY_DEFAULT = '#446266';
 export const PRIMARY_LIGHT = '#33494c';
 export const BLACK = '#000000';
 export const ERROR_DEFAULT = '#BA1A1A';
+export const TRANSPARENT = 'rgba(0, 0, 0, 0)';
 
 /**
  * Used as the pressed variant for inverted buttons

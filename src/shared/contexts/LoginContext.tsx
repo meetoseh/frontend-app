@@ -457,10 +457,21 @@ export const LoginProvider = ({
     };
 
     async function fetchTokens() {
-      const [tokens, attributes] = await Promise.all([
-        retrieveAuthTokens(),
-        retrieveUserAttributes(),
-      ]);
+      let tokens, attributes;
+      try {
+        [tokens, attributes] = await Promise.all([retrieveAuthTokens(), retrieveUserAttributes()]);
+      } catch (e) {
+        if (!active) {
+          return;
+        }
+
+        // almost certainly this error is Could not encrypt/decrypt data,
+        // which happens when the user uninstalls and reinstalls the app.
+        await Promise.all([storeAuthTokens(null), storeUserAttributes(null)]);
+        setState('logged-out');
+        return;
+      }
+
       if (!active) {
         return;
       }
@@ -630,7 +641,7 @@ export const LoginProvider = ({
       try {
         await tokenLock.current;
       } catch (e) {
-        console.log('error fetching tokens', e);
+        console.log('error handling expired tokens', e);
       } finally {
         if (active) {
           tokenLock.current = null;

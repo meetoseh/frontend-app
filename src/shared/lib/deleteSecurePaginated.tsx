@@ -9,7 +9,19 @@ export const deleteSecurePaginated = async (baseKey: string) => {
   const lengthKey = `${baseKey}-length`;
   const digestKey = `${baseKey}-sha512`;
 
-  const expectedLength = await SecureStore.getItemAsync(lengthKey);
+  let expectedLength;
+  try {
+    expectedLength = await SecureStore.getItemAsync(lengthKey);
+  } catch (e) {
+    // item did not exist or the secure store encryption key has been rotated
+    try {
+      await SecureStore.deleteItemAsync(lengthKey);
+    } catch (e) {
+      // Ignore; the key did not exist
+    }
+    expectedLength = null;
+  }
+
   if (expectedLength !== null) {
     await SecureStore.deleteItemAsync(lengthKey);
   }
@@ -31,9 +43,26 @@ export const deleteSecurePaginated = async (baseKey: string) => {
 
   let i = 0;
   while (true) {
-    const val = await SecureStore.getItemAsync(`${baseKey}-${i}`);
-    if (val !== null) {
-      await SecureStore.deleteItemAsync(`${baseKey}-${i}`);
+    let hadValue = false;
+    try {
+      const val = await SecureStore.getItemAsync(`${baseKey}-${i}`);
+      hadValue = val !== null;
+    } catch (e) {
+      // item did not exist or the secure store encryption key has been rotated
+      try {
+        await SecureStore.deleteItemAsync(`${baseKey}-${i}`);
+        hadValue = true;
+      } catch (e) {
+        // Ignore; the key did not exist
+      }
+    }
+
+    if (hadValue) {
+      try {
+        await SecureStore.deleteItemAsync(`${baseKey}-${i}`);
+      } catch (e) {
+        // Ignore; the key did not exist
+      }
       i++;
     } else {
       i++;

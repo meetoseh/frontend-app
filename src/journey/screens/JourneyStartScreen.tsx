@@ -3,8 +3,8 @@ import { ReactElement, useCallback, useContext, useMemo, useState } from 'react'
 import { Platform, Share, StyleProp, Text, TextStyle, View } from 'react-native';
 import { CloseButton } from '../../shared/components/CloseButton';
 import { ErrorBanner, ErrorBannerText } from '../../shared/components/ErrorBanner';
-import { FilledInvertedButton } from '../../shared/components/FilledInvertedButton';
 import { FilledPrimaryButton } from '../../shared/components/FilledPrimaryButton';
+import { LinkButton } from '../../shared/components/LinkButton';
 import { OsehImageBackgroundFromState } from '../../shared/components/OsehImageBackgroundFromState';
 import { LoginContext } from '../../shared/contexts/LoginContext';
 import { useScreenSize } from '../../shared/hooks/useScreenSize';
@@ -25,24 +25,28 @@ export const JourneyStartScreen = ({
 }: JourneyScreenProps): ReactElement => {
   const loginContext = useContext(LoginContext);
   const screenSize = useScreenSize();
-  const [pwafTextStyle, setPwafTextStyle] = useState<StyleProp<TextStyle> | undefined>(undefined);
-  const [pwafHeight, setPwafHeight] = useState<number>(56);
-  const [sfnTextStyle, setSfnTextStyle] = useState<StyleProp<TextStyle> | undefined>(undefined);
-  const [sfnHeight, setSfnHeight] = useState<number>(56);
+  const [letsGoTextStyle, setLetsGoTextStyle] = useState<StyleProp<TextStyle> | undefined>(
+    undefined
+  );
+  const [letsGoHeight, setLetsGoHeight] = useState<number>(56);
+  const [invAFriendTextStyle, setInvAFriendTextStyle] = useState<StyleProp<TextStyle> | undefined>(
+    undefined
+  );
+  const [invAFriendHeight, setInvAFriendHeight] = useState<number>(56);
 
-  const pwafContainerStyle = useMemo(() => {
-    return Object.assign({}, styles.practiceWithAFriendContainer, {
+  const letsGoContainerStyle = useMemo(() => {
+    return Object.assign({}, styles.letsGoContainer, {
       width: screenSize.width,
-      maxHeight: pwafHeight,
+      maxHeight: letsGoHeight,
     });
-  }, [screenSize.width, pwafHeight]);
+  }, [screenSize.width, letsGoHeight]);
 
-  const sfnContainerStyle = useMemo(() => {
-    return Object.assign({}, styles.skipForNowContainer, {
+  const invAFriendContainerStyle = useMemo(() => {
+    return Object.assign({}, styles.invAFriendContainer, {
       width: screenSize.width,
-      maxHeight: sfnHeight,
+      maxHeight: invAFriendHeight,
     });
-  }, [screenSize.width, sfnHeight]);
+  }, [screenSize.width, invAFriendHeight]);
 
   const onInviteFriend = useCallback(async () => {
     if (loginContext.state !== 'logged-in') {
@@ -83,7 +87,7 @@ export const JourneyStartScreen = ({
     }
   }, [loginContext, journey, setError]);
 
-  const onSkipForNow = useCallback(async () => {
+  const onLetsGo = useCallback(async () => {
     setScreen('journey');
   }, [setScreen]);
 
@@ -102,21 +106,24 @@ export const JourneyStartScreen = ({
       <CloseButton onPress={onClose} />
 
       <OsehImageBackgroundFromState state={shared.image} style={sharedStyles.background}>
-        <View style={pwafContainerStyle}>
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>You&rsquo;re Class is Ready</Text>
+        </View>
+        <View style={letsGoContainerStyle}>
           <FilledPrimaryButton
-            setTextStyle={setPwafTextStyle}
-            setHeight={setPwafHeight}
-            onPress={onInviteFriend}>
-            <Text style={pwafTextStyle}>Practice with a Friend</Text>
+            setTextStyle={setLetsGoTextStyle}
+            setHeight={setLetsGoHeight}
+            onPress={onLetsGo}>
+            <Text style={letsGoTextStyle}>Let&rsquo;s Go</Text>
           </FilledPrimaryButton>
         </View>
-        <View style={sfnContainerStyle}>
-          <FilledInvertedButton
-            setTextStyle={setSfnTextStyle}
-            setHeight={setSfnHeight}
-            onPress={onSkipForNow}>
-            <Text style={sfnTextStyle}>Skip for Now</Text>
-          </FilledInvertedButton>
+        <View style={invAFriendContainerStyle}>
+          <LinkButton
+            setTextStyle={setInvAFriendTextStyle}
+            setHeight={setInvAFriendHeight}
+            onPress={onInviteFriend}>
+            <Text style={invAFriendTextStyle}>Invite a Friend</Text>
+          </LinkButton>
         </View>
       </OsehImageBackgroundFromState>
       <StatusBar style="auto" />
