@@ -1,5 +1,5 @@
 import { ReactElement, useCallback, useMemo, useState } from 'react';
-import { Platform, Pressable, View } from 'react-native';
+import { Platform, Pressable, View, ViewStyle } from 'react-native';
 import { useTopBarHeight } from '../hooks/useTopBarHeight';
 import { styles } from './CloseButtonStyles';
 import Close from '../icons/Close';
@@ -15,12 +15,17 @@ type CloseButtonProps = {
    * The function to call when the button is pressed
    */
   onPress?: () => void;
+
+  /**
+   * Additional styles to apply to the button container, e.g., opacity
+   */
+  bonusStyle?: ViewStyle;
 };
 
 /**
  * A close button at the top-right of the screen.
  */
-export const CloseButton = ({ disabled, onPress }: CloseButtonProps): ReactElement => {
+export const CloseButton = ({ disabled, onPress, bonusStyle }: CloseButtonProps): ReactElement => {
   const topBarHeight = useTopBarHeight();
   const [pressing, setPressing] = useState(false);
 
@@ -49,9 +54,10 @@ export const CloseButton = ({ disabled, onPress }: CloseButtonProps): ReactEleme
         }),
       },
       ...(pressing ? [styles.containerPressed] : []),
-      ...(disabled ? [styles.containerDisabled] : [])
+      ...(disabled ? [styles.containerDisabled] : []),
+      bonusStyle
     );
-  }, [topBarHeight, pressing, disabled]);
+  }, [topBarHeight, pressing, disabled, bonusStyle]);
 
   return (
     <View style={containerStyle}>
