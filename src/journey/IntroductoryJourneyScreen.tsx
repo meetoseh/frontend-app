@@ -90,5 +90,12 @@ export const IntroductoryJourneyScreen = ({
     return <SplashScreen />;
   }
 
-  return <JourneyRouter journey={journey} onFinished={onFinished} initialError={null} />;
+  return (
+    <JourneyRouter
+      journey={journey}
+      onFinished={onFinished}
+      isOnboarding={true}
+      initialError={null}
+    />
+  );
 };

@@ -29,6 +29,11 @@ export type JourneyScreenProps = {
   onJourneyFinished: (error?: ReactElement | null) => void;
 
   /**
+   * True if this is an onboarding journey, false otherwise.
+   */
+  isOnboarding: boolean;
+
+  /**
    * The error to show to the user, if any.
    */
   error: ReactElement | null;

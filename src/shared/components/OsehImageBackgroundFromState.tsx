@@ -1,5 +1,5 @@
 import { PropsWithChildren, ReactElement } from 'react';
-import { ImageBackground, StyleProp, View, ViewStyle } from 'react-native';
+import { ImageBackground, ImageStyle, StyleProp, View, ViewStyle } from 'react-native';
 import { OsehImageState } from '../hooks/useOsehImage';
 
 /**
@@ -16,16 +16,18 @@ export const OsehImageBackgroundFromState = ({
   children,
   state,
   style = undefined,
+  imageStyle = undefined,
 }: PropsWithChildren<{
   state: OsehImageState;
   style?: StyleProp<ViewStyle> | undefined;
+  imageStyle?: StyleProp<ImageStyle> | undefined;
 }>): ReactElement => {
   const viewStyle = Object.assign(
     { width: state.displayWidth, height: state.displayHeight },
     style
   );
   return state.localUrl ? (
-    <ImageBackground style={viewStyle} source={{ uri: state.localUrl }}>
+    <ImageBackground style={viewStyle} source={{ uri: state.localUrl }} imageStyle={imageStyle}>
       {children}
     </ImageBackground>
   ) : (

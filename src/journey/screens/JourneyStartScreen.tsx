@@ -13,7 +13,7 @@ import { getDailyEventInvite } from '../../shared/lib/getDailyEventInvite';
 import { SplashScreen } from '../../splash/SplashScreen';
 import { JourneyScreenProps } from '../models/JourneyScreenProps';
 import { styles as sharedStyles } from '../shared/styles';
-import { styles } from './JourneyStartScreenStyle';
+import { styles } from './JourneyStartScreenStyles';
 
 export const JourneyStartScreen = ({
   journey,
@@ -22,6 +22,7 @@ export const JourneyStartScreen = ({
   onJourneyFinished,
   error,
   setError,
+  isOnboarding,
 }: JourneyScreenProps): ReactElement => {
   const loginContext = useContext(LoginContext);
   const screenSize = useScreenSize();
@@ -62,7 +63,7 @@ export const JourneyStartScreen = ({
     try {
       const invite = await getDailyEventInvite({
         loginContext,
-        journeyUid: journey.uid,
+        journeyUid: isOnboarding ? null : journey.uid,
       });
 
       const text = `Let's do a ${journey.category.externalName.toLowerCase()} class together on Oseh.`;
@@ -85,7 +86,7 @@ export const JourneyStartScreen = ({
       const err = await describeError(e);
       setError(err);
     }
-  }, [loginContext, journey, setError]);
+  }, [loginContext, journey, setError, isOnboarding]);
 
   const onLetsGo = useCallback(async () => {
     setScreen('journey');

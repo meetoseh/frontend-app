@@ -10,6 +10,7 @@ npm-debug.*
 *.orig.*
 web-build/
 dev.bat
+/build-android.bat
 /android
 /ios
 

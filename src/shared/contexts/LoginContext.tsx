@@ -493,6 +493,10 @@ export const LoginProvider = ({
         try {
           newTokens = await refreshTokens(tokens);
         } catch (e) {
+          if (e instanceof Response && e.status === 403) {
+            const data = await e.text();
+            console.error('refresh tokens additional context:', data);
+          }
           console.error('failed to refresh tokens', e);
         }
 

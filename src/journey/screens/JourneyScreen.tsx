@@ -229,8 +229,11 @@ export const JourneyScreen = ({
   }, [makeControlsVisible]);
 
   const onClose = useCallback(() => {
+    if (shared.audio !== null && shared.audio.sound !== null) {
+      shared.audio.sound.stopAsync();
+    }
     setScreen('post');
-  }, [setScreen]);
+  }, [setScreen, shared.audio]);
 
   if (shared.image === null || shared.audioLoading || audioState.state === 'unhandled') {
     return <SplashScreen />;

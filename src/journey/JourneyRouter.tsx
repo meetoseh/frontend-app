@@ -22,6 +22,11 @@ type JourneyRouterProps = {
   onFinished: (error?: ReactElement | null) => void;
 
   /**
+   * True if this is an onboarding journey, false otherwise.
+   */
+  isOnboarding: boolean;
+
+  /**
    * If specified, shown as the initial error for this journey.
    */
   initialError: ReactElement | null;
@@ -37,6 +42,7 @@ export type JourneyRouterScreenId = 'start' | 'journey' | 'post' | 'share';
 export const JourneyRouter = ({
   journey,
   onFinished,
+  isOnboarding,
   initialError,
 }: JourneyRouterProps): ReactElement => {
   const [screen, setScreen] = useState<JourneyRouterScreenId>('start');
@@ -48,10 +54,11 @@ export const JourneyRouter = ({
       shared: sharedState,
       setScreen,
       onJourneyFinished: onFinished,
+      isOnboarding,
       error,
       setError,
     };
-  }, [journey, sharedState, error, onFinished]);
+  }, [journey, sharedState, error, onFinished, isOnboarding]);
 
   if (sharedState.imageLoading || sharedState.audioLoading) {
     return <SplashScreen />;
