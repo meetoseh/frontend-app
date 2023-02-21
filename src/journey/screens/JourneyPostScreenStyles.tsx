@@ -43,6 +43,14 @@ export const styles = StyleSheet.create({
     lineHeight: 105,
     marginBottom: -5,
   },
+  streakLoading: {
+    alignSelf: 'center',
+    color: Colors.GRAYSCALE_MID_GRAY,
+    fontFamily: 'OpenSans-Light',
+    fontSize: 100,
+    lineHeight: 105,
+    marginBottom: -5,
+  },
   streakUnit: {
     alignSelf: 'center',
     color: Colors.WHITE,
