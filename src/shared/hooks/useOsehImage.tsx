@@ -123,6 +123,11 @@ export type OsehImageState = {
    * The alt text for the image
    */
   alt: string;
+
+  /**
+   * True if the image is still loading, false otherwise
+   */
+  loading: boolean;
 };
 
 /**
@@ -429,6 +434,7 @@ export const useOsehImageState = ({
       alt,
       displayWidth,
       displayHeight,
+      loading: downloadedItem?.localUrl === null,
     };
   }, [downloadedItem?.localUrl, alt, displayWidth, displayHeight]);
 };
