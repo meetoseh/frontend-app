@@ -1,9 +1,9 @@
 import { ReactElement } from 'react';
 import { View, Text } from 'react-native';
-import { DailyEventJourneyState } from '../daily_event/hooks/useDailyEventJourneyState';
-import { DailyEvent } from '../daily_event/models/DailyEvent';
-import { DailyEventJourney } from '../daily_event/models/DailyEventJourney';
-import { GestureHandler, SwipingDirection } from '../shared/lib/GestureHandler';
+import { DailyEventJourneyState } from '../hooks/useDailyEventJourneyState';
+import { DailyEvent } from '../models/DailyEvent';
+import { DailyEventJourney } from '../models/DailyEventJourney';
+import { GestureHandler, SwipingDirection } from '../../shared/lib/GestureHandler';
 
 type DailyEventJourneyCardProps = {
   /**
@@ -61,7 +61,7 @@ export const DailyEventJourneyCard = ({
   return (
     <View>
       <Text>
-        Journey Card: {journey.title}, {state.loading}
+        Journey Card: {journey.title}, {state.loading ? 'loading' : 'loaded'}
       </Text>
     </View>
   );

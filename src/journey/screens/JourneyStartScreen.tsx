@@ -10,6 +10,7 @@ import { LoginContext } from '../../shared/contexts/LoginContext';
 import { useScreenSize } from '../../shared/hooks/useScreenSize';
 import { describeError } from '../../shared/lib/describeError';
 import { getDailyEventInvite } from '../../shared/lib/getDailyEventInvite';
+import { RSQUO } from '../../shared/lib/HtmlEntities';
 import { SplashScreen } from '../../splash/SplashScreen';
 import { JourneyScreenProps } from '../models/JourneyScreenProps';
 import { styles as sharedStyles } from '../shared/styles';
@@ -53,7 +54,7 @@ export const JourneyStartScreen = ({
     if (loginContext.state !== 'logged-in') {
       setError(
         <ErrorBanner>
-          <ErrorBannerText>You can&rsquo;t do that right now.</ErrorBannerText>
+          <ErrorBannerText>You can{RSQUO}t do that right now.</ErrorBannerText>
         </ErrorBanner>
       );
       return;
@@ -108,14 +109,14 @@ export const JourneyStartScreen = ({
 
       <OsehImageBackgroundFromState state={shared.image} style={sharedStyles.background}>
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>You&rsquo;re Class is Ready</Text>
+          <Text style={styles.title}>You{RSQUO}re Class is Ready</Text>
         </View>
         <View style={letsGoContainerStyle}>
           <FilledPrimaryButton
             setTextStyle={setLetsGoTextStyle}
             setHeight={setLetsGoHeight}
             onPress={onLetsGo}>
-            <Text style={letsGoTextStyle}>Let&rsquo;s Go</Text>
+            <Text style={letsGoTextStyle}>Let{RSQUO}s Go</Text>
           </FilledPrimaryButton>
         </View>
         <View style={invAFriendContainerStyle}>

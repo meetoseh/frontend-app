@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { PixelRatio } from 'react-native';
 import { HTTP_API_URL } from '../lib/apiFetch';
+import { convertUsingKeymap, CrudFetcherKeyMap } from '../lib/CrudFetcher';
+import { removeUnmatchedKeysFromMap } from '../lib/removeUnmatchedKeys';
 import * as FileSystem from 'expo-file-system';
 
 /**
@@ -10,7 +12,6 @@ import * as FileSystem from 'expo-file-system';
 export type OsehImageRef = {
   /** The uid of the image file */
   uid: string;
-
   /** A JWT which provides access to the image file */
   jwt: string;
 };
@@ -84,6 +85,30 @@ type PlaylistItem = {
   sizeBytes: number;
 };
 
+const playlistItemKeymap: CrudFetcherKeyMap<PlaylistItem> = {
+  size_bytes: 'sizeBytes',
+};
+
+const playlistItemsEqual = (a: PlaylistItem | null, b: PlaylistItem | null): boolean => {
+  if (a === b) {
+    return true;
+  }
+
+  if (a === null || b === null) {
+    return false;
+  }
+
+  return (
+    a.url === b.url &&
+    a.format === b.format &&
+    a.width === b.width &&
+    a.height === b.height &&
+    a.sizeBytes === b.sizeBytes
+  );
+};
+
+type PlaylistItemWithJWT = { item: PlaylistItem; jwt: string };
+
 type Playlist = {
   /**
    * The uid of the image file this playlist is for, so we don't refetch the image
@@ -98,6 +123,67 @@ type Playlist = {
   items: { [format: string]: PlaylistItem[] };
 };
 
+const playlistKeymap: CrudFetcherKeyMap<Playlist> = {
+  items: (_, v: { [format: string]: any[] }) => ({
+    key: 'items',
+    value: Object.fromEntries(
+      Object.entries(v).map(([key, val]) => [
+        key,
+        val.map((v) => convertUsingKeymap(v, playlistItemKeymap)),
+      ])
+    ),
+  }),
+};
+
+const playlistsEqual = (a: Playlist | null, b: Playlist | null): boolean => {
+  if (a === b) {
+    return true;
+  }
+
+  if (a === null || b === null) {
+    return false;
+  }
+
+  if (a.uid !== b.uid) {
+    return false;
+  }
+
+  const aKeys = Object.keys(a.items);
+  const bKeys = Object.keys(b.items);
+
+  if (aKeys.length !== bKeys.length) {
+    return false;
+  }
+
+  for (const key of aKeys) {
+    if (!bKeys.includes(key)) {
+      return false;
+    }
+
+    const aItems = a.items[key];
+    const bItems = b.items[key];
+
+    if (aItems.length !== bItems.length) {
+      return false;
+    }
+
+    for (let i = 0; i < aItems.length; i++) {
+      if (!playlistItemsEqual(aItems[i], bItems[i])) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+};
+
+type PlaylistWithJWT = { playlist: Playlist; jwt: string };
+
+/**
+ * If webp support is available
+ */
+const USES_WEBP: Promise<boolean> = Promise.resolve(true);
+
 /**
  * The required state information to display an oseh image. Useful when you want
  * to use a single image in multiple places, as the standard OsehImage component
@@ -105,7 +191,7 @@ type Playlist = {
  */
 export type OsehImageState = {
   /**
-   * The local url where the image can be accessed. This will be a file:// URI
+   * The local url where the image can be accessed
    */
   localUrl: string | null;
 
@@ -125,9 +211,39 @@ export type OsehImageState = {
   alt: string;
 
   /**
-   * True if the image is still loading, false otherwise
+   * True if the image is loading, false otherwise
    */
   loading: boolean;
+};
+
+/**
+ * The information we need about an item that we have successfully
+ * downloaded.
+ */
+type DownloadedItem = {
+  /**
+   * A URI where the resource can be accessed locally (either memory
+   * or disk)
+   */
+  localUrl: string;
+
+  /**
+   * The URI we fetched the resource from, primarily for avoiding
+   * refetching the same resource
+   */
+  remoteUrl: string;
+};
+
+const downloadedItemsEqual = (a: DownloadedItem | null, b: DownloadedItem | null): boolean => {
+  if (a === b) {
+    return true;
+  }
+
+  if (a === null || b === null) {
+    return false;
+  }
+
+  return a.localUrl === b.localUrl && a.remoteUrl === b.remoteUrl;
 };
 
 /**
@@ -220,221 +336,459 @@ const compareSizes = (
 };
 
 /**
+ * Fetches the playlist information for a given private playlist. Returns
+ * a rejected promise if there is a network error or the server returns
+ * a non-200 status code.
+ *
+ * @param uid The uid of the playlist to fetch
+ * @param jwt The JWT to use to authenticate the request
+ * @returns The playlist information
+ */
+const fetchPrivatePlaylist = async (uid: string, jwt: string): Promise<Playlist> => {
+  const response = await fetch(`${HTTP_API_URL}/api/1/image_files/playlist/${uid}`, {
+    method: 'GET',
+    headers: { authorization: `bearer ${jwt}` },
+  });
+
+  if (!response.ok) {
+    throw response;
+  }
+
+  const data = await response.json();
+  return convertUsingKeymap(data, playlistKeymap);
+};
+
+/**
+ * Fetches the playlist information for a given public playlist. Returns
+ * a rejected promise if there is a network error or the server returns
+ * a non-200 status code.
+ *
+ * Public playlists still require a jwt to access the individual exports,
+ * but the response includes the jwt to use in the header. Thus, this
+ * also returns the jwt to use for fetching the individual exports.
+ *
+ * @param uid The uid of the playlist to fetch
+ * @returns The playlist information and the jwt to use to fetch the individual exports
+ */
+const fetchPublicPlaylist = async (uid: string): Promise<{ playlist: Playlist; jwt: string }> => {
+  const response = await fetch(`${HTTP_API_URL}/api/1/image_files/playlist/${uid}?public=1`, {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw response;
+  }
+
+  const jwt = response.headers.get('x-image-file-jwt');
+  if (jwt === null) {
+    throw new Error('Public playlist response did not include JWT in x-image-file-jwt header');
+  }
+
+  const data = await response.json();
+  const playlist = convertUsingKeymap(data, playlistKeymap);
+  return { playlist, jwt };
+};
+
+/**
+ * Selects the format available in the given playlist by preference
+ * based on the actual width and height we want to display the final
+ * exported image at.
+ *
+ * @param playlist The playlist to select from
+ * @param usesWebp Whether the device supports webp
+ * @param want The width and height of the image we want to display
+ * @returns The format to use
+ */
+function selectFormat<T extends Playlist>(
+  playlist: T,
+  usesWebp: boolean,
+  want: { width: number; height: number }
+): string & keyof T['items'] {
+  const area = want.width * want.height;
+
+  if (usesWebp && playlist.items.webp) {
+    return 'webp';
+  }
+
+  if (area <= 200 * 200 && playlist.items.png) {
+    return 'png';
+  }
+
+  return 'jpeg';
+}
+
+/**
+ * Selects the best item within the given list of options, given
+ * that we want to render it at the given width and height.
+ *
+ * @param items The list of items to choose from, must be non-empty
+ */
+const selectBestItemFromItems = (
+  items: PlaylistItem[],
+  want: { width: number; height: number }
+): PlaylistItem => {
+  if (items.length === 0) {
+    throw new Error('Cannot select best item from empty list');
+  }
+
+  let best = items[0];
+  for (let i = 1; i < items.length; i++) {
+    if (compareSizes(want, items[i], best) < 0) {
+      best = items[i];
+    }
+  }
+  return best;
+};
+
+/**
+ * Selects the best item from the given playlist, given that we want
+ * to render it at the given width and height and if the device supports
+ * webp.
+ *
+ * @param playlist The playlist to select from
+ * @param usesWebp Whether the device supports webp
+ * @param want The width and height of the image we want to display
+ * @returns The best item to use
+ */
+const selectBestItem = (
+  playlist: Playlist,
+  usesWebp: boolean,
+  want: { width: number; height: number }
+): PlaylistItem => {
+  const format = selectFormat(playlist, usesWebp, want);
+  return selectBestItemFromItems(playlist.items[format], want);
+};
+
+/**
+ * Downloads the given playlist item. Returns a rejected promise if
+ * there is a network error or the server returns a non-200 status code.
+ *
+ * @param item The item to download
+ * @param jwt The JWT to use to authenticate the request
+ * @returns The downloaded item
+ */
+const downloadItem = async (item: PlaylistItem, jwt: string): Promise<DownloadedItem> => {
+  const response = await fetch(item.url, {
+    headers: { Authorization: `bearer ${jwt}` },
+  });
+  if (!response.ok) {
+    throw response;
+  }
+
+  const targetFolder = FileSystem.cacheDirectory + 'images/';
+  const dirInfo = await FileSystem.getInfoAsync(targetFolder);
+  if (!dirInfo.exists) {
+    await FileSystem.makeDirectoryAsync(targetFolder, { intermediates: true });
+  }
+
+  const targetFile = targetFolder + item.url.split('/').pop();
+  const fileInfo = await FileSystem.getInfoAsync(targetFile);
+  if (!fileInfo.exists) {
+    try {
+      await FileSystem.downloadAsync(item.url, targetFile, {
+        headers: { Authorization: `bearer ${jwt}` },
+      });
+    } catch (e) {
+      await FileSystem.deleteAsync(targetFile, { idempotent: true });
+      throw e;
+    }
+  }
+
+  return {
+    remoteUrl: item.url,
+    localUrl: targetFile,
+  };
+};
+
+/**
  * A hook for loading an image from oseh. This hook will load the playlist
  * for the given uid, and then select the best image to display based on
  * the displayWidth and displayHeight props as well as device characteristics,
  * such as DPI. This will then download the image, but will not decode it,
- * before setting loading to false and setting the localUrl to the path to
- * the downloaded image.
- *
- * This does not redownload images that are still in the cache directory, which
- * is typically good enough for most use cases.
+ * before setting loading to false and setting the localUrl to the downloaded
+ * image blob.
  *
  * @returns The state of the image which can be used by OsehImageFromState
  */
-export const useOsehImageState = ({
-  uid,
-  jwt,
-  displayWidth,
-  displayHeight,
-  alt,
-  isPublic = false,
-  setLoading = null,
-}: OsehImageProps): OsehImageState => {
-  const [playlist, setPlaylist] = useState<Playlist | null>(null);
-  const [publicJwt, setPublicJwt] = useState<string | null>(null);
-  const [item, setItem] = useState<PlaylistItem | null>(null);
-  const [downloadedItem, setDownloadedItem] = useState<{
-    localUrl: string;
-    remoteUrl: string;
-  } | null>(null);
+export const useOsehImageState = (props: OsehImageProps): OsehImageState => {
+  const memodProps = useMemo(() => [props], [props]);
+  return useOsehImageStates(memodProps)[0];
+};
 
-  useEffect(() => {
-    if (uid === null) {
-      setPlaylist(null);
-      return;
-    }
+/**
+ * A variant of useOsehImageState that can be used to load multiple images
+ * in a single effect. This is useful when the number of images being loaded
+ * may change, but the images still need to be reused. This will only reload
+ * the images that actually change.
+ *
+ * Returns the image states in the order of the items array. Items with no
+ * uid will be stuck loading.
+ */
+export const useOsehImageStates = (images: OsehImageProps[]): OsehImageState[] => {
+  const [playlists, setPlaylists] = useState<Map<string, PlaylistWithJWT>>(new Map());
+  const [bestItems, setBestItems] = useState<Map<string, PlaylistItemWithJWT>>(new Map());
+  const [downloadedItems, setDownloadedItems] = useState<Map<string, DownloadedItem>>(new Map());
 
-    let alive = true;
-    safeFetchPlaylist();
-    return () => {
-      alive = false;
-    };
-
-    async function safeFetchPlaylist() {
-      try {
-        await fetchPlaylist();
-      } catch (e) {
-        console.log('error fetching playlist', e);
+  const uidsToImages = useMemo(() => {
+    const map: Map<string, OsehImageProps> = new Map();
+    for (const img of images) {
+      if (img.uid !== null) {
+        map.set(img.uid, img);
       }
     }
-
-    async function fetchPlaylist() {
-      if (playlist?.uid === uid) {
-        return;
-      }
-
-      const response = isPublic
-        ? await fetch(`${HTTP_API_URL}/api/1/image_files/playlist/${uid}?public=1`, {
-            method: 'GET',
-          })
-        : await fetch(`${HTTP_API_URL}/api/1/image_files/playlist/${uid}`, {
-            method: 'GET',
-            headers: { authorization: `bearer ${jwt}` },
-          });
-      if (!alive) {
-        return;
-      }
-      if (!response.ok) {
-        const text = await response.text();
-        if (!alive) {
-          return;
-        }
-        console.error("Couldn't fetch playlist", response, text);
-        return;
-      }
-
-      const data = await response.json();
-      if (!alive) {
-        return;
-      }
-
-      if (response.headers.has('x-image-file-jwt')) {
-        setPublicJwt(response.headers.get('x-image-file-jwt'));
-      } else {
-        setPublicJwt(null);
-      }
-      setPlaylist(data);
-    }
-  }, [uid, jwt, playlist?.uid, isPublic]);
-
-  useEffect(() => {
-    if (playlist === null) {
-      setItem(null);
-      return;
-    }
-
-    let alive = true;
-    selectItem();
-    return () => {
-      alive = false;
-    };
-
-    async function selectItem() {
-      if (!alive) {
-        return;
-      }
-      if (playlist === null) {
-        return;
-      }
-
-      const desiredImageSize = {
-        width: PixelRatio.getPixelSizeForLayoutSize(displayWidth),
-        height: PixelRatio.getPixelSizeForLayoutSize(displayHeight),
-      };
-      const desiredArea = desiredImageSize.width * desiredImageSize.height;
-
-      const format = playlist.items.webp
-        ? 'webp'
-        : desiredArea <= 200 * 200 && playlist.items.png
-        ? 'png'
-        : 'jpeg';
-
-      // items is already sorted by size, ascending
-      let items = playlist.items[format];
-
-      const itemByResolution: { [resolution: string]: PlaylistItem } = {};
-      for (const item of items) {
-        itemByResolution[`${item.width}x${item.height}`] = item;
-      }
-      items = Object.values(itemByResolution);
-
-      const bestItem = items.reduce((best, item) => {
-        if (best === null) {
-          return item;
-        }
-        if (compareSizes(desiredImageSize, item, best) < 0) {
-          return item;
-        }
-        return best;
-      });
-
-      if (
-        bestItem.width !== desiredImageSize.width ||
-        bestItem.height !== desiredImageSize.height
-      ) {
-        console.log(
-          `image size mismatch for ${playlist.uid}; wanted ${desiredImageSize.width}x${desiredImageSize.height} but got ${bestItem.width}x${bestItem.height}`
-        );
-      }
-      setItem(bestItem);
-    }
-  }, [playlist, displayWidth, displayHeight]);
+    return map;
+  }, [images]);
 
   useEffect(() => {
     let active = true;
-    fetchItemUrl();
+    fetchPlaylists();
     return () => {
       active = false;
     };
 
-    async function fetchItemUrl() {
-      if (item === null) {
-        setDownloadedItem(null);
-        return;
+    async function fetchPlaylist(
+      props: OsehImageProps,
+      old: PlaylistWithJWT | null
+    ): Promise<PlaylistWithJWT | null> {
+      if (props.uid === null) {
+        return null;
       }
 
-      if (downloadedItem?.remoteUrl === item.url) {
-        return;
+      if (old !== null && old.playlist.uid === props.uid) {
+        return old;
       }
 
-      const targetFolder = FileSystem.cacheDirectory + 'images/';
-      const dirInfo = await FileSystem.getInfoAsync(targetFolder);
-      if (!active) {
-        return;
-      }
-      if (!dirInfo.exists) {
-        await FileSystem.makeDirectoryAsync(targetFolder, { intermediates: true });
-        if (!active) {
-          return;
-        }
+      if (props.isPublic) {
+        return await fetchPublicPlaylist(props.uid);
       }
 
-      const targetFile = targetFolder + item.url.split('/').pop();
-      const fileInfo = await FileSystem.getInfoAsync(targetFile);
-      if (!active) {
-        return;
-      }
-      if (!fileInfo.exists) {
-        try {
-          await FileSystem.downloadAsync(item.url, targetFile, {
-            headers: { Authorization: `bearer ${publicJwt ?? jwt}` },
-          });
-        } catch (e) {
-          console.error('Failed to download image', e);
-
-          await FileSystem.deleteAsync(targetFile, { idempotent: true });
-          return;
-        }
+      if (props.jwt === null) {
+        throw new Error('Cannot fetch private playlist without JWT');
       }
 
-      setDownloadedItem({ localUrl: targetFile, remoteUrl: item.url });
+      return { playlist: await fetchPrivatePlaylist(props.uid, props.jwt), jwt: props.jwt };
     }
-  }, [item, jwt, downloadedItem?.remoteUrl, publicJwt]);
+
+    async function fetchPlaylists() {
+      const newPlaylists = removeUnmatchedKeysFromMap(playlists, uidsToImages);
+      let madeChanges = newPlaylists.size !== playlists.size;
+
+      const promises: Promise<void>[] = [];
+      const uids: string[] = [];
+      uidsToImages.forEach((props, uid) => {
+        const old = newPlaylists.get(uid) ?? null;
+        uids.push(uid);
+        promises.push(
+          fetchPlaylist(props, old).then((playlist) => {
+            if (!active) {
+              return;
+            }
+
+            if (playlist === null || old === null) {
+              madeChanges ||= playlist !== old;
+            } else {
+              madeChanges ||=
+                !playlistsEqual(playlist.playlist, old.playlist) || playlist.jwt !== old.jwt;
+            }
+
+            if (playlist === null) {
+              newPlaylists.delete(uid);
+            } else {
+              newPlaylists.set(uid, playlist);
+            }
+          })
+        );
+      });
+
+      const settled = await Promise.allSettled(promises);
+      if (!active) {
+        return;
+      }
+
+      settled.forEach((p, idx) => {
+        if (p.status === 'rejected') {
+          console.error('Failed to fetch playlist', uids[idx], p.reason);
+          if (newPlaylists.has(uids[idx])) {
+            newPlaylists.delete(uids[idx]);
+            madeChanges = true;
+          }
+        }
+      });
+
+      if (madeChanges) {
+        setPlaylists(newPlaylists);
+      }
+    }
+  }, [uidsToImages, playlists]);
 
   useEffect(() => {
-    if (setLoading !== null) {
-      setLoading(uid === null || downloadedItem === null, uid);
+    let active = true;
+    fetchBestItems();
+    return () => {
+      active = false;
+    };
+
+    async function fetchBestItems() {
+      const usesWebp = await USES_WEBP;
+      if (!active) {
+        return;
+      }
+
+      const newBestItems = removeUnmatchedKeysFromMap(bestItems, playlists);
+      let madeChanges = newBestItems.size !== bestItems.size;
+
+      playlists.forEach((playlist, uid) => {
+        const props = uidsToImages.get(uid) ?? null;
+        if (props === null) {
+          if (newBestItems.has(uid)) {
+            newBestItems.delete(uid);
+            madeChanges = true;
+          }
+          return;
+        }
+
+        const want = {
+          width: PixelRatio.getPixelSizeForLayoutSize(props.displayWidth),
+          height: PixelRatio.getPixelSizeForLayoutSize(props.displayHeight),
+        };
+        const old = newBestItems.get(uid) ?? null;
+        const bestItem = selectBestItem(playlist.playlist, usesWebp, want);
+        if (old === null || old.jwt !== playlist.jwt || !playlistItemsEqual(old.item, bestItem)) {
+          newBestItems.set(uid, { item: bestItem, jwt: playlist.jwt });
+          madeChanges = true;
+        }
+      });
+
+      if (madeChanges) {
+        setBestItems(newBestItems);
+      }
     }
-  }, [downloadedItem, setLoading, uid]);
+  }, [uidsToImages, playlists, bestItems]);
+
+  useEffect(() => {
+    let active = true;
+    fetchDownloadedItems();
+    return () => {
+      active = false;
+    };
+
+    async function fetchDownloadedItem(
+      item: PlaylistItemWithJWT,
+      old: DownloadedItem | null
+    ): Promise<DownloadedItem> {
+      if (old !== null && old.remoteUrl === item.item.url) {
+        return old;
+      }
+
+      return downloadItem(item.item, item.jwt);
+    }
+
+    async function fetchDownloadedItems() {
+      const newDownloadedItems = removeUnmatchedKeysFromMap(downloadedItems, bestItems);
+      let madeChanges = newDownloadedItems.size !== downloadedItems.size;
+
+      const promises: Promise<void>[] = [];
+      const uids: string[] = [];
+      bestItems.forEach((item, uid) => {
+        const old = newDownloadedItems.get(uid) ?? null;
+        uids.push(uid);
+        promises.push(
+          fetchDownloadedItem(item, old).then((downloadedItem) => {
+            if (!active) {
+              return;
+            }
+
+            madeChanges ||= !downloadedItemsEqual(downloadedItem, old);
+            if (downloadedItem === null) {
+              newDownloadedItems.delete(uid);
+            } else {
+              newDownloadedItems.set(uid, downloadedItem);
+            }
+          })
+        );
+      });
+
+      const settled = await Promise.allSettled(promises);
+      if (!active) {
+        return;
+      }
+
+      settled.forEach((p, idx) => {
+        if (p.status === 'rejected') {
+          console.error('Failed to download item', uids[idx], p.reason);
+          if (newDownloadedItems.has(uids[idx])) {
+            newDownloadedItems.delete(uids[idx]);
+            madeChanges = true;
+          }
+        }
+      });
+
+      if (madeChanges) {
+        setDownloadedItems(newDownloadedItems);
+      }
+    }
+  }, [bestItems, downloadedItems]);
+
+  /**
+   * Calls isLoading callback if set
+   */
+  useEffect(() => {
+    images.forEach((img) => {
+      if (img.setLoading === null || img.setLoading === undefined) {
+        return;
+      }
+
+      if (img.uid === null) {
+        img.setLoading(true, null);
+        return;
+      }
+
+      const downloadedItem = downloadedItems.get(img.uid);
+      if (
+        downloadedItem === null ||
+        downloadedItem === undefined ||
+        downloadedItem.localUrl === null
+      ) {
+        img.setLoading(true, img.uid);
+        return;
+      }
+
+      img.setLoading(false, img.uid);
+    });
+  }, [images, downloadedItems]);
 
   return useMemo(() => {
-    return {
-      localUrl: downloadedItem?.localUrl ?? null,
-      alt,
-      displayWidth,
-      displayHeight,
-      loading: downloadedItem?.localUrl === null,
-    };
-  }, [downloadedItem?.localUrl, alt, displayWidth, displayHeight]);
+    return images.map((img) => {
+      if (img.uid === null) {
+        return {
+          localUrl: null,
+          alt: img.alt,
+          displayWidth: img.displayWidth,
+          displayHeight: img.displayHeight,
+          loading: true,
+        };
+      }
+
+      const downloadedItem = downloadedItems.get(img.uid);
+      if (downloadedItem === null || downloadedItem === undefined) {
+        return {
+          localUrl: null,
+          alt: img.alt,
+          displayWidth: img.displayWidth,
+          displayHeight: img.displayHeight,
+          loading: true,
+        };
+      }
+
+      const localUrl = downloadedItem.localUrl ?? null;
+
+      return {
+        localUrl: localUrl,
+        alt: img.alt,
+        displayWidth: img.displayWidth,
+        displayHeight: img.displayHeight,
+        loading: localUrl === null,
+      };
+    });
+  }, [images, downloadedItems]);
 };

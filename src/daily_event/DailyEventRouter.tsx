@@ -1,6 +1,6 @@
-import { View, Text } from 'react-native';
 import { JourneyRef } from '../journey/models/JourneyRef';
 import { DailyEvent } from './models/DailyEvent';
+import { DailyEventScreen } from './screens/DailyEventScreen';
 
 type DailyEventRouterProps = {
   /**
@@ -21,10 +21,16 @@ type DailyEventRouterProps = {
   onGotoJourney: (journey: JourneyRef) => void;
 };
 
-export const DailyEventRouter = ({ event }: DailyEventRouterProps) => {
+/**
+ * Manages the screens and transitions for the user to interact with
+ * while looking at a daily event.
+ */
+export const DailyEventRouter = ({
+  event,
+  onGotoSettings,
+  onGotoJourney,
+}: DailyEventRouterProps) => {
   return (
-    <View>
-      <Text>Daily Event Router: {event.uid}</Text>
-    </View>
+    <DailyEventScreen event={event} onGotoSettings={onGotoSettings} onGotoJourney={onGotoJourney} />
   );
 };

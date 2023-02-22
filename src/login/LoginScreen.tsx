@@ -14,6 +14,7 @@ import { ErrorBanner, ErrorBannerText } from '../shared/components/ErrorBanner';
 import * as Linking from 'expo-linking';
 import { URLSearchParams } from 'react-native-url-polyfill';
 import { LoginContext } from '../shared/contexts/LoginContext';
+import { RSQUO } from '../shared/lib/HtmlEntities';
 
 type LoginScreenProps = {
   /**
@@ -229,7 +230,7 @@ export const LoginScreen = ({ onLogin, initialError }: LoginScreenProps): ReactE
         </View>
         <View style={styles.legalContainer}>
           <Text style={styles.legal}>
-            We won&rquo;t post to any of your accounts without asking first.
+            We won{RSQUO}t post to any of your accounts without asking first.
           </Text>
         </View>
       </OsehImageBackground>

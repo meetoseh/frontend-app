@@ -4,11 +4,12 @@ import { LoginScreen } from './src/login/LoginScreen';
 import { SplashScreen } from './src/splash/SplashScreen';
 import { LoginContext, LoginProvider } from './src/shared/contexts/LoginContext';
 import { IntroductoryJourneyScreen } from './src/journey/IntroductoryJourneyScreen';
+import { CurrentDailyEvent } from './src/daily_event/CurrentDailyEvent';
 
 /**
  * The allowed identifiers for screens
  */
-export type ScreenId = 'splash' | 'login' | 'introductory-journey';
+export type ScreenId = 'splash' | 'login' | 'introductory-journey' | 'current-daily-event';
 
 export default function App() {
   return (
@@ -51,7 +52,7 @@ const AppInner = () => {
       return;
     }
 
-    setScreen('introductory-journey');
+    setScreen('current-daily-event');
   }, [fontsLoaded, loginContext.state]);
 
   const setErrorAndDoNothing = useCallback((error?: ReactElement | null) => {
@@ -73,6 +74,9 @@ const AppInner = () => {
   }
   if (screen === 'introductory-journey') {
     return <IntroductoryJourneyScreen onFinished={setErrorAndDoNothing} />;
+  }
+  if (screen === 'current-daily-event') {
+    return <CurrentDailyEvent onGotoSettings={doNothing} onGotoJourney={doNothing} />;
   }
 
   throw new Error(`Unknown screen: ${screen}`);

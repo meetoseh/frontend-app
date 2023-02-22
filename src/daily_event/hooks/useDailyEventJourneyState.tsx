@@ -1,5 +1,9 @@
 import { useMemo } from 'react';
-import { OsehImageProps, OsehImageState, useOsehImageState } from '../../shared/hooks/useOsehImage';
+import {
+  OsehImageProps,
+  OsehImageState,
+  useOsehImageStates,
+} from '../../shared/hooks/useOsehImage';
 import { useScreenSize } from '../../shared/hooks/useScreenSize';
 import { DailyEventJourney } from '../models/DailyEventJourney';
 
@@ -22,26 +26,42 @@ export type DailyEventJourneyState = {
  *
  * @param journey The journey to load
  */
-export const useDailyEventJourneyState = (journey: DailyEventJourney): DailyEventJourneyState => {
+export const useDailyEventJourneyState = (journey: DailyEventJourney) => {
+  const journeys = useMemo(() => [journey], [journey]);
+  return useDailyEventJourneyStates(journeys)[0];
+};
+
+/**
+ * Loads the required state for immediately displaying multiple cards for
+ * multiple journeys within a daily event.
+ *
+ * @param journeys The journeys to load
+ * @returns The loaded journeys, in the same order as the input
+ */
+export const useDailyEventJourneyStates = (
+  journeys: DailyEventJourney[]
+): DailyEventJourneyState[] => {
   const screenSize = useScreenSize();
-  const imageProps: OsehImageProps = useMemo(
-    () => ({
-      uid: journey.backgroundImage.uid,
-      jwt: journey.backgroundImage.jwt,
-      displayWidth: screenSize.width,
-      displayHeight: screenSize.height,
-      alt: '',
-    }),
-    [journey, screenSize]
+  const imageProps = useMemo<OsehImageProps[]>(
+    () =>
+      journeys.map((journey) => ({
+        uid: journey.backgroundImage.uid,
+        jwt: journey.backgroundImage.jwt,
+        displayWidth: screenSize.width,
+        displayHeight: screenSize.height,
+        alt: '',
+      })),
+    [journeys, screenSize]
   );
 
-  const image = useOsehImageState(imageProps);
+  const images = useOsehImageStates(imageProps);
 
   return useMemo(
-    () => ({
-      image,
-      loading: image.loading,
-    }),
-    [image]
+    () =>
+      images.map((image) => ({
+        image,
+        loading: image.loading,
+      })),
+    [images]
   );
 };

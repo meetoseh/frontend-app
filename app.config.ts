@@ -7,6 +7,7 @@ module.exports = {
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
     scheme: 'oseh',
+    platforms: ['ios', 'android'],
     splash: {
       image: './assets/splash.png',
       resizeMode: 'contain',
@@ -28,9 +29,6 @@ module.exports = {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#FFFFFF',
       },
-    },
-    web: {
-      favicon: './assets/favicon.png',
     },
     extra: {
       rootBackendUrl: process.env.ROOT_BACKEND_URL,

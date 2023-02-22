@@ -14,6 +14,7 @@ import ThumbsUp from '../../shared/icons/ThumbsUp';
 import { FilledPrimaryButton } from '../../shared/components/FilledPrimaryButton';
 import { useScreenSize } from '../../shared/hooks/useScreenSize';
 import { apiFetch } from '../../shared/lib/apiFetch';
+import { RSQUO } from '../../shared/lib/HtmlEntities';
 
 export const JourneyPostScreen = ({
   journey,
@@ -191,7 +192,7 @@ export const JourneyPostScreen = ({
         <CloseButton onPress={onJourneyFinished} />
         <View style={styles.content}>
           <Text style={styles.title}>
-            Thanks for practicing {loginContext.userAttributes.givenName}, you&rsquo;re on a roll.
+            Thanks for practicing {loginContext.userAttributes.givenName}, you{RSQUO}re on a roll.
           </Text>
           <Text style={streakLoaded ? styles.streak : styles.streakLoading}>{streak}</Text>
           <Text style={styles.streakUnit}>day streak</Text>
