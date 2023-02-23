@@ -64,6 +64,7 @@ const AppInner = () => {
 
   const doNothing = useCallback(() => {
     // do nothing; for things not yet implemented
+    console.log('doNothing');
   }, []);
 
   if (screen === 'splash') {

@@ -14,6 +14,11 @@ import { Buffer } from '@craftzdog/react-native-buffer';
  */
 export type UserAttributes = {
   /**
+   * The user's unique identifier, which is used as the sub claim in the jwt.
+   */
+  sub: string;
+
+  /**
    * The user's email address
    */
   email: string;
@@ -197,6 +202,7 @@ export const extractUserAttributes = (tokenConfig: TokenResponseConfig): UserAtt
   }
 
   return {
+    sub: claims.sub,
     email: claims.email,
     phoneNumber: claims.phone_number || null,
     name: nameClaims.name,

@@ -8,5 +8,5 @@ import { OsehImageFromState } from './OsehImageFromState';
  */
 export const OsehImage = (props: OsehImageProps): ReactElement => {
   const state = useOsehImageState(props);
-  return <OsehImageFromState {...state} />;
+  return <OsehImageFromState state={state} />;
 };

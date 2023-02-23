@@ -66,6 +66,30 @@ export class GestureHandler {
   }
 
   /**
+   * The x-distance between the touch start and touch move events, if
+   * we're handling a touch, or null if we're not.
+   */
+  get deltaX(): number | null {
+    if (this.touchStartX === null || this.touchMoveX === null) {
+      return null;
+    }
+
+    return this.touchMoveX - this.touchStartX;
+  }
+
+  /**
+   * The y-distance between the touch start and touch move events, if
+   * we're handling a touch, or null if we're not.
+   */
+  get deltaY(): number | null {
+    if (this.touchStartY === null || this.touchMoveY === null) {
+      return null;
+    }
+
+    return this.touchMoveY - this.touchStartY;
+  }
+
+  /**
    * Handles a touch starting
    * @param x The x-coordinate of the touch
    * @param y The y-coordinate of the touch

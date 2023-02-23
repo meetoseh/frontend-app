@@ -109,7 +109,7 @@ export const JourneyStartScreen = ({
 
       <OsehImageBackgroundFromState state={shared.image} style={sharedStyles.background}>
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>You{RSQUO}re Class is Ready</Text>
+          <Text style={styles.title}>Your Class is Ready</Text>
         </View>
         <View style={letsGoContainerStyle}>
           <FilledPrimaryButton
