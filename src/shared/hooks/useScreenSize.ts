@@ -21,14 +21,5 @@ export const useScreenSize = (): ScaledSize => {
     };
   }, []);
 
-  if (
-    isNaN(screenSize.width) ||
-    isNaN(screenSize.height) ||
-    screenSize.width <= 0 ||
-    screenSize.height <= 0
-  ) {
-    console.log('invalid screenSize:', screenSize);
-  }
-
   return screenSize;
 };

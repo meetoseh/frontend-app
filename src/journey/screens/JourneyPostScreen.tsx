@@ -167,7 +167,7 @@ export const JourneyPostScreen = ({
         setStreak(data.streak);
         setStreakLoaded(true);
       } catch (e) {
-        console.log('error loading streak');
+        console.log('error loading streak', e);
       }
     }
   }, [loginContext, streakLoaded]);

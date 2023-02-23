@@ -262,7 +262,7 @@ export const JourneyShareScreen = ({
       text: `Let's do a ${journey.category.externalName.toLowerCase()} class together on Oseh.`,
     };
 
-    const result = await Share.share(
+    await Share.share(
       Platform.select({
         ios: {
           message: shareData.text,
@@ -273,7 +273,6 @@ export const JourneyShareScreen = ({
         },
       })
     );
-    console.log('share result:', result.action);
   }, [invite, journey.category.externalName]);
 
   const shareVideoContainerStyle = useMemo(() => {
