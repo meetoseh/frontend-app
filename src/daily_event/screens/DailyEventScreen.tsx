@@ -1,8 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Dimensions, LayoutChangeEvent, PanResponder, View, ViewStyle } from 'react-native';
 import { DailyEventJourneyCard } from '../components/DailyEventJourneyCard';
-import { JourneyRef } from '../../journey/models/JourneyRef';
+import { JourneyRef, journeyRefKeyMap } from '../../journey/models/JourneyRef';
 import { GestureHandler } from '../../shared/lib/GestureHandler';
 import { shuffle } from '../../shared/lib/shuffle';
 import {
@@ -16,6 +16,9 @@ import { useMyProfilePictureState } from '../../shared/hooks/useMyProfilePicture
 import { LoginContext } from '../../shared/contexts/LoginContext';
 import { Cancelers } from '../../shared/lib/cancelers';
 import { easeIn, easeOut } from '../../shared/lib/Bezier';
+import { describeError } from '../../shared/lib/describeError';
+import { apiFetch } from '../../shared/lib/apiFetch';
+import { convertUsingKeymap } from '../../shared/lib/CrudFetcher';
 
 type DailyEventScreenProps = {
   /**
@@ -34,9 +37,38 @@ type DailyEventScreenProps = {
    * @param journey The journey to go to
    */
   onGotoJourney: (journey: JourneyRef) => void;
+
+  /**
+   * The function to call if the user wants to refresh the event
+   */
+  onReload: () => void;
 };
 
-export const DailyEventScreen = ({ event, onGotoSettings }: DailyEventScreenProps) => {
+/** If we ever try to skip react renders via setNativeProps */
+const ALLOW_SET_NATIVE_PROPS = true;
+
+type CardInFrontDynamicStyle = {
+  translate?: number;
+  rotate?: number;
+  scale?: number; // 0-1
+};
+
+const createCardInFrontStyle = (dynStyle: CardInFrontDynamicStyle): ViewStyle => {
+  return Object.assign({}, styles.cardInFront, {
+    transform: [
+      ...(dynStyle.rotate === undefined ? [] : [{ rotate: dynStyle.rotate + 'deg' }]),
+      ...(dynStyle.translate === undefined ? [] : [{ translateX: dynStyle.translate }]),
+      ...(dynStyle.scale === undefined ? [] : [{ scale: dynStyle.scale }]),
+    ],
+  });
+};
+
+export const DailyEventScreen = ({
+  event,
+  onGotoSettings,
+  onGotoJourney,
+  onReload,
+}: DailyEventScreenProps) => {
   const loginContext = useContext(LoginContext);
   const loadedJourneys = useDailyEventJourneyStates(event.journeys);
   const profilePicture = useMyProfilePictureState({
@@ -47,6 +79,7 @@ export const DailyEventScreen = ({ event, onGotoSettings }: DailyEventScreenProp
   const [layoutSize, setLayoutSize] = useState<{ width: number; height: number }>(
     Dimensions.get('screen')
   );
+  const [error, setError] = useState<ReactElement | null>(null);
 
   const carouselShuffle = useMemo<number[]>(() => {
     const result = [];
@@ -68,13 +101,13 @@ export const DailyEventScreen = ({ event, onGotoSettings }: DailyEventScreenProp
     return result;
   }, [event.journeys, carouselShuffle, loadedJourneys]);
 
+  const cardBehindRef = useRef<View>(null);
+  const cardInFrontRef = useRef<View>(null);
   const [cardInFrontIndex, setCardInFrontIndex] = useState<number>(0);
   const [cardBehindIndex, setCardBehindIndex] = useState<number | null>(null);
-  const [cardInFrontDynamicStyle, setCardInFrontDynamicStyle] = useState<{
-    translate?: number;
-    rotate?: number;
-    scale?: number; // 0-1
-  }>({});
+  const [cardInFrontDynamicStyle, setCardInFrontDynamicStyle] = useState<CardInFrontDynamicStyle>(
+    {}
+  );
 
   const renderedCardInFrontIndex = useRef(cardInFrontIndex);
   const renderedCardInFrontDynamicStyle = useRef(cardInFrontDynamicStyle);
@@ -202,7 +235,7 @@ export const DailyEventScreen = ({ event, onGotoSettings }: DailyEventScreenProp
 
           const progress = elapsed / durationMs;
           const easedProgress = easeIn.y_x(progress);
-          expectedStyle = {
+          const newStyle = {
             translate:
               initialFilledIn.translate +
               (final.translate - initialFilledIn.translate) * easedProgress,
@@ -210,7 +243,17 @@ export const DailyEventScreen = ({ event, onGotoSettings }: DailyEventScreenProp
               initialFilledIn.rotate + (final.rotate - initialFilledIn.rotate) * easedProgress,
             scale: initialFilledIn.scale + (final.scale - initialFilledIn.scale) * easedProgress,
           };
-          setCardInFrontDynamicStyle(expectedStyle);
+
+          const view = cardInFrontRef.current;
+          if (view === null || view === undefined || !ALLOW_SET_NATIVE_PROPS) {
+            expectedStyle = newStyle;
+            setCardInFrontDynamicStyle(expectedStyle);
+          } else {
+            // update the native view directly
+            expectedStyle = newStyle;
+            renderedCardInFrontDynamicStyle.current = newStyle;
+            view.setNativeProps(createCardInFrontStyle(newStyle));
+          }
           requestAnimationFrame(onFrame);
         };
 
@@ -295,13 +338,21 @@ export const DailyEventScreen = ({ event, onGotoSettings }: DailyEventScreenProp
 
         const progress = elapsed / durationMs;
         const easedProgress = easeOut.y_x(progress);
-        expectedStyle = {
+        const newStyle = {
           translate:
             initial.translate === undefined ? undefined : initial.translate * (1 - easedProgress),
           rotate: initial.rotate === undefined ? undefined : initial.rotate * (1 - easedProgress),
           scale: initial.scale === undefined ? undefined : initial.scale * (1 - easedProgress),
         };
-        setCardInFrontDynamicStyle(expectedStyle);
+        const view = cardInFrontRef.current;
+        expectedStyle = newStyle;
+        if (view === null || view === undefined || !ALLOW_SET_NATIVE_PROPS) {
+          setCardInFrontDynamicStyle(expectedStyle);
+        } else {
+          // update the native view directly
+          renderedCardInFrontDynamicStyle.current = newStyle;
+          view.setNativeProps(createCardInFrontStyle(newStyle));
+        }
         requestAnimationFrame(onFrame);
       };
 
@@ -467,25 +518,85 @@ export const DailyEventScreen = ({ event, onGotoSettings }: DailyEventScreenProp
           return;
         }
 
-        expectedTranslateX = desiredPan.current;
-        if (expectedTranslateX === null) {
+        if (desiredPan.current === null) {
+          expectedTranslateX = null;
           expectedCardBehindIndex = null;
           setCardInFrontDynamicStyle({});
           setCardBehindIndex(null);
-        } else {
-          expectedCardBehindIndex = getCorrectBehindCardForDeltaX(expectedTranslateX);
-          setCardInFrontDynamicStyle({ translate: expectedTranslateX });
-          setCardBehindIndex(expectedCardBehindIndex);
+          handlePanOnceUpdated(panId);
+          return;
         }
+        expectedCardBehindIndex = getCorrectBehindCardForDeltaX(desiredPan.current);
+
+        const view = cardInFrontRef.current;
+        if (
+          view !== null &&
+          view !== undefined &&
+          renderedCardBehindIndex.current === expectedCardBehindIndex &&
+          ALLOW_SET_NATIVE_PROPS
+        ) {
+          // skip react render
+          const newDynStyle = { translate: desiredPan.current };
+          renderedCardInFrontDynamicStyle.current = newDynStyle;
+          expectedTranslateX = desiredPan.current;
+          view.setNativeProps({
+            style: createCardInFrontStyle(newDynStyle),
+          });
+          requestAnimationFrame(() => handlePan(panId));
+          return;
+        }
+
+        expectedTranslateX = desiredPan.current;
+        setCardInFrontDynamicStyle({ translate: expectedTranslateX });
+        setCardBehindIndex(expectedCardBehindIndex);
         handlePanOnceUpdated(panId);
       }
     }
   }, [event.journeys.length, waitUntil, handleTransition, transitionResetPan]);
 
-  const onStart = useCallback((journey: DailyEventJourney) => {
-    // todo
-    console.log('start', journey.uid);
-  }, []);
+  const loadingJourney = useRef(false);
+  const onStart = useCallback(
+    async (journey: DailyEventJourney) => {
+      if (loadingJourney.current || loginContext.state !== 'logged-in') {
+        return;
+      }
+
+      loadingJourney.current = true;
+      setError(null);
+      try {
+        await doLoadAndStart();
+      } catch (e) {
+        setError(await describeError(e));
+      } finally {
+        loadingJourney.current = false;
+      }
+
+      async function doLoadAndStart() {
+        const response = await apiFetch(
+          '/api/1/daily_events/start_specific',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json; charset=utf-8' },
+            body: JSON.stringify({
+              daily_event_uid: event.uid,
+              daily_event_jwt: event.jwt,
+              journey_uid: journey.uid,
+            }),
+          },
+          loginContext
+        );
+
+        if (!response.ok) {
+          throw response;
+        }
+
+        const data = await response.json();
+        const journeyRef = convertUsingKeymap(data, journeyRefKeyMap);
+        onGotoJourney(journeyRef);
+      }
+    },
+    [loginContext, onGotoJourney, event.uid, event.jwt]
+  );
 
   const boundOnStart = useMemo(() => {
     const result: (() => void)[] = [];
@@ -504,6 +615,10 @@ export const DailyEventScreen = ({ event, onGotoSettings }: DailyEventScreenProp
     gesture.current = new GestureHandler(layoutSize);
   }, [layoutSize]);
 
+  const onReloadRef = useRef(onReload);
+  useEffect(() => {
+    onReloadRef.current = onReload;
+  }, [onReload]);
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -529,6 +644,11 @@ export const DailyEventScreen = ({ event, onGotoSettings }: DailyEventScreenProp
           }
         } else if (detected === 'horizontal') {
           panCanceler.current?.('swipe');
+        } else if (detected === 'vertical') {
+          const dy = gest.deltaY;
+          if (dy !== null && dy > 0) {
+            onReloadRef.current();
+          }
         }
       },
       onPanResponderEnd: () => {
@@ -552,21 +672,10 @@ export const DailyEventScreen = ({ event, onGotoSettings }: DailyEventScreenProp
     );
   }, [layoutSize.width, layoutSize.height]);
 
-  const cardInFrontStyle = useMemo<ViewStyle>(() => {
-    return Object.assign({}, styles.cardInFront, {
-      transform: [
-        ...(cardInFrontDynamicStyle.rotate === undefined
-          ? []
-          : [{ rotate: cardInFrontDynamicStyle.rotate + 'deg' }]),
-        ...(cardInFrontDynamicStyle.translate === undefined
-          ? []
-          : [{ translateX: cardInFrontDynamicStyle.translate }]),
-        ...(cardInFrontDynamicStyle.scale === undefined
-          ? []
-          : [{ scale: cardInFrontDynamicStyle.scale }]),
-      ],
-    });
-  }, [cardInFrontDynamicStyle]);
+  const cardInFrontStyle = useMemo<ViewStyle>(
+    () => createCardInFrontStyle(cardInFrontDynamicStyle),
+    [cardInFrontDynamicStyle]
+  );
 
   renderedCardInFrontDynamicStyle.current = cardInFrontDynamicStyle;
   renderedCardInFrontIndex.current = cardInFrontIndex;
@@ -592,8 +701,10 @@ export const DailyEventScreen = ({ event, onGotoSettings }: DailyEventScreenProp
 
   return (
     <View style={styles.container} {...panResponder.current.panHandlers}>
+      {error}
+
       {cardBehindIndex !== null && (
-        <View style={cardBehindStyle}>
+        <View style={cardBehindStyle} ref={cardBehindRef}>
           <DailyEventJourneyCard
             profilePicture={profilePicture}
             journey={reorderedJourneys[cardBehindIndex].journey}
@@ -606,7 +717,7 @@ export const DailyEventScreen = ({ event, onGotoSettings }: DailyEventScreenProp
           />
         </View>
       )}
-      <View style={cardInFrontStyle} onLayout={onCardInFrontLayout}>
+      <View style={cardInFrontStyle} onLayout={onCardInFrontLayout} ref={cardInFrontRef}>
         <DailyEventJourneyCard
           profilePicture={profilePicture}
           journey={reorderedJourneys[cardInFrontIndex].journey}

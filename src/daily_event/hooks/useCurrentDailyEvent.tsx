@@ -8,11 +8,14 @@ import { DailyEvent, dailyEventKeyMap } from '../models/DailyEvent';
 
 /**
  * Fetches the current daily event using the now endpoint. This refreshes the
- * daily event whenever its jwt expires.
+ * daily event whenever its jwt expires and can be forced to reload by changing
+ * the counter.
  *
  * Returns the daily event (if loaded), and the error (if any).
  */
-export const useCurrentDailyEvent = (): [DailyEvent | null, ReactElement | null] => {
+export const useCurrentDailyEvent = (
+  reloadCounter?: number
+): [DailyEvent | null, ReactElement | null] => {
   const loginContext = useContext(LoginContext);
   const [dailyEvent, setDailyEvent] = useState<DailyEvent | null>(null);
   const [error, setError] = useState<ReactElement | null>(null);
@@ -87,7 +90,7 @@ export const useCurrentDailyEvent = (): [DailyEvent | null, ReactElement | null]
         setError(err);
       }
     }
-  }, [loginContext]);
+  }, [loginContext, reloadCounter]);
 
   return useMemo(() => [dailyEvent, error], [dailyEvent, error]);
 };

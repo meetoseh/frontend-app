@@ -11,7 +11,7 @@ module.exports = {
     splash: {
       image: './assets/splash.png',
       resizeMode: 'contain',
-      backgroundColor: '#ffffff',
+      backgroundColor: '#000000',
     },
     updates: {
       fallbackToCacheTimeout: 0,
@@ -27,7 +27,7 @@ module.exports = {
       package: 'com.oseh.frontendapp',
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#000000',
       },
     },
     extra: {

@@ -27,3 +27,5 @@ export const GRAYSCALE_DARK_GRAY = '#3F484A';
 
 export const WHITISH_BLUE = '#EAF0FF';
 export const TRANSPARENT_LIGHT_GRAY = 'rgba(245, 245, 245, 0.7)';
+export const TRANSPARENT_PRIMARY_DEFAULT = 'rgba(68, 98, 102, 0.4)';
+export const SLIGHTLY_TRANSPARENT_PRIMARY_DEFAULT = 'background: rgba(68, 98, 102, 0.9)';

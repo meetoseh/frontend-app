@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { ReactElement } from 'react';
+import { ReactElement, useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { JourneyRef } from '../journey/models/JourneyRef';
 import { SplashScreen } from '../splash/SplashScreen';
@@ -27,10 +27,30 @@ export const CurrentDailyEvent = ({
   onGotoSettings,
   onGotoJourney,
 }: CurrentDailyEventProps): ReactElement => {
-  const [event, error] = useCurrentDailyEvent();
+  const [reloadCounter, setReloadCounter] = useState(0);
+  const [event, error] = useCurrentDailyEvent(reloadCounter);
+
+  const [reloading, setReloading] = useState(false);
+  const reload = useCallback(() => {
+    if (reloading) {
+      return;
+    }
+
+    setReloadCounter((counter) => counter + 1);
+    setReloading(true);
+    setTimeout(() => {
+      setReloading(false);
+    }, 1500);
+  }, [reloading]);
 
   if (event === null && error === null) {
     return <SplashScreen type="brandmark" />;
+  }
+
+  // to improve confidence that we're actually reloading, we purposely
+  // show a long splash screen
+  if (reloading) {
+    return <SplashScreen type="wordmark" />;
   }
 
   if (event === null) {
@@ -43,6 +63,11 @@ export const CurrentDailyEvent = ({
   }
 
   return (
-    <DailyEventRouter event={event} onGotoSettings={onGotoSettings} onGotoJourney={onGotoJourney} />
+    <DailyEventRouter
+      event={event}
+      onGotoSettings={onGotoSettings}
+      onGotoJourney={onGotoJourney}
+      onReload={reload}
+    />
   );
 };

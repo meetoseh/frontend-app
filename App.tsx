@@ -5,11 +5,18 @@ import { SplashScreen } from './src/splash/SplashScreen';
 import { LoginContext, LoginProvider } from './src/shared/contexts/LoginContext';
 import { IntroductoryJourneyScreen } from './src/journey/IntroductoryJourneyScreen';
 import { CurrentDailyEvent } from './src/daily_event/CurrentDailyEvent';
+import { JourneyRef } from './src/journey/models/JourneyRef';
+import { JourneyRouter } from './src/journey/JourneyRouter';
 
 /**
  * The allowed identifiers for screens
  */
-export type ScreenId = 'splash' | 'login' | 'introductory-journey' | 'current-daily-event';
+export type ScreenId =
+  | 'splash'
+  | 'login'
+  | 'introductory-journey'
+  | 'current-daily-event'
+  | 'journey';
 
 export default function App() {
   return (
@@ -25,6 +32,7 @@ export default function App() {
 const AppInner = () => {
   const loginContext = useContext(LoginContext);
   const [screen, setScreen] = useState<ScreenId>('splash');
+  const [journey, setJourney] = useState<JourneyRef | null>(null);
   const [fontsLoaded] = useFonts({
     'OpenSans-Bold': require('./assets/fonts/OpenSans-Bold.ttf'),
     'OpenSans-BoldItalic': require('./assets/fonts/OpenSans-BoldItalic.ttf'),
@@ -67,6 +75,15 @@ const AppInner = () => {
     console.log('doNothing');
   }, []);
 
+  const gotoJourney = useCallback((journey: JourneyRef) => {
+    setJourney(journey);
+    setScreen('journey');
+  }, []);
+
+  const gotoDailyEvent = useCallback(() => {
+    setJourney(null);
+    setScreen('current-daily-event');
+  }, []);
   if (screen === 'splash') {
     return <SplashScreen type="wordmark" />;
   }
@@ -77,7 +94,20 @@ const AppInner = () => {
     return <IntroductoryJourneyScreen onFinished={setErrorAndDoNothing} />;
   }
   if (screen === 'current-daily-event') {
-    return <CurrentDailyEvent onGotoSettings={doNothing} onGotoJourney={doNothing} />;
+    return <CurrentDailyEvent onGotoSettings={doNothing} onGotoJourney={gotoJourney} />;
+  }
+  if (screen === 'journey') {
+    if (journey === null) {
+      return <SplashScreen />;
+    }
+    return (
+      <JourneyRouter
+        journey={journey}
+        onFinished={gotoDailyEvent}
+        isOnboarding={false}
+        initialError={null}
+      />
+    );
   }
 
   throw new Error(`Unknown screen: ${screen}`);

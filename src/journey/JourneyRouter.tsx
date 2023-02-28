@@ -3,6 +3,7 @@ import { SplashScreen } from '../splash/SplashScreen';
 import { useJourneyShared } from './hooks/useJourneyShared';
 import { JourneyRef } from './models/JourneyRef';
 import { JourneyScreenProps } from './models/JourneyScreenProps';
+import { JourneyLobbyScreen } from './screens/JourneyLobbyScreen';
 import { JourneyPostScreen } from './screens/JourneyPostScreen';
 import { JourneyScreen } from './screens/JourneyScreen';
 import { JourneyShareScreen } from './screens/JourneyShareScreen';
@@ -32,7 +33,7 @@ type JourneyRouterProps = {
   initialError: ReactElement | null;
 };
 
-export type JourneyRouterScreenId = 'start' | 'journey' | 'post' | 'share';
+export type JourneyRouterScreenId = 'lobby' | 'start' | 'journey' | 'post' | 'share';
 
 /**
  * Takes the user through the entire flow for the given journey, starting
@@ -45,7 +46,7 @@ export const JourneyRouter = ({
   isOnboarding,
   initialError,
 }: JourneyRouterProps): ReactElement => {
-  const [screen, setScreen] = useState<JourneyRouterScreenId>('start');
+  const [screen, setScreen] = useState<JourneyRouterScreenId>('lobby');
   const sharedState = useJourneyShared(journey);
   const [error, setError] = useState<ReactElement | null>(initialError);
   const screenProps: JourneyScreenProps = useMemo(() => {
@@ -60,12 +61,20 @@ export const JourneyRouter = ({
     };
   }, [journey, sharedState, error, onFinished, isOnboarding]);
 
-  if (sharedState.imageLoading || sharedState.audioLoading) {
+  if (sharedState.imageLoading) {
+    return <SplashScreen />;
+  }
+
+  if ((screen === 'start' || screen === 'journey') && sharedState.audioLoading) {
     return <SplashScreen />;
   }
 
   if (screen === 'post' && sharedState.blurredImageLoading) {
     return <SplashScreen />;
+  }
+
+  if (screen === 'lobby') {
+    return <JourneyLobbyScreen {...screenProps} />;
   }
 
   if (screen === 'start') {

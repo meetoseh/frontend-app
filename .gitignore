@@ -12,6 +12,7 @@ web-build/
 dev.bat
 /build-android.bat
 /android
+/*.apks
 /ios
 
 # macOS

@@ -5,20 +5,20 @@
     "start": "expo start --dev-client",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "cross-env REACT_APP_ENVIRONMENT=$ENVIRONMENT REACT_APP_LOGIN_URL=$LOGIN_URL REACT_APP_ROOT_BACKEND_URL=$ROOT_BACKEND_URL REACT_APP_ROOT_WEBSOCKET_URL=$ROOT_WEBSOCKET_URL REACT_APP_AUTH_DOMAIN=$AUTH_DOMAIN REACT_APP_AUTH_CLIENT_ID=$AUTH_CLIENT_ID REACT_APP_PUBLIC_URL=$ROOT_FRONTEND_URL expo start --web"
+    "web": "cross-env REACT_APP_ENVIRONMENT=$ENVIRONMENT REACT_APP_ROOT_BACKEND_URL=$ROOT_BACKEND_URL REACT_APP_ROOT_WEBSOCKET_URL=$ROOT_WEBSOCKET_URL REACT_APP_PUBLIC_URL=$ROOT_FRONTEND_URL expo start --web"
   },
   "dependencies": {
     "@craftzdog/react-native-buffer": "^6.0.5",
     "@react-native-async-storage/async-storage": "~1.17.3",
     "cross-env": "^7.0.3",
     "expo": "~47.0.12",
-    "expo-av": "~13.0.2",
+    "expo-av": "~13.0.3",
     "expo-constants": "~14.0.2",
     "expo-crypto": "~12.0.0",
     "expo-dev-client": "~2.0.1",
     "expo-file-system": "~15.1.1",
     "expo-font": "~11.0.1",
-    "expo-linking": "~3.3.0",
+    "expo-linking": "~3.3.1",
     "expo-secure-store": "~12.0.0",
     "expo-sharing": "~11.0.1",
     "expo-splash-screen": "~0.17.5",
@@ -32,7 +32,8 @@
     "react-native-ssl-pinning": "^1.5.7",
     "react-native-svg": "13.4.0",
     "react-native-url-polyfill": "^1.3.0",
-    "react-native-web": "~0.18.9"
+    "react-native-web": "~0.18.9",
+    "lottie-react-native": "5.1.4"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9",

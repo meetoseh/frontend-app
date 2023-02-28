@@ -19,6 +19,11 @@ type DailyEventRouterProps = {
    * @param journey The journey to go to
    */
   onGotoJourney: (journey: JourneyRef) => void;
+
+  /**
+   * The function to call if the user wants to refresh the current daily event
+   */
+  onReload: () => void;
 };
 
 /**
@@ -29,8 +34,14 @@ export const DailyEventRouter = ({
   event,
   onGotoSettings,
   onGotoJourney,
+  onReload,
 }: DailyEventRouterProps) => {
   return (
-    <DailyEventScreen event={event} onGotoSettings={onGotoSettings} onGotoJourney={onGotoJourney} />
+    <DailyEventScreen
+      event={event}
+      onGotoSettings={onGotoSettings}
+      onGotoJourney={onGotoJourney}
+      onReload={onReload}
+    />
   );
 };
