@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { ReactElement, useCallback, useContext, useMemo, useState } from 'react';
+import { ReactElement, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { OsehImageBackground } from '../shared/components/OsehImageBackground';
 import { useScreenSize } from '../shared/hooks/useScreenSize';
@@ -28,6 +28,11 @@ type LoginScreenProps = {
    * If specified, acts as the initial error message to display.
    */
   initialError: ReactElement | null;
+
+  /**
+   * If specified, called when the first screen is ready to be shown.
+   */
+  onReady?: () => void;
 };
 
 const prepareLink = async (
@@ -65,7 +70,7 @@ const prepareLink = async (
  *
  * This assumes that fonts have already been loaded. Requires the login context.
  */
-export const LoginScreen = ({ onLogin, initialError }: LoginScreenProps): ReactElement => {
+export const LoginScreen = ({ onLogin, initialError, onReady }: LoginScreenProps): ReactElement => {
   const loginContext = useContext(LoginContext);
   const dims = useScreenSize();
   const [pressingGoogle, setPressingGoogle] = useState(false);
@@ -73,6 +78,7 @@ export const LoginScreen = ({ onLogin, initialError }: LoginScreenProps): ReactE
   const [goingToGoogle, setGoingToGoogle] = useState(false);
   const [goingToApple, setGoingToApple] = useState(false);
   const [error, setError] = useState<ReactElement | null>(initialError);
+  const [backgroundLoading, setBackgroundLoading] = useState(true);
 
   const onGooglePressIn = useCallback(() => {
     setPressingGoogle(true);
@@ -186,6 +192,12 @@ export const LoginScreen = ({ onLogin, initialError }: LoginScreenProps): ReactE
     );
   }, [pressingApple]);
 
+  useEffect(() => {
+    if (onReady && !backgroundLoading) {
+      onReady();
+    }
+  }, [backgroundLoading, onReady]);
+
   if (goingToApple || goingToGoogle) {
     if (pressingApple) {
       setPressingApple(false);
@@ -206,7 +218,8 @@ export const LoginScreen = ({ onLogin, initialError }: LoginScreenProps): ReactE
         displayHeight={dims.height}
         alt=""
         isPublic={true}
-        style={styles.content}>
+        style={styles.content}
+        setLoading={setBackgroundLoading}>
         <Text style={styles.header}>Sign in with your social account</Text>
         <View style={styles.continueWithGoogleContainer}>
           <Pressable

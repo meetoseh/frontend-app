@@ -7,6 +7,7 @@ import { IntroductoryJourneyScreen } from './src/journey/IntroductoryJourneyScre
 import { CurrentDailyEvent } from './src/daily_event/CurrentDailyEvent';
 import { JourneyRef } from './src/journey/models/JourneyRef';
 import { JourneyRouter } from './src/journey/JourneyRouter';
+import { View, ViewStyle } from 'react-native';
 
 /**
  * The allowed identifiers for screens
@@ -32,6 +33,7 @@ export default function App() {
 const AppInner = () => {
   const loginContext = useContext(LoginContext);
   const [screen, setScreen] = useState<ScreenId>('splash');
+  const [loadingForced, setLoadingForced] = useState(true);
   const [journey, setJourney] = useState<JourneyRef | null>(null);
   const [fontsLoaded] = useFonts({
     'OpenSans-Bold': require('./assets/fonts/OpenSans-Bold.ttf'),
@@ -48,6 +50,10 @@ const AppInner = () => {
     'OpenSans-SemiBoldItalic': require('./assets/fonts/OpenSans-SemiBoldItalic.ttf'),
   });
   const [error, setError] = useState<ReactElement | null>(null);
+
+  const clearLoadingForced = useCallback(() => {
+    setLoadingForced(false);
+  }, []);
 
   useEffect(() => {
     if (!fontsLoaded || loginContext.state === 'loading') {
@@ -84,31 +90,58 @@ const AppInner = () => {
     setJourney(null);
     setScreen('current-daily-event');
   }, []);
-  if (screen === 'splash') {
-    return <SplashScreen type="wordmark" />;
-  }
-  if (screen === 'login') {
-    return <LoginScreen onLogin={doNothing} initialError={error} />;
-  }
-  if (screen === 'introductory-journey') {
-    return <IntroductoryJourneyScreen onFinished={setErrorAndDoNothing} />;
-  }
-  if (screen === 'current-daily-event') {
-    return <CurrentDailyEvent onGotoSettings={doNothing} onGotoJourney={gotoJourney} />;
-  }
-  if (screen === 'journey') {
-    if (journey === null) {
-      return <SplashScreen />;
-    }
-    return (
-      <JourneyRouter
-        journey={journey}
-        onFinished={gotoDailyEvent}
-        isOnboarding={false}
-        initialError={null}
-      />
-    );
-  }
 
-  throw new Error(`Unknown screen: ${screen}`);
+  const inner = (() => {
+    if (screen === 'splash') {
+      return <SplashScreen type="wordmark" />;
+    }
+    if (screen === 'login') {
+      return <LoginScreen onLogin={doNothing} initialError={error} onReady={clearLoadingForced} />;
+    }
+    if (screen === 'introductory-journey') {
+      return (
+        <IntroductoryJourneyScreen onFinished={setErrorAndDoNothing} onReady={clearLoadingForced} />
+      );
+    }
+    if (screen === 'current-daily-event') {
+      return (
+        <CurrentDailyEvent
+          onGotoSettings={doNothing}
+          onGotoJourney={gotoJourney}
+          onReady={clearLoadingForced}
+        />
+      );
+    }
+    if (screen === 'journey') {
+      if (journey === null) {
+        return <SplashScreen />;
+      }
+      return (
+        <JourneyRouter
+          journey={journey}
+          onFinished={gotoDailyEvent}
+          isOnboarding={false}
+          initialError={null}
+          onReady={clearLoadingForced}
+        />
+      );
+    }
+
+    throw new Error(`Unknown screen: ${screen}`);
+  })();
+
+  return (
+    <View style={MOUNTED_HIDDEN_CONTAINER}>
+      <View style={loadingForced ? DISPLAY_NONE : {}}>{inner}</View>
+      {loadingForced ? <SplashScreen type="wordmark" /> : null}
+    </View>
+  );
+};
+
+const DISPLAY_NONE: ViewStyle = { display: 'none' };
+const MOUNTED_HIDDEN_CONTAINER: ViewStyle = {
+  flex: 1,
+  justifyContent: 'flex-start',
+  alignItems: 'stretch',
+  position: 'absolute',
 };

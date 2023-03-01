@@ -24,6 +24,11 @@ type DailyEventRouterProps = {
    * The function to call if the user wants to refresh the current daily event
    */
   onReload: () => void;
+
+  /**
+   * If specified, called when the first screen is ready to be shown.
+   */
+  onReady?: () => void;
 };
 
 /**
@@ -35,6 +40,7 @@ export const DailyEventRouter = ({
   onGotoSettings,
   onGotoJourney,
   onReload,
+  onReady,
 }: DailyEventRouterProps) => {
   return (
     <DailyEventScreen
@@ -42,6 +48,7 @@ export const DailyEventRouter = ({
       onGotoSettings={onGotoSettings}
       onGotoJourney={onGotoJourney}
       onReload={onReload}
+      onReady={onReady}
     />
   );
 };

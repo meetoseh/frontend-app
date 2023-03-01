@@ -6,6 +6,7 @@ import {
   SetStateAction,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -82,8 +83,15 @@ export const SplashScreen = ({ type }: SplashScreenProps): ReactElement => {
     holdTime: WORDMARK_HOLD_TIME_MS,
   });
 
+  const containerStyle = useMemo(() => {
+    return Object.assign({}, styles.container, {
+      width: screenSize.width,
+      height: screenSize.height,
+    });
+  }, [screenSize]);
+
   return (
-    <View style={styles.container}>
+    <View style={containerStyle}>
       <LottieView
         key={realType}
         autoPlay={false}

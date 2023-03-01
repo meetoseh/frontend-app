@@ -14,6 +14,11 @@ type IntroductoryJourneyScreenProps = {
    * which is as if by describeError.
    */
   onFinished: (error?: ReactElement | null) => void;
+
+  /**
+   * If specified, called when the first screen is ready to be shown.
+   */
+  onReady?: () => void;
 };
 
 /**
@@ -22,6 +27,7 @@ type IntroductoryJourneyScreenProps = {
  */
 export const IntroductoryJourneyScreen = ({
   onFinished,
+  onReady,
 }: IntroductoryJourneyScreenProps): ReactElement => {
   const loginContext = useContext(LoginContext);
   const [journey, setJourney] = useState<JourneyRef | null>(null);
@@ -94,6 +100,7 @@ export const IntroductoryJourneyScreen = ({
     <JourneyRouter
       journey={journey}
       onFinished={onFinished}
+      onReady={onReady}
       isOnboarding={true}
       initialError={null}
     />

@@ -1,4 +1,4 @@
-import { ReactElement, useMemo, useState } from 'react';
+import { ReactElement, useEffect, useMemo, useState } from 'react';
 import { SplashScreen } from '../splash/SplashScreen';
 import { useJourneyShared } from './hooks/useJourneyShared';
 import { JourneyRef } from './models/JourneyRef';
@@ -31,6 +31,11 @@ type JourneyRouterProps = {
    * If specified, shown as the initial error for this journey.
    */
   initialError: ReactElement | null;
+
+  /**
+   * If specified, called when the first screen is ready to be shown.
+   */
+  onReady?: () => void;
 };
 
 export type JourneyRouterScreenId = 'lobby' | 'start' | 'journey' | 'post' | 'share';
@@ -45,10 +50,12 @@ export const JourneyRouter = ({
   onFinished,
   isOnboarding,
   initialError,
+  onReady,
 }: JourneyRouterProps): ReactElement => {
   const [screen, setScreen] = useState<JourneyRouterScreenId>('lobby');
   const sharedState = useJourneyShared(journey);
   const [error, setError] = useState<ReactElement | null>(initialError);
+  const [setReady, setSetReady] = useState(false);
   const screenProps: JourneyScreenProps = useMemo(() => {
     return {
       journey,
@@ -60,6 +67,18 @@ export const JourneyRouter = ({
       setError,
     };
   }, [journey, sharedState, error, onFinished, isOnboarding]);
+
+  useEffect(() => {
+    if (!setReady && !sharedState.imageLoading) {
+      setSetReady(true);
+    }
+  }, [setReady, sharedState.imageLoading]);
+
+  useEffect(() => {
+    if (setReady && onReady) {
+      onReady();
+    }
+  }, [setReady, onReady]);
 
   if (sharedState.imageLoading) {
     return <SplashScreen />;

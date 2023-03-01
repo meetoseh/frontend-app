@@ -18,6 +18,11 @@ type CurrentDailyEventProps = {
    * @param journey The journey to go to
    */
   onGotoJourney: (journey: JourneyRef) => void;
+
+  /**
+   * If specified, called when the first screen is ready to be shown.
+   */
+  onReady?: () => void;
 };
 
 /**
@@ -26,6 +31,7 @@ type CurrentDailyEventProps = {
 export const CurrentDailyEvent = ({
   onGotoSettings,
   onGotoJourney,
+  onReady,
 }: CurrentDailyEventProps): ReactElement => {
   const [reloadCounter, setReloadCounter] = useState(0);
   const [event, error] = useCurrentDailyEvent(reloadCounter);
@@ -68,6 +74,7 @@ export const CurrentDailyEvent = ({
       onGotoSettings={onGotoSettings}
       onGotoJourney={onGotoJourney}
       onReload={reload}
+      onReady={onReady}
     />
   );
 };

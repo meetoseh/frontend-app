@@ -42,6 +42,11 @@ type DailyEventScreenProps = {
    * The function to call if the user wants to refresh the event
    */
   onReload: () => void;
+
+  /**
+   * If specified, called when the first screen is ready to be shown.
+   */
+  onReady?: () => void;
 };
 
 /** If we ever try to skip react renders via setNativeProps */
@@ -68,6 +73,7 @@ export const DailyEventScreen = ({
   onGotoSettings,
   onGotoJourney,
   onReload,
+  onReady,
 }: DailyEventScreenProps) => {
   const loginContext = useContext(LoginContext);
   const loadedJourneys = useDailyEventJourneyStates(event.journeys);
@@ -698,6 +704,16 @@ export const DailyEventScreen = ({
       };
     });
   }, []);
+
+  useEffect(() => {
+    if (!onReady) {
+      return;
+    }
+
+    if (!reorderedJourneys.some((j) => j.state.loading)) {
+      onReady();
+    }
+  }, [onReady, reorderedJourneys]);
 
   return (
     <View style={styles.container} {...panResponder.current.panHandlers}>
