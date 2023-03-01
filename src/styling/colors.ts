@@ -11,6 +11,8 @@ export const PRIMARY_LIGHT = '#33494c';
 export const BLACK = '#000000';
 export const ERROR_DEFAULT = '#BA1A1A';
 export const TRANSPARENT = 'rgba(0, 0, 0, 0)';
+export const HALF_TRANSPARENT_WHITE = 'rgba(255, 255, 255, 0.5)';
+export const OFF_BLACK = '#191c1d';
 
 /**
  * Used as the pressed variant for inverted buttons

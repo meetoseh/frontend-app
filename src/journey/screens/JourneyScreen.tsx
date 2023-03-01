@@ -214,7 +214,7 @@ export const JourneyScreen = ({
           state: 'hiding',
           duration,
           startTime,
-          opacityPercent: ease.y_x(progress) * 100,
+          opacityPercent: ease.b_t(progress)[1] * 100,
           cancel: unmount,
         });
         requestAnimationFrame(update);

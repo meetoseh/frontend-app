@@ -1,5 +1,5 @@
 import { useFonts } from 'expo-font';
-import { ReactElement, useCallback, useContext, useEffect, useState } from 'react';
+import { ReactElement, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { LoginScreen } from './src/login/LoginScreen';
 import { SplashScreen } from './src/splash/SplashScreen';
 import { LoginContext, LoginProvider } from './src/shared/contexts/LoginContext';
@@ -8,6 +8,7 @@ import { CurrentDailyEvent } from './src/daily_event/CurrentDailyEvent';
 import { JourneyRef } from './src/journey/models/JourneyRef';
 import { JourneyRouter } from './src/journey/JourneyRouter';
 import { View, ViewStyle } from 'react-native';
+import { useScreenSize } from './src/shared/hooks/useScreenSize';
 
 /**
  * The allowed identifiers for screens
@@ -50,6 +51,7 @@ const AppInner = () => {
     'OpenSans-SemiBoldItalic': require('./assets/fonts/OpenSans-SemiBoldItalic.ttf'),
   });
   const [error, setError] = useState<ReactElement | null>(null);
+  const screenSize = useScreenSize();
 
   const clearLoadingForced = useCallback(() => {
     setLoadingForced(false);
@@ -76,11 +78,6 @@ const AppInner = () => {
     setError(error);
   }, []);
 
-  const doNothing = useCallback(() => {
-    // do nothing; for things not yet implemented
-    console.log('doNothing');
-  }, []);
-
   const gotoJourney = useCallback((journey: JourneyRef) => {
     setJourney(journey);
     setScreen('journey');
@@ -90,6 +87,19 @@ const AppInner = () => {
     setJourney(null);
     setScreen('current-daily-event');
   }, []);
+
+  const doNothing = useCallback(() => {
+    // used for loginscreen onlogin as we will detect the login state change
+    // and change the screen
+    // also used for things which haven't been implemented yet
+  }, []);
+
+  const smartLoadingContainerStyle = useMemo(() => {
+    return Object.assign({}, MOUNTED_HIDDEN_CONTAINER, {
+      width: screenSize.width,
+      height: screenSize.height,
+    });
+  }, [screenSize]);
 
   const inner = (() => {
     if (screen === 'splash') {
@@ -130,9 +140,16 @@ const AppInner = () => {
     throw new Error(`Unknown screen: ${screen}`);
   })();
 
+  const innerContainerStyle = useMemo(() => {
+    return {
+      width: screenSize.width,
+      height: screenSize.height,
+    };
+  }, [screenSize.width, screenSize.height]);
+
   return (
-    <View style={MOUNTED_HIDDEN_CONTAINER}>
-      <View style={loadingForced ? DISPLAY_NONE : {}}>{inner}</View>
+    <View style={smartLoadingContainerStyle}>
+      <View style={loadingForced ? DISPLAY_NONE : innerContainerStyle}>{inner}</View>
       {loadingForced ? <SplashScreen type="wordmark" /> : null}
     </View>
   );
@@ -144,4 +161,6 @@ const MOUNTED_HIDDEN_CONTAINER: ViewStyle = {
   justifyContent: 'flex-start',
   alignItems: 'stretch',
   position: 'absolute',
+  top: 0,
+  left: 0,
 };

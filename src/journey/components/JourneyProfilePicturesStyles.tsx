@@ -9,9 +9,11 @@ export const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    flexBasis: 38,
     flexDirection: 'row',
     height: 38,
     maxHeight: 38,
+    minHeight: 38,
     paddingLeft: 24,
     paddingRight: 24,
   },

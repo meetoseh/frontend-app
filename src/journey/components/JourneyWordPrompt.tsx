@@ -393,7 +393,7 @@ export const JourneyWordPrompt = ({
 
         if (anim !== null) {
           const progress = (now - anim.startedAt) / animDuration;
-          const easedProgress = easeInOut.y_x(progress);
+          const easedProgress = easeInOut.b_t(progress)[1];
           const newWidth = Math.max(anim.from + (anim.to - anim.from) * easedProgress, 0);
           currentWidths[i] = newWidth;
           view.setNativeProps({

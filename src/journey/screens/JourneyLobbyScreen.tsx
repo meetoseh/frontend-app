@@ -8,6 +8,7 @@ import { useScreenSize } from '../../shared/hooks/useScreenSize';
 import { useTopBarHeight } from '../../shared/hooks/useTopBarHeight';
 import { getPaddingFromStyle } from '../../shared/lib/getPaddingFromStyle';
 import { SplashScreen } from '../../splash/SplashScreen';
+import { JourneyNumericPrompt } from '../components/JourneyNumericPrompt';
 import { JourneyProfilePictures } from '../components/JourneyProfilePictures';
 import { JourneyWordPrompt } from '../components/JourneyWordPrompt';
 import { useJoinLeave } from '../hooks/useJoinLeave';
@@ -181,6 +182,7 @@ export const JourneyLobbyScreen = ({
           </View>
           <View style={promptAndProfilePicturesStyle}>
             {journey.prompt.style === 'word' && <JourneyWordPrompt {...promptProps} />}
+            {journey.prompt.style === 'numeric' && <JourneyNumericPrompt {...promptProps} />}
             {showingProfilePictures && (
               <JourneyProfilePictures profilePictures={profilePictures} users={stats.users} />
             )}

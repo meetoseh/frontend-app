@@ -240,7 +240,7 @@ export const DailyEventScreen = ({
           }
 
           const progress = elapsed / durationMs;
-          const easedProgress = easeIn.y_x(progress);
+          const easedProgress = easeIn.b_t(progress)[1];
           const newStyle = {
             translate:
               initialFilledIn.translate +
@@ -343,7 +343,7 @@ export const DailyEventScreen = ({
         }
 
         const progress = elapsed / durationMs;
-        const easedProgress = easeOut.y_x(progress);
+        const easedProgress = easeOut.b_t(progress)[1];
         const newStyle = {
           translate:
             initial.translate === undefined ? undefined : initial.translate * (1 - easedProgress),

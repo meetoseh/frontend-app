@@ -77,11 +77,11 @@ export class Bezier {
    */
   private refinement: number;
 
-  constructor(points: number[][]) {
+  constructor(points: number[][], refinement = 10) {
     this.points = points;
     this.order = points.length;
     this.cardinality = points[0].length;
-    this.refinement = 10;
+    this.refinement = refinement;
   }
 
   /**
