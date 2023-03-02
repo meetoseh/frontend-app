@@ -187,14 +187,23 @@ const BottomSection = ({
   );
 
   const onTitleLayout = useCallback((event: LayoutChangeEvent) => {
+    if (!event.nativeEvent) {
+      return;
+    }
     setTitleHeight(event.nativeEvent.layout.height);
   }, []);
 
   const onInstructorLayout = useCallback((event: LayoutChangeEvent) => {
+    if (!event.nativeEvent) {
+      return;
+    }
     setInstructorHeight(event.nativeEvent.layout.height);
   }, []);
 
   const onDescriptionLayout = useCallback((event: LayoutChangeEvent) => {
+    if (!event.nativeEvent) {
+      return;
+    }
     setDescriptionHeight(event.nativeEvent.layout.height);
   }, []);
 

@@ -8,6 +8,7 @@ import { useScreenSize } from '../../shared/hooks/useScreenSize';
 import { useTopBarHeight } from '../../shared/hooks/useTopBarHeight';
 import { getPaddingFromStyle } from '../../shared/lib/getPaddingFromStyle';
 import { SplashScreen } from '../../splash/SplashScreen';
+import { JourneyColorPrompt } from '../components/JourneyColorPrompt';
 import { JourneyNumericPrompt } from '../components/JourneyNumericPrompt';
 import { JourneyProfilePictures } from '../components/JourneyProfilePictures';
 import { JourneyWordPrompt } from '../components/JourneyWordPrompt';
@@ -31,7 +32,7 @@ export const JourneyLobbyScreen = ({
   setScreen,
 }: JourneyScreenProps): ReactElement => {
   const loginContext = useContext(LoginContext);
-  const journeyTime = useJourneyTime(0, false);
+  const journeyTime = useJourneyTime(0, true); // TODO
   const topBarHeight = useTopBarHeight();
   const screenSize = useScreenSize();
   const [promptHeight, setPromptHeight] = useState(0);
@@ -183,6 +184,7 @@ export const JourneyLobbyScreen = ({
           <View style={promptAndProfilePicturesStyle}>
             {journey.prompt.style === 'word' && <JourneyWordPrompt {...promptProps} />}
             {journey.prompt.style === 'numeric' && <JourneyNumericPrompt {...promptProps} />}
+            {journey.prompt.style === 'color' && <JourneyColorPrompt {...promptProps} />}
             {showingProfilePictures && (
               <JourneyProfilePictures profilePictures={profilePictures} users={stats.users} />
             )}

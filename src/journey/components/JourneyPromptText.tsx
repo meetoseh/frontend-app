@@ -31,6 +31,9 @@ export const JourneyPromptText = ({ text, setHeight }: JourneyPromptTextProps): 
   }, [height]);
 
   const onTextLayout = useCallback((event: LayoutChangeEvent) => {
+    if (!event.nativeEvent) {
+      return;
+    }
     setTextHeight(event.nativeEvent.layout.height);
   }, []);
 

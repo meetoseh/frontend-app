@@ -33,7 +33,8 @@
     "react-native-svg": "13.4.0",
     "react-native-url-polyfill": "^1.3.0",
     "react-native-web": "~0.18.9",
-    "lottie-react-native": "5.1.4"
+    "lottie-react-native": "5.1.4",
+    "expo-gl": "~12.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9",

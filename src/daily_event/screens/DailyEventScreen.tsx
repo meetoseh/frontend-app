@@ -691,6 +691,9 @@ export const DailyEventScreen = ({
   cpRerenderCallbacks.forEach((cb) => cb());
 
   const onCardInFrontLayout = useCallback((ev: LayoutChangeEvent) => {
+    if (!ev.nativeEvent) {
+      return;
+    }
     setLayoutSize((oldSize) => {
       if (
         oldSize.width === ev.nativeEvent.layout.width &&
