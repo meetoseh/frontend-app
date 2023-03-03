@@ -5,9 +5,15 @@ import { JourneyPromptProps } from '../models/JourneyPromptProps';
 import { styles } from './JourneyColorPromptStyles';
 import { JourneyPromptText } from './JourneyPromptText';
 import { ExpoWebGLRenderingContext, GLView } from 'expo-gl';
-import { Bezier, easeInOut, easeOut } from '../../shared/lib/Bezier';
+import { easeInOut, easeOut } from '../../shared/lib/Bezier';
 import { JourneyStats } from '../hooks/useStats';
 import { apiFetch } from '../../shared/lib/apiFetch';
+import {
+  BezierAnimation,
+  calculateAnimValue,
+  getColor3fFromHex,
+  updateAnim,
+} from '../../shared/lib/BezierAnimation';
 
 const minRowHeight = 48;
 const rowGap = 32;
@@ -393,8 +399,8 @@ const Option = ({ infoRef, width: outerWidth, height: outerHeight }: OptionProps
     const info = infoRef();
     let renderedOpacity: number = info.opacity;
     let renderedHeight: number = info.height;
-    let opacityAnim: Animation | null = null;
-    let heightAnim: Animation | null = null;
+    let opacityAnim: BezierAnimation | null = null;
+    let heightAnim: BezierAnimation | null = null;
 
     info.awaken = awaken;
     requestAnimationFrame(animate);
@@ -495,14 +501,6 @@ const Option = ({ infoRef, width: outerWidth, height: outerHeight }: OptionProps
     }
 
     function initializeGl(gl: ExpoWebGLRenderingContext): [OptionGlState, () => void] {
-      console.log(
-        'initializing gl with buffer size',
-        gl.drawingBufferWidth,
-        gl.drawingBufferHeight,
-        'and context id',
-        gl.contextId
-      );
-
       gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
       gl.clearColor(0, 0, 0, 0);
 
@@ -659,7 +657,6 @@ const Option = ({ infoRef, width: outerWidth, height: outerHeight }: OptionProps
           },
         },
         () => {
-          console.log('destroying gl', gl.contextId);
           gl.deleteBuffer(positionBuffer);
           gl.deleteProgram(program);
         },
@@ -732,86 +729,6 @@ type OptionGlState = {
     position: WebGLBuffer;
   };
 };
-
-type UpdateAnimArgs = {
-  now: number | null;
-  current: number;
-  target: number;
-  oldAnim: Animation | null;
-  duration: number;
-  ease: Bezier;
-};
-
-type Animation = {
-  from: number;
-  to: number;
-  startedAt: DOMHighResTimeStamp | null;
-  ease: Bezier;
-  duration: number;
-};
-
-/**
- * Gives the new animation that should be used to animate from the current value
- * to the target value, given the currently configured animation
- */
-const updateAnim = ({
-  now,
-  current,
-  target,
-  oldAnim,
-  duration,
-  ease,
-}: UpdateAnimArgs): Animation | null => {
-  if (current === target) {
-    return null;
-  }
-
-  if (oldAnim !== null && oldAnim.to === target) {
-    if (now !== null && oldAnim.startedAt !== null && oldAnim.startedAt + oldAnim.duration <= now) {
-      return null;
-    }
-
-    return oldAnim;
-  }
-
-  return {
-    from: current,
-    to: target,
-    startedAt: now,
-    ease,
-    duration,
-  };
-};
-
-/**
- * Computes the current value of the given animation, given the current time.
- * If the animation is not yet started, it will be started at the given time.
- */
-const calculateAnimValue = (anim: Animation, now: number): number => {
-  if (anim.startedAt === null) {
-    anim.startedAt = now;
-    return anim.from;
-  }
-
-  const progress = (now - anim.startedAt) / anim.duration;
-  return anim.ease.b_t(progress)[1] * (anim.to - anim.from) + anim.from;
-};
-
-/**
- * Converts the given 7-character color hex string, e.g., #ff0000, to a
- * 3-element array of floats, e.g., [1.0, 0.0, 0.0].
- * @param color The color hex string.
- * @returns The color as a 3-element array of floats, each from 0.0 to 1.0.
- */
-function getColor3fFromHex(color: string): number[] {
-  if (color.length !== 7) {
-    throw new Error('Invalid color hex string: ' + color);
-  }
-  const r = parseInt(color.substring(1, 3), 16) / 255.0;
-  const g = parseInt(color.substring(3, 5), 16) / 255.0;
-  const b = parseInt(color.substring(5, 7), 16) / 255.0;
-  return [r, g, b];
-}
 
 type FakedMove = {
   fromIndex: number | null;

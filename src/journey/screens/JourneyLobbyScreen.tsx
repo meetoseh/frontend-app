@@ -10,6 +10,7 @@ import { getPaddingFromStyle } from '../../shared/lib/getPaddingFromStyle';
 import { SplashScreen } from '../../splash/SplashScreen';
 import { JourneyColorPrompt } from '../components/JourneyColorPrompt';
 import { JourneyNumericPrompt } from '../components/JourneyNumericPrompt';
+import { JourneyPressPrompt } from '../components/JourneyPressPrompt';
 import { JourneyProfilePictures } from '../components/JourneyProfilePictures';
 import { JourneyWordPrompt } from '../components/JourneyWordPrompt';
 import { useJoinLeave } from '../hooks/useJoinLeave';
@@ -185,6 +186,7 @@ export const JourneyLobbyScreen = ({
             {journey.prompt.style === 'word' && <JourneyWordPrompt {...promptProps} />}
             {journey.prompt.style === 'numeric' && <JourneyNumericPrompt {...promptProps} />}
             {journey.prompt.style === 'color' && <JourneyColorPrompt {...promptProps} />}
+            {journey.prompt.style === 'press' && <JourneyPressPrompt {...promptProps} />}
             {showingProfilePictures && (
               <JourneyProfilePictures profilePictures={profilePictures} users={stats.users} />
             )}
