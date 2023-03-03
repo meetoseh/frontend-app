@@ -1,6 +1,6 @@
 module.exports = {
   expo: {
-    name: 'frontend-app',
+    name: 'Oseh',
     slug: 'frontend-app',
     version: '1.0.0',
     orientation: 'portrait',

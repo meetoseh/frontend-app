@@ -1,10 +1,13 @@
 import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, ViewStyle } from 'react-native';
+import { Pressable, View, ViewStyle } from 'react-native';
 import { useScreenSize } from '../../shared/hooks/useScreenSize';
 import { JourneyPromptProps } from '../models/JourneyPromptProps';
 import { styles } from './JourneyColorPromptStyles';
 import { JourneyPromptText } from './JourneyPromptText';
 import { ExpoWebGLRenderingContext, GLView } from 'expo-gl';
+import { Bezier, easeInOut, easeOut } from '../../shared/lib/Bezier';
+import { JourneyStats } from '../hooks/useStats';
+import { apiFetch } from '../../shared/lib/apiFetch';
 
 const minRowHeight = 48;
 const rowGap = 32;
@@ -31,6 +34,9 @@ type ColorOpt = {
   index: number;
 };
 
+const OPACITY_NOT_ACTIVE = 0.4;
+const OPACITY_ACTIVE = 1.0;
+
 /**
  * Displays the statistics and allows the user to answer a color prompt,
  * where there are several colors to choose from and the user can change
@@ -53,6 +59,15 @@ export const JourneyColorPrompt = ({
 
   const [titleHeight, setTitleHeight] = useState(0);
   const screenSize = useScreenSize();
+
+  const activeOptionIndexRef = useRef<number | null>(null);
+  const fakingMoveRef = useRef<FakedMove | null>(null);
+
+  const statsRef = useRef<JourneyStats>(stats);
+  statsRef.current = stats;
+
+  const loginContextRef = useRef(loginContext);
+  loginContextRef.current = loginContext;
 
   const rowOptions: ColorOpt[][] = useMemo(() => {
     const desiredNumColumns = computeMaxColumnsForContainerWidth(
@@ -97,7 +112,7 @@ export const JourneyColorPrompt = ({
         minWidth: rowWidth,
       });
     });
-  }, [rowOptions]);
+  }, [rowOptions, rowHeight]);
 
   const colorRowsHeight = rowHeight * rowOptions.length + rowGap * (rowOptions.length - 1);
   const colorRowsStyle = useMemo<ViewStyle>(() => {
@@ -136,9 +151,60 @@ export const JourneyColorPrompt = ({
     });
   }, [height]);
 
-  const onColorPressed = useCallback((idx: number) => {
-    console.log('pressed color idx ' + idx);
-  }, []);
+  const onColorPressed = useCallback(
+    (idx: number) => {
+      const oldIdx = activeOptionIndexRef.current;
+      if (oldIdx === idx) {
+        return;
+      }
+
+      if (oldIdx !== null) {
+        const oldInfo = optionInfoRefs.current[oldIdx];
+        oldInfo.opacity = OPACITY_NOT_ACTIVE;
+        oldInfo.awaken?.();
+      }
+      const newInfo = optionInfoRefs.current[idx];
+      newInfo.opacity = OPACITY_ACTIVE;
+      newInfo.awaken?.();
+      activeOptionIndexRef.current = idx;
+      fakingMoveRef.current = {
+        fromIndex: oldIdx,
+        toIndex: idx,
+        fakeEndsAt: journeyTime.time.current + 1500,
+        cancelFakeToMin: ((statsRef.current.colorActive ?? [])[idx] ?? 0) + 1,
+      };
+
+      if (loginContextRef.current.state === 'logged-in') {
+        apiFetch(
+          '/api/1/journeys/events/respond_color_prompt',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json; charset=utf-8' },
+            body: JSON.stringify({
+              journey_uid: journeyUid,
+              journey_jwt: journeyJwt,
+              session_uid: sessionUid,
+              journey_time: journeyTime.time.current / 1000,
+              data: {
+                index: idx,
+              },
+            }),
+          },
+          loginContextRef.current
+        )
+          .then((r) => {
+            if (!r.ok) {
+              console.error('Failed to send color prompt response', r.status, r.statusText);
+              r.text().then((t) => console.error(t));
+            }
+          })
+          .catch((e) => {
+            console.error('Failed to send color prompt response', e);
+          });
+      }
+    },
+    [journeyTime.time, journeyUid, journeyJwt, sessionUid]
+  );
   const onColorPressedRef = useRef(onColorPressed);
   onColorPressedRef.current = onColorPressed;
 
@@ -151,6 +217,7 @@ export const JourneyColorPrompt = ({
       onPress: () => {
         onColorPressedRef.current(idx);
       },
+      opacity: 0.4,
       awaken: null,
     }));
   }
@@ -158,6 +225,71 @@ export const JourneyColorPrompt = ({
   const boundGetOptionInfo = useMemo<(() => OptionInfo)[]>(() => {
     return prompt.colors.map((col, idx) => () => optionInfoRefs.current[idx]);
   }, [prompt.colors]);
+
+  useEffect(() => {
+    let mounted = true;
+    requestAnimationFrame(animateStats);
+    return () => {
+      mounted = false;
+    };
+
+    function animateStats() {
+      if (!mounted) {
+        return;
+      }
+
+      const colorActive = statsRef.current.colorActive;
+      if (colorActive === null) {
+        requestAnimationFrame(animateStats);
+        return;
+      }
+      const journeyNow = journeyTime.time.current;
+
+      if (
+        fakingMoveRef.current !== null &&
+        (fakingMoveRef.current.fakeEndsAt <= journeyNow ||
+          (colorActive[fakingMoveRef.current.toIndex] ?? 0) >=
+            fakingMoveRef.current.cancelFakeToMin)
+      ) {
+        fakingMoveRef.current = null;
+      }
+
+      const effectiveColorActive =
+        fakingMoveRef.current !== null
+          ? (() => {
+              const move = fakingMoveRef.current;
+              if (move === null) {
+                return colorActive;
+              }
+
+              const res = colorActive.slice();
+              if (move.fromIndex !== null) {
+                res[move.fromIndex] = Math.max((res[move.fromIndex] ?? 0) - 1, 0);
+              }
+              res[move.toIndex] = Math.max((res[move.toIndex] ?? 0) + 1, 0);
+              return res;
+            })()
+          : colorActive;
+
+      const total = effectiveColorActive.reduce((acc, cur) => acc + cur, 0);
+      const targetHeights = effectiveColorActive.map((num) => {
+        if (total === 0) {
+          return 0;
+        }
+        return (num / total) * rowHeight;
+      });
+
+      for (let idx = 0; idx < optionInfoRefs.current.length && idx < targetHeights.length; idx++) {
+        const info = optionInfoRefs.current[idx];
+        const targetHeight = targetHeights[idx];
+        if (info.height !== targetHeight) {
+          info.height = targetHeight;
+          info.awaken?.();
+        }
+      }
+      requestAnimationFrame(animateStats);
+    }
+  }, [rowHeight, journeyTime.time]);
 
   return (
     <View style={containerStyle}>
@@ -190,16 +322,17 @@ type OptionInfo = {
    */
   height: number;
   /**
-   * If this is the currently active option for the user. This impacts
-   * primarily the opacity of the item. This is the target value; the
-   * rendered value is interpolated. After changing this value,
-   * awaken() should be called to animate the change.
-   */
-  active: boolean;
-  /**
-   * The color for the background when active.
+   * The color for the background when active. Must be specified as
+   * a 7-character hex string, including the leading '#', e.g. '#ff0000'.
    */
   color: string;
+  /**
+   * The opacity to render at, 0-1, based on if the option is active.
+   * This is the target value; the rendered value is interpolated.
+   * After changing this value, awaken() should be called to animate
+   * the change.
+   */
+  opacity: number;
   /**
    * The function to call when the option is pressed. Whatever value
    * this has when the component is pressed will be called. This is
@@ -239,6 +372,8 @@ type OptionProps = {
   height: number;
 };
 
+const opacityAnimationDuration = 350;
+const heightAnimationDuration = 350;
 const Option = ({ infoRef, width: outerWidth, height: outerHeight }: OptionProps): ReactElement => {
   const glContextRef = useRef<ExpoWebGLRenderingContext | null>(null);
 
@@ -257,6 +392,10 @@ const Option = ({ infoRef, width: outerWidth, height: outerHeight }: OptionProps
       destroy: () => void;
     } | null = null;
     const info = infoRef();
+    let renderedOpacity: number = info.opacity;
+    let renderedHeight: number = info.height;
+    let opacityAnim: Animation | null = null;
+    let heightAnim: Animation | null = null;
 
     info.awaken = awaken;
     requestAnimationFrame(animate);
@@ -274,7 +413,7 @@ const Option = ({ infoRef, width: outerWidth, height: outerHeight }: OptionProps
     };
 
     function awaken() {
-      if (awake) {
+      if (awake || !mounted) {
         return;
       }
       awake = true;
@@ -289,7 +428,7 @@ const Option = ({ infoRef, width: outerWidth, height: outerHeight }: OptionProps
       awake = false;
     }
 
-    function animate() {
+    function animate(now: DOMHighResTimeStamp) {
       if (!mounted) {
         return;
       }
@@ -320,18 +459,40 @@ const Option = ({ infoRef, width: outerWidth, height: outerHeight }: OptionProps
         };
       }
 
+      opacityAnim = updateAnim({
+        now,
+        current: renderedOpacity,
+        target: info.opacity,
+        oldAnim: opacityAnim,
+        duration: opacityAnimationDuration,
+        ease: easeInOut,
+      });
+      heightAnim = updateAnim({
+        now,
+        current: renderedHeight,
+        target: info.height,
+        oldAnim: heightAnim,
+        duration: heightAnimationDuration,
+        ease: easeOut,
+      });
+
+      renderedOpacity = opacityAnim !== null ? calculateAnimValue(opacityAnim, now) : info.opacity;
+      renderedHeight = heightAnim !== null ? calculateAnimValue(heightAnim, now) : info.height;
       applyStyle(
         gl,
         handlingGl.state,
-        0.4,
+        renderedOpacity,
         {
-          width: gl.drawingBufferWidth,
-          outlineHeight: gl.drawingBufferHeight,
-          fillHeight: (gl.drawingBufferHeight / outerHeight) * info.height,
+          fillHeight: renderedHeight,
         },
         info.color
       );
-      onGoingToSleep();
+
+      if (opacityAnim === null && heightAnim === null) {
+        onGoingToSleep();
+      } else {
+        requestAnimationFrame(animate);
+      }
     }
 
     function initializeGl(gl: ExpoWebGLRenderingContext): [OptionGlState, () => void] {
@@ -384,7 +545,9 @@ const Option = ({ infoRef, width: outerWidth, height: outerHeight }: OptionProps
 
         uniform vec2 u_resolution;
         uniform float u_radius;
-        uniform vec3 u_color;
+        uniform float u_thickness;
+        uniform float u_fillHeight;
+        uniform vec4 u_color;
 
         varying vec2 v_position;
 
@@ -395,8 +558,24 @@ const Option = ({ infoRef, width: outerWidth, height: outerHeight }: OptionProps
           vec2 vecCircleCenterToPosition = positionAsIfTopRight - (u_resolution - vec2(u_radius, u_radius));
           float distanceFromCircleCenter = length(vecCircleCenterToPosition);
           bool isTopRightOfCircle = vecCircleCenterToPosition.x > 0.0 && vecCircleCenterToPosition.y > 0.0;
-          float opacity = 1.0 - float(isTopRightOfCircle) * smoothstep(u_radius, u_radius + edgeSmoothness, distanceFromCircleCenter);
-          gl_FragColor = vec4(u_color, 1.0) * opacity;
+          bool isBottomLeftOfCircle = vecCircleCenterToPosition.x < 0.0 && vecCircleCenterToPosition.y < 0.0;
+          bool isTopLeftOfCircle = vecCircleCenterToPosition.x < 0.0 && vecCircleCenterToPosition.y > 0.0;
+          bool isBottomRightOfCircle = vecCircleCenterToPosition.x > 0.0 && vecCircleCenterToPosition.y < 0.0;
+          bool isInFill = v_position.y < u_fillHeight;
+          float opacity = (
+            1.0 
+            // outer edge of circle
+            - float(isTopRightOfCircle) * smoothstep(u_radius, u_radius + edgeSmoothness, distanceFromCircleCenter)
+            // inner edge of circle
+            - float(isTopRightOfCircle) * float(!isInFill) * (1.0 - smoothstep(u_radius - u_thickness - edgeSmoothness, u_radius - u_thickness, distanceFromCircleCenter))
+            // bottom left is always not visible
+            - float(isBottomLeftOfCircle) * float(!isInFill)
+            // top left uses border thickness relative to the top
+            - float(isTopLeftOfCircle) * float(!isInFill) * (1.0 - smoothstep(u_resolution.y - u_thickness - edgeSmoothness, u_resolution.y - u_thickness, positionAsIfTopRight.y))
+            // bottom right uses border thickness relative to the right
+            - float(isBottomRightOfCircle) * float(!isInFill) * (1.0 - smoothstep(u_resolution.x - u_thickness - edgeSmoothness, u_resolution.x - u_thickness, positionAsIfTopRight.x))
+          );
+          gl_FragColor = vec4(u_color.xyz, 1.0) * opacity * u_color.a;
         }
         `
       );
@@ -455,6 +634,16 @@ const Option = ({ infoRef, width: outerWidth, height: outerHeight }: OptionProps
         throw new Error('Failed to get color location');
       }
 
+      const thicknessLocation = gl.getUniformLocation(program, 'u_thickness');
+      if (thicknessLocation === null) {
+        throw new Error('Failed to get thickness location');
+      }
+
+      const fillHeightLocation = gl.getUniformLocation(program, 'u_fillHeight');
+      if (fillHeightLocation === null) {
+        throw new Error('Failed to get fillHeight location');
+      }
+
       return [
         {
           program,
@@ -463,6 +652,8 @@ const Option = ({ infoRef, width: outerWidth, height: outerHeight }: OptionProps
             resolution: resolutionLocation,
             radius: radiusLocation,
             color: colorLocation,
+            thickness: thicknessLocation,
+            fillHeight: fillHeightLocation,
           },
           buffers: {
             position: positionBuffer,
@@ -485,10 +676,10 @@ const Option = ({ infoRef, width: outerWidth, height: outerHeight }: OptionProps
       gl: ExpoWebGLRenderingContext,
       glState: OptionGlState,
       opacity: number,
-      size: { width: number; outlineHeight: number; fillHeight: number },
+      size: { fillHeight: number },
       color: string
     ) {
-      console.log('applying style');
+      const dpi = gl.drawingBufferWidth / outerWidth;
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.useProgram(glState.program);
 
@@ -496,10 +687,12 @@ const Option = ({ infoRef, width: outerWidth, height: outerHeight }: OptionProps
       gl.bindBuffer(gl.ARRAY_BUFFER, glState.buffers.position);
       gl.vertexAttribPointer(glState.locs.position, 2, gl.FLOAT, false, 0, 0);
       gl.uniform2f(glState.locs.resolution, gl.drawingBufferWidth, gl.drawingBufferHeight);
-      gl.uniform1f(glState.locs.radius, (gl.drawingBufferWidth / outerWidth) * 10.0);
+      gl.uniform1f(glState.locs.radius, dpi * 10.0);
+      gl.uniform1f(glState.locs.thickness, dpi * 2.0);
+      gl.uniform1f(glState.locs.fillHeight, dpi * size.fillHeight);
 
       const colorParts = getColor3fFromHex(color);
-      gl.uniform3f(glState.locs.color, colorParts[0], colorParts[1], colorParts[2]);
+      gl.uniform4f(glState.locs.color, colorParts[0], colorParts[1], colorParts[2], opacity);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
 
       gl.flush();
@@ -507,12 +700,23 @@ const Option = ({ infoRef, width: outerWidth, height: outerHeight }: OptionProps
     }
   }, [infoRef, outerWidth, outerHeight]);
 
-  const glViewStyle = useMemo(
+  const sizeStyle = useMemo(
     () => ({ width: outerWidth, height: outerHeight }),
     [outerWidth, outerHeight]
   );
 
-  return <GLView style={glViewStyle} onContextCreate={onGlContextCreate} />;
+  const onPress = useCallback(() => {
+    const info = infoRef();
+    if (info.onPress) {
+      info.onPress();
+    }
+  }, [infoRef]);
+
+  return (
+    <Pressable style={sizeStyle} onPress={onPress}>
+      <GLView style={sizeStyle} onContextCreate={onGlContextCreate} />
+    </Pressable>
+  );
 };
 
 type OptionGlState = {
@@ -522,10 +726,76 @@ type OptionGlState = {
     resolution: WebGLUniformLocation;
     radius: WebGLUniformLocation;
     color: WebGLUniformLocation;
+    thickness: WebGLUniformLocation;
+    fillHeight: WebGLUniformLocation;
   };
   buffers: {
     position: WebGLBuffer;
   };
+};
+
+type UpdateAnimArgs = {
+  now: number | null;
+  current: number;
+  target: number;
+  oldAnim: Animation | null;
+  duration: number;
+  ease: Bezier;
+};
+
+type Animation = {
+  from: number;
+  to: number;
+  startedAt: DOMHighResTimeStamp | null;
+  ease: Bezier;
+  duration: number;
+};
+
+/**
+ * Gives the new animation that should be used to animate from the current value
+ * to the target value, given the currently configured animation
+ */
+const updateAnim = ({
+  now,
+  current,
+  target,
+  oldAnim,
+  duration,
+  ease,
+}: UpdateAnimArgs): Animation | null => {
+  if (current === target) {
+    return null;
+  }
+
+  if (oldAnim !== null && oldAnim.to === target) {
+    if (now !== null && oldAnim.startedAt !== null && oldAnim.startedAt + oldAnim.duration <= now) {
+      return null;
+    }
+
+    return oldAnim;
+  }
+
+  return {
+    from: current,
+    to: target,
+    startedAt: now,
+    ease,
+    duration,
+  };
+};
+
+/**
+ * Computes the current value of the given animation, given the current time.
+ * If the animation is not yet started, it will be started at the given time.
+ */
+const calculateAnimValue = (anim: Animation, now: number): number => {
+  if (anim.startedAt === null) {
+    anim.startedAt = now;
+    return anim.from;
+  }
+
+  const progress = (now - anim.startedAt) / anim.duration;
+  return anim.ease.b_t(progress)[1] * (anim.to - anim.from) + anim.from;
 };
 
 /**
@@ -543,3 +813,11 @@ function getColor3fFromHex(color: string): number[] {
   const b = parseInt(color.substring(5, 7), 16) / 255.0;
   return [r, g, b];
 }
+
+type FakedMove = {
+  fromIndex: number | null;
+  toIndex: number;
+
+  fakeEndsAt: DOMHighResTimeStamp;
+  cancelFakeToMin: number;
+};

@@ -32,7 +32,7 @@ export const JourneyLobbyScreen = ({
   setScreen,
 }: JourneyScreenProps): ReactElement => {
   const loginContext = useContext(LoginContext);
-  const journeyTime = useJourneyTime(0, true); // TODO
+  const journeyTime = useJourneyTime(0, false);
   const topBarHeight = useTopBarHeight();
   const screenSize = useScreenSize();
   const [promptHeight, setPromptHeight] = useState(0);
