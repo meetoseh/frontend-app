@@ -48,7 +48,6 @@ export const JourneyColorPrompt = ({
   stats,
   journeyTime,
   loginContext,
-  journeyLobbyDurationSeconds,
   journeyUid,
   journeyJwt,
   sessionUid,
