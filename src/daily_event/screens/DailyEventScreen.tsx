@@ -76,6 +76,43 @@ const createCardInFrontStyle = (dynStyle: CardInFrontDynamicStyle): ViewStyle =>
   });
 };
 
+/**
+ * Category external names which some people really like, but others really dislike.
+ * This is contrasted with categories which tend not to illicit negative reactions
+ */
+const DIVISIVE_CATEGORIES = new Set(['Instrumental', 'Poetry']);
+
+/**
+ * Performs a biased shuffling of the cards in the journey, preferring to
+ * move content that can be more divisive to anything but the front card.
+ *
+ * @param journeys The journeys to produce an ordering of
+ * @returns The indices of the journeys in the order they should be shown
+ */
+const createJourneyShuffle = (journeys: DailyEventJourney[]): number[] => {
+  if (journeys.length === 0) {
+    return [];
+  }
+
+  const result: number[] = [];
+  for (let i = 0; i < journeys.length; i++) {
+    result.push(i);
+  }
+  shuffle(result);
+
+  if (DIVISIVE_CATEGORIES.has(journeys[result[0]].category.externalName)) {
+    const firstNonDivisive = result.findIndex(
+      (i) => !DIVISIVE_CATEGORIES.has(journeys[i].category.externalName)
+    );
+    if (firstNonDivisive !== -1) {
+      const tmp = result[0];
+      result[0] = result[firstNonDivisive];
+      result[firstNonDivisive] = tmp;
+    }
+  }
+  return result;
+};
+
 export const DailyEventScreen = ({
   event,
   onGotoSettings,
@@ -96,14 +133,10 @@ export const DailyEventScreen = ({
   );
   const [error, setError] = useState<ReactElement | null>(initialError);
 
-  const carouselShuffle = useMemo<number[]>(() => {
-    const result = [];
-    for (let i = 0; i < event.journeys.length; i++) {
-      result.push(i);
-    }
-    shuffle(result);
-    return result;
-  }, [event.journeys.length]);
+  const carouselShuffle = useMemo<number[]>(
+    () => createJourneyShuffle(event.journeys),
+    [event.journeys]
+  );
 
   const reorderedJourneys = useMemo(() => {
     const result: { journey: DailyEventJourney; state: DailyEventJourneyState }[] = [];
