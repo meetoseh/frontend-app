@@ -37,14 +37,18 @@ export const useUpgradeValuePropsState = (): UpgradeValuePropsState => {
   const isOsehPlus = useIsOsehPlus({ loginContext, force: true });
   const dims = useScreenSize();
 
-  const imageBackground = useOsehImageState({
-    uid: 'oseh_if_hH68hcmVBYHanoivLMgstg',
-    jwt: null,
-    displayWidth: dims.width,
-    displayHeight: dims.height,
-    alt: '',
-    isPublic: true,
-  });
+  const imageProps = useMemo(
+    () => ({
+      uid: 'oseh_if_hH68hcmVBYHanoivLMgstg',
+      jwt: null,
+      displayWidth: dims.width,
+      displayHeight: dims.height,
+      alt: '',
+      isPublic: true,
+    }),
+    [dims.width, dims.height]
+  );
+  const imageBackground = useOsehImageState(imageProps);
 
   return useMemo(
     () => ({
