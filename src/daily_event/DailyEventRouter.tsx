@@ -1,3 +1,4 @@
+import { ReactElement } from 'react';
 import { JourneyRef } from '../journey/models/JourneyRef';
 import { DailyEvent } from './models/DailyEvent';
 import { DailyEventScreen } from './screens/DailyEventScreen';
@@ -29,6 +30,14 @@ type DailyEventRouterProps = {
    * If specified, called when the first screen is ready to be shown.
    */
   onReady?: () => void;
+
+  /**
+   * If specified, this is the error that should be shown to the user
+   * initially. Useful if the user was trying to do something in a previous
+   * screen and an error occurs preventing the earlier screen from being
+   * displayed.
+   */
+  initialError: ReactElement | null;
 };
 
 /**
@@ -41,6 +50,7 @@ export const DailyEventRouter = ({
   onGotoJourney,
   onReload,
   onReady,
+  initialError,
 }: DailyEventRouterProps) => {
   return (
     <DailyEventScreen
@@ -49,6 +59,7 @@ export const DailyEventRouter = ({
       onGotoJourney={onGotoJourney}
       onReload={onReload}
       onReady={onReady}
+      initialError={initialError}
     />
   );
 };

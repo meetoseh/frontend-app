@@ -47,7 +47,7 @@ export const styles = StyleSheet.create({
   },
   optionNotFirst: Object.assign({}, option, { marginLeft: 20 }),
   optionText: {
-    color: Colors.OFF_BLACK,
+    color: Colors.GRAYSCALE_BLACK,
     fontFamily: 'OpenSans-Regular',
     fontSize: 34,
   },

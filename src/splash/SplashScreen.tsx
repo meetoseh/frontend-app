@@ -106,7 +106,7 @@ export const SplashScreen = ({ type }: SplashScreenProps): ReactElement => {
             : require('./assets/brandmark.lottie.json')
         }
       />
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
     </View>
   );
 };

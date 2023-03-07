@@ -126,6 +126,10 @@ export const DailyEventJourneyCard = ({
 
   const alwaysTrue = useCallback(() => true, []);
 
+  const onGotoSettingsPressed = useCallback(() => {
+    onGotoSettings();
+  }, [onGotoSettings]);
+
   if (loginContext.state !== 'logged-in' || loginContext.userAttributes === null) {
     return <SplashScreen />;
   }
@@ -134,7 +138,7 @@ export const DailyEventJourneyCard = ({
     <OsehImageBackgroundFromState state={state.image} style={containerStyle}>
       <Pressable
         style={styles.header}
-        onPress={onGotoSettings}
+        onPress={onGotoSettingsPressed}
         onStartShouldSetResponder={alwaysTrue}
         onMoveShouldSetResponder={alwaysTrue}>
         {profilePicture.state === 'available' && (

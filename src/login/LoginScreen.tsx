@@ -15,6 +15,9 @@ import * as Linking from 'expo-linking';
 import { URLSearchParams } from 'react-native-url-polyfill';
 import { LoginContext } from '../shared/contexts/LoginContext';
 import { RSQUO } from '../shared/lib/HtmlEntities';
+import Constants from 'expo-constants';
+
+const DEV_ACCOUNT_USER_IDENTITY_ID = 'guest9833';
 
 type LoginScreenProps = {
   /**
@@ -69,6 +72,8 @@ const prepareLink = async (
  * a new account, potentially skipping some of our standard logout process.
  *
  * This assumes that fonts have already been loaded. Requires the login context.
+ *
+ * In development, the user can tap the legal text to use a test account.
  */
 export const LoginScreen = ({ onLogin, initialError, onReady }: LoginScreenProps): ReactElement => {
   const loginContext = useContext(LoginContext);
@@ -198,6 +203,44 @@ export const LoginScreen = ({ onLogin, initialError, onReady }: LoginScreenProps
     }
   }, [backgroundLoading, onReady]);
 
+  const onPressLegal = useCallback(async () => {
+    if (Constants.expoConfig?.extra?.environment !== 'dev') {
+      return;
+    }
+
+    setError(null);
+    try {
+      const response = await apiFetch(
+        '/api/1/dev/login',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+          },
+          body: JSON.stringify({
+            sub: DEV_ACCOUNT_USER_IDENTITY_ID,
+            refresh_token_desired: true,
+          }),
+        },
+        loginContext
+      );
+
+      if (!response.ok) {
+        throw response;
+      }
+
+      const data: { id_token: string; refresh_token: string; onboard: boolean } =
+        await response.json();
+      await loginContext.setAuthTokens({
+        idToken: data.id_token,
+        refreshToken: data.refresh_token,
+      });
+      onLogin(data.onboard);
+    } catch (e) {
+      setError(await describeError(e));
+    }
+  }, [loginContext, onLogin]);
+
   if (goingToApple || goingToGoogle) {
     if (pressingApple) {
       setPressingApple(false);
@@ -241,11 +284,11 @@ export const LoginScreen = ({ onLogin, initialError, onReady }: LoginScreenProps
             <Text style={styles.continueWithAppleText}>Continue with Apple</Text>
           </Pressable>
         </View>
-        <View style={styles.legalContainer}>
+        <Pressable style={styles.legalContainer} onPress={onPressLegal}>
           <Text style={styles.legal}>
             We won{RSQUO}t post to any of your accounts without asking first.
           </Text>
-        </View>
+        </Pressable>
       </OsehImageBackground>
       <StatusBar style="light" />
     </View>

@@ -31,4 +31,15 @@ export type CustomButtonProps = {
    * as possible.
    */
   setHeight?: (height: number) => void;
+
+  /**
+   * If set to true, the container will use the screen size to determine its width,
+   * with appropriate padding on the left and right. Default false.
+   */
+  fullWidth?: boolean;
+
+  /**
+   * If specified, the button will have a margin on the top of this value.
+   */
+  marginTop?: number;
 };

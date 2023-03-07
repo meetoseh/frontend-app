@@ -9,6 +9,8 @@ import { JourneyRef } from './src/journey/models/JourneyRef';
 import { JourneyRouter } from './src/journey/JourneyRouter';
 import { View, ViewStyle } from 'react-native';
 import { useScreenSize } from './src/shared/hooks/useScreenSize';
+import { SettingsRouter } from './src/settings/SettingsRouter';
+import { UpgradeRouter } from './src/upgrade/UpgradeRouter';
 
 /**
  * The allowed identifiers for screens
@@ -18,7 +20,9 @@ export type ScreenId =
   | 'login'
   | 'introductory-journey'
   | 'current-daily-event'
-  | 'journey';
+  | 'journey'
+  | 'settings'
+  | 'upgrade';
 
 export default function App() {
   return (
@@ -83,9 +87,32 @@ const AppInner = () => {
     setScreen('journey');
   }, []);
 
-  const gotoDailyEvent = useCallback(() => {
+  const gotoDailyEvent = useCallback((error?: ReactElement | null) => {
+    if (error === undefined) {
+      error = null;
+    }
+    setError(error);
     setJourney(null);
     setScreen('current-daily-event');
+  }, []);
+
+  const gotoSettings = useCallback((error?: ReactElement | null) => {
+    if (error === undefined) {
+      error = null;
+    }
+    setError(error);
+    setJourney(null);
+    setScreen('settings');
+  }, []);
+
+  const gotoUpgrade = useCallback((error?: ReactElement | null) => {
+    if (error === undefined) {
+      error = null;
+    }
+    console.log('goto upgrade');
+    setError(error);
+    setJourney(null);
+    setScreen('upgrade');
   }, []);
 
   const doNothing = useCallback(() => {
@@ -113,12 +140,28 @@ const AppInner = () => {
         <IntroductoryJourneyScreen onFinished={setErrorAndDoNothing} onReady={clearLoadingForced} />
       );
     }
+    if (screen === 'settings') {
+      return (
+        <SettingsRouter
+          onBack={gotoDailyEvent}
+          onGotoUpgrade={gotoUpgrade}
+          initialError={error}
+          onReady={clearLoadingForced}
+        />
+      );
+    }
+    if (screen === 'upgrade') {
+      return (
+        <UpgradeRouter onBack={gotoDailyEvent} initialError={error} onReady={clearLoadingForced} />
+      );
+    }
     if (screen === 'current-daily-event') {
       return (
         <CurrentDailyEvent
-          onGotoSettings={doNothing}
+          onGotoSettings={gotoSettings}
           onGotoJourney={gotoJourney}
           onReady={clearLoadingForced}
+          initialError={error}
         />
       );
     }

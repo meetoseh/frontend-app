@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { ReactElement, useEffect, useMemo, useState } from 'react';
 import { PixelRatio } from 'react-native';
 import { HTTP_API_URL } from '../lib/apiFetch';
 import { convertUsingKeymap, CrudFetcherKeyMap } from '../lib/CrudFetcher';
 import { removeUnmatchedKeysFromMap } from '../lib/removeUnmatchedKeys';
 import * as FileSystem from 'expo-file-system';
+import { describeError } from '../lib/describeError';
 
 /**
  * Describes the minimum information required to reference a specific
@@ -214,6 +215,12 @@ export type OsehImageState = {
    * True if the image is loading, false otherwise
    */
   loading: boolean;
+
+  /**
+   * If an error prevented us from loading the image, this will be set to the
+   * an element describing the error, otherwise it will be null
+   */
+  error: ReactElement | null;
 };
 
 /**
@@ -528,6 +535,7 @@ export const useOsehImageStates = (images: OsehImageProps[]): OsehImageState[] =
   const [playlists, setPlaylists] = useState<Map<string, PlaylistWithJWT>>(new Map());
   const [bestItems, setBestItems] = useState<Map<string, PlaylistItemWithJWT>>(new Map());
   const [downloadedItems, setDownloadedItems] = useState<Map<string, DownloadedItem>>(new Map());
+  const [errors, setErrors] = useState<Map<string, ReactElement>>(new Map());
 
   const uidsToImages = useMemo(() => {
     const map: Map<string, OsehImageProps> = new Map();
@@ -573,30 +581,36 @@ export const useOsehImageStates = (images: OsehImageProps[]): OsehImageState[] =
       const newPlaylists = removeUnmatchedKeysFromMap(playlists, uidsToImages);
       let madeChanges = newPlaylists.size !== playlists.size;
 
+      const newErrors = new Map<string, ReactElement>();
+
       const promises: Promise<void>[] = [];
       const uids: string[] = [];
       uidsToImages.forEach((props, uid) => {
         const old = newPlaylists.get(uid) ?? null;
         uids.push(uid);
         promises.push(
-          fetchPlaylist(props, old).then((playlist) => {
-            if (!active) {
-              return;
-            }
+          fetchPlaylist(props, old)
+            .then((playlist) => {
+              if (!active) {
+                return;
+              }
 
-            if (playlist === null || old === null) {
-              madeChanges ||= playlist !== old;
-            } else {
-              madeChanges ||=
-                !playlistsEqual(playlist.playlist, old.playlist) || playlist.jwt !== old.jwt;
-            }
+              if (playlist === null || old === null) {
+                madeChanges ||= playlist !== old;
+              } else {
+                madeChanges ||=
+                  !playlistsEqual(playlist.playlist, old.playlist) || playlist.jwt !== old.jwt;
+              }
 
-            if (playlist === null) {
-              newPlaylists.delete(uid);
-            } else {
-              newPlaylists.set(uid, playlist);
-            }
-          })
+              if (playlist === null) {
+                newPlaylists.delete(uid);
+              } else {
+                newPlaylists.set(uid, playlist);
+              }
+            })
+            .catch(async (e) => {
+              throw await describeError(e);
+            })
         );
       });
 
@@ -612,12 +626,15 @@ export const useOsehImageStates = (images: OsehImageProps[]): OsehImageState[] =
             newPlaylists.delete(uids[idx]);
             madeChanges = true;
           }
+          newErrors.set(uids[idx], p.reason);
         }
       });
 
       if (madeChanges) {
         setPlaylists(newPlaylists);
       }
+
+      setErrors(newErrors);
     }
   }, [uidsToImages, playlists]);
 
@@ -687,24 +704,35 @@ export const useOsehImageStates = (images: OsehImageProps[]): OsehImageState[] =
       const newDownloadedItems = removeUnmatchedKeysFromMap(downloadedItems, bestItems);
       let madeChanges = newDownloadedItems.size !== downloadedItems.size;
 
+      const newErrors = new Map<string, ReactElement>();
+      const changedDownloaded = new Set<string>();
+
       const promises: Promise<void>[] = [];
       const uids: string[] = [];
       bestItems.forEach((item, uid) => {
         const old = newDownloadedItems.get(uid) ?? null;
         uids.push(uid);
         promises.push(
-          fetchDownloadedItem(item, old).then((downloadedItem) => {
-            if (!active) {
-              return;
-            }
+          fetchDownloadedItem(item, old)
+            .then((downloadedItem) => {
+              if (!active) {
+                return;
+              }
 
-            madeChanges ||= !downloadedItemsEqual(downloadedItem, old);
-            if (downloadedItem === null) {
-              newDownloadedItems.delete(uid);
-            } else {
-              newDownloadedItems.set(uid, downloadedItem);
-            }
-          })
+              const changed = !downloadedItemsEqual(downloadedItem, old);
+              if (changed) {
+                changedDownloaded.add(uid);
+              }
+              madeChanges ||= changed;
+              if (downloadedItem === null) {
+                newDownloadedItems.delete(uid);
+              } else {
+                newDownloadedItems.set(uid, downloadedItem);
+              }
+            })
+            .catch((e) => {
+              throw describeError(e);
+            })
         );
       });
 
@@ -720,12 +748,24 @@ export const useOsehImageStates = (images: OsehImageProps[]): OsehImageState[] =
             newDownloadedItems.delete(uids[idx]);
             madeChanges = true;
           }
+          newErrors.set(uids[idx], p.reason);
         }
       });
 
       if (madeChanges) {
         setDownloadedItems(newDownloadedItems);
       }
+
+      setErrors((old) => {
+        const res = new Map<string, ReactElement>(old);
+        for (const uid of changedDownloaded) {
+          res.delete(uid);
+        }
+        for (const [uid, err] of newErrors) {
+          res.set(uid, err);
+        }
+        return res;
+      });
     }
   }, [bestItems, downloadedItems]);
 
@@ -757,7 +797,17 @@ export const useOsehImageStates = (images: OsehImageProps[]): OsehImageState[] =
     });
   }, [images, downloadedItems]);
 
-  return useMemo(() => {
+  /**
+   * Clear old errors
+   */
+  useEffect(() => {
+    const newErrors = removeUnmatchedKeysFromMap(errors, uidsToImages);
+    if (newErrors.size !== errors.size) {
+      setErrors(newErrors);
+    }
+  }, [uidsToImages, errors]);
+
+  return useMemo<OsehImageState[]>(() => {
     return images.map((img) => {
       if (img.uid === null) {
         return {
@@ -766,10 +816,12 @@ export const useOsehImageStates = (images: OsehImageProps[]): OsehImageState[] =
           displayWidth: img.displayWidth,
           displayHeight: img.displayHeight,
           loading: true,
+          error: null,
         };
       }
 
       const downloadedItem = downloadedItems.get(img.uid);
+      const error = errors.get(img.uid) ?? null;
       if (downloadedItem === null || downloadedItem === undefined) {
         return {
           localUrl: null,
@@ -777,6 +829,7 @@ export const useOsehImageStates = (images: OsehImageProps[]): OsehImageState[] =
           displayWidth: img.displayWidth,
           displayHeight: img.displayHeight,
           loading: true,
+          error,
         };
       }
 
@@ -788,7 +841,8 @@ export const useOsehImageStates = (images: OsehImageProps[]): OsehImageState[] =
         displayWidth: img.displayWidth,
         displayHeight: img.displayHeight,
         loading: localUrl === null,
+        error,
       };
     });
-  }, [images, downloadedItems]);
+  }, [images, downloadedItems, errors]);
 };

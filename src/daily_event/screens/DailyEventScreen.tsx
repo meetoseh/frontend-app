@@ -47,6 +47,14 @@ type DailyEventScreenProps = {
    * If specified, called when the first screen is ready to be shown.
    */
   onReady?: () => void;
+
+  /**
+   * If specified, this is the error that should be shown to the user
+   * initially. Useful if the user was trying to do something in a previous
+   * screen and an error occurs preventing the earlier screen from being
+   * displayed.
+   */
+  initialError: ReactElement | null;
 };
 
 /** If we ever try to skip react renders via setNativeProps */
@@ -74,6 +82,7 @@ export const DailyEventScreen = ({
   onGotoJourney,
   onReload,
   onReady,
+  initialError,
 }: DailyEventScreenProps) => {
   const loginContext = useContext(LoginContext);
   const loadedJourneys = useDailyEventJourneyStates(event.journeys);
@@ -85,7 +94,7 @@ export const DailyEventScreen = ({
   const [layoutSize, setLayoutSize] = useState<{ width: number; height: number }>(
     Dimensions.get('screen')
   );
-  const [error, setError] = useState<ReactElement | null>(null);
+  const [error, setError] = useState<ReactElement | null>(initialError);
 
   const carouselShuffle = useMemo<number[]>(() => {
     const result = [];
@@ -694,16 +703,14 @@ export const DailyEventScreen = ({
     if (!ev.nativeEvent) {
       return;
     }
+    const layout = ev.nativeEvent.layout;
     setLayoutSize((oldSize) => {
-      if (
-        oldSize.width === ev.nativeEvent.layout.width &&
-        oldSize.height === ev.nativeEvent.layout.height
-      ) {
+      if (oldSize.width === layout.width && oldSize.height === layout.height) {
         return oldSize;
       }
       return {
-        width: ev.nativeEvent.layout.width,
-        height: ev.nativeEvent.layout.height,
+        width: layout.width,
+        height: layout.height,
       };
     });
   }, []);

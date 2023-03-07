@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { ReactElement, useCallback, useState } from 'react';
+import { ReactElement, useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { JourneyRef } from '../journey/models/JourneyRef';
 import { SplashScreen } from '../splash/SplashScreen';
@@ -23,6 +23,14 @@ type CurrentDailyEventProps = {
    * If specified, called when the first screen is ready to be shown.
    */
   onReady?: () => void;
+
+  /**
+   * If an error should be propagated from an earlier screen, it can be
+   * specified here. This is useful when the user is trying to do something
+   * in a previous screen and an error occurs preventing the earlier screen
+   * from being displayed.
+   */
+  initialError: ReactElement | null;
 };
 
 /**
@@ -32,9 +40,11 @@ export const CurrentDailyEvent = ({
   onGotoSettings,
   onGotoJourney,
   onReady,
+  initialError,
 }: CurrentDailyEventProps): ReactElement => {
   const [reloadCounter, setReloadCounter] = useState(0);
-  const [event, error] = useCurrentDailyEvent(reloadCounter);
+  const [event, currentDailyEventError] = useCurrentDailyEvent(reloadCounter);
+  const [error, setError] = useState<ReactElement | null>(initialError);
 
   const [reloading, setReloading] = useState(false);
   const reload = useCallback(() => {
@@ -49,7 +59,13 @@ export const CurrentDailyEvent = ({
     }, 1500);
   }, [reloading]);
 
-  if (event === null && error === null) {
+  useEffect(() => {
+    if (currentDailyEventError) {
+      setError(currentDailyEventError);
+    }
+  }, [currentDailyEventError]);
+
+  if (event === null && error === initialError) {
     return <SplashScreen type="brandmark" />;
   }
 
@@ -75,6 +91,7 @@ export const CurrentDailyEvent = ({
       onGotoJourney={onGotoJourney}
       onReload={reload}
       onReady={onReady}
+      initialError={error}
     />
   );
 };

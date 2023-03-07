@@ -11,7 +11,7 @@ export const styles = StyleSheet.create({
   },
   text: {
     color: Colors.WHITE,
-    fontFamily: 'OpenSans-Regular',
+    fontFamily: 'OpenSans-Light',
     fontSize: 22,
     lineHeight: 32,
     textAlign: 'center',
