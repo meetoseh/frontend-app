@@ -14,7 +14,8 @@ import { DailyEvent, dailyEventKeyMap } from '../models/DailyEvent';
  * Returns the daily event (if loaded), and the error (if any).
  */
 export const useCurrentDailyEvent = (
-  reloadCounter?: number
+  reloadCounter?: number,
+  load?: boolean
 ): [DailyEvent | null, ReactElement | null] => {
   const loginContext = useContext(LoginContext);
   const [dailyEvent, setDailyEvent] = useState<DailyEvent | null>(null);
@@ -22,6 +23,12 @@ export const useCurrentDailyEvent = (
 
   useEffect(() => {
     if (loginContext.state !== 'logged-in') {
+      return;
+    }
+
+    if (load === false) {
+      setDailyEvent(null);
+      setError(null);
       return;
     }
 
@@ -90,7 +97,7 @@ export const useCurrentDailyEvent = (
         setError(err);
       }
     }
-  }, [loginContext, reloadCounter]);
+  }, [loginContext, reloadCounter, load]);
 
   return useMemo(() => [dailyEvent, error], [dailyEvent, error]);
 };

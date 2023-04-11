@@ -12,19 +12,55 @@ import {
 import { DailyEvent } from '../models/DailyEvent';
 import { DailyEventJourney } from '../models/DailyEventJourney';
 import { styles } from './DailyEventScreenStyles';
-import { useMyProfilePictureState } from '../../shared/hooks/useMyProfilePicture';
+import {
+  MyProfilePictureState,
+  useMyProfilePictureState,
+} from '../../shared/hooks/useMyProfilePicture';
 import { LoginContext } from '../../shared/contexts/LoginContext';
-import { Cancelers } from '../../shared/lib/cancelers';
 import { easeIn, easeOut } from '../../shared/lib/Bezier';
 import { describeError } from '../../shared/lib/describeError';
 import { apiFetch } from '../../shared/lib/apiFetch';
 import { convertUsingKeymap } from '../../shared/lib/CrudFetcher';
+import { Callbacks } from '../../shared/lib/Callbacks';
+import { ScreenState } from '../../shared/models/ScreenState';
+import { ScreenResources } from '../../shared/models/ScreenResources';
+import { OsehScreen } from '../../shared/models/OsehScreen';
+import { useCurrentDailyEvent } from '../hooks/useCurrentDailyEvent';
+import { SplashScreen } from '../../splash/SplashScreen';
 
-type DailyEventScreenProps = {
+type DailyEventScreenState = ScreenState;
+type DailyEventScreenResources = ScreenResources & {
   /**
-   * The event to show
+   * The event to show, or null if not loaded yet
    */
-  event: DailyEvent;
+  event: DailyEvent | null;
+
+  /**
+   * The state for each journey within the event. When the event
+   * is null, this is an empty list.
+   */
+  loadedJourneys: DailyEventJourneyState[];
+
+  /**
+   * The users profile picture
+   */
+  profilePicture: MyProfilePictureState;
+
+  /**
+   * The error that occurred while loading the event, or null if none
+   */
+  error: ReactElement | null;
+
+  /**
+   * True if a splash screen should be shown to give the user confidence
+   * that we actually reloaded, false if we should just show the event
+   */
+  reloading: boolean;
+
+  /**
+   * A function which can be called to reload the event from the server.
+   */
+  onReload: () => void;
 
   /**
    * The function to call if the user wants to go to their settings
@@ -37,24 +73,93 @@ type DailyEventScreenProps = {
    * @param journey The journey to go to
    */
   onGotoJourney: (journey: JourneyRef) => void;
+};
 
-  /**
-   * The function to call if the user wants to refresh the event
-   */
-  onReload: () => void;
+const emptyArr: [] = [];
 
-  /**
-   * If specified, called when the first screen is ready to be shown.
-   */
-  onReady?: () => void;
+/**
+ * Shows the current daily event, which consists of the journeys of the
+ * day. This screen can also be used to go to settings.
+ *
+ * This screen is required whenever the user is logged in, so it should
+ * typically be the last screen in the stack.
+ */
+export const DailyEventScreen: OsehScreen<
+  DailyEventScreenState,
+  DailyEventScreenResources,
+  object
+> = {
+  useState: () => {
+    const loginContext = useContext(LoginContext);
 
-  /**
-   * If specified, this is the error that should be shown to the user
-   * initially. Useful if the user was trying to do something in a previous
-   * screen and an error occurs preventing the earlier screen from being
-   * displayed.
-   */
-  initialError: ReactElement | null;
+    return useMemo(
+      () => ({
+        required: loginContext.state === 'loading' ? undefined : loginContext.state === 'logged-in',
+      }),
+      [loginContext.state]
+    );
+  },
+  useResources: (state, load) => {
+    const loginContext = useContext(LoginContext);
+    const [reloading, setReloading] = useState(false);
+    const [reloadCounter, setReloadCounter] = useState(0);
+    const [event, eventError] = useCurrentDailyEvent(reloadCounter, load);
+    const loadedJourneys = useDailyEventJourneyStates(event?.journeys ?? emptyArr);
+    const profilePicture = useMyProfilePictureState({
+      loginContext,
+      displayWidth: 48,
+      displayHeight: 48,
+    });
+
+    const onReload = useCallback(() => {
+      if (reloading) {
+        return;
+      }
+
+      setReloading(true);
+      setReloadCounter((c) => c + 1);
+      setTimeout(() => {
+        setReloading(false);
+      }, 1500);
+    }, [reloading]);
+
+    const onGotoSettings = useCallback(() => {
+      // todo use shared state
+    }, []);
+    const onGotoJourney = useCallback(() => {
+      // todo use shared state
+    }, []);
+
+    return useMemo<DailyEventScreenResources>(
+      () => ({
+        loading:
+          (event === null && eventError === null) ||
+          (event !== null && loadedJourneys.some((j) => j.loading)) ||
+          profilePicture.state === 'loading',
+        loadedJourneys,
+        profilePicture,
+        event,
+        error: eventError,
+        reloading,
+        onReload,
+        onGotoSettings,
+        onGotoJourney,
+      }),
+      [
+        event,
+        eventError,
+        reloading,
+        loadedJourneys,
+        onReload,
+        onGotoSettings,
+        onGotoJourney,
+        profilePicture,
+      ]
+    );
+  },
+  component: (state, resources) => (
+    <DailyEventScreenComponent state={state} resources={resources} />
+  ),
 };
 
 /** If we ever try to skip react renders via setNativeProps */
@@ -113,41 +218,36 @@ const createJourneyShuffle = (journeys: DailyEventJourney[]): number[] => {
   return result;
 };
 
-export const DailyEventScreen = ({
-  event,
-  onGotoSettings,
-  onGotoJourney,
-  onReload,
-  onReady,
-  initialError,
-}: DailyEventScreenProps) => {
+const DailyEventScreenComponent = ({
+  resources,
+}: {
+  state: DailyEventScreenState;
+  resources: DailyEventScreenResources;
+}) => {
   const loginContext = useContext(LoginContext);
-  const loadedJourneys = useDailyEventJourneyStates(event.journeys);
-  const profilePicture = useMyProfilePictureState({
-    loginContext,
-    displayWidth: 48,
-    displayHeight: 48,
-  });
   const [layoutSize, setLayoutSize] = useState<{ width: number; height: number }>(
     Dimensions.get('screen')
   );
-  const [error, setError] = useState<ReactElement | null>(initialError);
+  const [error, setError] = useState<ReactElement | null>(resources.error);
 
   const carouselShuffle = useMemo<number[]>(
-    () => createJourneyShuffle(event.journeys),
-    [event.journeys]
+    () => createJourneyShuffle(resources.event?.journeys ?? []),
+    [resources.event?.journeys]
   );
 
   const reorderedJourneys = useMemo(() => {
+    if (resources.event === null) {
+      return [];
+    }
     const result: { journey: DailyEventJourney; state: DailyEventJourneyState }[] = [];
     for (const idx of carouselShuffle) {
       result.push({
-        journey: event.journeys[idx],
-        state: loadedJourneys[idx],
+        journey: resources.event.journeys[idx],
+        state: resources.loadedJourneys[idx],
       });
     }
     return result;
-  }, [event.journeys, carouselShuffle, loadedJourneys]);
+  }, [resources.event, carouselShuffle, resources.loadedJourneys]);
 
   const cardBehindRef = useRef<View>(null);
   const cardInFrontRef = useRef<View>(null);
@@ -409,18 +509,17 @@ export const DailyEventScreen = ({
   }, [waitUntil]);
 
   // pan handling
+  const numJourneys = resources.event?.journeys?.length ?? 0;
   useEffect(() => {
     let active = true;
-    const cancelers = new Cancelers();
+    const cancelers = new Callbacks<undefined>();
     handlePanning();
     const unmount = () => {
       if (!active) {
         return;
       }
       active = false;
-      cancelers.invokeAll({ copy: false }).finally(() => {
-        cancelers.clear();
-      });
+      cancelers.call(undefined);
     };
     return unmount;
 
@@ -474,10 +573,10 @@ export const DailyEventScreen = ({
       function getCorrectBehindCardForDeltaX(dx: number): number {
         if (dx < 0) {
           return renderedCardInFrontIndex.current === 0
-            ? event.journeys.length - 1
+            ? numJourneys - 1
             : renderedCardInFrontIndex.current - 1;
         } else {
-          return renderedCardInFrontIndex.current === event.journeys.length - 1
+          return renderedCardInFrontIndex.current === numJourneys - 1
             ? 0
             : renderedCardInFrontIndex.current + 1;
         }
@@ -600,14 +699,21 @@ export const DailyEventScreen = ({
         handlePanOnceUpdated(panId);
       }
     }
-  }, [event.journeys.length, waitUntil, handleTransition, transitionResetPan]);
+  }, [numJourneys, waitUntil, handleTransition, transitionResetPan]);
 
   const loadingJourney = useRef(false);
   const onStart = useCallback(
     async (journey: DailyEventJourney) => {
-      if (loadingJourney.current || loginContext.state !== 'logged-in') {
+      if (
+        loadingJourney.current ||
+        loginContext.state !== 'logged-in' ||
+        resources.event?.uid === undefined ||
+        resources.event?.jwt === undefined
+      ) {
         return;
       }
+      const eventUid = resources.event.uid;
+      const eventJwt = resources.event.jwt;
 
       loadingJourney.current = true;
       setError(null);
@@ -626,8 +732,8 @@ export const DailyEventScreen = ({
             method: 'POST',
             headers: { 'Content-Type': 'application/json; charset=utf-8' },
             body: JSON.stringify({
-              daily_event_uid: event.uid,
-              daily_event_jwt: event.jwt,
+              daily_event_uid: eventUid,
+              daily_event_jwt: eventJwt,
               journey_uid: journey.uid,
             }),
           },
@@ -640,10 +746,10 @@ export const DailyEventScreen = ({
 
         const data = await response.json();
         const journeyRef = convertUsingKeymap(data, journeyRefKeyMap);
-        onGotoJourney(journeyRef);
+        resources.onGotoJourney.call(undefined, journeyRef);
       }
     },
-    [loginContext, onGotoJourney, event.uid, event.jwt]
+    [loginContext, resources.event?.jwt, resources.event?.uid, resources.onGotoJourney]
   );
 
   const boundOnStart = useMemo(() => {
@@ -663,10 +769,8 @@ export const DailyEventScreen = ({
     gesture.current = new GestureHandler(layoutSize);
   }, [layoutSize]);
 
-  const onReloadRef = useRef(onReload);
-  useEffect(() => {
-    onReloadRef.current = onReload;
-  }, [onReload]);
+  const onReloadRef = useRef(resources.onReload);
+  onReloadRef.current = resources.onReload;
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -748,15 +852,13 @@ export const DailyEventScreen = ({
     });
   }, []);
 
-  useEffect(() => {
-    if (!onReady) {
-      return;
-    }
+  if (resources.event === null) {
+    return <></>;
+  }
 
-    if (!reorderedJourneys.some((j) => j.state.loading)) {
-      onReady();
-    }
-  }, [onReady, reorderedJourneys]);
+  if (resources.reloading) {
+    return <SplashScreen type="brandmark" />;
+  }
 
   return (
     <View style={styles.container} {...panResponder.current.panHandlers}>
@@ -765,11 +867,11 @@ export const DailyEventScreen = ({
       {cardBehindIndex !== null && (
         <View style={cardBehindStyle} ref={cardBehindRef}>
           <DailyEventJourneyCard
-            profilePicture={profilePicture}
+            profilePicture={resources.profilePicture}
             journey={reorderedJourneys[cardBehindIndex].journey}
             state={reorderedJourneys[cardBehindIndex].state}
-            event={event}
-            onGotoSettings={onGotoSettings}
+            event={resources.event}
+            onGotoSettings={resources.onGotoSettings}
             onStart={boundOnStart[cardBehindIndex]}
             onStartRandom={onStartRandom}
             journeyIndex={cardBehindIndex}
@@ -778,11 +880,11 @@ export const DailyEventScreen = ({
       )}
       <View style={cardInFrontStyle} onLayout={onCardInFrontLayout} ref={cardInFrontRef}>
         <DailyEventJourneyCard
-          profilePicture={profilePicture}
+          profilePicture={resources.profilePicture}
           journey={reorderedJourneys[cardInFrontIndex].journey}
           state={reorderedJourneys[cardInFrontIndex].state}
-          event={event}
-          onGotoSettings={onGotoSettings}
+          event={resources.event}
+          onGotoSettings={resources.onGotoSettings}
           onStart={boundOnStart[cardInFrontIndex]}
           onStartRandom={onStartRandom}
           journeyIndex={cardInFrontIndex}

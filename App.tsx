@@ -5,6 +5,7 @@ import { LoginScreen } from './src/login/LoginScreen';
 import { GreedyScreenManager } from './src/shared/components/GreedyScreenManager';
 import { SplashScreen } from './src/splash/SplashScreen';
 import { LoginProvider } from './src/shared/contexts/LoginContext';
+import { DailyEventScreen } from './src/daily_event/screens/DailyEventScreen';
 
 /**
  * The allowed identifiers for screens
@@ -47,8 +48,8 @@ const AppInner = () => {
   });
   const [sharedState, setSharedState] = useState<object>({});
   const loginScreen = useStatefulScreen(LoginScreen, sharedState, setSharedState);
-
-  const screens = useMemo(() => [loginScreen], [loginScreen]);
+  const dailyEventScreen = useStatefulScreen(DailyEventScreen, sharedState, setSharedState);
+  const screens = useMemo(() => [loginScreen, dailyEventScreen], [loginScreen, dailyEventScreen]);
 
   if (!fontsLoaded) {
     return <SplashScreen type="wordmark" />;
