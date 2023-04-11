@@ -17,6 +17,7 @@ export type CancelerIdentifier = {
  * efficient iteration under an expected small number of items. It's expected
  * that typically cancelers are either never removed or they are removed shortly
  * after being added.
+ * @deprecated prefer Callbacks
  */
 export class Cancelers {
   /**

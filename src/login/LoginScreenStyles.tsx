@@ -10,13 +10,14 @@ export const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     backgroundColor: Colors.WHITE,
+    flexDirection: 'column',
     flex: 1,
     justifyContent: 'center',
   },
   content: {
     alignItems: 'stretch',
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
   },
   continueWithApple: {
     alignItems: 'center',
@@ -106,19 +107,19 @@ export const styles = StyleSheet.create({
     paddingRight: 24,
     textAlign: 'center',
   },
-  legal: {
-    color: Colors.WHITE,
-    fontFamily: 'OpenSans-Regular',
-    fontSize: 12,
-    letterSpacing: 0.15,
-    lineHeight: 20,
-    textAlign: 'center',
+  logo: {
+    alignSelf: 'center',
   },
-  legalContainer: {
-    marginLeft: 'auto',
-    marginRight: 'auto',
-    maxWidth: 240,
-    paddingLeft: 24,
-    paddingRight: 24,
+  message: {
+    alignSelf: 'center',
+    color: Colors.WHITE,
+    fontFamily: 'OpenSans-Light',
+    fontSize: 16,
+    letterSpacing: 0.25,
+    lineHeight: 28,
+    marginBottom: 60,
+    marginTop: 32,
+    maxWidth: 262,
+    textAlign: 'center',
   },
 });

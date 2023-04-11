@@ -1,4 +1,4 @@
-import { Buffer } from '@craftzdog/react-native-buffer';
+import { Buffer } from 'buffer';
 
 /**
  * Determines when the JWT expires
@@ -20,4 +20,13 @@ export const getJwtExpiration = (jwt: string): number => {
   }
 
   return payload.exp * 1000;
+};
+
+/**
+ * @param jwt The JWT to check
+ * @returns True if the JWT is expired, false otherwise
+ */
+export const isJWTExpired = (jwt: string): boolean => {
+  const expiration = getJwtExpiration(jwt);
+  return Date.now() >= expiration;
 };

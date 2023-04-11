@@ -1,42 +1,127 @@
-import { StatusBar } from 'expo-status-bar';
 import { ReactElement, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
-import { OsehImageBackground } from '../shared/components/OsehImageBackground';
-import { useScreenSize } from '../shared/hooks/useScreenSize';
-import { styles } from './LoginScreenStyles';
-import Apple from './icons/Apple';
-import Google from './icons/Google';
-import { SplashScreen } from '../splash/SplashScreen';
-import { describeError } from '../shared/lib/describeError';
-import * as WebBrowser from 'expo-web-browser';
-import { apiFetch } from '../shared/lib/apiFetch';
-import { ErrorBanner, ErrorBannerText } from '../shared/components/ErrorBanner';
-import * as Linking from 'expo-linking';
-import { URLSearchParams } from 'react-native-url-polyfill';
 import { LoginContext } from '../shared/contexts/LoginContext';
-import { RSQUO } from '../shared/lib/HtmlEntities';
+import {
+  OsehImageState,
+  OsehImageStateChangedEvent,
+  ensureHandlingImage,
+  removeImageIfPresent,
+  useOsehImageStatesRef,
+} from '../shared/hooks/useOsehImage';
+import { OsehScreen } from '../shared/models/OsehScreen';
+import { ScreenState } from '../shared/models/ScreenState';
+import { useScreenSize } from '../shared/hooks/useScreenSize';
+import { Pressable, ScaledSize, Text, View } from 'react-native';
+import * as Linking from 'expo-linking';
+import { apiFetch } from '../shared/lib/apiFetch';
+import * as WebBrowser from 'expo-web-browser';
+import { ErrorBanner, ErrorBannerText } from '../shared/components/ErrorBanner';
+import { describeError } from '../shared/lib/describeError';
+import { styles } from './LoginScreenStyles';
 import Constants from 'expo-constants';
+import { SplashScreen } from '../splash/SplashScreen';
+import { OsehImageBackgroundFromState } from '../shared/components/OsehImageBackgroundFromState';
+import Google from './icons/Google';
+import Apple from './icons/Apple';
+import { StatusBar } from 'expo-status-bar';
+import OsehBrandmarkWhite from './icons/OsehBrandmarkWhite';
+
+type LoginScreenState = ScreenState & {
+  /**
+   * True if the user logged in and hasn't gone through onboarding,
+   * false if the user either was already logged in or logged in and has already
+   * gone through onboarding, undefined if unsure.
+   */
+  onboard: boolean | undefined;
+
+  /**
+   * Called to set the onboard value. This should only be used by components
+   * reacting to new login JWTs or by components which manage the onboarding
+   * process
+   */
+  setOnboard: (onboard: boolean) => void;
+};
+type LoginScreenResources = {
+  background: OsehImageState | null;
+  windowSize: ScaledSize;
+  loading: boolean;
+};
+
+/**
+ * Presents the user with the ability to login when they are logged out.
+ */
+export const LoginScreen: OsehScreen<LoginScreenState, LoginScreenResources, object> = {
+  useState() {
+    const loginContext = useContext(LoginContext);
+    const [onboard, setOnboard] = useState<boolean>(false);
+
+    return useMemo(
+      () => ({
+        required: loginContext.state === 'loading' ? undefined : loginContext.state !== 'logged-in',
+        onboard: loginContext.state === 'loading' ? undefined : onboard,
+        setOnboard,
+      }),
+      [loginContext.state, onboard]
+    );
+  },
+
+  useResources(state, load) {
+    const windowSize = useScreenSize();
+    const images = useOsehImageStatesRef({});
+    const [background, setBackground] = useState<OsehImageState | null>(null);
+
+    const backgroundUid =
+      windowSize.width < 450 ? 'oseh_if_ds8R1NIo4ch3pD7vBRT2cg' : 'oseh_if_hH68hcmVBYHanoivLMgstg';
+
+    useEffect(() => {
+      if (!load) {
+        return;
+      }
+
+      ensureHandlingImage(images, backgroundUid, {
+        uid: backgroundUid,
+        jwt: null,
+        displayWidth: windowSize.width,
+        displayHeight: windowSize.height,
+        isPublic: true,
+        alt: '',
+      });
+      const newState = images.state.current.get(backgroundUid);
+      if (newState !== undefined) {
+        setBackground(newState);
+      } else {
+        setBackground(null);
+      }
+      images.onStateChanged.current.add(handleStateChanged);
+
+      return () => {
+        images.onStateChanged.current.remove(handleStateChanged);
+        removeImageIfPresent(images, backgroundUid);
+        setBackground(null);
+      };
+
+      function handleStateChanged(e: OsehImageStateChangedEvent) {
+        if (e.uid !== backgroundUid) {
+          return;
+        }
+
+        setBackground(e.current);
+      }
+    }, [load, backgroundUid, images, windowSize]);
+
+    return useMemo(
+      () => ({
+        background,
+        windowSize,
+        loading: background === null || background.loading,
+      }),
+      [background, windowSize]
+    );
+  },
+
+  component: (state, resources) => <LoginScreenComponent state={state} resources={resources} />,
+};
 
 const DEV_ACCOUNT_USER_IDENTITY_ID = 'guest9833';
-
-type LoginScreenProps = {
-  /**
-   * Called after the user successfully logs in.
-   *
-   * @param onboard True if the user should be directed through the onboarding flow, false otherwise
-   */
-  onLogin: (onboard: boolean) => void;
-
-  /**
-   * If specified, acts as the initial error message to display.
-   */
-  initialError: ReactElement | null;
-
-  /**
-   * If specified, called when the first screen is ready to be shown.
-   */
-  onReady?: () => void;
-};
 
 const prepareLink = async (
   provider: 'Google' | 'SignInWithApple'
@@ -66,24 +151,19 @@ const prepareLink = async (
   return { url: data.url, redirectUrl };
 };
 
-/**
- * Allows the user to login. The user should not be directed here if they
- * are already logged in, but if they are, this will allow them to login to
- * a new account, potentially skipping some of our standard logout process.
- *
- * This assumes that fonts have already been loaded. Requires the login context.
- *
- * In development, the user can tap the legal text to use a test account.
- */
-export const LoginScreen = ({ onLogin, initialError, onReady }: LoginScreenProps): ReactElement => {
+const LoginScreenComponent = ({
+  state,
+  resources,
+}: {
+  state: LoginScreenState;
+  resources: LoginScreenResources;
+}) => {
   const loginContext = useContext(LoginContext);
-  const dims = useScreenSize();
+  const [error, setError] = useState<ReactElement | null>(null);
   const [pressingGoogle, setPressingGoogle] = useState(false);
   const [pressingApple, setPressingApple] = useState(false);
   const [goingToGoogle, setGoingToGoogle] = useState(false);
   const [goingToApple, setGoingToApple] = useState(false);
-  const [error, setError] = useState<ReactElement | null>(initialError);
-  const [backgroundLoading, setBackgroundLoading] = useState(true);
 
   const onGooglePressIn = useCallback(() => {
     setPressingGoogle(true);
@@ -155,12 +235,12 @@ export const LoginScreen = ({ onLogin, initialError, onReady }: LoginScreenProps
         };
 
         loginContext.setAuthTokens.apply(undefined, [tokenResponse]);
-        onLogin(onboard);
+        state.setOnboard.call(undefined, onboard);
       } catch (e) {
         setError(await describeError(e));
       }
     },
-    [loginContext.setAuthTokens, onLogin]
+    [loginContext.setAuthTokens, state.setOnboard]
   );
 
   const onContinueWithGoogle = useCallback(async () => {
@@ -197,13 +277,7 @@ export const LoginScreen = ({ onLogin, initialError, onReady }: LoginScreenProps
     );
   }, [pressingApple]);
 
-  useEffect(() => {
-    if (onReady && !backgroundLoading) {
-      onReady();
-    }
-  }, [backgroundLoading, onReady]);
-
-  const onPressLegal = useCallback(async () => {
+  const onPressMessage = useCallback(async () => {
     if (Constants.expoConfig?.extra?.environment !== 'dev') {
       return;
     }
@@ -235,11 +309,11 @@ export const LoginScreen = ({ onLogin, initialError, onReady }: LoginScreenProps
         idToken: data.id_token,
         refreshToken: data.refresh_token,
       });
-      onLogin(data.onboard);
+      state.setOnboard.call(undefined, data.onboard);
     } catch (e) {
       setError(await describeError(e));
     }
-  }, [loginContext, onLogin]);
+  }, [loginContext, state.setOnboard]);
 
   if (goingToApple || goingToGoogle) {
     if (pressingApple) {
@@ -251,19 +325,18 @@ export const LoginScreen = ({ onLogin, initialError, onReady }: LoginScreenProps
     return <SplashScreen />;
   }
 
+  if (resources.background === null) {
+    return <></>;
+  }
+
   return (
     <View style={styles.container}>
       {error}
-      <OsehImageBackground
-        uid="oseh_if_hH68hcmVBYHanoivLMgstg"
-        jwt={null}
-        displayWidth={dims.width}
-        displayHeight={dims.height}
-        alt=""
-        isPublic={true}
-        style={styles.content}
-        setLoading={setBackgroundLoading}>
-        <Text style={styles.header}>Sign in with your social account</Text>
+      <OsehImageBackgroundFromState state={resources.background} style={styles.content}>
+        <OsehBrandmarkWhite width={163} height={40} style={styles.logo} />
+        <Text style={styles.message} onPress={onPressMessage}>
+          Make mindfulness a daily part of your life in 60 seconds.
+        </Text>
         <View style={styles.continueWithGoogleContainer}>
           <Pressable
             style={googleStyles}
@@ -284,12 +357,7 @@ export const LoginScreen = ({ onLogin, initialError, onReady }: LoginScreenProps
             <Text style={styles.continueWithAppleText}>Continue with Apple</Text>
           </Pressable>
         </View>
-        <Pressable style={styles.legalContainer} onPress={onPressLegal}>
-          <Text style={styles.legal}>
-            We won{RSQUO}t post to any of your accounts without asking first.
-          </Text>
-        </Pressable>
-      </OsehImageBackground>
+      </OsehImageBackgroundFromState>
       <StatusBar style="light" />
     </View>
   );
