@@ -31,6 +31,7 @@
     ],
     "rules": {
       "react-native/no-raw-text": [2, { "skip": ["ErrorBannerText"] }],
+      "no-async-promise-executor": 0,
       "no-constant-condition": 0,
       "@typescript-eslint/no-explicit-any": 0
     }

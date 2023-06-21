@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { LoginContextValue } from '../contexts/LoginContext';
 import { apiFetch } from '../lib/apiFetch';
-import { OsehImageRef, OsehImageState, useOsehImageState } from './useOsehImage';
+import { OsehImageState } from '../images/OsehImageState';
+import { OsehImageRef } from '../images/OsehImageRef';
+import { useOsehImageState } from '../images/useOsehImageState';
+import { useOsehImageStateRequestHandler } from '../images/useOsehImageStateRequestHandler';
 
 type MyProfilePictureStateProps = {
   /**
@@ -36,19 +39,16 @@ export const useMyProfilePictureState = ({
   displayWidth,
   displayHeight,
 }: MyProfilePictureStateProps): MyProfilePictureState => {
+  const images = useOsehImageStateRequestHandler({});
   const [imgRef, setImgRef] = useState<{ sub: string; img: OsehImageRef } | null>(null);
   const [loadingImageRefFailed, setLoadingImageRefFailed] = useState<string | null>(null);
-  const imgArgs = useMemo(
-    () => ({
-      uid: imgRef?.img?.uid ?? null,
-      jwt: imgRef?.img?.jwt ?? null,
-      displayWidth,
-      displayHeight,
-      alt: 'Profile',
-    }),
-    [imgRef?.img?.uid, imgRef?.img?.jwt, displayWidth, displayHeight]
-  );
-  const img = useOsehImageState(imgArgs);
+  const img = useOsehImageState({
+    uid: imgRef?.img?.uid ?? null,
+    jwt: imgRef?.img?.jwt ?? null,
+    displayWidth,
+    displayHeight,
+    alt: 'Profile',
+  }, images);
 
   useEffect(() => {
     if (loginContext.state !== 'logged-in' || loginContext.userAttributes === null) {

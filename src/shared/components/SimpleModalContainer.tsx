@@ -6,7 +6,7 @@ import {
   Pressable,
   View,
 } from 'react-native';
-import { useScreenSize } from '../hooks/useScreenSize';
+import { useScreenSize } from '../hooks/useWindowSize';
 import { useTopBarHeight } from '../hooks/useTopBarHeight';
 import { styles } from './SimpleModalContainerStyles';
 

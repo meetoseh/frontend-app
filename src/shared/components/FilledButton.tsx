@@ -1,7 +1,14 @@
-import { PropsWithChildren, ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, TextStyle, ViewStyle } from 'react-native';
-import { useScreenSize } from '../hooks/useScreenSize';
-import { CustomButtonProps } from '../models/CustomButtonProps';
+import {
+  PropsWithChildren,
+  ReactElement,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { Pressable, TextStyle, ViewStyle } from "react-native";
+import { CustomButtonProps } from "../models/CustomButtonProps";
+import { useWindowSize } from "../hooks/useWindowSize";
 
 /**
  * A basic filled button using the given styles.
@@ -28,7 +35,7 @@ export const FilledButton = ({
     };
   }
 >): ReactElement => {
-  const screenSize = useScreenSize();
+  const screenSize = useWindowSize();
   const handlePress = useCallback(() => {
     if (!disabled) {
       onPress?.();
@@ -49,7 +56,9 @@ export const FilledButton = ({
     return Object.assign(
       {},
       styles.container,
-      ...(fullWidth ? [{ width: screenSize.width - 48, marginLeft: 24, marginRight: 24 }] : []),
+      ...(fullWidth
+        ? [{ width: screenSize.width - 48, marginLeft: 24, marginRight: 24 }]
+        : []),
       ...(marginTop ? [{ marginTop }] : []),
       ...(pressed ? [styles.pressed] : []),
       ...(disabled ? [styles.disabled] : [])
@@ -102,7 +111,8 @@ export const FilledButton = ({
       onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      style={containerStyles}>
+      style={containerStyles}
+    >
       {children}
     </Pressable>
   );

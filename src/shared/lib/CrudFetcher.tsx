@@ -1,6 +1,6 @@
-import { Dispatch, SetStateAction } from 'react';
-import { apiFetch } from './apiFetch';
-import { LoginContextValue } from '../contexts/LoginContext';
+import { Dispatch, SetStateAction } from "react";
+import { apiFetch } from "./apiFetch";
+import { LoginContextValue } from "../contexts/LoginContext";
 
 type MappedKey<T> = {
   key: string & keyof T;
@@ -8,11 +8,13 @@ type MappedKey<T> = {
 };
 
 export type CrudFetcherKeyMap<T> = {
-  [key: string]: (string & keyof T) | ((key: string, value: any) => MappedKey<T>);
+  [key: string]:
+    | (string & keyof T)
+    | ((key: string, value: any) => MappedKey<T>);
 };
 type SortItem = {
   key: string;
-  dir: 'asc' | 'desc';
+  dir: "asc" | "desc";
   before: any;
   after: any;
 };
@@ -34,12 +36,15 @@ export type CrudFetcherFilter = { [key: string]: FilterItem };
  * @param keyMap The key map to use
  * @returns The converted object
  */
-export function convertUsingKeymap<T>(raw: any, keyMap: CrudFetcherKeyMap<T>): T {
+export function convertUsingKeymap<T>(
+  raw: any,
+  keyMap: CrudFetcherKeyMap<T>
+): T {
   const result: any = {};
   for (const key in raw) {
     if (key in keyMap) {
       const value = keyMap[key];
-      if (typeof value === 'string') {
+      if (typeof value === "string") {
         result[value] = raw[key];
       } else {
         const mapped = value(key, raw[key]);
@@ -215,7 +220,7 @@ export class CrudFetcher<T> {
   ): Promise<{ items: T[]; nextOrPrevPageSort: CrudFetcherSort | null }> {
     const handleAborted = () => {
       if (this.counter !== id || (signal && signal.aborted)) {
-        throw new Error('aborted');
+        throw new Error("aborted");
       }
     };
     handleAborted();
@@ -225,9 +230,9 @@ export class CrudFetcher<T> {
       response = await apiFetch(
         this.path,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json; charset=utf-8',
+            "Content-Type": "application/json; charset=utf-8",
           },
           body: JSON.stringify({
             filters,
@@ -239,8 +244,8 @@ export class CrudFetcher<T> {
         loginContext
       );
     } catch (e: any) {
-      if (e !== null && e !== undefined && e.name === 'AbortError') {
-        throw new Error('aborted');
+      if (e !== null && e !== undefined && e.name === "AbortError") {
+        throw new Error("aborted");
       }
       throw e;
     }
@@ -254,8 +259,8 @@ export class CrudFetcher<T> {
     try {
       json = await response.json();
     } catch (e: any) {
-      if (e !== null && e !== undefined && e.name === 'AbortError') {
-        throw new Error('aborted');
+      if (e !== null && e !== undefined && e.name === "AbortError") {
+        throw new Error("aborted");
       }
       throw e;
     }
@@ -281,7 +286,7 @@ export class CrudFetcher<T> {
     }
     this.setLoading(true);
 
-    if (window.AbortController === undefined || window.AbortController === null) {
+    if (AbortController === undefined || AbortController === null) {
       return { id, signal: null };
     }
 
@@ -359,7 +364,7 @@ export class CrudFetcher<T> {
       this.nextPageSort = nextPageSort;
       this.setHaveMore(nextPageSort !== null);
     } catch (e: any) {
-      if (e !== null && e !== undefined && e.message === 'aborted') {
+      if (e !== null && e !== undefined && e.message === "aborted") {
         return;
       }
       throw e;
@@ -423,7 +428,7 @@ export class CrudFetcher<T> {
         this.nextPageSort = nextPageSort;
         this.setHaveMore(nextPageSort !== null);
       } catch (e: any) {
-        if (e !== null && e !== undefined && e.message === 'aborted') {
+        if (e !== null && e !== undefined && e.message === "aborted") {
           return;
         }
         onError(e);
