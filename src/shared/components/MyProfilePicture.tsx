@@ -8,13 +8,13 @@ import { ImageStyle, StyleProp } from "react-native";
 type MyProfilePictureProps = {
   /**
    * Desired display width
-   * @default 60
+   * @default 45
    */
   displayWidth?: number;
 
   /**
    * Desired display height
-   * @default 60
+   * @default 45
    */
   displayHeight?: number;
 
@@ -31,13 +31,13 @@ type MyProfilePictureProps = {
 };
 
 /**
- * Shows the users profile picture as a 60x60 image. Requires a login
+ * Shows the users profile picture as a 45x45 image. Requires a login
  * context. Returns an empty fragment if the user doesn't have a profile
  * picture.
  */
 export const MyProfilePicture = ({
-  displayWidth = 60,
-  displayHeight = 60,
+  displayWidth = 45,
+  displayHeight = 45,
   imageHandler,
   style,
 }: MyProfilePictureProps): ReactElement => {

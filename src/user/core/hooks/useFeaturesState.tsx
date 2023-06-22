@@ -2,6 +2,7 @@ import { ReactElement, useMemo, useRef } from "react";
 import { FeatureAllStates } from "../models/FeatureAllStates";
 import { RequestNameFeature } from "../features/requestName/RequestNameFeature";
 import { LoginFeature } from "../features/login/LoginFeature";
+import { PickEmotionJourneyFeature } from "../features/pickEmotionJourney/PickEmotionJourneyFeature";
 
 export type FeaturesState = {
   /**
@@ -21,7 +22,7 @@ export type FeaturesState = {
   feature: ReactElement | null;
 };
 
-const features = [LoginFeature, RequestNameFeature];
+const features = [LoginFeature, RequestNameFeature, PickEmotionJourneyFeature];
 
 /**
  * Determines the current state of the various features the app supports. Once
