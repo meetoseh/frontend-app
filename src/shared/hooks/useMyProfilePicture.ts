@@ -4,7 +4,7 @@ import { apiFetch } from '../lib/apiFetch';
 import { OsehImageState } from '../images/OsehImageState';
 import { OsehImageRef } from '../images/OsehImageRef';
 import { useOsehImageState } from '../images/useOsehImageState';
-import { useOsehImageStateRequestHandler } from '../images/useOsehImageStateRequestHandler';
+import { OsehImageStateRequestHandler } from '../images/useOsehImageStateRequestHandler';
 
 type MyProfilePictureStateProps = {
   /**
@@ -22,6 +22,17 @@ type MyProfilePictureStateProps = {
    * Desired display height of the image
    */
   displayHeight: number;
+
+  /**
+   * The image handler to use
+   */
+  handler: OsehImageStateRequestHandler;
+
+  /**
+   * True or undefined if the image should be loaded, false if it should
+   * not be loaded. Allows conditional loading of the image.
+   */
+  load?: boolean;
 };
 
 export type MyProfilePictureState =
@@ -38,20 +49,24 @@ export const useMyProfilePictureState = ({
   loginContext,
   displayWidth,
   displayHeight,
+  handler,
+  load = true,
 }: MyProfilePictureStateProps): MyProfilePictureState => {
-  const images = useOsehImageStateRequestHandler({});
   const [imgRef, setImgRef] = useState<{ sub: string; img: OsehImageRef } | null>(null);
   const [loadingImageRefFailed, setLoadingImageRefFailed] = useState<string | null>(null);
-  const img = useOsehImageState({
-    uid: imgRef?.img?.uid ?? null,
-    jwt: imgRef?.img?.jwt ?? null,
-    displayWidth,
-    displayHeight,
-    alt: 'Profile',
-  }, images);
+  const img = useOsehImageState(
+    {
+      uid: imgRef?.img?.uid ?? null,
+      jwt: imgRef?.img?.jwt ?? null,
+      displayWidth,
+      displayHeight,
+      alt: 'Profile',
+    },
+    handler
+  );
 
   useEffect(() => {
-    if (loginContext.state !== 'logged-in' || loginContext.userAttributes === null) {
+    if (loginContext.state !== 'logged-in' || loginContext.userAttributes === null || !load) {
       setImgRef(null);
       return;
     }
@@ -84,8 +99,9 @@ export const useMyProfilePictureState = ({
         }
         if (!response.ok) {
           if (response.status === 404) {
-            if (retryCounter < 1) {
-              setTimeout(getImageRef.bind(undefined, retryCounter + 1), 10000);
+            const data = await response.json();
+            if (data.type !== 'not_available' && retryCounter < 2) {
+              setTimeout(getImageRef.bind(undefined, retryCounter + 1), 2500);
             } else {
               setLoadingImageRefFailed(userSub);
             }
@@ -112,7 +128,7 @@ export const useMyProfilePictureState = ({
         setLoadingImageRefFailed(userSub);
       }
     }
-  }, [loginContext, imgRef, loadingImageRefFailed]);
+  }, [loginContext, imgRef, loadingImageRefFailed, load]);
 
   return useMemo(() => {
     if (loadingImageRefFailed) {
