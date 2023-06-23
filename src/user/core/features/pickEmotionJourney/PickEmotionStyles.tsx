@@ -63,4 +63,11 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.WHITE,
   },
+  words: {
+    position: "relative",
+  },
+  wordText: {
+    color: Colors.WHITE,
+    fontFamily: "OpenSans-Regular",
+  },
 });
