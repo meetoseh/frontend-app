@@ -438,9 +438,14 @@ export const LinearGradientBackground = ({
 }: React.PropsWithChildren<LinearGradientProps>) => {
   const containerRef = useRef<View>(null);
   const backgroundRef = useRef<View>(null);
-  const size = useWritableValueWithCallbacks<{ width: number; height: number }>(
-    { width: 0, height: 0 }
-  );
+  const trueSize = useWritableValueWithCallbacks<{
+    width: number;
+    height: number;
+  }>({ width: 0, height: 0 });
+  const renderedSize = useWritableValueWithCallbacks<{
+    width: number;
+    height: number;
+  }>({ width: 0, height: 0 });
   const state = useAdaptedVariableStrategyProps(stateRaw);
 
   const rerender = useCallback(() => {
@@ -448,8 +453,7 @@ export const LinearGradientBackground = ({
       return;
     }
 
-    const currentState = state.get();
-    const currentSize = size.get();
+    const currentSize = renderedSize.get();
 
     backgroundRef.current.setNativeProps({
       style: {
@@ -458,7 +462,7 @@ export const LinearGradientBackground = ({
         height: currentSize.height,
       },
     });
-  }, [state, size]);
+  }, [state, trueSize]);
 
   const onContainerLayout = useCallback((e: LayoutChangeEvent) => {
     if (
@@ -467,20 +471,30 @@ export const LinearGradientBackground = ({
     ) {
       const width = e.nativeEvent.layout.width;
       const height = e.nativeEvent.layout.height;
-      size.set({ width, height });
-      size.callbacks.call(undefined);
+      trueSize.set({ width, height });
+      trueSize.callbacks.call(undefined);
+    }
+  }, []);
+
+  useEffect(() => {
+    // it's very laggy to resize our background and it might not matter at all if we're
+    // a constant color anyway.
+    const current = renderedSize.get();
+    if (current.width !== 1 || current.height !== 1) {
+      renderedSize.set({ width: 1, height: 1 });
+      renderedSize.callbacks.call(undefined);
     }
   }, []);
 
   useEffect(() => {
     state.callbacks.add(rerender);
-    size.callbacks.add(rerender);
+    renderedSize.callbacks.add(rerender);
 
     return () => {
       state.callbacks.remove(rerender);
-      size.callbacks.remove(rerender);
+      renderedSize.callbacks.remove(rerender);
     };
-  }, [state, size, rerender]);
+  }, [state, trueSize, rerender]);
 
   return (
     <View
@@ -498,8 +512,8 @@ export const LinearGradientBackground = ({
           renderer={LinearGradientRenderer}
           props={state.get}
           propsChanged={state.callbacks}
-          size={size.get}
-          sizeChanged={size.callbacks}
+          size={renderedSize.get}
+          sizeChanged={renderedSize.callbacks}
         />
       </View>
       {children}
