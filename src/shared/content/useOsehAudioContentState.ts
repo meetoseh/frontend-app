@@ -14,6 +14,11 @@ export const useOsehAudioContentState = (target: OsehContentTarget): OsehAudioCo
   const audioCallbacksRef = useRef<Callbacks<undefined>>() as MutableRefObject<
     Callbacks<undefined>
   >;
+
+  if (audioCallbacksRef.current === undefined) {
+    audioCallbacksRef.current = new Callbacks();
+  }
+
   const [play, setPlayRaw] = useState<((this: void) => Promise<void>) | null>(null);
   const [stop, setStopRaw] = useState<((this: void) => Promise<void>) | null>(null);
 
