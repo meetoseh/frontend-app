@@ -192,7 +192,7 @@ export function SinglePassWebGLComponent<
   }>(() => size());
   const glView = useRef<GLView>(null);
   const glContext =
-    useWritableValueWithCallbacks<ExpoWebGLRenderingContext | null>(null);
+    useWritableValueWithCallbacks<ExpoWebGLRenderingContext | null>(() => null);
   const onGlContextCreate = useCallback(
     (gl: ExpoWebGLRenderingContext) => {
       glContext.set(gl);

@@ -1,4 +1,4 @@
-import { ReactElement, useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { OsehContentProps } from "./OsehContentProps";
 import {
   ContentFileNativeExport,
@@ -31,23 +31,35 @@ export const useOsehContentTarget = ({
       };
     }
 
-    const path = Platform.select({
-      ios: `/api/1/content_files/${uid}/ios.m3u8`,
-      android: `/api/1/content_files/${uid}/android.m3u8`,
-    });
-
-    if (path === undefined) {
-      throw new Error("Unsupported platform for audio content");
-    }
-
     return {
       state: "loaded",
       error: null,
-      nativeExport: {
-        url: `${HTTP_API_URL}${path}` + (presign ? "?jwt=" + jwt : ""),
-      },
+      nativeExport: getNativeExport(uid, jwt, presign),
       presigned: presign,
       jwt,
     };
   }, [uid, jwt, presign]);
+};
+
+/**
+ * Fetches the native export for a content file with the given uid and jwt,
+ * presigning as requested.
+ */
+export const getNativeExport = (
+  uid: string,
+  jwt: string,
+  presign: boolean
+): ContentFileNativeExport => {
+  const path = Platform.select({
+    ios: `/api/1/content_files/${uid}/ios.m3u8`,
+    android: `/api/1/content_files/${uid}/android.m3u8`,
+  });
+
+  if (path === undefined) {
+    throw new Error("Unsupported platform for audio content");
+  }
+
+  return {
+    url: `${HTTP_API_URL}${path}` + (presign ? "?jwt=" + jwt : ""),
+  };
 };

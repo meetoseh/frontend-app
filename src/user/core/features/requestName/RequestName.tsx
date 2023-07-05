@@ -10,15 +10,15 @@ import { RSQUO } from "../../../../shared/lib/HtmlEntities";
 import { OsehTextInput } from "../../../../shared/forms/OsehTextInput";
 import { apiFetch } from "../../../../shared/lib/apiFetch";
 import { describeError } from "../../../../shared/lib/describeError";
-import { FilledButton } from "../../../../shared/components/FilledButton";
 import { FilledPrimaryButton } from "../../../../shared/components/FilledPrimaryButton";
+import { useUnwrappedValueWithCallbacks } from "../../../../shared/hooks/useUnwrappedValueWithCallbacks";
+import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
 
 /**
  * Prompts the user their name.
  */
 export const RequestName = ({
   resources,
-  doAnticipateState,
 }: FeatureComponentProps<
   RequestNameState,
   RequestNameResources
@@ -27,65 +27,62 @@ export const RequestName = ({
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [error, setError] = useState<ReactElement | null>(null);
+  const [saving, setSaving] = useState(false);
+
   const [saveTextStyle, setSaveTextStyle] = useState<StyleProp<TextStyle>>(
     () => ({})
   );
-  const [saving, setSaving] = useState(false);
 
   const onSubmit = useCallback(async () => {
-    doAnticipateState(
-      {
-        givenName: firstName,
-      },
-      (async () => {
-        setSaving(true);
-        try {
-          const response = await apiFetch(
-            "/api/1/users/me/attributes/name",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json; charset=utf-8",
-              },
-              body: JSON.stringify({
-                given_name: firstName,
-                family_name: lastName,
-              }),
-            },
-            loginContext
-          );
+    setSaving(true);
+    try {
+      const response = await apiFetch(
+        "/api/1/users/me/attributes/name",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+          },
+          body: JSON.stringify({
+            given_name: firstName,
+            family_name: lastName,
+          }),
+        },
+        loginContext
+      );
 
-          if (!response.ok) {
-            throw response;
-          }
+      if (!response.ok) {
+        throw response;
+      }
 
-          const data: { given_name: string; family_name: string } =
-            await response.json();
-          if (loginContext.userAttributes !== null) {
-            loginContext.setUserAttributes({
-              ...loginContext.userAttributes,
-              name: data.given_name + " " + data.family_name,
-              givenName: data.given_name,
-              familyName: data.family_name,
-            });
-          }
-        } catch (e) {
-          console.error(e);
-          const err = await describeError(e);
-          setError(err);
-          throw new Error("Network request failed");
-        } finally {
-          setSaving(false);
-        }
-      })()
-    );
-  }, [loginContext, firstName, lastName, doAnticipateState]);
+      const data: { given_name: string; family_name: string } =
+        await response.json();
+      if (loginContext.userAttributes !== null) {
+        loginContext.setUserAttributes({
+          ...loginContext.userAttributes,
+          name: data.given_name + " " + data.family_name,
+          givenName: data.given_name,
+          familyName: data.family_name,
+        });
+      }
+    } catch (e) {
+      console.error(e);
+      const err = await describeError(e);
+      setError(err);
+      throw new Error("Network request failed");
+    } finally {
+      setSaving(false);
+    }
+  }, [loginContext, firstName, lastName]);
 
   return (
     <OsehImageBackgroundFromState
-      state={resources.background}
+      state={useUnwrappedValueWithCallbacks(
+        useMappedValueWithCallbacks(resources, (r) => r.background)
+      )}
       style={styles.container}
     >
+      {error}
       <Text style={styles.title}>What{RSQUO}s Your Name?</Text>
       <OsehTextInput
         type="text"

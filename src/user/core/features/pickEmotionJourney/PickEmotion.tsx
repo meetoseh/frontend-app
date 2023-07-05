@@ -17,23 +17,23 @@ import { OsehImageFromState } from "../../../../shared/images/OsehImageFromState
 import { LoginContext } from "../../../../shared/contexts/LoginContext";
 import EmptyHeart from "./icons/EmptyHeart";
 import {
-  Callbacks,
   ValueWithCallbacks,
   WritableValueWithCallbacks,
   useWritableValueWithCallbacks,
 } from "../../../../shared/lib/Callbacks";
-import {
-  TrivialAnimator,
-  VariableStrategyProps,
-  inferAnimators,
-} from "../../../../shared/anim/AnimationLoop";
+import { inferAnimators } from "../../../../shared/anim/AnimationLoop";
 import { ease } from "../../../../shared/lib/Bezier";
 import { useAnimatedValueWithCallbacks } from "../../../../shared/anim/useAnimatedValueWithCallbacks";
-import { useWindowSize } from "../../../../shared/hooks/useWindowSize";
+import { useWindowSizeValueWithCallbacks } from "../../../../shared/hooks/useWindowSize";
 import {
   LinearGradientBackground,
   LinearGradientState,
 } from "../../../../shared/anim/LinearGradientBackground";
+import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
+import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMappedValuesWithCallbacks";
+import { useUnwrappedValueWithCallbacks } from "../../../../shared/hooks/useUnwrappedValueWithCallbacks";
+import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
+import { VariableStrategyProps } from "../../../../shared/anim/VariableStrategyProps";
 
 /**
  * Allows the user to pick an emotion and then go to that class
@@ -47,72 +47,136 @@ export const PickEmotion = ({
   gotoJourney: () => void;
 }): ReactElement => {
   const loginContext = useContext(LoginContext);
-  const words = useMemo(
-    () => resources.options?.words?.map((opt) => opt.word) ?? [],
-    [resources.options]
-  );
-  const [tentativelyPressedIndex, setTentativelyPressedIndex] = useState<
-    number | null
-  >(null);
-  const pressed = useMemo<{
-    index: number;
-    votes: number | null;
-  } | null>(() => {
-    if (resources.options === null) {
-      return null;
-    }
-
-    if (resources.selected !== null) {
-      const sel = resources.selected;
-
-      const idx = resources.options.words.findIndex(
-        (opt) => opt.word === sel.word.word
-      );
-      if (idx < 0) {
+  const selectedInfoVWC = useMappedValueWithCallbacks(
+    resources,
+    (r) => {
+      if (r.selected === null || r.options === null) {
         return null;
       }
 
+      const sel = r.selected;
+
       return {
-        index: idx,
-        votes: resources.selected.numVotes,
+        word: sel.word.word,
+        index: r.options.words.findIndex((opt) => opt.word === sel.word.word),
+        numVotes: sel.numVotes,
       };
+    },
+    {
+      outputEqualityFn: (a, b) => {
+        if (a === null || b === null) {
+          return a === b;
+        }
+
+        return (
+          a.word === b.word && a.numVotes === b.numVotes && a.index === b.index
+        );
+      },
     }
-
-    if (tentativelyPressedIndex !== null) {
-      return {
-        index: tentativelyPressedIndex,
-        votes: null,
-      };
+  );
+  const wordsVWC = useMappedValueWithCallbacks(
+    resources,
+    (r) => {
+      const res = r.options?.words?.map((opt) => opt.word) ?? [];
+      return res;
+    },
+    {
+      outputEqualityFn: (a, b) => {
+        return a.length === b.length && a.every((v, i) => v === b[i]);
+      },
     }
+  );
+  const tentativelyPressedVWC = useWritableValueWithCallbacks<number | null>(
+    () => null
+  );
+  const visuallyPressedVWC = useMappedValuesWithCallbacks(
+    [selectedInfoVWC, tentativelyPressedVWC, wordsVWC],
+    () => {
+      const selected = selectedInfoVWC.get();
+      const tentativelyPressed = tentativelyPressedVWC.get();
+      const words = wordsVWC.get();
 
-    return null;
-  }, [resources.selected, resources.options, tentativelyPressedIndex]);
+      if (selected !== null) {
+        return {
+          index: selected.index,
+          votes: selected.numVotes,
+        };
+      }
 
-  const windowSize = useWindowSize();
+      if (tentativelyPressed !== null && tentativelyPressed < words.length) {
+        return {
+          index: tentativelyPressed,
+          votes: 0,
+        };
+      }
+
+      return null;
+    },
+    {
+      outputEqualityFn: (a, b) => {
+        if (a === null || b === null) {
+          return a === b;
+        }
+
+        return a.votes === b.votes && a.index === b.index;
+      },
+    }
+  );
+  const windowSizeVWC = useWindowSizeValueWithCallbacks();
 
   const onWordClick = useCallback(
     (word: string, index: number) => {
-      setTentativelyPressedIndex(index);
-      resources.onSelect.call(undefined, resources.options!.words[index]);
+      const res = resources.get();
+      if (res.options !== null && index < res.options.words.length) {
+        const emotion = res.options.words[index];
+        tentativelyPressedVWC.set(index);
+        tentativelyPressedVWC.callbacks.call(undefined);
+        res.onSelect.call(undefined, emotion);
+      }
     },
-    [resources.onSelect, resources.options]
+    [tentativelyPressedVWC, resources]
   );
+
+  const error = useUnwrappedValueWithCallbacks(
+    useMappedValueWithCallbacks(resources, (r) => r.error)
+  );
+  const background = useUnwrappedValueWithCallbacks(
+    useMappedValueWithCallbacks(resources, (r) => r.background)
+  );
+  const profilePicture = useMappedValueWithCallbacks(
+    resources,
+    (r) => r.profilePicture
+  );
+
+  const layoutVWC = useMappedValueWithCallbacks(
+    tentativelyPressedVWC,
+    (tp): "horizontal" | "vertical" => {
+      return tp === null ? "horizontal" : "vertical";
+    }
+  );
+
+  usePerformanceTestingEffect(tentativelyPressedVWC);
 
   return (
     <View style={styles.container}>
-      {resources.error}
-      <OsehImageBackgroundFromState
-        state={resources.background}
-        style={styles.content}
-      >
+      {error}
+
+      <OsehImageBackgroundFromState state={background} style={styles.content}>
         <View style={styles.topNav}>
           <View style={styles.settingsLink}>
-            {resources.profilePicture.state === "available" && (
-              <OsehImageFromState
-                state={resources.profilePicture.image}
-                style={styles.profilePic}
-              />
-            )}
+            <RenderGuardedComponent
+              props={profilePicture}
+              component={(pic) => (
+                <>
+                  {pic.state === "available" && (
+                    <OsehImageFromState
+                      state={pic.image}
+                      style={styles.profilePic}
+                    />
+                  )}
+                </>
+              )}
+            />
             <View style={styles.settingsMessages}>
               <Text style={styles.greeting}>
                 Hi {loginContext.userAttributes?.givenName ?? "there"} 👋
@@ -126,10 +190,10 @@ export const PickEmotion = ({
           </View>
         </View>
         <Words
-          options={words}
+          optionsVWC={wordsVWC}
           onWordClick={onWordClick}
-          pressed={pressed}
-          layout={resources.selected === null ? "horizontal" : "vertical"}
+          pressedVWC={visuallyPressedVWC}
+          layoutVWC={layoutVWC}
         />
       </OsehImageBackgroundFromState>
     </View>
@@ -301,15 +365,18 @@ const computeVerticalPositions = (
 };
 
 const Words = ({
-  options,
+  optionsVWC,
   onWordClick,
-  pressed,
-  layout,
+  pressedVWC,
+  layoutVWC,
 }: {
-  options: string[];
+  optionsVWC: ValueWithCallbacks<string[]>;
   onWordClick: (word: string, idx: number) => void;
-  pressed: { index: number; votes: number | null } | null;
-  layout: "horizontal" | "vertical";
+  pressedVWC: ValueWithCallbacks<{
+    index: number;
+    votes: number | null;
+  } | null>;
+  layoutVWC: ValueWithCallbacks<"horizontal" | "vertical">;
 }): ReactElement => {
   const containerRef = useRef<View>(null);
   const containerSizeTarget = useAnimatedValueWithCallbacks<Size>(
@@ -330,68 +397,94 @@ const Words = ({
     }
   );
 
-  const windowSize = useWindowSize();
-  const numOptions = options.length;
-  const wordSizes: WritableValueWithCallbacks<Size>[] = useMemo(() => {
-    const result = [];
-    for (let i = 0; i < numOptions; i++) {
-      result.push(
-        (() => {
-          let size: Size = { width: 0, height: 0 };
-          const callbacks = new Callbacks<undefined>();
-          return {
-            get: () => size,
-            set: (s: Size) => {
-              size = s;
-            },
-            callbacks,
-          };
-        })()
-      );
-    }
-    return result;
-  }, [numOptions]);
-  const wordPositions: WritableValueWithCallbacks<Pos>[] = useMemo(() => {
-    const result = [];
-    for (let i = 0; i < numOptions; i++) {
-      result.push(
-        (() => {
-          let pos: Pos = { x: windowSize.width / 2, y: 0 };
-          const callbacks = new Callbacks<undefined>();
-          return {
-            get: () => pos,
-            set: (p: Pos) => {
-              pos = p;
-            },
-            callbacks,
-          };
-        })()
-      );
-    }
-    return result;
-  }, [numOptions, windowSize]);
+  const windowSizeVWC = useWindowSizeValueWithCallbacks();
+  const wordSizesVWC = useWritableValueWithCallbacks<Size[]>(() =>
+    optionsVWC.get().map(() => ({
+      width: 0,
+      height: 0,
+    }))
+  );
 
   useEffect(() => {
-    for (let i = 0; i < wordSizes.length; i++) {
-      wordSizes[i].callbacks.add(handleSizesChanged);
-    }
-    handleSizesChanged();
+    optionsVWC.callbacks.add(updateWordSizes);
+    updateWordSizes();
     return () => {
-      for (let i = 0; i < wordSizes.length; i++) {
-        wordSizes[i].callbacks.remove(handleSizesChanged);
-      }
+      optionsVWC.callbacks.remove(updateWordSizes);
     };
 
-    function handleSizesChanged() {
-      const sizes = wordSizes.map((s) => s.get());
+    function updateWordSizes() {
+      if (wordSizesVWC.get().length === optionsVWC.get().length) {
+        return;
+      }
+
+      const oldWordSizes = wordSizesVWC.get();
+
+      const wordSizes = optionsVWC.get().map((_, idx) => ({
+        width: oldWordSizes.length > idx ? oldWordSizes[idx].width : 0,
+        height: oldWordSizes.length > idx ? oldWordSizes[idx].height : 0,
+      }));
+      wordSizesVWC.set(wordSizes);
+      wordSizesVWC.callbacks.call(undefined);
+    }
+  }, [optionsVWC, wordSizesVWC]);
+
+  const wordPositionsVWC = useWritableValueWithCallbacks<Pos[]>(() =>
+    optionsVWC.get().map(() => ({
+      x: windowSizeVWC.get().width / 2,
+      y: 0,
+    }))
+  );
+
+  useEffect(() => {
+    optionsVWC.callbacks.add(updateWordPositions);
+    updateWordPositions();
+    return () => {
+      optionsVWC.callbacks.remove(updateWordPositions);
+    };
+
+    function updateWordPositions() {
+      const oldWordPositions = wordPositionsVWC.get();
+      const options = optionsVWC.get();
+
+      if (oldWordPositions.length === options.length) {
+        return;
+      }
+
+      const wordPositions = options.map((_, idx) => ({
+        x:
+          oldWordPositions.length > idx
+            ? oldWordPositions[idx].x
+            : windowSizeVWC.get().width / 2,
+        y: oldWordPositions.length > idx ? oldWordPositions[idx].y : 0,
+      }));
+      wordPositionsVWC.set(wordPositions);
+      wordPositionsVWC.callbacks.call(undefined);
+    }
+  }, [optionsVWC, wordPositionsVWC, windowSizeVWC]);
+
+  useEffect(() => {
+    wordSizesVWC.callbacks.add(reposition);
+    layoutVWC.callbacks.add(reposition);
+    windowSizeVWC.callbacks.add(reposition);
+    reposition();
+    return () => {
+      wordSizesVWC.callbacks.remove(reposition);
+      layoutVWC.callbacks.remove(reposition);
+      windowSizeVWC.callbacks.remove(reposition);
+    };
+
+    function reposition() {
+      const sizes = wordSizesVWC.get();
+      const layout = layoutVWC.get();
+      const windowSize = windowSizeVWC.get();
       const target =
         layout === "horizontal"
           ? computeHorizontalPositions(windowSize, sizes)
           : computeVerticalPositions(windowSize, sizes);
-      for (let i = 0; i < wordPositions.length; i++) {
-        wordPositions[i].set(target.positions[i]);
-        wordPositions[i].callbacks.call(undefined);
-      }
+
+      wordPositionsVWC.set(target.positions);
+      wordPositionsVWC.callbacks.call(undefined);
+
       const currentContainerSize = containerSizeTarget.get();
       if (
         currentContainerSize.width !== target.size.width ||
@@ -403,39 +496,51 @@ const Words = ({
       }
     }
   }, [
-    windowSize,
-    layout,
-    wordSizes,
-    wordPositions,
+    layoutVWC,
+    windowSizeVWC,
+    wordSizesVWC,
+    wordPositionsVWC,
     containerSizeTarget,
-    pressed,
   ]);
 
   return (
     <View ref={containerRef}>
-      {options.map((word, i) => (
-        <Word
-          word={word}
-          idx={i}
-          key={word}
-          onWordClick={onWordClick}
-          pressed={pressed}
-          variant={layout}
-          size={wordSizes[i]}
-          pos={wordPositions[i]}
-        />
-      ))}
+      <RenderGuardedComponent
+        props={optionsVWC}
+        component={(options) => {
+          return (
+            <>
+              {options.map((word, i) => (
+                <WordAdapter
+                  word={word}
+                  idx={i}
+                  key={`${word}-${i}`}
+                  onWordClick={onWordClick}
+                  pressedVWC={pressedVWC}
+                  variantVWC={layoutVWC}
+                  wordSizesVWC={wordSizesVWC}
+                  wordPositionsVWC={wordPositionsVWC}
+                />
+              ))}
+            </>
+          );
+        }}
+      />
     </View>
   );
 };
 
 type WordSetting = {
+  /**
+   * we use progress to determine if we're animating or not, to switch to
+   * hardware textures for the words (increased gpu mem usage, better performance).
+   *
+   * An exact integer value means not animating
+   */
+  progress: number;
+  outerScale: number;
   left: number;
   top: number;
-  fontSize: number;
-  letterSpacing: number;
-  padding: [number, number, number, number];
-  borderRadius: number;
   /**
    * We implement a solid color as a gradient to the same colors;
    * this allows easing the gradient in relatively easily.
@@ -448,61 +553,173 @@ type WordSetting = {
 
 const WORD_SETTINGS = {
   horizontal: {
-    fontSize: 16,
-    letterSpacing: 0.25,
-    padding: [12, 14, 12, 14] as [number, number, number, number],
-    borderRadius: 24,
+    progress: 0,
+    outerScale: 1,
   },
   vertical: {
-    fontSize: 14,
-    letterSpacing: 0.25,
-    padding: [10, 12, 10, 12] as [number, number, number, number],
-    borderRadius: 24,
+    progress: 1,
+    outerScale: 0.875,
   },
+};
+
+const WordAdapter = ({
+  word,
+  idx,
+  onWordClick,
+  pressedVWC,
+  variantVWC,
+  wordSizesVWC,
+  wordPositionsVWC,
+}: {
+  word: string;
+  idx: number;
+  onWordClick: (word: string, idx: number) => void;
+  pressedVWC: ValueWithCallbacks<{
+    index: number;
+    votes: number | null;
+  } | null>;
+  variantVWC: ValueWithCallbacks<"horizontal" | "vertical">;
+  wordSizesVWC: WritableValueWithCallbacks<Size[]>;
+  wordPositionsVWC: ValueWithCallbacks<Pos[]>;
+}): ReactElement => {
+  const size = useWritableValueWithCallbacks<Size>(
+    () => wordSizesVWC.get()[idx] ?? { width: 0, height: 0 }
+  );
+  const position = useWritableValueWithCallbacks<Pos>(
+    () => wordPositionsVWC.get()[idx] ?? { x: 0, y: 0 }
+  );
+
+  useEffect(() => {
+    size.callbacks.add(updateParentSize);
+    variantVWC.callbacks.add(updateParentSize);
+    updateParentSize();
+    return () => {
+      size.callbacks.remove(updateParentSize);
+      variantVWC.callbacks.remove(updateParentSize);
+    };
+
+    function updateParentSize() {
+      const currentParent = wordSizesVWC.get();
+      const variant = variantVWC.get();
+      if (idx >= currentParent.length) {
+        return;
+      }
+
+      const correctUnscaledSize = size.get();
+      const correctSize = {
+        width: correctUnscaledSize.width * WORD_SETTINGS[variant].outerScale,
+        height: correctUnscaledSize.height * WORD_SETTINGS[variant].outerScale,
+      };
+
+      const currentSize = currentParent[idx];
+      if (
+        currentSize.width === correctSize.width &&
+        currentSize.height === correctSize.height
+      ) {
+        return;
+      }
+
+      currentParent[idx] = {
+        width: correctSize.width,
+        height: correctSize.height,
+      };
+      wordSizesVWC.callbacks.call(undefined);
+    }
+  }, [idx, size, wordSizesVWC, variantVWC]);
+
+  useEffect(() => {
+    wordPositionsVWC.callbacks.add(updateChildPosition);
+    updateChildPosition();
+    return () => {
+      wordPositionsVWC.callbacks.remove(updateChildPosition);
+    };
+
+    function updateChildPosition() {
+      const currentParent = wordPositionsVWC.get();
+      if (idx >= currentParent.length) {
+        return;
+      }
+
+      const correctPosition = currentParent[idx];
+      const currentPosition = position.get();
+
+      if (
+        correctPosition.x === currentPosition.x &&
+        correctPosition.y === currentPosition.y
+      ) {
+        return;
+      }
+
+      position.set({ x: correctPosition.x, y: correctPosition.y });
+      position.callbacks.call(undefined);
+    }
+  });
+
+  return (
+    <Word
+      word={word}
+      idx={idx}
+      onWordClick={onWordClick}
+      pressedVWC={pressedVWC}
+      variantVWC={variantVWC}
+      sizeVWC={size}
+      posVWC={position}
+    />
+  );
 };
 
 const Word = ({
   word,
   idx,
   onWordClick,
-  pressed,
-  variant,
-  size,
-  pos,
+  pressedVWC,
+  variantVWC,
+  sizeVWC,
+  posVWC,
 }: {
   word: string;
   idx: number;
   onWordClick: (word: string, idx: number) => void;
-  pressed: { index: number; votes: number | null } | null;
-  variant: "horizontal" | "vertical";
-  size: WritableValueWithCallbacks<Size>;
-  pos: ValueWithCallbacks<Pos>;
+  pressedVWC: ValueWithCallbacks<{
+    index: number;
+    votes: number | null;
+  } | null>;
+  variantVWC: ValueWithCallbacks<"horizontal" | "vertical">;
+  sizeVWC: WritableValueWithCallbacks<Size>;
+  posVWC: ValueWithCallbacks<Pos>;
 }) => {
   const outerRef = useRef<View>(null);
+
+  const handleClick = useCallback(() => {
+    onWordClick(word, idx);
+  }, [word, idx, onWordClick]);
+
+  const gradientState = useWritableValueWithCallbacks<LinearGradientState>(
+    () => ({
+      stops: [
+        {
+          color: [255, 255, 255, 0.2],
+          offset: 0,
+        },
+        {
+          color: [255, 255, 255, 0.2],
+          offset: 1,
+        },
+      ],
+      angleDegreesClockwiseFromTop: 95.08,
+    })
+  );
+  const unscaledSizeRef = useRef<Size | undefined>();
   const pressableRef = useRef<View>(null);
-  const gradientState = useWritableValueWithCallbacks<LinearGradientState>({
-    stops: [
-      {
-        color: [255, 255, 255, 0.2],
-        offset: 0,
-      },
-      {
-        color: [255, 255, 255, 0.2],
-        offset: 1,
-      },
-    ],
-    angleDegreesClockwiseFromTop: 95.08,
-  });
-  const textRef = useRef<Text>(null);
   const target = useAnimatedValueWithCallbacks<WordSetting>(
     {
-      left: pos.get().x,
-      top: pos.get().y,
+      left: posVWC.get().x,
+      top: posVWC.get().y,
       backgroundGradient: {
         color1: [255, 255, 255, 0.2],
         color2: [255, 255, 255, 0.2],
       },
-      ...WORD_SETTINGS[variant],
+      ...WORD_SETTINGS[variantVWC.get()],
     },
     () => [
       ...inferAnimators<{ top: number; left: number }, WordSetting>(
@@ -513,27 +730,25 @@ const Word = ({
       ),
       ...inferAnimators<
         {
-          fontSize: number;
-          letterSpacing: number;
-          padding: number[];
-          borderRadius: number;
+          progress: number;
         },
         WordSetting
       >(
         {
-          fontSize: 0,
-          letterSpacing: 0,
-          padding: [0, 0, 0, 0],
-          borderRadius: 0,
+          progress: 0,
         },
         ease,
         700
       ),
       ...inferAnimators<
-        { backgroundGradient: { color1: number[]; color2: number[] } },
+        {
+          outerScale: number;
+          backgroundGradient: { color1: number[]; color2: number[] };
+        },
         WordSetting
       >(
         {
+          outerScale: 0,
           backgroundGradient: {
             color1: [0, 0, 0, 0],
             color2: [0, 0, 0, 0],
@@ -544,32 +759,37 @@ const Word = ({
       ),
     ],
     (val) => {
-      if (
-        outerRef.current === null ||
-        pressableRef.current === null ||
-        textRef.current === null
-      ) {
+      if (outerRef.current === null || pressableRef.current === null) {
         return;
       }
       const outer = outerRef.current;
       const pressable = pressableRef.current;
-      const text = textRef.current;
+
+      const sizeBeforeScaling = unscaledSizeRef.current ?? {
+        width: 0,
+        height: 0,
+      };
+
       outer.setNativeProps({
         style: {
           position: "absolute",
           left: val.left,
           top: val.top,
-          borderRadius: val.borderRadius,
+          borderRadius: 24,
           overflow: "hidden",
+          transform: [
+            {
+              translateX: 0.5 * (val.outerScale - 1) * sizeBeforeScaling.width,
+            },
+            {
+              translateY: 0.5 * (val.outerScale - 1) * sizeBeforeScaling.height,
+            },
+            { scale: val.outerScale },
+          ],
         },
-      });
-      pressable.setNativeProps({
-        style: {
-          paddingTop: val.padding[0],
-          paddingRight: val.padding[1],
-          paddingBottom: val.padding[2],
-          paddingLeft: val.padding[3],
-        },
+        renderToHardwareTextureAndroid:
+          val.progress !== 0 && val.progress !== 1,
+        shouldRasterizeIOS: val.progress !== 0 && val.progress !== 1,
       });
       gradientState.set({
         stops: [
@@ -585,41 +805,46 @@ const Word = ({
         angleDegreesClockwiseFromTop: 95.08,
       });
       gradientState.callbacks.call(undefined);
-      text.setNativeProps({
-        style: {
-          ...styles.wordText,
-          fontSize: val.fontSize,
-          lineHeight: val.fontSize,
-          letterSpacing: val.letterSpacing,
-        },
-      });
 
       pressable.measure((x, y, realWidth, realHeight) => {
-        const reportedSize = size.get();
+        const unscaledSize = {
+          width: realWidth / val.outerScale,
+          height: realHeight / val.outerScale,
+        };
+        unscaledSizeRef.current = unscaledSize;
+
+        const reportedSize = sizeVWC.get();
+
         if (
-          realWidth !== reportedSize.width ||
-          realHeight !== reportedSize.height
+          unscaledSize.width !== reportedSize.width ||
+          unscaledSize.height !== reportedSize.height
         ) {
-          size.set({ width: realWidth, height: realHeight });
-          size.callbacks.call(undefined);
+          sizeVWC.set(unscaledSize);
+          sizeVWC.callbacks.call(undefined);
         }
       });
     }
   );
 
   useEffect(() => {
-    pos.callbacks.add(handlePositionChanged);
-    handlePositionChanged();
+    posVWC.callbacks.add(render);
+    variantVWC.callbacks.add(render);
+    pressedVWC.callbacks.add(render);
+    let waitingForNonZeroSizeCanceler = waitForNonZeroSize();
+    render();
     return () => {
-      pos.callbacks.remove(handlePositionChanged);
+      waitingForNonZeroSizeCanceler();
+      posVWC.callbacks.remove(render);
+      variantVWC.callbacks.remove(render);
+      pressedVWC.callbacks.remove(render);
     };
 
-    function handlePositionChanged() {
+    function render() {
       target.set({
-        left: pos.get().x,
-        top: pos.get().y,
+        left: posVWC.get().x,
+        top: posVWC.get().y,
         backgroundGradient:
-          pressed?.index === idx
+          pressedVWC.get()?.index === idx
             ? {
                 //'linear-gradient(95.08deg, #57b8a2 2.49%, #009999 97.19%)'
                 color1: [87, 184, 162, 1],
@@ -630,16 +855,54 @@ const Word = ({
                 color1: [255, 255, 255, 0.2],
                 color2: [255, 255, 255, 0.2],
               },
-        ...WORD_SETTINGS[variant],
+        ...WORD_SETTINGS[variantVWC.get()],
       });
       target.callbacks.call(undefined);
     }
-  }, [pos, variant, target, pressed, idx]);
 
-  const handleClick = useCallback(() => {
-    console.log("click", word);
-    onWordClick(word, idx);
-  }, [word, idx, onWordClick]);
+    function waitForNonZeroSize(): () => void {
+      if (pressableRef.current === null) {
+        return () => {};
+      }
+      const ele = pressableRef.current;
+      let running = true;
+      const interval = setInterval(checkSize, 100);
+      const unmount = () => {
+        if (running) {
+          running = false;
+          clearInterval(interval);
+        }
+      };
+      checkSize();
+      return unmount;
+
+      function checkSize() {
+        if (!running) {
+          return;
+        }
+        render();
+
+        ele.measure((x, y, realWidth, realHeight) => {
+          if (!running) {
+            return;
+          }
+
+          if (realWidth !== 0 && realHeight !== 0) {
+            unmount();
+
+            const reported = sizeVWC.get();
+            if (
+              reported.width !== realWidth ||
+              reported.height !== realHeight
+            ) {
+              sizeVWC.set({ width: realWidth, height: realHeight });
+              sizeVWC.callbacks.call(undefined);
+            }
+          }
+        });
+      }
+    }
+  }, [posVWC, variantVWC, target, pressedVWC, idx, sizeVWC]);
 
   const gradientStateVariableStrategyProps = useMemo<
     VariableStrategyProps<LinearGradientState>
@@ -655,10 +918,27 @@ const Word = ({
   return (
     <View ref={outerRef}>
       <LinearGradientBackground state={gradientStateVariableStrategyProps}>
-        <Pressable ref={pressableRef} onPress={handleClick}>
-          <Text ref={textRef}>{word}</Text>
+        <Pressable
+          ref={pressableRef}
+          style={styles.wordPressable}
+          onPress={handleClick}
+        >
+          <Text style={styles.wordText}>{word}</Text>
         </Pressable>
       </LinearGradientBackground>
     </View>
   );
+};
+
+const usePerformanceTestingEffect = (
+  tentativelyPressedVWC: WritableValueWithCallbacks<number | null>
+) => {
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const isPressed = tentativelyPressedVWC.get() !== null;
+      tentativelyPressedVWC.set(isPressed ? null : 0);
+      tentativelyPressedVWC.callbacks.call(undefined);
+    }, 2000);
+    return () => clearInterval(interval);
+  });
 };

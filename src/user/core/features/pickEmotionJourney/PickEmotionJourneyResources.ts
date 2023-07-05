@@ -81,7 +81,7 @@ export type PickEmotionJourneyResources = {
   } | null;
 
   /**
-   * The background image, may be loading
+   * The background image to use, may be loading
    */
   background: OsehImageState;
 

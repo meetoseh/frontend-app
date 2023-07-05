@@ -26,6 +26,9 @@ import {
 import { describeError } from "../../../../shared/lib/describeError";
 import { OsehImageBackgroundFromState } from "../../../../shared/images/OsehImageBackgroundFromState";
 import { URLSearchParams } from "react-native-url-polyfill";
+import { FeatureComponentProps } from "../../models/Feature";
+import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
+import { useUnwrappedValueWithCallbacks } from "../../../../shared/hooks/useUnwrappedValueWithCallbacks";
 
 const DEV_ACCOUNT_USER_IDENTITY_ID = "guest9833";
 
@@ -64,10 +67,7 @@ const prepareLink = async (
 export const Login = ({
   state,
   resources,
-}: {
-  state: LoginState;
-  resources: LoginResources;
-}) => {
+}: FeatureComponentProps<LoginState, LoginResources>) => {
   const loginContext = useContext(LoginContext);
   const [error, setError] = useState<ReactElement | null>(null);
   const [pressingGoogle, setPressingGoogle] = useState(false);
@@ -155,12 +155,12 @@ export const Login = ({
         };
 
         loginContext.setAuthTokens.apply(undefined, [tokenResponse]);
-        state.setOnboard.call(undefined, onboard);
+        state.get().setOnboard.call(undefined, onboard);
       } catch (e) {
         setError(await describeError(e));
       }
     },
-    [loginContext.setAuthTokens, state.setOnboard]
+    [loginContext.setAuthTokens, state]
   );
 
   const onContinueWithGoogle = useCallback(async () => {
@@ -232,11 +232,15 @@ export const Login = ({
         idToken: data.id_token,
         refreshToken: data.refresh_token,
       });
-      state.setOnboard.call(undefined, data.onboard);
+      state.get().setOnboard.call(undefined, data.onboard);
     } catch (e) {
       setError(await describeError(e));
     }
-  }, [loginContext, state.setOnboard]);
+  }, [loginContext, state]);
+
+  const background = useUnwrappedValueWithCallbacks(
+    useMappedValueWithCallbacks(resources, (r) => r.background)
+  );
 
   if (goingToApple || goingToGoogle) {
     if (pressingApple) {
@@ -248,17 +252,10 @@ export const Login = ({
     return <SplashScreen />;
   }
 
-  if (resources.background === null) {
-    return <></>;
-  }
-
   return (
     <View style={styles.container}>
       {error}
-      <OsehImageBackgroundFromState
-        state={resources.background}
-        style={styles.content}
-      >
+      <OsehImageBackgroundFromState state={background} style={styles.content}>
         <OsehBrandmarkWhite width={163} height={40} style={styles.logo} />
         <Text style={styles.message} onPress={onPressMessage}>
           Make mindfulness a daily part of your life in 60 seconds.

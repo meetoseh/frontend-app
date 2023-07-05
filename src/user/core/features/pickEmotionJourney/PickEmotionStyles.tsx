@@ -69,5 +69,14 @@ export const styles = StyleSheet.create({
   wordText: {
     color: Colors.WHITE,
     fontFamily: "OpenSans-Regular",
+    fontSize: 16,
+    lineHeight: 16,
+    letterSpacing: 0.25,
+  },
+  wordPressable: {
+    paddingTop: 12,
+    paddingRight: 14,
+    paddingBottom: 12,
+    paddingLeft: 14,
   },
 });

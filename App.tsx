@@ -2,7 +2,7 @@ import { useFonts } from "expo-font";
 import { LoginProvider } from "./src/shared/contexts/LoginContext";
 import { SplashScreen } from "./src/user/splash/SplashScreen";
 import { useFeaturesState } from "./src/user/core/hooks/useFeaturesState";
-import { FeaturesRouter } from "./src/user/core/FeaturesRouter";
+import { RenderGuardedComponent } from "./src/shared/components/RenderGuardedComponent";
 
 export default function App() {
   return (
@@ -30,11 +30,18 @@ const AppInner = () => {
     "OpenSans-SemiBold": require("./assets/fonts/OpenSans-SemiBold.ttf"),
     "OpenSans-SemiBoldItalic": require("./assets/fonts/OpenSans-SemiBoldItalic.ttf"),
   });
-  const featuresState = useFeaturesState();
+  const featureVWC = useFeaturesState();
 
-  if (!fontsLoaded || featuresState.loading) {
-    return <SplashScreen type="wordmark" />;
-  }
+  return (
+    <RenderGuardedComponent
+      props={featureVWC}
+      component={(feature) => {
+        if (!fontsLoaded || feature === null || feature === undefined) {
+          return <SplashScreen type="wordmark" />;
+        }
 
-  return <FeaturesRouter state={featuresState} />;
+        return feature;
+      }}
+    />
+  );
 };

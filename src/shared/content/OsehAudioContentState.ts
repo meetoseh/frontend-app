@@ -1,7 +1,6 @@
 import { ReactElement } from 'react';
-import { ValueWithCallbacks } from '../lib/Callbacks';
 import { Audio } from 'expo-av';
-import { ContentFileNativeExport, OsehContentTarget } from './OsehContentTarget';
+import { OsehContentTarget } from './OsehContentTarget';
 
 /**
  * The default Audio.Sound is a little less powerful than the HTMLAudioElement
@@ -70,5 +69,5 @@ export type OsehAudioContentState = {
    * A reference to the underlying audio element, if it has been created.
    * This is useful for more advanced use cases.
    */
-  audio: ValueWithCallbacks<WrappedAudioSound | null>;
+  audio: WrappedAudioSound | null;
 };

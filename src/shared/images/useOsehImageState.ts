@@ -19,6 +19,10 @@ const createLoadingState = (props: OsehImageProps): OsehImageState => ({
  * such as DPI. This will then download the image, and if necessary, crop it
  * to the desired size before returning a URL to the corresponding blob via
  * the states localUrl property.
+ * 
+ * This hook will cause react rerenders as the state loads; to avoid this
+ * in animation heavy components, prefer useOsehImageStateValueWithCallbacks
+ * and OsehImageFromStateValueWithCallbacks, which never trigger rerenders
  *
  * @param props The props for the image to load; props do not need to be memoized.
  *   To disable loading, set the uid to null.

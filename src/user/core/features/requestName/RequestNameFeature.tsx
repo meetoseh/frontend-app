@@ -1,12 +1,16 @@
-import { useContext, useMemo } from "react";
+import { useContext } from "react";
 import { Feature } from "../../models/Feature";
 import { LoginContext } from "../../../../shared/contexts/LoginContext";
 import { RequestNameState } from "./RequestNameState";
 import { RequestNameResources } from "./RequestNameResources";
-import { useWindowSize } from "../../../../shared/hooks/useWindowSize";
 import { RequestName } from "./RequestName";
 import { useOsehImageStateRequestHandler } from "../../../../shared/images/useOsehImageStateRequestHandler";
-import { useOsehImageState } from "../../../../shared/images/useOsehImageState";
+import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks";
+import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
+import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMappedValuesWithCallbacks";
+import { OsehImageProps } from "../../../../shared/images/OsehImageProps";
+import { useWindowSizeValueWithCallbacks } from "../../../../shared/hooks/useWindowSize";
+import { useOsehImageStateValueWithCallbacks } from "../../../../shared/images/useOsehImageStateValueWithCallbacks";
 
 const backgroundImageUid = "oseh_if_hH68hcmVBYHanoivLMgstg";
 
@@ -21,32 +25,49 @@ export const RequestNameFeature: Feature<
 
   useWorldState: () => {
     const loginContext = useContext(LoginContext);
-    return {
-      givenName: loginContext.userAttributes?.givenName,
-    };
+
+    const givenName = loginContext.userAttributes?.givenName;
+    const result = useWritableValueWithCallbacks<RequestNameState>(() => ({
+      givenName,
+    }));
+
+    if (result.get().givenName !== givenName) {
+      result.set({ givenName });
+      result.callbacks.call(undefined);
+    }
+
+    return result;
   },
 
   useResources: (worldState, required) => {
     const images = useOsehImageStateRequestHandler({});
-    const windowSize = useWindowSize();
-    const background = useOsehImageState(
-      {
-        uid: required ? backgroundImageUid : null,
+    const windowSize = useWindowSizeValueWithCallbacks();
+    const backgroundProps = useMappedValuesWithCallbacks(
+      [windowSize, required],
+      (): OsehImageProps => ({
+        uid: required.get() ? backgroundImageUid : null,
         jwt: null,
-        displayWidth: windowSize.width,
-        displayHeight: windowSize.height,
+        displayWidth: windowSize.get().width,
+        displayHeight: windowSize.get().height,
         alt: "",
         isPublic: true,
+      })
+    );
+    const background = useOsehImageStateValueWithCallbacks(
+      {
+        type: "callbacks",
+        props: () => backgroundProps.get(),
+        callbacks: backgroundProps.callbacks,
       },
       images
     );
 
-    return useMemo<RequestNameResources>(
-      () => ({
-        background,
-        loading: background === null || background.loading,
-      }),
-      [background]
+    return useMappedValueWithCallbacks(
+      background,
+      (): RequestNameResources => ({
+        background: background.get(),
+        loading: background.get().loading,
+      })
     );
   },
 
@@ -58,11 +79,7 @@ export const RequestNameFeature: Feature<
     return worldState.givenName === "Anonymous";
   },
 
-  component: (worldState, resources, doAnticipateState) => (
-    <RequestName
-      state={worldState}
-      resources={resources}
-      doAnticipateState={doAnticipateState}
-    />
+  component: (worldState, resources) => (
+    <RequestName state={worldState} resources={resources} />
   ),
 };
