@@ -3,6 +3,7 @@ import { Bezier } from '../lib/Bezier';
 import { BezierAnimation, animIsComplete, calculateAnimValue } from '../lib/BezierAnimation';
 import { Callbacks } from '../lib/Callbacks';
 import { VariableStrategyProps } from './VariableStrategyProps';
+import { InteractionManager } from 'react-native';
 
 export interface Animator<P extends object> {
   /**
@@ -529,11 +530,16 @@ export const useAnimationLoop = <P extends object>(
   useEffect(() => {
     const statuses = animators.map((a) => a.maybeAwaken(rendered.current, target.current));
     let animating = statuses.some((s) => s);
+    let interactionHandle: number | null = null;
     let active = true;
 
     const loop = (now: DOMHighResTimeStamp) => {
       if (!active) {
         animating = false;
+        if (interactionHandle !== null) {
+          InteractionManager.clearInteractionHandle(interactionHandle);
+          interactionHandle = null;
+        }
         return;
       }
 
@@ -553,6 +559,11 @@ export const useAnimationLoop = <P extends object>(
       animating = stillAnimating;
       if (animating) {
         requestAnimationFrame(loop);
+      } else {
+        if (interactionHandle !== null) {
+          InteractionManager.clearInteractionHandle(interactionHandle);
+          interactionHandle = null;
+        }
       }
     };
 
@@ -571,11 +582,13 @@ export const useAnimationLoop = <P extends object>(
 
       if (maybeStartAnimating && !animating) {
         animating = true;
+        interactionHandle = InteractionManager.createInteractionHandle();
         requestAnimationFrame(loop);
       }
     };
 
     if (animating) {
+      interactionHandle = InteractionManager.createInteractionHandle();
       requestAnimationFrame(loop);
     }
     onTargetChanged.current.add(handleTargetChanged);
@@ -585,6 +598,10 @@ export const useAnimationLoop = <P extends object>(
         return;
       }
       active = false;
+      if (interactionHandle !== null) {
+        InteractionManager.clearInteractionHandle(interactionHandle);
+        interactionHandle = null;
+      }
       onTargetChanged.current.remove(handleTargetChanged);
 
       for (let i = 0; i < animators.length; i++) {

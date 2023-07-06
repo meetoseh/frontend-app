@@ -17,7 +17,7 @@ import { USES_WEBP } from './usesWebp';
 import { getJwtExpiration } from '../lib/getJwtExpiration';
 import { downloadItem } from './downloadItem';
 import { cropImage } from './cropImage';
-import { PixelRatio } from 'react-native';
+import { InteractionManager, PixelRatio } from 'react-native';
 
 /**
  * Describes a manually ref-counted reference to a given OsehImageState. While
@@ -198,6 +198,7 @@ export const useOsehImageStateRequestHandler = ({
 
   useEffect(() => {
     let active = true;
+    let handleQueueScheduled = false;
     const canceledCallbacks = new Callbacks<undefined>();
     const playlistsByImageFileUIDCache = new LeastRecentlyUsedCache<string, PlaylistWithJWT>(
       playlistCacheSize
@@ -234,12 +235,12 @@ export const useOsehImageStateRequestHandler = ({
       }
     });
 
-    handleQueue();
-    requestQueuedCallbacks.current.add(handleQueue);
+    scheduleHandleQueue();
+    requestQueuedCallbacks.current.add(scheduleHandleQueue);
     return () => {
       if (active) {
         active = false;
-        requestQueuedCallbacks.current.remove(handleQueue);
+        requestQueuedCallbacks.current.remove(scheduleHandleQueue);
         canceledCallbacks.call(undefined);
         if (playlistsByImageFileUID.size !== 0) {
           throw new Error('failed to cleanup playlistsByImageFileUID');
@@ -253,7 +254,7 @@ export const useOsehImageStateRequestHandler = ({
       }
     };
 
-    async function handleQueue() {
+    async function realHandleQueue() {
       const usesWebp = await USES_WEBP;
 
       while (active) {
@@ -263,6 +264,32 @@ export const useOsehImageStateRequestHandler = ({
         }
         if (!item.released) {
           handleRequest(item, usesWebp);
+        }
+      }
+    }
+
+    async function scheduleHandleQueue() {
+      if (handleQueueScheduled || !active) {
+        return;
+      }
+
+      let finished = false;
+      handleQueueScheduled = true;
+      const cancelable = InteractionManager.runAfterInteractions(() => {
+        if (!finished) {
+          handleQueueScheduled = false;
+          finished = true;
+          realHandleQueue();
+          canceledCallbacks.remove(handleCanceled);
+        }
+      });
+      canceledCallbacks.add(handleCanceled);
+
+      function handleCanceled() {
+        if (!finished) {
+          finished = true;
+          handleQueueScheduled = false;
+          cancelable.cancel();
         }
       }
     }

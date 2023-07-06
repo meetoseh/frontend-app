@@ -833,17 +833,14 @@ const Word = ({
 
       outer.setNativeProps({
         style: {
-          position: "absolute",
-          left: val.left,
-          top: val.top,
-          borderRadius: 24,
-          overflow: "hidden",
           transform: [
             {
-              translateX: 0.5 * (val.outerScale - 1) * sizeBeforeScaling.width,
+              translateX:
+                0.5 * (val.outerScale - 1) * sizeBeforeScaling.width + val.left,
             },
             {
-              translateY: 0.5 * (val.outerScale - 1) * sizeBeforeScaling.height,
+              translateY:
+                0.5 * (val.outerScale - 1) * sizeBeforeScaling.height + val.top,
             },
             { scale: val.outerScale },
           ],
@@ -977,7 +974,16 @@ const Word = ({
   );
 
   return (
-    <View ref={outerRef}>
+    <View
+      style={{
+        position: "absolute",
+        left: 0,
+        top: 0,
+        borderRadius: 24,
+        overflow: "hidden",
+      }}
+      ref={outerRef}
+    >
       <LinearGradientBackground state={gradientStateVariableStrategyProps}>
         <Pressable
           ref={pressableRef}

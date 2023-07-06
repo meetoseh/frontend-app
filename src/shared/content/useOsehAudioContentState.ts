@@ -4,6 +4,7 @@ import { OsehContentTarget } from './OsehContentTarget';
 import { Audio } from 'expo-av';
 import { Callbacks, ValueWithCallbacks, useWritableValueWithCallbacks } from '../lib/Callbacks';
 import { VariableStrategyProps, useVariableStrategyPropsAsValueWithCallbacks } from '../anim/VariableStrategyProps';
+import { InteractionManager } from 'react-native';
 
 /**
  * Loads the specified audio target and returns a state object which can be used
@@ -70,18 +71,44 @@ export const useOsehAudioContentState = (
         audioVWC.current = null;
       }
 
-      if (audioVWC.current === null) {
-        audioVWC.current = loadNewAudio(target);
-      }
+      let active = true;
+      let started = false;
+      let aud: ValueWithCallbacks<WrappedAudioSound> | null = null;
 
-      const aud = audioVWC.current;
-      aud.callbacks.add(handleAudioChanged);
-      handleAudioChanged();
+      const afterInteractionHandler = InteractionManager.runAfterInteractions({
+        name: 'useOsehAudioContentState loadAudio',
+        gen: async () => {
+          if (!active) {
+            return;
+          }
+          
+          started = true;
+          if (audioVWC.current === null) {
+            audioVWC.current = loadNewAudio(target);
+          }
+    
+          aud = audioVWC.current;
+          aud.callbacks.add(handleAudioChanged);
+          handleAudioChanged();
+        }
+      })
+
       return () => {
-        aud.callbacks.remove(handleAudioChanged);
+        if (active) {
+          active = false;
+          if (started) {
+            aud?.callbacks.remove(handleAudioChanged);
+          } else {
+            afterInteractionHandler.cancel();
+          }
+        }
       }
 
       function handleAudioChanged() {
+        if (aud === null) {
+          return;
+        }
+        
         const newAudio = aud.get();
         if (newAudio.canceled) {
           audioVWC.current = null;
