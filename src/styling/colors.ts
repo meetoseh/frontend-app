@@ -14,6 +14,7 @@ export const TRANSPARENT = 'rgba(0, 0, 0, 0)';
 export const HALF_TRANSPARENT_WHITE = 'rgba(255, 255, 255, 0.5)';
 export const BLACK_OVERLAY = 'rgba(0, 0, 0, 0.5)';
 export const PROMPT_BACKGROUND = 'rgba(239, 240, 256, 0.95)';
+export const PROFILE_PICTURE_BACKGROUND = '#c9d6d6';
 
 /**
  * Used as the pressed variant for inverted buttons

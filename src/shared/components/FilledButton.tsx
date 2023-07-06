@@ -6,7 +6,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Pressable, TextStyle, ViewStyle } from "react-native";
+import { Pressable, TextStyle, View, ViewStyle } from "react-native";
 import { CustomButtonProps } from "../models/CustomButtonProps";
 import { useWindowSize } from "../hooks/useWindowSize";
 
@@ -18,7 +18,6 @@ export const FilledButton = ({
   disabled,
   setTextStyle,
   setForegroundColor,
-  setHeight,
   styles,
   fullWidth,
   marginTop,
@@ -26,7 +25,7 @@ export const FilledButton = ({
 }: PropsWithChildren<
   CustomButtonProps & {
     styles: {
-      container: ViewStyle & { maxHeight: number };
+      container: ViewStyle & { flex: undefined };
       pressed: ViewStyle;
       disabled: ViewStyle;
       text: TextStyle & { color: string };
@@ -97,14 +96,6 @@ export const FilledButton = ({
 
     setForegroundColor(styles.text.color);
   }, [pressed, disabled, setForegroundColor, styles]);
-
-  useEffect(() => {
-    if (!setHeight) {
-      return;
-    }
-
-    setHeight(styles.container.maxHeight);
-  }, [setHeight, styles]);
 
   return (
     <Pressable

@@ -7,7 +7,15 @@ import {
   useRef,
   useState,
 } from "react";
-import { Pressable, Text, View } from "react-native";
+import {
+  Pressable,
+  StyleProp,
+  Text,
+  TextInput,
+  TextStyle,
+  View,
+  ViewStyle,
+} from "react-native";
 import { FeatureComponentProps } from "../../models/Feature";
 import { PickEmotionJourneyResources } from "./PickEmotionJourneyResources";
 import { PickEmotionJourneyState } from "./PickEmotionJourneyState";
@@ -21,7 +29,11 @@ import {
   WritableValueWithCallbacks,
   useWritableValueWithCallbacks,
 } from "../../../../shared/lib/Callbacks";
-import { inferAnimators } from "../../../../shared/anim/AnimationLoop";
+import {
+  BezierAnimator,
+  TrivialAnimator,
+  inferAnimators,
+} from "../../../../shared/anim/AnimationLoop";
 import { ease } from "../../../../shared/lib/Bezier";
 import { useAnimatedValueWithCallbacks } from "../../../../shared/anim/useAnimatedValueWithCallbacks";
 import { useWindowSizeValueWithCallbacks } from "../../../../shared/hooks/useWindowSize";
@@ -34,6 +46,18 @@ import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMapped
 import { useUnwrappedValueWithCallbacks } from "../../../../shared/hooks/useUnwrappedValueWithCallbacks";
 import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
 import { VariableStrategyProps } from "../../../../shared/anim/VariableStrategyProps";
+import { ProfilePicturesState } from "../../../interactive_prompts/hooks/useProfilePictures";
+import {
+  HereSettings,
+  ProfilePictures,
+} from "../../../interactive_prompts/components/ProfilePictures";
+import { FilledInvertedButton } from "../../../../shared/components/FilledInvertedButton";
+import { FilledPrimaryButton } from "../../../../shared/components/FilledPrimaryButton";
+
+/**
+ * The settings for the profile pictures
+ */
+const hereSettings: HereSettings = { type: "floating", action: "voted" };
 
 /**
  * Allows the user to pick an emotion and then go to that class
@@ -137,6 +161,10 @@ export const PickEmotion = ({
     [tentativelyPressedVWC, resources]
   );
 
+  const onGotoClassClick = useCallback(() => {
+    console.log("goto class");
+  }, []);
+
   const error = useUnwrappedValueWithCallbacks(
     useMappedValueWithCallbacks(resources, (r) => r.error)
   );
@@ -147,6 +175,22 @@ export const PickEmotion = ({
     resources,
     (r) => r.profilePicture
   );
+  const profilePicturesState = useMappedValueWithCallbacks(
+    resources,
+    (r): ProfilePicturesState => {
+      if (r.selected === null) {
+        return {
+          pictures: [],
+          additionalUsers: 0,
+        };
+      }
+
+      return {
+        pictures: r.selected.profilePictures,
+        additionalUsers: r.selected.numTotalVotes - r.selected.numVotes,
+      };
+    }
+  );
 
   const layoutVWC = useMappedValueWithCallbacks(
     tentativelyPressedVWC,
@@ -154,8 +198,6 @@ export const PickEmotion = ({
       return tp === null ? "horizontal" : "vertical";
     }
   );
-
-  usePerformanceTestingEffect(tentativelyPressedVWC);
 
   return (
     <View style={styles.container}>
@@ -189,11 +231,25 @@ export const PickEmotion = ({
             <Text style={styles.favoritesLinkText}> Favorites</Text>
           </View>
         </View>
+        <Text style={styles.questionText}>How do you want to feel today?</Text>
         <Words
           optionsVWC={wordsVWC}
           onWordClick={onWordClick}
           pressedVWC={visuallyPressedVWC}
           layoutVWC={layoutVWC}
+        />
+        <RenderGuardedComponent
+          props={layoutVWC}
+          component={(layout) =>
+            layout === "horizontal" ? (
+              <></>
+            ) : (
+              <Bottom
+                onGotoClassClick={onGotoClassClick}
+                profilePicturesState={profilePicturesState}
+              />
+            )
+          }
         />
       </OsehImageBackgroundFromState>
     </View>
@@ -525,6 +581,11 @@ const Words = ({
             </>
           );
         }}
+      />
+      <Votes
+        pressedVWC={pressedVWC}
+        wordPositionsVWC={wordPositionsVWC}
+        wordSizesVWC={wordSizesVWC}
       />
     </View>
   );
@@ -930,15 +991,151 @@ const Word = ({
   );
 };
 
-const usePerformanceTestingEffect = (
-  tentativelyPressedVWC: WritableValueWithCallbacks<number | null>
-) => {
+type VotesSetting = {
+  progress: number;
+  left: number;
+  top: number;
+  opacity: number;
+  textContent: string;
+};
+
+const Votes = ({
+  pressedVWC,
+  wordPositionsVWC,
+  wordSizesVWC,
+}: {
+  pressedVWC: ValueWithCallbacks<{
+    index: number;
+    votes: number | null;
+  } | null>;
+  wordPositionsVWC: ValueWithCallbacks<Pos[]>;
+  wordSizesVWC: ValueWithCallbacks<Size[]>;
+}): ReactElement => {
+  const containerRef = useRef<View>(null);
+  const inputRef = useRef<TextInput>(null);
+  const inputTextValue = useRef("");
+  const target = useAnimatedValueWithCallbacks<VotesSetting>(
+    { progress: 0, left: 0, top: 0, opacity: 0, textContent: "+0 votes" },
+    () => [
+      new TrivialAnimator("left"),
+      new TrivialAnimator("top"),
+      new BezierAnimator(
+        ease,
+        700,
+        (s) => s.opacity,
+        (s, v) => (s.opacity = v)
+      ),
+      new TrivialAnimator("textContent"),
+    ],
+    (val) => {
+      if (containerRef.current === null || inputRef.current === null) {
+        return;
+      }
+      const container = containerRef.current;
+      const input = inputRef.current;
+      container.setNativeProps({
+        style: {
+          ...styles.votesView,
+          left: val.left,
+          top: val.top,
+          opacity: val.opacity,
+        },
+        renderToHardwareTextureAndroid:
+          val.progress !== 0 && val.progress !== 1,
+        shouldRasterizeIOS: val.progress !== 0 && val.progress !== 1,
+      });
+
+      if (val.textContent !== inputTextValue.current) {
+        inputTextValue.current = val.textContent;
+        input.setNativeProps({
+          text: val.textContent,
+        });
+      }
+    }
+  );
+
   useEffect(() => {
-    const interval = setInterval(() => {
-      const isPressed = tentativelyPressedVWC.get() !== null;
-      tentativelyPressedVWC.set(isPressed ? null : 0);
-      tentativelyPressedVWC.callbacks.call(undefined);
-    }, 2000);
-    return () => clearInterval(interval);
-  });
+    wordPositionsVWC.callbacks.add(render);
+    wordSizesVWC.callbacks.add(render);
+    pressedVWC.callbacks.add(render);
+    render();
+    return () => {
+      wordPositionsVWC.callbacks.remove(render);
+      wordSizesVWC.callbacks.remove(render);
+      pressedVWC.callbacks.remove(render);
+    };
+
+    function render() {
+      const wordPositions = wordPositionsVWC.get();
+      const wordSizes = wordSizesVWC.get();
+      const pressed = pressedVWC.get();
+
+      if (
+        pressed === null ||
+        pressed.index >= wordPositions.length ||
+        pressed.index >= wordSizes.length
+      ) {
+        target.set({
+          left: 0,
+          top: 0,
+          opacity: 0,
+          textContent: "+0 votes",
+          progress: 0,
+        });
+        target.callbacks.call(undefined);
+        return;
+      }
+
+      const pos = wordPositions[pressed.index];
+      const size = wordSizes[pressed.index];
+
+      target.set({
+        left: pos.x + size.width + 6,
+        top: pos.y + 11,
+        opacity: 1,
+        textContent:
+          pressed.votes !== null
+            ? `+${pressed.votes.toLocaleString()} votes`
+            : "+0 votes",
+        progress: 1,
+      });
+      target.callbacks.call(undefined);
+    }
+  }, [wordPositionsVWC, wordSizesVWC, pressedVWC, target]);
+
+  return (
+    <View style={styles.votesView} ref={containerRef} pointerEvents="none">
+      <TextInput style={styles.votesText} ref={inputRef} defaultValue="" />
+    </View>
+  );
+};
+
+const Bottom = ({
+  onGotoClassClick,
+  profilePicturesState,
+}: {
+  onGotoClassClick: () => void;
+  profilePicturesState: ValueWithCallbacks<ProfilePicturesState>;
+}) => {
+  const [btnTextStyle, setBtnTextStyle] = useState<StyleProp<TextStyle>>(
+    () => ({})
+  );
+
+  return (
+    <>
+      <View style={styles.profilePicturesContainer}>
+        <ProfilePictures
+          profilePictures={profilePicturesState}
+          hereSettings={hereSettings}
+        />
+      </View>
+      <FilledInvertedButton
+        onPress={onGotoClassClick}
+        setTextStyle={setBtnTextStyle}
+        fullWidth
+      >
+        <Text style={btnTextStyle}>Take Me To Class</Text>
+      </FilledInvertedButton>
+    </>
+  );
 };

@@ -1,4 +1,4 @@
-import { StyleProp, TextStyle } from 'react-native';
+import { StyleProp, TextStyle } from "react-native";
 
 export type CustomButtonProps = {
   /**
@@ -24,13 +24,6 @@ export type CustomButtonProps = {
    * typically icons.
    */
   setForegroundColor?: (color: string) => void;
-
-  /**
-   * Sets the recommended height for the button. Useful as a maxHeight for the
-   * container, since otherwise flex: '1' will cause the button to be as tall
-   * as possible.
-   */
-  setHeight?: (height: number) => void;
 
   /**
    * If set to true, the container will use the screen size to determine its width,
