@@ -92,6 +92,8 @@ export const styles = StyleSheet.create({
   },
   votesView: {
     position: "absolute",
+    left: 0,
+    top: 0,
     margin: 0,
     padding: 0,
     flexDirection: "row",

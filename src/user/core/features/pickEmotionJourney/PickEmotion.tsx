@@ -1042,8 +1042,7 @@ const Votes = ({
       container.setNativeProps({
         style: {
           ...styles.votesView,
-          left: val.left,
-          top: val.top,
+          transform: [{ translateX: val.left }, { translateY: val.top }],
           opacity: val.opacity,
         },
         renderToHardwareTextureAndroid:

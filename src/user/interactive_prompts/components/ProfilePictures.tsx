@@ -91,6 +91,9 @@ export const ProfilePictures = ({
 };
 
 const ProfilePictureSlot = ({ picture }: { picture: OsehImageState }) => {
+  if (picture.loading) {
+    return <></>;
+  }
   return (
     <View style={styles.pictureContainer}>
       {picture !== undefined && (
