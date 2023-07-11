@@ -514,7 +514,12 @@ export const useAnimationLoop = <P extends object>(
       return;
     }
 
+    let active = true;
+
     const handlePropsChanged = () => {
+      if (!active) {
+        return;
+      }
       target.current = props.props.call(undefined);
       onTargetChanged.current.call(undefined);
     };
@@ -523,7 +528,10 @@ export const useAnimationLoop = <P extends object>(
     handlePropsChanged();
 
     return () => {
-      propCallbacks.remove(handlePropsChanged);
+      if (active) {
+        active = false;
+        propCallbacks.remove(handlePropsChanged);
+      }
     };
   }, [props.type, propCallbacks, props.props]);
 

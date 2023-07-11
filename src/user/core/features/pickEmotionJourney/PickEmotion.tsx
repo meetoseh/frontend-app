@@ -5,8 +5,8 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
 } from "react";
+import { useStateCompat as useState } from "../../../../shared/hooks/useStateCompat";
 import {
   Pressable,
   StyleProp,
@@ -14,7 +14,6 @@ import {
   TextInput,
   TextStyle,
   View,
-  ViewStyle,
 } from "react-native";
 import { FeatureComponentProps } from "../../models/Feature";
 import { PickEmotionJourneyResources } from "./PickEmotionJourneyResources";
@@ -43,16 +42,16 @@ import {
 } from "../../../../shared/anim/LinearGradientBackground";
 import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
 import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMappedValuesWithCallbacks";
-import { useUnwrappedValueWithCallbacks } from "../../../../shared/hooks/useUnwrappedValueWithCallbacks";
 import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
 import { VariableStrategyProps } from "../../../../shared/anim/VariableStrategyProps";
-import { ProfilePicturesState } from "../../../interactive_prompts/hooks/useProfilePictures";
+import { ProfilePicturesState } from "../../../interactive_prompt/hooks/useProfilePictures";
 import {
   HereSettings,
   ProfilePictures,
-} from "../../../interactive_prompts/components/ProfilePictures";
+} from "../../../interactive_prompt/components/ProfilePictures";
 import { FilledInvertedButton } from "../../../../shared/components/FilledInvertedButton";
-import { FilledPrimaryButton } from "../../../../shared/components/FilledPrimaryButton";
+import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks";
+import { useTopBarHeight } from "../../../../shared/hooks/useTopBarHeight";
 
 /**
  * The settings for the profile pictures
@@ -64,6 +63,7 @@ const hereSettings: HereSettings = { type: "floating", action: "voted" };
  */
 export const PickEmotion = ({
   resources,
+  gotoJourney,
 }: FeatureComponentProps<
   PickEmotionJourneyState,
   PickEmotionJourneyResources
@@ -146,7 +146,6 @@ export const PickEmotion = ({
       },
     }
   );
-  const windowSizeVWC = useWindowSizeValueWithCallbacks();
 
   const onWordClick = useCallback(
     (word: string, index: number) => {
@@ -162,18 +161,13 @@ export const PickEmotion = ({
   );
 
   const onGotoClassClick = useCallback(() => {
-    console.log("goto class");
+    gotoJourney();
   }, []);
 
-  const error = useUnwrappedValueWithCallbacks(
-    useMappedValueWithCallbacks(resources, (r) => r.error)
-  );
-  const background = useUnwrappedValueWithCallbacks(
-    useMappedValueWithCallbacks(resources, (r) => r.background)
-  );
   const profilePicture = useMappedValueWithCallbacks(
     resources,
-    (r) => r.profilePicture
+    (r) => r.profilePicture,
+    { outputEqualityFn: Object.is }
   );
   const profilePicturesState = useMappedValueWithCallbacks(
     resources,
@@ -189,6 +183,11 @@ export const PickEmotion = ({
         pictures: r.selected.profilePictures,
         additionalUsers: r.selected.numTotalVotes - r.selected.numVotes,
       };
+    },
+    {
+      outputEqualityFn: (a, b) =>
+        Object.is(a.pictures, b.pictures) &&
+        a.additionalUsers === b.additionalUsers,
     }
   );
 
@@ -199,11 +198,23 @@ export const PickEmotion = ({
     }
   );
 
+  const topBarHeight = useTopBarHeight();
+
   return (
     <View style={styles.container}>
-      {error}
+      <RenderGuardedComponent
+        props={useMappedValueWithCallbacks(resources, (r) => r.error, {
+          outputEqualityFn: Object.is,
+        })}
+        component={(error) => error ?? <></>}
+      />
 
-      <OsehImageBackgroundFromState state={background} style={styles.content}>
+      <OsehImageBackgroundFromStateValueWithCallbacks
+        state={useMappedValueWithCallbacks(resources, (r) => r.background, {
+          outputEqualityFn: (a, b) => a.localUrl === b.localUrl,
+        })}
+        style={Object.assign({ paddingTop: topBarHeight }, styles.content)}
+      >
         <View style={styles.topNav}>
           <View style={styles.settingsLink}>
             <RenderGuardedComponent
@@ -251,7 +262,7 @@ export const PickEmotion = ({
             )
           }
         />
-      </OsehImageBackgroundFromState>
+      </OsehImageBackgroundFromStateValueWithCallbacks>
     </View>
   );
 };
@@ -462,13 +473,21 @@ const Words = ({
   );
 
   useEffect(() => {
+    let active = true;
     optionsVWC.callbacks.add(updateWordSizes);
     updateWordSizes();
     return () => {
+      if (!active) {
+        return;
+      }
+      active = false;
       optionsVWC.callbacks.remove(updateWordSizes);
     };
 
     function updateWordSizes() {
+      if (!active) {
+        return;
+      }
       if (wordSizesVWC.get().length === optionsVWC.get().length) {
         return;
       }
@@ -492,13 +511,21 @@ const Words = ({
   );
 
   useEffect(() => {
+    let active = true;
     optionsVWC.callbacks.add(updateWordPositions);
     updateWordPositions();
     return () => {
+      if (!active) {
+        return;
+      }
+      active = false;
       optionsVWC.callbacks.remove(updateWordPositions);
     };
 
     function updateWordPositions() {
+      if (!active) {
+        return;
+      }
       const oldWordPositions = wordPositionsVWC.get();
       const options = optionsVWC.get();
 
@@ -519,17 +546,25 @@ const Words = ({
   }, [optionsVWC, wordPositionsVWC, windowSizeVWC]);
 
   useEffect(() => {
+    let active = true;
     wordSizesVWC.callbacks.add(reposition);
     layoutVWC.callbacks.add(reposition);
     windowSizeVWC.callbacks.add(reposition);
     reposition();
     return () => {
+      if (!active) {
+        return;
+      }
+      active = false;
       wordSizesVWC.callbacks.remove(reposition);
       layoutVWC.callbacks.remove(reposition);
       windowSizeVWC.callbacks.remove(reposition);
     };
 
     function reposition() {
+      if (!active) {
+        return;
+      }
       const sizes = wordSizesVWC.get();
       const layout = layoutVWC.get();
       const windowSize = windowSizeVWC.get();
@@ -651,15 +686,23 @@ const WordAdapter = ({
   );
 
   useEffect(() => {
+    let active = true;
     size.callbacks.add(updateParentSize);
     variantVWC.callbacks.add(updateParentSize);
     updateParentSize();
     return () => {
+      if (!active) {
+        return;
+      }
+      active = false;
       size.callbacks.remove(updateParentSize);
       variantVWC.callbacks.remove(updateParentSize);
     };
 
     function updateParentSize() {
+      if (!active) {
+        return;
+      }
       const currentParent = wordSizesVWC.get();
       const variant = variantVWC.get();
       if (idx >= currentParent.length) {
@@ -689,13 +732,21 @@ const WordAdapter = ({
   }, [idx, size, wordSizesVWC, variantVWC]);
 
   useEffect(() => {
+    let active = true;
     wordPositionsVWC.callbacks.add(updateChildPosition);
     updateChildPosition();
     return () => {
+      if (!active) {
+        return;
+      }
+      active = false;
       wordPositionsVWC.callbacks.remove(updateChildPosition);
     };
 
     function updateChildPosition() {
+      if (!active) {
+        return;
+      }
       const currentParent = wordPositionsVWC.get();
       if (idx >= currentParent.length) {
         return;
@@ -885,12 +936,17 @@ const Word = ({
   );
 
   useEffect(() => {
+    let active = true;
     posVWC.callbacks.add(render);
     variantVWC.callbacks.add(render);
     pressedVWC.callbacks.add(render);
     let waitingForNonZeroSizeCanceler = waitForNonZeroSize();
     render();
     return () => {
+      if (!active) {
+        return;
+      }
+      active = false;
       waitingForNonZeroSizeCanceler();
       posVWC.callbacks.remove(render);
       variantVWC.callbacks.remove(render);
@@ -898,6 +954,9 @@ const Word = ({
     };
 
     function render() {
+      if (!active) {
+        return;
+      }
       target.set({
         left: posVWC.get().x,
         top: posVWC.get().y,
@@ -1060,17 +1119,25 @@ const Votes = ({
   );
 
   useEffect(() => {
+    let active = true;
     wordPositionsVWC.callbacks.add(render);
     wordSizesVWC.callbacks.add(render);
     pressedVWC.callbacks.add(render);
     render();
     return () => {
+      if (!active) {
+        return;
+      }
+      active = false;
       wordPositionsVWC.callbacks.remove(render);
       wordSizesVWC.callbacks.remove(render);
       pressedVWC.callbacks.remove(render);
     };
 
     function render() {
+      if (!active) {
+        return;
+      }
       const wordPositions = wordPositionsVWC.get();
       const wordSizes = wordSizesVWC.get();
       const pressed = pressedVWC.get();

@@ -78,10 +78,15 @@ export const useMyProfilePictureStateValueWithCallbacks = (
   const propsVWC = useVariableStrategyPropsAsValueWithCallbacks(propsVariableStrategy);
 
   useEffect(() => {
+    let active = true;
     let cleanup: (() => void) | null = null;
     propsVWC.callbacks.add(handlePropsChanged);
     handlePropsChanged();
     return () => {
+      if (!active) {
+        return;
+      }
+      active = false;
       propsVWC.callbacks.remove(handlePropsChanged);
       if (cleanup !== null) {
         cleanup();
@@ -90,6 +95,9 @@ export const useMyProfilePictureStateValueWithCallbacks = (
     };
 
     function handlePropsChanged() {
+      if (!active) {
+        return;
+      }
       if (cleanup !== null) {
         cleanup();
         cleanup = null;

@@ -11,7 +11,6 @@ export const styles = StyleSheet.create({
   },
   content: {
     alignItems: "stretch",
-    flex: 1,
     justifyContent: "flex-start",
   },
   topNav: {

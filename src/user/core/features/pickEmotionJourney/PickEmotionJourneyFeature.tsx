@@ -276,8 +276,10 @@ export const PickEmotionJourneyFeature: Feature<
           try {
             await fetchOptionsInner();
             if (errorVWC.get() !== null) {
-              errorVWC.set(null);
-              errorVWC.callbacks.call(undefined);
+              if (active) {
+                errorVWC.set(null);
+                errorVWC.callbacks.call(undefined);
+              }
             }
           } catch (e) {
             const err = await describeError(e);
@@ -368,10 +370,15 @@ export const PickEmotionJourneyFeature: Feature<
     );
 
     useEffect(() => {
+      let active = true;
       let cleanup: (() => void) | null = null;
       selectedVWC.callbacks.add(handleSelectedChanged);
       handleSelectedChanged();
       return () => {
+        if (!active) {
+          return;
+        }
+        active = false;
         selectedVWC.callbacks.remove(handleSelectedChanged);
         if (cleanup !== null) {
           cleanup();
@@ -385,6 +392,7 @@ export const PickEmotionJourneyFeature: Feature<
         if (selected?.profilePictures === undefined) {
           return;
         }
+        let innerActive = true;
         const refs = selected.profilePictures;
         const requests = refs.map((ref) =>
           images.request({
@@ -402,6 +410,10 @@ export const PickEmotionJourneyFeature: Feature<
         handleStateChanged();
 
         return () => {
+          if (!innerActive) {
+            return;
+          }
+          innerActive = false;
           profilePicturesVWC.set([]);
           profilePicturesVWC.callbacks.call(undefined);
           for (let r of requests) {
@@ -411,12 +423,18 @@ export const PickEmotionJourneyFeature: Feature<
         };
 
         function handleStateChanged() {
+          if (!innerActive) {
+            return;
+          }
           profilePicturesVWC.set(requests.map((r) => r.state));
           profilePicturesVWC.callbacks.call(undefined);
         }
       }
 
       function handleSelectedChanged() {
+        if (!active) {
+          return;
+        }
         if (cleanup !== null) {
           cleanup();
           cleanup = null;

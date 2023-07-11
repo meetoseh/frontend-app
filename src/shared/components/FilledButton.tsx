@@ -4,9 +4,9 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useState,
 } from "react";
-import { Pressable, TextStyle, View, ViewStyle } from "react-native";
+import { useStateCompat as useState } from "../hooks/useStateCompat";
+import { Pressable, TextStyle, ViewStyle } from "react-native";
 import { CustomButtonProps } from "../models/CustomButtonProps";
 import { useWindowSize } from "../hooks/useWindowSize";
 

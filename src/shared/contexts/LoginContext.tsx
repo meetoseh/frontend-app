@@ -1,11 +1,18 @@
-import { createContext, PropsWithChildren, useCallback, useEffect, useRef, useState } from 'react';
-import { deleteSecurePaginated } from '../lib/deleteSecurePaginated';
-import { storeSecurePaginated } from '../lib/storeSecurePaginated';
-import { retrieveSecurePaginated } from '../lib/retrieveSecurePaginated';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiFetch } from '../lib/apiFetch';
-import { AppState, NativeEventSubscription } from 'react-native';
-import { Buffer } from '@craftzdog/react-native-buffer';
+import {
+  createContext,
+  PropsWithChildren,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
+import { useStateCompat as useState } from "../hooks/useStateCompat";
+import { deleteSecurePaginated } from "../lib/deleteSecurePaginated";
+import { storeSecurePaginated } from "../lib/storeSecurePaginated";
+import { retrieveSecurePaginated } from "../lib/retrieveSecurePaginated";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiFetch } from "../lib/apiFetch";
+import { AppState, NativeEventSubscription } from "react-native";
+import { Buffer } from "@craftzdog/react-native-buffer";
 
 /**
  * The user attributes that are available when a user is logged in. When
@@ -82,7 +89,7 @@ export type LoginContextValue = {
    * This is helpful for login buttons to be disabled until we're sure about
    * the login state.
    */
-  state: 'loading' | 'logged-in' | 'logged-out';
+  state: "loading" | "logged-in" | "logged-out";
 
   /**
    * The number of times we've logged out. This is sometimes useful as a key
@@ -130,15 +137,15 @@ export type LoginContextValue = {
 };
 
 const defaultProps: LoginContextValue = {
-  state: 'loading',
+  state: "loading",
   logoutCounter: 0,
   authTokens: null,
   setAuthTokens: async () => {
-    throw new Error('cannot be called while still loading');
+    throw new Error("cannot be called while still loading");
   },
   userAttributes: null,
   setUserAttributes: async () => {
-    throw new Error('cannot be called while not logged in');
+    throw new Error("cannot be called while not logged in");
   },
 };
 
@@ -152,7 +159,8 @@ const defaultProps: LoginContextValue = {
  * Do NOT use the LoginContext.Provider directly. Instead use the exported
  * LoginProvider.
  */
-export const LoginContext: React.Context<LoginContextValue> = createContext(defaultProps);
+export const LoginContext: React.Context<LoginContextValue> =
+  createContext(defaultProps);
 
 /**
  * The expected props to the LoginProvider
@@ -165,25 +173,33 @@ type LoginProviderProps = object;
  *
  * @param tokenConfig The token config to use to get the user attributes
  */
-export const extractUserAttributes = (tokenConfig: TokenResponseConfig): UserAttributes => {
+export const extractUserAttributes = (
+  tokenConfig: TokenResponseConfig
+): UserAttributes => {
   // we don't need to verify the idToken since this only effects the client,
   // and they can lie to themselves if they want
   const idToken = tokenConfig.idToken;
-  const claimsBase64 = idToken.split('.')[1];
-  const claimsJson = Buffer.from(claimsBase64, 'base64').toString('utf8');
+  const claimsBase64 = idToken.split(".")[1];
+  const claimsJson = Buffer.from(claimsBase64, "base64").toString("utf8");
   const claims = JSON.parse(claimsJson);
 
-  const nameClaims: { name: string | null; given_name: string | null; family_name: string | null } =
-    Object.assign({ name: null, given_name: null, family_name: null }, claims);
+  const nameClaims: {
+    name: string | null;
+    given_name: string | null;
+    family_name: string | null;
+  } = Object.assign(
+    { name: null, given_name: null, family_name: null },
+    claims
+  );
 
   if (
     nameClaims.name === null &&
     (nameClaims.given_name !== null || nameClaims.family_name !== null)
   ) {
     nameClaims.name = (
-      (nameClaims.given_name || '') +
-      ' ' +
-      (nameClaims.family_name || '')
+      (nameClaims.given_name || "") +
+      " " +
+      (nameClaims.family_name || "")
     ).trimEnd();
   }
 
@@ -191,13 +207,13 @@ export const extractUserAttributes = (tokenConfig: TokenResponseConfig): UserAtt
     nameClaims.name !== null &&
     (nameClaims.given_name === null || nameClaims.family_name === null)
   ) {
-    const spaceIndex = nameClaims.name.indexOf(' ');
+    const spaceIndex = nameClaims.name.indexOf(" ");
     if (spaceIndex !== -1) {
       nameClaims.given_name = nameClaims.name.substring(0, spaceIndex);
       nameClaims.family_name = nameClaims.name.substring(spaceIndex + 1);
     } else {
       nameClaims.given_name = nameClaims.name;
-      nameClaims.family_name = '';
+      nameClaims.family_name = "";
     }
   }
 
@@ -216,17 +232,22 @@ export const extractUserAttributes = (tokenConfig: TokenResponseConfig): UserAtt
  *
  * @param authTokens The auth tokens to store
  */
-export const storeAuthTokens = async (authTokens: TokenResponseConfig | null) => {
+export const storeAuthTokens = async (
+  authTokens: TokenResponseConfig | null
+) => {
   if (authTokens === null) {
-    await Promise.all([deleteSecurePaginated('id_token'), deleteSecurePaginated('refresh_token')]);
+    await Promise.all([
+      deleteSecurePaginated("id_token"),
+      deleteSecurePaginated("refresh_token"),
+    ]);
     return;
   }
 
-  const idTokenPromise = storeSecurePaginated('id_token', authTokens.idToken);
+  const idTokenPromise = storeSecurePaginated("id_token", authTokens.idToken);
   const refreshTokenPromise =
     authTokens.refreshToken === null
-      ? deleteSecurePaginated('refresh_token')
-      : storeSecurePaginated('refresh_token', authTokens.refreshToken);
+      ? deleteSecurePaginated("refresh_token")
+      : storeSecurePaginated("refresh_token", authTokens.refreshToken);
 
   await Promise.all([idTokenPromise, refreshTokenPromise]);
 };
@@ -237,12 +258,12 @@ export const storeAuthTokens = async (authTokens: TokenResponseConfig | null) =>
  * @returns The auth tokens from the appropriate store
  */
 const retrieveAuthTokens = async (): Promise<TokenResponseConfig | null> => {
-  const idToken = await retrieveSecurePaginated('id_token');
+  const idToken = await retrieveSecurePaginated("id_token");
   if (idToken === null) {
     return null;
   }
 
-  const refreshToken = await retrieveSecurePaginated('refresh_token');
+  const refreshToken = await retrieveSecurePaginated("refresh_token");
 
   return {
     idToken,
@@ -255,11 +276,16 @@ const retrieveAuthTokens = async (): Promise<TokenResponseConfig | null> => {
  *
  * @param userAttributes The user attributes to store
  */
-export const storeUserAttributes = async (userAttributes: UserAttributes | null) => {
+export const storeUserAttributes = async (
+  userAttributes: UserAttributes | null
+) => {
   if (userAttributes === null) {
-    await AsyncStorage.removeItem('user_attributes');
+    await AsyncStorage.removeItem("user_attributes");
   } else {
-    await AsyncStorage.setItem('user_attributes', JSON.stringify(userAttributes));
+    await AsyncStorage.setItem(
+      "user_attributes",
+      JSON.stringify(userAttributes)
+    );
   }
 };
 /**
@@ -268,7 +294,7 @@ export const storeUserAttributes = async (userAttributes: UserAttributes | null)
  * @returns The user attributes from the appropriate store
  */
 const retrieveUserAttributes = async (): Promise<UserAttributes | null> => {
-  const userAttributesJson = await AsyncStorage.getItem('user_attributes');
+  const userAttributesJson = await AsyncStorage.getItem("user_attributes");
   if (userAttributesJson === null) {
     return null;
   }
@@ -286,8 +312,8 @@ const isTokenFresh = (token: TokenResponseConfig): boolean => {
   const nowMs = Date.now();
   const minExpTime = nowMs + 1000 * 60 * 5;
 
-  const claimsBase64 = token.idToken.split('.')[1];
-  const claimsJson = Buffer.from(claimsBase64, 'base64').toString('utf8');
+  const claimsBase64 = token.idToken.split(".")[1];
+  const claimsJson = Buffer.from(claimsBase64, "base64").toString("utf8");
   const claims = JSON.parse(claimsJson);
   return claims.exp * 1000 > minExpTime;
 };
@@ -308,13 +334,15 @@ const isRefreshable = (token: TokenResponseConfig): boolean => {
   const minExpTime = nowMs + 1000 * 60 * 5;
   const minOgExpTime = nowMs - 1000 * 60 * 60 * 24 * 60 + 1000 * 60 * 5;
 
-  const refreshClaimsBase64 = token.refreshToken.split('.')[1];
-  const refreshClaimsJson = Buffer.from(refreshClaimsBase64, 'base64').toString('utf8');
+  const refreshClaimsBase64 = token.refreshToken.split(".")[1];
+  const refreshClaimsJson = Buffer.from(refreshClaimsBase64, "base64").toString(
+    "utf8"
+  );
   const refreshClaims = JSON.parse(refreshClaimsJson);
 
   const refreshable =
     refreshClaims.exp * 1000 > minExpTime &&
-    refreshClaims['oseh:og_exp'] * 1000 > minOgExpTime &&
+    refreshClaims["oseh:og_exp"] * 1000 > minOgExpTime &&
     refreshClaims.iat * 1000 < maxIat;
 
   return refreshable;
@@ -327,13 +355,15 @@ const isRefreshable = (token: TokenResponseConfig): boolean => {
  * @param oldTokens The tokens to refresh
  * @returns The new tokens
  */
-const refreshTokens = async (oldTokens: TokenResponseConfig): Promise<TokenResponseConfig> => {
+const refreshTokens = async (
+  oldTokens: TokenResponseConfig
+): Promise<TokenResponseConfig> => {
   const response = await apiFetch(
-    '/api/1/oauth/refresh',
+    "/api/1/oauth/refresh",
     {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json; charset=utf-8',
+        "Content-Type": "application/json; charset=utf-8",
       },
       body: JSON.stringify({
         refresh_token: oldTokens.refreshToken,
@@ -346,7 +376,8 @@ const refreshTokens = async (oldTokens: TokenResponseConfig): Promise<TokenRespo
     throw response;
   }
 
-  const data: { id_token: string; refresh_token: string } = await response.json();
+  const data: { id_token: string; refresh_token: string } =
+    await response.json();
   return {
     idToken: data.id_token,
     refreshToken: data.refresh_token,
@@ -370,7 +401,7 @@ const canCheckForegrounded = async () => {
  * @returns True if we're foregrounded, false otherwise
  */
 const isForegrounded = async () => {
-  return AppState.currentState === 'active';
+  return AppState.currentState === "active";
 };
 
 type ForegroundChangedIdentifier = NativeEventSubscription;
@@ -386,7 +417,7 @@ type ForegroundChangedIdentifier = NativeEventSubscription;
 const addForegroundChangedListener = async (
   listener: () => void
 ): Promise<ForegroundChangedIdentifier> => {
-  return AppState.addEventListener('change', listener);
+  return AppState.addEventListener("change", listener);
 };
 
 /**
@@ -396,7 +427,9 @@ const addForegroundChangedListener = async (
  *
  * @param listener The listener to remove
  */
-const removeForegroundChangedListener = async (listener: ForegroundChangedIdentifier) => {
+const removeForegroundChangedListener = async (
+  listener: ForegroundChangedIdentifier
+) => {
   listener.remove();
 };
 
@@ -408,17 +441,23 @@ const removeForegroundChangedListener = async (listener: ForegroundChangedIdenti
 export const LoginProvider = ({
   children,
 }: PropsWithChildren<LoginProviderProps>): React.ReactElement => {
-  const [state, setState] = useState<'loading' | 'logged-in' | 'logged-out'>('loading');
-  const [authTokens, setAuthTokens] = useState<TokenResponseConfig | null>(null);
-  const [userAttributes, setUserAttributes] = useState<UserAttributes | null>(null);
+  const [state, setState] = useState<"loading" | "logged-in" | "logged-out">(
+    "loading"
+  );
+  const [authTokens, setAuthTokens] = useState<TokenResponseConfig | null>(
+    null
+  );
+  const [userAttributes, setUserAttributes] = useState<UserAttributes | null>(
+    null
+  );
   const [logoutCounter, setLogoutCounter] = useState(0);
 
   const tokenLock = useRef<Promise<void> | null>(null);
 
   const wrappedSetAuthTokens = useCallback(
     async (authTokens: TokenResponseConfig | null) => {
-      if (state === 'loading') {
-        throw new Error('cannot be called while still loading');
+      if (state === "loading") {
+        throw new Error("cannot be called while still loading");
       }
 
       const loggedIn = authTokens !== null;
@@ -431,13 +470,13 @@ export const LoginProvider = ({
         ]);
         setAuthTokens(authTokens);
         setUserAttributes(extractedUserAttributes);
-        setState('logged-in');
+        setState("logged-in");
       } else {
         await Promise.all([storeAuthTokens(null), storeUserAttributes(null)]);
         setLogoutCounter((counter) => counter + 1);
         setAuthTokens(null);
         setUserAttributes(null);
-        setState('logged-out');
+        setState("logged-out");
       }
     },
     [state]
@@ -445,8 +484,8 @@ export const LoginProvider = ({
 
   const wrappedSetUserAttributes = useCallback(
     async (userAttributes: UserAttributes | null) => {
-      if (state !== 'logged-in') {
-        throw new Error('cannot be called while not logged in');
+      if (state !== "logged-in") {
+        throw new Error("cannot be called while not logged in");
       }
 
       await storeUserAttributes(userAttributes);
@@ -465,7 +504,10 @@ export const LoginProvider = ({
     async function fetchTokens() {
       let tokens, attributes;
       try {
-        [tokens, attributes] = await Promise.all([retrieveAuthTokens(), retrieveUserAttributes()]);
+        [tokens, attributes] = await Promise.all([
+          retrieveAuthTokens(),
+          retrieveUserAttributes(),
+        ]);
       } catch (e) {
         if (!active) {
           return;
@@ -474,7 +516,7 @@ export const LoginProvider = ({
         // almost certainly this error is Could not encrypt/decrypt data,
         // which happens when the user uninstalls and reinstalls the app.
         await Promise.all([storeAuthTokens(null), storeUserAttributes(null)]);
-        setState('logged-out');
+        setState("logged-out");
         return;
       }
 
@@ -483,14 +525,14 @@ export const LoginProvider = ({
       }
 
       if (tokens === null) {
-        setState('logged-out');
+        setState("logged-out");
         return;
       }
 
       if (isTokenFresh(tokens)) {
         setAuthTokens(tokens);
         setUserAttributes(attributes);
-        setState('logged-in');
+        setState("logged-in");
         return;
       }
 
@@ -501,19 +543,22 @@ export const LoginProvider = ({
         } catch (e) {
           if (e instanceof Response && e.status === 403) {
             const data = await e.text();
-            console.error('refresh tokens additional context:', data);
+            console.error("refresh tokens additional context:", data);
           }
-          console.error('failed to refresh tokens', e);
+          console.error("failed to refresh tokens", e);
         }
 
         if (newTokens !== null) {
           const userAttributes = extractUserAttributes(newTokens);
-          await Promise.all([storeAuthTokens(newTokens), storeUserAttributes(userAttributes)]);
+          await Promise.all([
+            storeAuthTokens(newTokens),
+            storeUserAttributes(userAttributes),
+          ]);
 
           if (active) {
             setAuthTokens(newTokens);
             setUserAttributes(userAttributes);
-            setState('logged-in');
+            setState("logged-in");
           }
           return;
         }
@@ -523,7 +568,7 @@ export const LoginProvider = ({
       if (!active) {
         return;
       }
-      setState('logged-out');
+      setState("logged-out");
     }
 
     async function acquireLockAndFetchTokens() {
@@ -531,7 +576,7 @@ export const LoginProvider = ({
         try {
           await tokenLock.current;
         } catch (e) {
-          console.log('ignoring error from previous token fetch', e);
+          console.log("ignoring error from previous token fetch", e);
         }
       }
 
@@ -543,7 +588,7 @@ export const LoginProvider = ({
       try {
         await tokenLock.current;
       } catch (e) {
-        console.log('error fetching tokens', e);
+        console.log("error fetching tokens", e);
       } finally {
         if (active) {
           tokenLock.current = null;
@@ -556,8 +601,10 @@ export const LoginProvider = ({
     let timeout: NodeJS.Timeout | null = null;
     let visibilityHandler: ForegroundChangedIdentifier | null = null;
     if (authTokens !== null) {
-      const idenClaimsB64 = authTokens.idToken.split('.')[1];
-      const idenClaimsJson = Buffer.from(idenClaimsB64, 'base64').toString('utf8');
+      const idenClaimsB64 = authTokens.idToken.split(".")[1];
+      const idenClaimsJson = Buffer.from(idenClaimsB64, "base64").toString(
+        "utf8"
+      );
       const idenClaims = JSON.parse(idenClaimsJson);
       const expMs = idenClaims.exp * 1000;
       const nowMs = Date.now();
@@ -626,7 +673,7 @@ export const LoginProvider = ({
           const refreshed = await refreshTokens(authTokens);
           wrappedSetAuthTokens(refreshed);
         } catch (e) {
-          console.error('error refreshing tokens: ', e);
+          console.error("error refreshing tokens: ", e);
           wrappedSetAuthTokens(null);
         }
       } else {
@@ -639,7 +686,7 @@ export const LoginProvider = ({
         try {
           await tokenLock.current;
         } catch (e) {
-          console.log('ignoring error from previous token fetch', e);
+          console.log("ignoring error from previous token fetch", e);
         }
       }
 
@@ -651,7 +698,7 @@ export const LoginProvider = ({
       try {
         await tokenLock.current;
       } catch (e) {
-        console.log('error handling expired tokens', e);
+        console.log("error handling expired tokens", e);
       } finally {
         if (active) {
           tokenLock.current = null;
@@ -669,7 +716,8 @@ export const LoginProvider = ({
         setAuthTokens: wrappedSetAuthTokens,
         userAttributes,
         setUserAttributes: wrappedSetUserAttributes,
-      }}>
+      }}
+    >
       {children}
     </LoginContext.Provider>
   );

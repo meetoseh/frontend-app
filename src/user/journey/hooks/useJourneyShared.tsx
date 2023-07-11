@@ -65,10 +65,15 @@ export const useJourneyShared = (
   // holy callback hell
   // this is surprisingly efficient despite looking like a mess
   useEffect(() => {
+    let outerActive = true;
     let unmountJourneyHandler: (() => void) | null = null;
     journeyVWC.callbacks.add(handleJourneyChanged);
     handleJourneyChanged();
     return () => {
+      if (!outerActive) {
+        return;
+      }
+      outerActive = false;
       journeyVWC.callbacks.remove(handleJourneyChanged);
       if (unmountJourneyHandler !== null) {
         unmountJourneyHandler();
@@ -77,6 +82,9 @@ export const useJourneyShared = (
     };
 
     function handleJourneyChanged(): void {
+      if (!outerActive) {
+        return;
+      }
       if (unmountJourneyHandler !== null) {
         unmountJourneyHandler();
         unmountJourneyHandler = null;
@@ -92,6 +100,7 @@ export const useJourneyShared = (
     }
 
     function handleJourney(journey: JourneyRef): () => void {
+      let active = true;
       const cleanup = [
         handleOriginalImage(),
         handleDarkenedAndBlurredImages(),
@@ -100,6 +109,10 @@ export const useJourneyShared = (
         handleFavorited(),
       ];
       return () => {
+        if (!active) {
+          return;
+        }
+        active = false;
         cleanup.forEach((fn) => fn());
       };
 
@@ -117,6 +130,9 @@ export const useJourneyShared = (
         };
 
         function update() {
+          if (!active) {
+            return;
+          }
           if (removeRequest !== null) {
             removeRequest();
             removeRequest = null;
@@ -160,6 +176,9 @@ export const useJourneyShared = (
         };
 
         function update() {
+          if (!active) {
+            return;
+          }
           if (removeRequest !== null) {
             removeRequest();
             removeRequest = null;
@@ -202,13 +221,13 @@ export const useJourneyShared = (
       }
 
       function handleContentTarget(): () => void {
-        let active = true;
         fetchContentTarget();
-        return () => {
-          active = false;
-        };
+        return () => {};
 
         async function fetchContentTarget() {
+          if (!active) {
+            return;
+          }
           if (targetVWC.get().state !== "loading") {
             targetVWC.set({
               state: "loading",
@@ -258,6 +277,9 @@ export const useJourneyShared = (
         };
 
         function update() {
+          if (!active) {
+            return;
+          }
           result.set({
             ...result.get(),
             audio: audioVWC.get(),
@@ -267,11 +289,8 @@ export const useJourneyShared = (
       }
 
       function handleFavorited(): () => void {
-        let active = true;
         loadFavorited();
-        return () => {
-          active = false;
-        };
+        return () => {};
 
         async function loadFavoritedInner() {
           if (!active) {
@@ -316,7 +335,9 @@ export const useJourneyShared = (
 
           const data = await response.json();
           const isFavorited = data.items.length >= 1;
-          setFavorited(isFavorited);
+          if (active) {
+            setFavorited(isFavorited);
+          }
         }
 
         async function loadFavorited() {
@@ -347,15 +368,23 @@ export const useJourneyShared = (
     }
 
     function handlePerpetualLoading(): () => void {
+      let active = true;
       windowSizeVWC.callbacks.add(update);
       previewSizeVWC.callbacks.add(update);
 
       return () => {
+        if (!active) {
+          return;
+        }
+        active = false;
         windowSizeVWC.callbacks.remove(update);
         previewSizeVWC.callbacks.remove(update);
       };
 
       function update() {
+        if (!active) {
+          return;
+        }
         result.set(
           createLoadingJourneyShared(windowSizeVWC.get(), previewSizeVWC.get())
         );

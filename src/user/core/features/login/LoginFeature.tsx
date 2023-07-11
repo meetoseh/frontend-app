@@ -29,13 +29,21 @@ export const LoginFeature: Feature<LoginState, LoginResources> = {
     }));
 
     useEffect(() => {
+      let active = true;
       onboard.callbacks.add(update);
       update();
       return () => {
+        if (!active) {
+          return;
+        }
+        active = false;
         onboard.callbacks.remove(update);
       };
 
       function update() {
+        if (!active) {
+          return;
+        }
         state.set({
           required:
             loginContext.state === "loading"

@@ -1,6 +1,7 @@
-import { JourneyRouterScreenId } from '../JourneyRouter';
-import { JourneyRef } from './JourneyRef';
-import { JourneyShared } from './JourneyShared';
+import { ValueWithCallbacks } from "../../../shared/lib/Callbacks";
+import { JourneyRouterScreenId } from "../JourneyRouter";
+import { JourneyRef } from "./JourneyRef";
+import { JourneyShared } from "./JourneyShared";
 
 export type JourneyScreenProps = {
   /**
@@ -11,7 +12,7 @@ export type JourneyScreenProps = {
   /**
    * The shared state for the journey, to avoid repeating work
    */
-  shared: JourneyShared;
+  shared: ValueWithCallbacks<JourneyShared>;
 
   /**
    * Used to move to a different journey screen. Privileged is true if the

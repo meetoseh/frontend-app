@@ -12,6 +12,7 @@ export const BLACK = '#000000';
 export const ERROR_DEFAULT = '#BA1A1A';
 export const TRANSPARENT = 'rgba(0, 0, 0, 0)';
 export const HALF_TRANSPARENT_WHITE = 'rgba(255, 255, 255, 0.5)';
+export const SLIGHTLY_TRANSPARENT_WHITE = 'rgba(255, 255, 255, 0.9)';
 export const BLACK_OVERLAY = 'rgba(0, 0, 0, 0.5)';
 export const PROMPT_BACKGROUND = 'rgba(239, 240, 256, 0.95)';
 export const PROFILE_PICTURE_BACKGROUND = '#c9d6d6';

@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { MutableRefObject, useEffect, useRef } from 'react';
 import { Callbacks, ValueWithCallbacks, useWritableValueWithCallbacks } from '../lib/Callbacks';
+import { defaultEqualityFn } from '../hooks/useMappedValueWithCallbacks';
 
 /**
  * For components which can be used both using standard react state or
@@ -12,6 +13,22 @@ import { Callbacks, ValueWithCallbacks, useWritableValueWithCallbacks } from '..
 export type VariableStrategyProps<P> =
   | { type: 'react-rerender'; props: P }
   | { type: 'callbacks'; props: () => P; callbacks: Callbacks<undefined> };
+
+export type UseVariableStrategyPropsAsValueWithCallbacksOpts<P> = {
+  /**
+   * The equality function to use to decide if the props have actually
+   * changed. By default, this is the same equality function used for
+   * mapping ValueWithCallbacks, which is always false for objects.
+   *
+   * It is often convenient to use this to reduce callbacks rather
+   * than having each callback check if it really needs to do anything.
+   *
+   * @param a
+   * @param b
+   * @returns If the two are equal and thus callbacks can be skipped
+   */
+  equalityFn?: (a: P, b: P) => boolean;
+};
 
 /**
  * Converts a VariablyStrategyProps, which is usually used as the type that's
@@ -63,33 +80,57 @@ export type VariableStrategyProps<P> =
  * @returns The adapted props using the least common denominator, ValueWithCallbacks
  */
 export const useVariableStrategyPropsAsValueWithCallbacks = <P>(
-  props: VariableStrategyProps<P>
+  props: VariableStrategyProps<P>,
+  rawOpts?: UseVariableStrategyPropsAsValueWithCallbacksOpts<P>
 ): ValueWithCallbacks<P> => {
+  const optsRef = useRef<
+    Required<UseVariableStrategyPropsAsValueWithCallbacksOpts<P>>
+  >() as MutableRefObject<Required<UseVariableStrategyPropsAsValueWithCallbacksOpts<P>>>;
+  optsRef.current = Object.assign(
+    {
+      equalityFn: defaultEqualityFn,
+    },
+    rawOpts
+  );
   const result = useWritableValueWithCallbacks<P>(() =>
     props.type === 'react-rerender' ? props.props : props.props()
   );
 
   useEffect(() => {
     if (props.type === 'react-rerender') {
-      result.set(props.props);
-      result.callbacks.call(undefined);
+      // adding this function improves error messages
+      const reactRerenderVSPCallback = () => {
+        result.set(props.props);
+        result.callbacks.call(undefined);
+      };
+      reactRerenderVSPCallback();
       return;
     }
 
+    let active = true;
     const propsGetter = props.props;
     const propsCallbacks = props.callbacks;
     propsCallbacks.add(handleChange);
     handleChange();
     return () => {
-      propsCallbacks.remove(handleChange);
+      if (active) {
+        active = false;
+        propsCallbacks.remove(handleChange);
+      }
     };
 
     function handleChange() {
-      const newV = propsGetter();
-      if (newV !== result.get()) {
-        result.set(newV);
-        result.callbacks.call(undefined);
+      if (!active) {
+        return;
       }
+      const val = propsGetter();
+
+      if (optsRef.current.equalityFn(result.get(), val)) {
+        return;
+      }
+
+      result.set(propsGetter());
+      result.callbacks.call(undefined);
     }
   }, [props, result]);
 

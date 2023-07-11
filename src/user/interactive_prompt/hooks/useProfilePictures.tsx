@@ -7,16 +7,7 @@ import {
 import { CancelablePromise } from "../../../shared/lib/CancelablePromise";
 import { LoginContext } from "../../../shared/contexts/LoginContext";
 import { InteractivePrompt } from "../models/InteractivePrompt";
-import {
-  PromptTime,
-  waitUntilUsingPromptTime,
-  waitUntilUsingPromptTimeCancelable,
-} from "./usePromptTime";
-import {
-  PromptStats,
-  StatsChangedEvent,
-  waitUntilNextStatsUpdateCancelable,
-} from "./useStats";
+import { PromptTime } from "./usePromptTime";
 import { OsehImageState } from "../../../shared/images/OsehImageState";
 import {
   OsehImageRequestedState,
@@ -24,6 +15,12 @@ import {
 } from "../../../shared/images/useOsehImageStateRequestHandler";
 import { OsehImageRef } from "../../../shared/images/OsehImageRef";
 import { createCancelablePromiseFromCallbacks } from "../../../shared/lib/createCancelablePromiseFromCallbacks";
+import {
+  VariableStrategyProps,
+  useVariableStrategyPropsAsValueWithCallbacks,
+} from "../../../shared/anim/VariableStrategyProps";
+import { Stats } from "./useStats";
+import { waitForValueWithCallbacksConditionCancelable } from "../../../shared/lib/waitForValueWithCallbacksCondition";
 import { apiFetch } from "../../../shared/lib/apiFetch";
 
 /**
@@ -48,17 +45,17 @@ type ProfilePicturesProps = {
   /**
    * The interactive prompt to generate profile pictures for
    */
-  prompt: InteractivePrompt;
+  prompt: VariableStrategyProps<InteractivePrompt>;
 
   /**
    * The prompt time to use to generate the profile pictures
    */
-  promptTime: PromptTime;
+  promptTime: VariableStrategyProps<PromptTime>;
 
   /**
    * The prompt statistics, used for determining the number of users
    */
-  stats: PromptStats;
+  stats: VariableStrategyProps<Stats>;
 };
 
 const displayWidth = 38;
@@ -70,10 +67,20 @@ const displayHeight = 38;
  * people active in the prompt at the current prompt time.
  */
 export const useProfilePictures = ({
-  prompt,
-  promptTime,
-  stats,
+  prompt: promptVariableStrategy,
+  promptTime: promptTimeVariableStrategy,
+  stats: statsVariableStrategy,
 }: ProfilePicturesProps): ValueWithCallbacks<ProfilePicturesState> => {
+  const promptVWC = useVariableStrategyPropsAsValueWithCallbacks(
+    promptVariableStrategy
+  );
+  const promptTimeVWC = useVariableStrategyPropsAsValueWithCallbacks(
+    promptTimeVariableStrategy
+  );
+  const statsVWC = useVariableStrategyPropsAsValueWithCallbacks(
+    statsVariableStrategy
+  );
+
   const result = useWritableValueWithCallbacks(
     (): ProfilePicturesState => ({
       pictures: [],
@@ -109,25 +116,36 @@ export const useProfilePictures = ({
 
     async function getImageRefs() {
       const lastBin = (() => {
-        const res = Math.floor(prompt.durationSeconds / 2);
-        if (res * 2 === prompt.durationSeconds) {
+        const res = Math.floor(promptVWC.get().durationSeconds / 2);
+        if (res * 2 === promptVWC.get().durationSeconds) {
           return res - 1;
         }
         return res;
       })();
-      let currentBin = Math.max(0, Math.floor(promptTime.time.current / 2000));
+      let currentBin = Math.max(0, Math.floor(promptTimeVWC.get().time / 2000));
       let nextBinToLoad = currentBin;
 
       while (active && nextBinToLoad <= lastBin) {
-        currentBin = Math.max(0, Math.floor(promptTime.time.current / 2000));
+        currentBin = Math.max(0, Math.floor(promptTimeVWC.get().time / 2000));
 
         if (nextBinToLoad > currentBin + 1) {
-          // eslint-disable-next-line no-loop-func
-          await waitUntilUsingPromptTime(promptTime, (event) => {
-            const newCurrentBin = Math.floor(event.current / 2000);
-            return nextBinToLoad <= newCurrentBin + 1;
-          });
-          currentBin = Math.max(0, Math.floor(promptTime.time.current / 2000));
+          const timePromiseCancelable =
+            waitForValueWithCallbacksConditionCancelable(
+              promptTimeVWC,
+              // eslint-disable-next-line no-loop-func
+              (promptTime) => {
+                const newCurrentBin = Math.floor(promptTime.time / 2000);
+                return nextBinToLoad <= newCurrentBin + 1;
+              }
+            );
+          const cancelPromise = createCancelablePromiseFromCallbacks(cancelers);
+          await Promise.race([
+            timePromiseCancelable.promise.catch(() => {}),
+            cancelPromise.promise.catch(() => {}),
+          ]);
+          timePromiseCancelable.cancel();
+          cancelPromise.cancel();
+          continue;
         }
 
         const bin = nextBinToLoad;
@@ -138,8 +156,8 @@ export const useProfilePictures = ({
               method: "POST",
               headers: { "Content-Type": "application/json; charset=utf-8" },
               body: JSON.stringify({
-                uid: prompt.uid,
-                jwt: prompt.jwt,
+                uid: promptVWC.get().uid,
+                jwt: promptVWC.get().jwt,
                 prompt_time: bin * 2,
                 limit: 5,
               }),
@@ -167,7 +185,7 @@ export const useProfilePictures = ({
         } catch (e) {
           console.error(
             "failed to fetch profile pictures for prompt ",
-            prompt.uid,
+            promptVWC.get().uid,
             " at time ",
             bin * 2,
             ": ",
@@ -188,9 +206,8 @@ export const useProfilePictures = ({
     }
 
     async function handlePictures() {
-      let timePromise: CancelablePromise<void> | null = null;
-      let statsChangedPromise: CancelablePromise<StatsChangedEvent> | null =
-        null;
+      let timePromise: CancelablePromise<PromptTime> | null = null;
+      let statsChangedPromise: CancelablePromise<undefined> | null = null;
       let imageLoadedPromise: CancelablePromise<void> | null = null;
       const imageLoadedCallbacks = new Callbacks<undefined>();
       const canceledPromise = new Promise<void>((resolve) => {
@@ -200,17 +217,23 @@ export const useProfilePictures = ({
       while (active) {
         const currentBin = Math.max(
           0,
-          Math.floor(promptTime.time.current / 2000)
+          Math.floor(promptTimeVWC.get().time / 2000)
         );
         const imageRequests = imageRequestsByPromptTime.get(currentBin);
         if (imageRequests === undefined) {
+          const availableCancelablePromise =
+            waitForValueWithCallbacksConditionCancelable(
+              promptTimeVWC,
+              (promptTime) => {
+                const newCurrentBin = Math.floor(promptTime.time / 2000);
+                return imageRequestsByPromptTime.has(newCurrentBin);
+              }
+            );
           await Promise.race([
-            waitUntilUsingPromptTime(promptTime, (event) => {
-              const newCurrentBin = Math.floor(event.current / 2000);
-              return imageRequestsByPromptTime.has(newCurrentBin);
-            }),
+            availableCancelablePromise.promise.catch(() => {}),
             canceledPromise,
           ]);
+          availableCancelablePromise.cancel();
           continue;
         }
 
@@ -235,7 +258,7 @@ export const useProfilePictures = ({
           }
         }
 
-        const additionalUsers = stats.stats.current.users - loadedImages.length;
+        const additionalUsers = statsVWC.get().users - loadedImages.length;
         result.set({
           pictures: loadedImages,
           additionalUsers,
@@ -243,16 +266,18 @@ export const useProfilePictures = ({
         result.callbacks.call(undefined);
 
         if (timePromise === null || timePromise.done()) {
-          timePromise = waitUntilUsingPromptTimeCancelable(
-            promptTime,
-            (event) => {
-              return event.current >= (currentBin + 1) * 2000;
+          timePromise = waitForValueWithCallbacksConditionCancelable(
+            promptTimeVWC,
+            (promptTime) => {
+              return promptTime.time >= (currentBin + 1) * 2000;
             }
           );
         }
 
         if (statsChangedPromise === null || statsChangedPromise.done()) {
-          statsChangedPromise = waitUntilNextStatsUpdateCancelable(stats);
+          statsChangedPromise = createCancelablePromiseFromCallbacks(
+            statsVWC.callbacks
+          );
         }
 
         await Promise.race([
@@ -268,7 +293,7 @@ export const useProfilePictures = ({
       statsChangedPromise?.cancel();
       unmount();
     }
-  }, [prompt, promptTime, stats, loginContext, imagesHandler, result]);
+  }, [promptVWC, promptTimeVWC, statsVWC, loginContext, imagesHandler, result]);
 
   return result;
 };

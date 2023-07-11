@@ -46,12 +46,17 @@ export const useOsehImageStateValueWithCallbacks = (
   const propsAsValueWithCallbacks = useVariableStrategyPropsAsValueWithCallbacks(props);
 
   useEffect(() => {
+    let active = true;
     let canceler: (() => void) | null = null;
 
     propsAsValueWithCallbacks.callbacks.add(handlePropsChanged);
     handlePropsChanged();
 
     return () => {
+      if (!active) {
+        return;
+      }
+      active = false;
       propsAsValueWithCallbacks.callbacks.remove(handlePropsChanged);
       if (canceler) {
         canceler();
@@ -60,6 +65,9 @@ export const useOsehImageStateValueWithCallbacks = (
     };
 
     function handlePropsChanged() {
+      if (!active) {
+        return;
+      }
       if (canceler) {
         canceler();
         canceler = null;

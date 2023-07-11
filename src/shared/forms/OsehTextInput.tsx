@@ -1,10 +1,4 @@
-import {
-  ComponentProps,
-  ReactElement,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { ReactElement } from "react";
 import { styles } from "./OsehTextInputStyles";
 import { View, Text, TextInput, TextInputProps } from "react-native";
 

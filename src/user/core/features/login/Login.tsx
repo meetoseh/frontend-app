@@ -1,10 +1,5 @@
-import {
-  ReactElement,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from "react";
+import { ReactElement, useCallback, useContext, useMemo } from "react";
+import { useStateCompat as useState } from "../../../../shared/hooks/useStateCompat";
 import { Pressable, Text, View } from "react-native";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";

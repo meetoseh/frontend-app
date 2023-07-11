@@ -48,14 +48,20 @@ export const useAnimatedValueWithCallbacks = <T extends object>(
   renderRef.current = render;
 
   useEffect(() => {
+    let active = true;
     renderedCallbacks.add(doRender);
     doRender();
     return () => {
-      renderedCallbacks.remove(doRender);
+      if (active) {
+        active = false;
+        renderedCallbacks.remove(doRender);
+      }
     };
 
     function doRender() {
-      renderRef.current(rendered());
+      if (active) {
+        renderRef.current(rendered());
+      }
     }
   }, [rendered, renderedCallbacks]);
 

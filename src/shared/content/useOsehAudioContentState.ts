@@ -29,9 +29,14 @@ export const useOsehAudioContentState = (
   }
 
   useEffect(() => {
+    let outerActive = true;
     let targetCanceler: (() => void) | null = null;
     targetVWC.callbacks.add(handleTargetChanged);
     return () => {
+      if (!outerActive) {
+        return;
+      }
+      outerActive = false;
       targetVWC.callbacks.remove(handleTargetChanged);
       if (targetCanceler !== null) {
         targetCanceler();
@@ -40,6 +45,10 @@ export const useOsehAudioContentState = (
     };
 
     function handleTargetChanged() {
+      if (!outerActive) {
+        return;
+      }
+
       if (targetCanceler !== null) {
         targetCanceler();
         targetCanceler = null;
@@ -105,6 +114,9 @@ export const useOsehAudioContentState = (
       }
 
       function handleAudioChanged() {
+        if (!active) {
+          return;
+        }
         if (aud === null) {
           return;
         }

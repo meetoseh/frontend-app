@@ -8,8 +8,8 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
 } from "react";
+import { useStateCompat as useState } from "../../shared/hooks/useStateCompat";
 import { View, ViewStyle } from "react-native";
 import { styles } from "./SplashScreenStyles";
 import LottieView from "lottie-react-native";

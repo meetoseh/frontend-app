@@ -1,11 +1,5 @@
-import {
-  ReactElement,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { ReactElement, useCallback, useEffect, useRef } from "react";
+import { useStateCompat as useState } from "../hooks/useStateCompat";
 import { Callbacks, useWritableValueWithCallbacks } from "../lib/Callbacks";
 import { ExpoWebGLRenderingContext, GLView } from "expo-gl";
 import { PixelRatio } from "react-native";
@@ -205,7 +199,12 @@ export function SinglePassWebGLComponent<
     const dpi = PixelRatio.get();
     let state: RenderState<A, U, B, T> | null = null;
     let renderedProps: P | null = null;
+    let active = true;
     const rerender = () => {
+      if (!active) {
+        return;
+      }
+
       if (state !== null) {
         if (
           renderedProps !== null &&
@@ -220,6 +219,10 @@ export function SinglePassWebGLComponent<
     };
 
     const contextChanged = () => {
+      if (!active) {
+        return;
+      }
+
       if (state !== null) {
         state.dispose();
         state = null;
@@ -236,7 +239,6 @@ export function SinglePassWebGLComponent<
     rerender();
     contextChanged();
 
-    let active = true;
     return () => {
       if (active) {
         active = false;

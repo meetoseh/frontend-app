@@ -6,7 +6,7 @@ export type NumericPrompt = {
   /**
    * The style of the prompt. This is always 'numeric' for this type.
    */
-  style: 'numeric';
+  style: "numeric";
 
   /**
    * The text to show to the user which they use to select a number.
@@ -38,7 +38,7 @@ export type PressPrompt = {
   /**
    * The style of the prompt. This is always 'press' for this type.
    */
-  style: 'press';
+  style: "press";
 
   /**
    * The text to show to the user which they use to decide when to press
@@ -53,7 +53,7 @@ export type ColorPrompt = {
   /**
    * The style of the prompt. This is always 'color' for this type.
    */
-  style: 'color';
+  style: "color";
 
   /**
    * The text to show to the user which they use to decide which color to select.
@@ -73,7 +73,7 @@ export type WordPrompt = {
   /**
    * The style of the prompt. This is always 'word' for this type.
    */
-  style: 'word';
+  style: "word";
 
   /**
    * The text to show to the user which they use to decide which word to select.
@@ -89,4 +89,4 @@ export type WordPrompt = {
 /**
  * A prompt that a journey can have
  */
-export type Prompt = NumericPrompt | PressPrompt | ColorPrompt | WordPrompt;
+export type Prompt = NumericPrompt | ColorPrompt | WordPrompt;

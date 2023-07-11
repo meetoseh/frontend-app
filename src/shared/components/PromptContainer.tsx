@@ -1,6 +1,7 @@
-import { ReactElement, useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { styles } from './PromptContainerStyles';
+import { ReactElement, useEffect, useMemo } from "react";
+import { useStateCompat as useState } from "../hooks/useStateCompat";
+import { Pressable, Text, View } from "react-native";
+import { styles } from "./PromptContainerStyles";
 
 type PromptContainerProps = {
   /**
@@ -36,8 +37,14 @@ type PromptContainerProps = {
  * background, title, ctas, and optionally a body. The cta styling is not
  * configurable for simplicity.
  */
-export const PromptContainer = ({ title, body, ctas }: PromptContainerProps): ReactElement => {
-  const [pressing, setPressing] = useState<boolean[]>(() => ctas.map(() => false));
+export const PromptContainer = ({
+  title,
+  body,
+  ctas,
+}: PromptContainerProps): ReactElement => {
+  const [pressing, setPressing] = useState<boolean[]>(() =>
+    ctas.map(() => false)
+  );
 
   useEffect(() => {
     setPressing((oldPressing) => {
@@ -58,7 +65,11 @@ export const PromptContainer = ({ title, body, ctas }: PromptContainerProps): Re
       return styles.primaryCtaContainer;
     }
 
-    return Object.assign({}, styles.primaryCtaContainer, styles.primaryCtaContainerPressed);
+    return Object.assign(
+      {},
+      styles.primaryCtaContainer,
+      styles.primaryCtaContainerPressed
+    );
   }, [pressing]);
 
   const secondaryCtaContainerStyles = useMemo(() => {
@@ -67,7 +78,11 @@ export const PromptContainer = ({ title, body, ctas }: PromptContainerProps): Re
         return styles.secondaryCtaContainer;
       }
 
-      return Object.assign({}, styles.secondaryCtaContainer, styles.secondaryCtaContainerPressed);
+      return Object.assign(
+        {},
+        styles.secondaryCtaContainer,
+        styles.secondaryCtaContainerPressed
+      );
     });
   }, [ctas, pressing]);
 
@@ -93,14 +108,24 @@ export const PromptContainer = ({ title, body, ctas }: PromptContainerProps): Re
 
   return (
     <View style={styles.container}>
-      {typeof title === 'string' ? <Text style={styles.title}>{title}</Text> : title}
-      {body && (typeof body === 'string' ? <Text style={styles.body}>{body}</Text> : body)}
+      {typeof title === "string" ? (
+        <Text style={styles.title}>{title}</Text>
+      ) : (
+        title
+      )}
+      {body &&
+        (typeof body === "string" ? (
+          <Text style={styles.body}>{body}</Text>
+        ) : (
+          body
+        ))}
       {ctas[0] && (
         <Pressable
           style={primaryCtaContainerStyle}
           onPress={ctas[0].onPress}
           onPressIn={boundOnPressIn[0]}
-          onPressOut={boundOnPressOut[0]}>
+          onPressOut={boundOnPressOut[0]}
+        >
           <Text style={styles.primaryCta}>{ctas[0].text}</Text>
         </Pressable>
       )}
@@ -110,7 +135,8 @@ export const PromptContainer = ({ title, body, ctas }: PromptContainerProps): Re
           style={secondaryCtaContainerStyles[index]}
           onPress={cta.onPress}
           onPressIn={boundOnPressIn[index + 1]}
-          onPressOut={boundOnPressOut[index + 1]}>
+          onPressOut={boundOnPressOut[index + 1]}
+        >
           <Text style={styles.secondaryCta}>{cta.text}</Text>
         </Pressable>
       ))}

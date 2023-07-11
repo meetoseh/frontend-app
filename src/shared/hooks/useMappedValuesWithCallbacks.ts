@@ -1,14 +1,6 @@
 import { MutableRefObject, useEffect, useRef } from 'react';
 import { ValueWithCallbacks, useWritableValueWithCallbacks } from '../lib/Callbacks';
-import { MappedValueWithCallbacksOpts } from './useMappedValueWithCallbacks';
-
-const defaultInputEquals = <V>(a: V[], b: V[]) => {
-  if (a.length !== b.length) {
-    return false;
-  }
-
-  return a.every((v, i) => Object.is(v, b[i]));
-};
+import { MappedValueWithCallbacksOpts, defaultEqualityFn } from './useMappedValueWithCallbacks';
 
 /**
  * Similar to useMappedValueWithCallbacks, except this one maps an array of
@@ -35,8 +27,9 @@ export const useMappedValuesWithCallbacks = <V, T extends ValueWithCallbacks<V>[
 ) => {
   const opts: Required<MappedValueWithCallbacksOpts<V[], U>> = Object.assign(
     {
-      inputEqualityFn: defaultInputEquals,
-      outputEqualityFn: Object.is,
+      inputEqualityFn: defaultEqualityFn,
+      outputEqualityFn: defaultEqualityFn,
+      delayOneTick: false,
     },
     rawOpts
   );
@@ -47,17 +40,39 @@ export const useMappedValuesWithCallbacks = <V, T extends ValueWithCallbacks<V>[
   const result = useWritableValueWithCallbacks<U>(() => mapper(lastInputRef.current));
 
   useEffect(() => {
+    let active = true;
+    let timeout: NodeJS.Timeout | null = null;
     for (const v of arr) {
       v.callbacks.add(handleChange);
     }
-    handleChange();
+    handleChange(undefined);
     return () => {
-      for (const v of arr) {
-        v.callbacks.remove(handleChange);
+      if (active) {
+        active = false;
+        if (timeout !== null) {
+          clearTimeout(timeout);
+          timeout = null;
+        }
+        for (const v of arr) {
+          v.callbacks.remove(handleChange);
+        }
       }
     };
 
-    function handleChange() {
+    function handleChange(delayed: boolean | undefined) {
+      if (delayed) {
+        timeout = null;
+      }
+      if (opts.delayOneTick && !delayed) {
+        if (timeout === null) {
+          timeout = setTimeout(() => handleChange(true), 0);
+        }
+        return;
+      }
+      if (!active) {
+        return;
+      }
+      
       const newInput = arr.map((a) => a.get());
       if (opts.inputEqualityFn.call(undefined, lastInputRef.current, newInput)) {
         return;

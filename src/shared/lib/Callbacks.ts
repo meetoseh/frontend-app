@@ -169,6 +169,7 @@ export class Callbacks<T> {
       node = node.next;
     }
 
+    const identifier = Math.random().toString(36).substring(2, 15);
     this.calling = true;
     let i = 0;
     while (i < callbacks.length && this.callReplacedBy === null) {
@@ -339,4 +340,23 @@ export const useWritableValueWithCallbacks = <T>(
     }),
     [get, set, callbacks]
   );
+};
+
+/**
+ * Similar to useWritableValueWithCallbacks, but not a hook-like function. Returns
+ * a new writable value with callbacks, initialized to initial.
+ *
+ * @param initial the initial value
+ * @returns a value with callbacks, initialized to initial
+ */
+export const createWritableValueWithCallbacks = <T>(initial: T): WritableValueWithCallbacks<T> => {
+  let current = initial;
+  const callbacks = new Callbacks<undefined>();
+  return {
+    get: () => current,
+    set: (t: T) => {
+      current = t;
+    },
+    callbacks,
+  };
 };

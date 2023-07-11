@@ -443,13 +443,23 @@ export const LinearGradientBackground = ({
   );
 
   useEffect(() => {
-    state.callbacks.add(rerender);
-    trueSize.callbacks.add(rerender);
+    let active = true;
+    state.callbacks.add(rerenderIfActive);
+    trueSize.callbacks.add(rerenderIfActive);
 
     return () => {
-      state.callbacks.remove(rerender);
-      trueSize.callbacks.remove(rerender);
+      if (active) {
+        active = false;
+        state.callbacks.remove(rerenderIfActive);
+        trueSize.callbacks.remove(rerenderIfActive);
+      }
     };
+
+    function rerenderIfActive() {
+      if (active) {
+        rerender();
+      }
+    }
   }, [state, trueSize, rerender]);
 
   return (

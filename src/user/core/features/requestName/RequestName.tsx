@@ -1,4 +1,5 @@
-import { ReactElement, useCallback, useContext, useState } from "react";
+import { ReactElement, useCallback, useContext } from "react";
+import { useStateCompat as useState } from "../../../../shared/hooks/useStateCompat";
 import { StyleProp, Text, TextStyle, View } from "react-native";
 import { LoginContext } from "../../../../shared/contexts/LoginContext";
 import { RequestNameResources } from "./RequestNameResources";

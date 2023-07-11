@@ -1,6 +1,13 @@
-import { ReactElement, useMemo } from 'react';
-import { Image, ImageSourcePropType, ImageStyle, StyleProp, View } from 'react-native';
-import { OsehImageState } from './OsehImageState';
+import { ReactElement, useMemo } from "react";
+import {
+  Image,
+  ImageSourcePropType,
+  ImageStyle,
+  StyleProp,
+  View,
+  ViewProps,
+} from "react-native";
+import { OsehImageState } from "./OsehImageState";
 
 type OsehImageStateFromStateProps = {
   /**
@@ -13,6 +20,11 @@ type OsehImageStateFromStateProps = {
    * or height, as these are set by the image state.
    */
   style?: StyleProp<ImageStyle>;
+
+  /**
+   * Can be used to prevent the image from being interacted with.
+   */
+  pointerEvents?: ViewProps["pointerEvents"];
 };
 /**
  * Uses the standard rendering for the given oseh image state, using a placeholder
@@ -23,9 +35,14 @@ type OsehImageStateFromStateProps = {
 export const OsehImageFromState = ({
   state,
   style,
+  pointerEvents,
 }: OsehImageStateFromStateProps): ReactElement => {
   const fullStyle = useMemo(() => {
-    return Object.assign({}, { width: state.displayWidth, height: state.displayHeight }, style);
+    return Object.assign(
+      {},
+      { width: state.displayWidth, height: state.displayHeight },
+      style
+    );
   }, [state.displayHeight, state.displayWidth, style]);
 
   const source = useMemo<ImageSourcePropType | null>(() => {
@@ -36,5 +53,15 @@ export const OsehImageFromState = ({
     return null;
   }, [state.localUrl]);
 
-  return source ? <Image style={fullStyle} source={source} /> : <View style={fullStyle} />;
+  return source ? (
+    pointerEvents === undefined ? (
+      <Image style={fullStyle} source={source} />
+    ) : (
+      <View pointerEvents={pointerEvents}>
+        <Image style={fullStyle} source={source} />
+      </View>
+    )
+  ) : (
+    <View style={fullStyle} pointerEvents={pointerEvents} />
+  );
 };

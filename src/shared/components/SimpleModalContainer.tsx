@@ -1,14 +1,15 @@
-import { PropsWithChildren, ReactElement, useCallback, useMemo, useState } from 'react';
+import { PropsWithChildren, ReactElement, useCallback, useMemo } from "react";
+import { useStateCompat as useState } from "../hooks/useStateCompat";
 import {
   GestureResponderEvent,
   LayoutChangeEvent,
   LayoutRectangle,
   Pressable,
   View,
-} from 'react-native';
-import { useScreenSize } from '../hooks/useWindowSize';
-import { useTopBarHeight } from '../hooks/useTopBarHeight';
-import { styles } from './SimpleModalContainerStyles';
+} from "react-native";
+import { useWindowSize as useScreenSize } from "../hooks/useWindowSize";
+import { useTopBarHeight } from "../hooks/useTopBarHeight";
+import { styles } from "./SimpleModalContainerStyles";
 
 type SimpleModalContainerProps = {
   /**
@@ -28,7 +29,8 @@ export const SimpleModalContainer = ({
 }: PropsWithChildren<SimpleModalContainerProps>): ReactElement => {
   const screenSize = useScreenSize();
   const topBarHeight = useTopBarHeight();
-  const [innerContainerBounds, setInnerContainerBounds] = useState<LayoutRectangle | null>(null);
+  const [innerContainerBounds, setInnerContainerBounds] =
+    useState<LayoutRectangle | null>(null);
 
   const outerContainerStyle = useMemo(() => {
     return Object.assign({}, styles.outerContainer, {
