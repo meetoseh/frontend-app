@@ -10,6 +10,7 @@ import { WordPrompt } from "./WordPrompt";
 import { PromptOnFinished } from "../models/PromptOnFinished";
 import { Text } from "react-native";
 import { ColorPrompt } from "./ColorPrompt";
+import { NumericPrompt } from "./NumericPrompt";
 
 type InteractivePromptRouterPropsBase<R> = {
   /**
@@ -114,6 +115,9 @@ export const InteractivePromptRouter = (
   } else if (props.prompt.prompt.style === "color") {
     props = props as InteractivePromptRouterColorProps;
     return <ColorPrompt {...props} />;
+  } else if (props.prompt.prompt.style === "numeric") {
+    props = props as InteractivePromptRouterNumericProps;
+    return <NumericPrompt {...props} />;
   }
 
   return <Text>This prompt is not supported on this platform yet.</Text>;

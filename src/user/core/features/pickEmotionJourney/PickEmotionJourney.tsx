@@ -139,7 +139,6 @@ export const PickEmotionJourney = ({
 
       const selected = resources.get().selected;
       if (selected === null) {
-        console.warn("Cannot go to journey screen without a selected emotion.");
         return;
       }
 
