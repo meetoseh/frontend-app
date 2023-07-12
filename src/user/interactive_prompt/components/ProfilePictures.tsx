@@ -90,8 +90,8 @@ export const ProfilePictures = ({
   );
 };
 
-const ProfilePictureSlot = ({ picture }: { picture: OsehImageState }) => {
-  if (picture.loading) {
+const ProfilePictureSlot = ({ picture }: { picture?: OsehImageState }) => {
+  if (picture === undefined || picture.loading) {
     return <></>;
   }
   return (

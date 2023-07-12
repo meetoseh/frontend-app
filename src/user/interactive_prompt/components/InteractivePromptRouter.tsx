@@ -9,6 +9,7 @@ import { CountdownTextConfig } from "./CountdownText";
 import { WordPrompt } from "./WordPrompt";
 import { PromptOnFinished } from "../models/PromptOnFinished";
 import { Text } from "react-native";
+import { ColorPrompt } from "./ColorPrompt";
 
 type InteractivePromptRouterPropsBase<R> = {
   /**
@@ -110,6 +111,9 @@ export const InteractivePromptRouter = (
     // not sure why typescript can't infer this type
     props = props as InteractivePromptRouterWordProps;
     return <WordPrompt {...props} />;
+  } else if (props.prompt.prompt.style === "color") {
+    props = props as InteractivePromptRouterColorProps;
+    return <ColorPrompt {...props} />;
   }
 
   return <Text>This prompt is not supported on this platform yet.</Text>;
