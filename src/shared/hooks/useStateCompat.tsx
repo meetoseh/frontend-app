@@ -59,7 +59,9 @@ export function useStateCompat<T>(
         return;
       }
       settingTo.current = notSet;
-      setState(nowSettingTo);
+      if (!Object.is(nowSettingTo, stateRef.current)) {
+        setState(nowSettingTo);
+      }
     }, 0);
   }, []);
 

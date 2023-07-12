@@ -21,7 +21,6 @@ export const styles = StyleSheet.create({
     textAlign: "center",
     fontFamily: "OpenSans-Light",
     fontSize: 100,
-    lineHeight: 100,
     color: Colors.SLIGHTLY_TRANSPARENT_WHITE,
   },
 });

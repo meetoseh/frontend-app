@@ -6,10 +6,10 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: Colors.WHITE,
     flexDirection: "column",
-    flex: 1,
     justifyContent: "center",
   },
   content: {
+    flexDirection: "column",
     alignItems: "stretch",
     justifyContent: "flex-start",
   },

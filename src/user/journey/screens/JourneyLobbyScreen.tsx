@@ -4,12 +4,12 @@ import { JourneyScreenProps } from "../models/JourneyScreenProps";
 import { styles } from "./JourneyLobbyScreenStyles";
 import { JourneyPrompt } from "../components/JourneyPrompt";
 import { useMappedValueWithCallbacks } from "../../../shared/hooks/useMappedValueWithCallbacks";
-import { useUnwrappedValueWithCallbacks } from "../../../shared/hooks/useUnwrappedValueWithCallbacks";
 import { View } from "react-native";
-import { OsehImageBackgroundFromState } from "../../../shared/images/OsehImageBackgroundFromState";
 import { StatusBar } from "expo-status-bar";
 import { CloseButton } from "../../../shared/components/CloseButton";
 import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks";
+import { useTopBarHeight } from "../../../shared/hooks/useTopBarHeight";
+import { useWindowSize } from "../../../shared/hooks/useWindowSize";
 
 /**
  * Shows the screen for the lobby prior to the actual class, where the user
@@ -42,14 +42,23 @@ export const JourneyLobbyScreen = ({
     setScreen("start", false);
   }, [setScreen]);
 
+  const topBarHeight = useTopBarHeight();
+  const screenSize = useWindowSize();
+
   return (
     <View style={styles.container}>
       <OsehImageBackgroundFromStateValueWithCallbacks
         state={useMappedValueWithCallbacks(shared, (s) => s.darkenedImage)}
-        style={styles.innerContainer}
+        style={{ ...styles.innerContainer, height: screenSize.height }}
       >
         <CloseButton onPress={gotoStartPrivileged} />
-        <View style={styles.content}>
+        <View
+          style={{
+            ...styles.content,
+            paddingTop: styles.content.paddingTop + topBarHeight,
+            maxHeight: styles.content.maxHeight + topBarHeight,
+          }}
+        >
           <JourneyPrompt
             journey={journey}
             loginContext={loginContext}

@@ -19,7 +19,6 @@ import { FeatureComponentProps } from "../../models/Feature";
 import { PickEmotionJourneyResources } from "./PickEmotionJourneyResources";
 import { PickEmotionJourneyState } from "./PickEmotionJourneyState";
 import { styles } from "./PickEmotionStyles";
-import { OsehImageBackgroundFromState } from "../../../../shared/images/OsehImageBackgroundFromState";
 import { OsehImageFromState } from "../../../../shared/images/OsehImageFromState";
 import { LoginContext } from "../../../../shared/contexts/LoginContext";
 import EmptyHeart from "./icons/EmptyHeart";
@@ -52,6 +51,7 @@ import {
 import { FilledInvertedButton } from "../../../../shared/components/FilledInvertedButton";
 import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks";
 import { useTopBarHeight } from "../../../../shared/hooks/useTopBarHeight";
+import { StatusBar } from "expo-status-bar";
 
 /**
  * The settings for the profile pictures
@@ -263,6 +263,7 @@ export const PickEmotion = ({
           }
         />
       </OsehImageBackgroundFromStateValueWithCallbacks>
+      <StatusBar style="light" />
     </View>
   );
 };

@@ -194,9 +194,6 @@ export const PickEmotionJourney = ({
       props={selectedJourneyVWC}
       component={(journey) => {
         if (journey === undefined) {
-          console.warn(
-            "Not at the pick step, but there's no selected emotion."
-          );
           return <></>;
         }
         const props = {

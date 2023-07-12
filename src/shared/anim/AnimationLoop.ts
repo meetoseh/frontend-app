@@ -503,7 +503,7 @@ export const useAnimationLoop = <P extends object>(
     onRenderedChanged.current = new Callbacks();
   }
 
-  if (props.type === 'react-rerender' && target.current !== props.props) {
+  if (props.type === 'react-rerender') {
     target.current = props.props;
     onTargetChanged.current.call(undefined);
   }

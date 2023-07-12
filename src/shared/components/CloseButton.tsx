@@ -53,10 +53,7 @@ export const CloseButton = ({
       {},
       styles.container,
       {
-        top: Platform.select({
-          android: topBarHeight, // because it's translucent, looks a little further from top than it is
-          default: topBarHeight + 8,
-        }),
+        top: topBarHeight + 8,
       },
       ...(pressing ? [styles.containerPressed] : []),
       ...(disabled ? [styles.containerDisabled] : []),

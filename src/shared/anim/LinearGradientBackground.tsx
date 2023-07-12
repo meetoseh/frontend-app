@@ -1,5 +1,6 @@
 import { LayoutChangeEvent, View } from "react-native";
 import { useCallback, useEffect, useRef } from "react";
+import { useStateCompat as useState } from "../hooks/useStateCompat";
 import { useWritableValueWithCallbacks } from "../lib/Callbacks";
 import {
   SinglePassWebGLComponent,
@@ -411,21 +412,9 @@ export const LinearGradientBackground = ({
     height: number;
   }>(() => ({ width: 0, height: 0 }));
   const state = useVariableStrategyPropsAsValueWithCallbacks(stateRaw);
-
-  const rerender = useCallback(() => {
-    if (backgroundRef.current === null) {
-      return;
-    }
-
-    const currentSize = trueSize.get();
-    backgroundRef.current.setNativeProps({
-      style: {
-        position: "absolute",
-        width: currentSize.width,
-        height: currentSize.height,
-      },
-    });
-  }, [trueSize]);
+  const [flatBackgroundColor, setFlatBackgroundColor] = useState<
+    [number, number, number, number] | null
+  >(() => state.get().stops[0].color);
 
   const onContainerLayout = useCallback(
     (e: LayoutChangeEvent) => {
@@ -435,53 +424,94 @@ export const LinearGradientBackground = ({
       ) {
         const width = e.nativeEvent.layout.width;
         const height = e.nativeEvent.layout.height;
-        trueSize.set({ width, height });
-        trueSize.callbacks.call(undefined);
+
+        if (
+          trueSize.get().width !== width ||
+          trueSize.get().height !== height
+        ) {
+          trueSize.set({ width, height });
+          trueSize.callbacks.call(undefined);
+        }
       }
     },
     [trueSize]
   );
 
   useEffect(() => {
-    let active = true;
-    state.callbacks.add(rerenderIfActive);
-    trueSize.callbacks.add(rerenderIfActive);
-
+    state.callbacks.add(reconsiderFlatBackground);
+    trueSize.callbacks.add(reconsiderFlatBackground);
     return () => {
-      if (active) {
-        active = false;
-        state.callbacks.remove(rerenderIfActive);
-        trueSize.callbacks.remove(rerenderIfActive);
-      }
+      state.callbacks.remove(reconsiderFlatBackground);
+      trueSize.callbacks.remove(reconsiderFlatBackground);
     };
 
-    function rerenderIfActive() {
-      if (active) {
-        rerender();
-      }
+    function reconsiderFlatBackground() {
+      const correct = determineCorrectFlatBackground();
+      setFlatBackgroundColor((prev) => {
+        if (prev === correct) {
+          return prev;
+        }
+
+        if (prev === null || correct === null) {
+          return correct;
+        }
+
+        if (prev.every((p, i) => p === correct[i])) {
+          return prev;
+        }
+
+        return correct;
+      });
     }
-  }, [state, trueSize, rerender]);
+
+    function determineCorrectFlatBackground():
+      | [number, number, number, number]
+      | null {
+      const size = trueSize.get();
+      const stops = state.get().stops;
+
+      if (size.width <= 0 || size.height <= 0) {
+        return stops[0].color;
+      }
+
+      if (
+        stops.every((s) => s.color.every((c, i) => c === stops[0].color[i]))
+      ) {
+        return stops[0].color;
+      }
+
+      return null;
+    }
+  }, [state, trueSize]);
 
   return (
     <View
-      style={{ position: "relative" }}
+      style={{
+        ...(flatBackgroundColor === null
+          ? { position: "relative" }
+          : {
+              backgroundColor: `rgba(${flatBackgroundColor.join(",")})`,
+            }),
+      }}
       ref={containerRef}
       onLayout={onContainerLayout}
     >
-      <View
-        style={{
-          position: "absolute",
-        }}
-        ref={backgroundRef}
-      >
-        <SinglePassWebGLComponent
-          renderer={LinearGradientRenderer}
-          props={state.get}
-          propsChanged={state.callbacks}
-          size={trueSize.get}
-          sizeChanged={trueSize.callbacks}
-        />
-      </View>
+      {flatBackgroundColor === null && (
+        <View
+          style={{
+            position: "absolute",
+          }}
+          ref={backgroundRef}
+        >
+          <SinglePassWebGLComponent
+            renderer={LinearGradientRenderer}
+            props={state.get}
+            propsChanged={state.callbacks}
+            size={trueSize.get}
+            sizeChanged={trueSize.callbacks}
+          />
+        </View>
+      )}
       {children}
     </View>
   );

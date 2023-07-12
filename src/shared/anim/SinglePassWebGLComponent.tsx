@@ -1,8 +1,14 @@
-import { ReactElement, useCallback, useEffect, useRef } from "react";
+import {
+  MutableRefObject,
+  ReactElement,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import { useStateCompat as useState } from "../hooks/useStateCompat";
 import { Callbacks, useWritableValueWithCallbacks } from "../lib/Callbacks";
 import { ExpoWebGLRenderingContext, GLView } from "expo-gl";
-import { PixelRatio } from "react-native";
+import { LayoutChangeEvent, PixelRatio } from "react-native";
 
 /**
  * The basic render state for a WebGL component which uses a single render pass.
@@ -180,11 +186,18 @@ export function SinglePassWebGLComponent<
   size,
   sizeChanged,
 }: SinglePassWebGLComponentProps<A, U, B, T, P>): ReactElement {
+  const [remounting, setRemounting] = useState(false);
+  const remountDone = useRef<Callbacks<undefined>>() as MutableRefObject<
+    Callbacks<undefined>
+  >;
+  if (remountDone.current === undefined) {
+    remountDone.current = new Callbacks();
+  }
+
   const [renderedSize, setRenderedSize] = useState<{
     width: number;
     height: number;
   }>(() => size());
-  const glView = useRef<GLView>(null);
   const glContext =
     useWritableValueWithCallbacks<ExpoWebGLRenderingContext | null>(() => null);
   const onGlContextCreate = useCallback(
@@ -193,6 +206,34 @@ export function SinglePassWebGLComponent<
       glContext.callbacks.call(undefined);
     },
     [glContext]
+  );
+  const onLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      if (e.nativeEvent?.layout?.width === undefined) {
+        return;
+      }
+
+      if (remounting) {
+        return;
+      }
+
+      const shownSize = {
+        width: e.nativeEvent.layout.width,
+        height: e.nativeEvent.layout.height,
+      };
+      if (
+        renderedSize.width !== shownSize.width ||
+        renderedSize.height !== shownSize.height
+      ) {
+        const onDoneRemounting = () => {
+          remountDone.current.remove(onDoneRemounting);
+          setRemounting(false);
+        };
+        remountDone.current.add(onDoneRemounting);
+        setRemounting(true);
+      }
+    },
+    [size, renderedSize, remounting]
   );
 
   useEffect(() => {
@@ -211,14 +252,14 @@ export function SinglePassWebGLComponent<
           renderer.requiresReinitialize !== undefined &&
           renderer.requiresReinitialize(renderedProps, props())
         ) {
-          contextChanged();
+          refreshState();
         }
         renderedProps = props();
         renderer.render(state, renderedProps, dpi);
       }
     };
 
-    const contextChanged = () => {
+    const refreshState = () => {
       if (!active) {
         return;
       }
@@ -234,10 +275,16 @@ export function SinglePassWebGLComponent<
         state = renderer.initialize(newContext, props());
       }
     };
+
+    const contextChanged = () => {
+      refreshState();
+      rerender();
+    };
+
     propsChanged.add(rerender);
     glContext.callbacks.add(contextChanged);
+    refreshState();
     rerender();
-    contextChanged();
 
     return () => {
       if (active) {
@@ -260,18 +307,36 @@ export function SinglePassWebGLComponent<
     };
 
     function handleSizeChanged() {
-      if (glView.current !== null) {
-        const { width, height } = size();
-        setRenderedSize({ width, height });
-      }
+      const { width, height } = size();
+      setRenderedSize((rendered) => {
+        if (rendered.width === width && rendered.height === height) {
+          return rendered;
+        }
+
+        return { width, height };
+      });
     }
   }, [size, sizeChanged]);
 
+  if (remounting) {
+    remountDone.current.call(undefined);
+    return <></>;
+  }
+
+  if (renderedSize.width <= 0 || renderedSize.height <= 0) {
+    return <></>;
+  }
+
   return (
     <GLView
-      style={renderedSize}
+      onLayout={onLayout}
+      style={{
+        width: renderedSize.width,
+        height: renderedSize.height,
+        flexGrow: 0,
+        flexShrink: 0,
+      }}
       onContextCreate={onGlContextCreate}
-      ref={glView}
     />
   );
 }
