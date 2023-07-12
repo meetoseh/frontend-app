@@ -35,12 +35,6 @@ export type MappedValueWithCallbacksOpts<T, U> = {
    * @default false
    */
   outputEqualityFn?: (a: U, b: U) => boolean;
-
-  /**
-   * If true, doesn't call the mapper or callbacks in the same stack
-   * as the original value changes. This can be useful to break loops.
-   */
-  delayOneTick?: boolean;
 };
 
 export const defaultEqualityFn = <T>(a: T, b: T) => {
@@ -69,7 +63,6 @@ export const useMappedValueWithCallbacks = <T, U>(
     {
       inputEqualityFn: defaultEqualityFn,
       outputEqualityFn: defaultEqualityFn,
-      delayOneTick: false,
     },
     rawOpts
   );
@@ -81,33 +74,13 @@ export const useMappedValueWithCallbacks = <T, U>(
   });
 
   useEffect(() => {
-    let active = true;
-    let timeout: NodeJS.Timeout | null = null;
     original.callbacks.add(handleChange);
-    handleChange(undefined);
+    handleChange();
     return () => {
-      if (!active) {
-        return;
-      }
-      active = false;
       original.callbacks.remove(handleChange);
     };
 
-    function handleChange(delayed: boolean | undefined) {
-      if (delayed) {
-        timeout = null;
-      }
-
-      if (opts.delayOneTick && !delayed) {
-        if (timeout === null) {
-          timeout = setTimeout(() => handleChange(true), 0);
-        }
-        return;
-      }
-      
-      if (!active) {
-        return;
-      }
+    function handleChange() {
       const newInput = original.get();
       if (opts.inputEqualityFn.call(undefined, lastInputRef.current, newInput)) {
         return;
@@ -148,29 +121,13 @@ export const createMappedValueWithCallbacks = <T, U>(
     {
       inputEqualityFn: defaultEqualityFn,
       outputEqualityFn: defaultEqualityFn,
-      delayOneTick: false,
     },
     rawOpts
   );
   let lastInput = original.get();
-  let active = true;
-  let timeout: NodeJS.Timeout | null = null;
 
   const result = createWritableValueWithCallbacks<U>(mapper(lastInput));
-  const handleChange = (delayed: boolean | undefined) => {
-    if (delayed) {
-      timeout = null;
-    }
-    if (!delayed && opts.delayOneTick) {
-      if (timeout === null) {
-        timeout = setTimeout(() => handleChange(true), 0);
-      }
-      return;
-    }
-    
-    if (!active) {
-      return;
-    }
+  const handleChange = () => {
     if (opts.inputEqualityFn.call(undefined, lastInput, original.get())) {
       return;
     }
@@ -186,11 +143,5 @@ export const createMappedValueWithCallbacks = <T, U>(
   };
 
   original.callbacks.add(handleChange);
-  return [result, () => {
-    if (!active) {
-      return;
-    }
-    active = false;
-    original.callbacks.remove(handleChange)
-  }];
+  return [result, () => original.callbacks.remove(handleChange)];
 };

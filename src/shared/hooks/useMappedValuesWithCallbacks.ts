@@ -29,7 +29,6 @@ export const useMappedValuesWithCallbacks = <V, T extends ValueWithCallbacks<V>[
     {
       inputEqualityFn: defaultEqualityFn,
       outputEqualityFn: defaultEqualityFn,
-      delayOneTick: false,
     },
     rawOpts
   );
@@ -40,39 +39,17 @@ export const useMappedValuesWithCallbacks = <V, T extends ValueWithCallbacks<V>[
   const result = useWritableValueWithCallbacks<U>(() => mapper(lastInputRef.current));
 
   useEffect(() => {
-    let active = true;
-    let timeout: NodeJS.Timeout | null = null;
     for (const v of arr) {
       v.callbacks.add(handleChange);
     }
-    handleChange(undefined);
+    handleChange();
     return () => {
-      if (active) {
-        active = false;
-        if (timeout !== null) {
-          clearTimeout(timeout);
-          timeout = null;
-        }
-        for (const v of arr) {
-          v.callbacks.remove(handleChange);
-        }
+      for (const v of arr) {
+        v.callbacks.remove(handleChange);
       }
     };
 
-    function handleChange(delayed: boolean | undefined) {
-      if (delayed) {
-        timeout = null;
-      }
-      if (opts.delayOneTick && !delayed) {
-        if (timeout === null) {
-          timeout = setTimeout(() => handleChange(true), 0);
-        }
-        return;
-      }
-      if (!active) {
-        return;
-      }
-      
+    function handleChange() {
       const newInput = arr.map((a) => a.get());
       if (opts.inputEqualityFn.call(undefined, lastInputRef.current, newInput)) {
         return;

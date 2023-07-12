@@ -163,7 +163,6 @@ export const PickEmotionJourney = ({
     (r) => r.selected?.journey,
     {
       outputEqualityFn: (a, b) => a?.uid === b?.uid,
-      delayOneTick: true,
     }
   );
   const sharedVWC = useMappedValueWithCallbacks(

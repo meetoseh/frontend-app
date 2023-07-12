@@ -33,11 +33,9 @@ export const JourneyLobbyScreen = ({
       leavingCallback.current();
     }
     setScreen("start", true);
-    console.log("journeylobbyscreen going to start (privileged)");
   }, [setScreen]);
 
   const gotoStart = useCallback(() => {
-    console.log("journeylobbyscreen going to start");
     if (leavingCallback.current !== null) {
       leavingCallback.current();
     }
