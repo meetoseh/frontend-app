@@ -9,5 +9,5 @@ import { styles } from "./FilledInvertedButtonStyles";
 export const FilledInvertedButton = (
   props: PropsWithChildren<CustomButtonProps>
 ): ReactElement => {
-  return <FilledButton styles={styles} {...props} />;
+  return <FilledButton styles={styles} spinnerVariant="black" {...props} />;
 };

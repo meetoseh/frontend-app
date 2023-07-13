@@ -2,9 +2,16 @@ import { StyleProp, TextStyle } from "react-native";
 
 export type CustomButtonProps = {
   /**
-   * True if the button is disabled, false otherwise. Default false.
+   * True if the button is disabled, false otherwise. Default false. If
+   * the button is disabled because we're loading/doing something, it's
+   * usually good to also set the spinner prop to true.
    */
   disabled?: boolean;
+
+  /**
+   * True to show a spinner, false otherwise. Default false.
+   */
+  spinner?: boolean;
 
   /**
    * The function to call when the button is pressed

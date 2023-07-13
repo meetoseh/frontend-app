@@ -24,6 +24,16 @@ export const styles = StyleSheet.create({
     }),
   },
 
+  containerWithSpinner: {
+    position: "relative",
+  },
+
+  spinnerContainer: {
+    position: "absolute",
+    top: 16,
+    left: 13,
+  },
+
   disabled: {
     backgroundColor: Colors.GRAYSCALE_MID_GRAY,
   },

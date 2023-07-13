@@ -9,5 +9,5 @@ import { styles } from "./FilledPrimaryButtonStyles";
 export const FilledPrimaryButton = (
   props: PropsWithChildren<CustomButtonProps>
 ): ReactElement => {
-  return <FilledButton styles={styles} {...props} />;
+  return <FilledButton styles={styles} spinnerVariant="white" {...props} />;
 };

@@ -6,9 +6,10 @@ import {
   useMemo,
 } from "react";
 import { useStateCompat as useState } from "../hooks/useStateCompat";
-import { Pressable, TextStyle, ViewStyle } from "react-native";
+import { Pressable, TextStyle, View, ViewStyle } from "react-native";
 import { CustomButtonProps } from "../models/CustomButtonProps";
 import { useWindowSize } from "../hooks/useWindowSize";
+import { InlineOsehSpinner } from "./InlineOsehSpinner";
 
 /**
  * A basic filled button using the given styles.
@@ -16,9 +17,11 @@ import { useWindowSize } from "../hooks/useWindowSize";
 export const FilledButton = ({
   onPress,
   disabled,
+  spinner,
   setTextStyle,
   setForegroundColor,
   styles,
+  spinnerVariant,
   fullWidth,
   marginTop,
   children,
@@ -31,7 +34,10 @@ export const FilledButton = ({
       text: TextStyle & { color: string };
       pressedText: TextStyle & { color: string };
       disabledText: TextStyle & { color: string };
+      containerWithSpinner: ViewStyle;
+      spinnerContainer: ViewStyle;
     };
+    spinnerVariant: "white" | "black" | "primary";
   }
 >): ReactElement => {
   const screenSize = useWindowSize();
@@ -60,7 +66,8 @@ export const FilledButton = ({
         : []),
       ...(marginTop ? [{ marginTop }] : []),
       ...(pressed ? [styles.pressed] : []),
-      ...(disabled ? [styles.disabled] : [])
+      ...(disabled ? [styles.disabled] : []),
+      ...(spinner ? [styles.containerWithSpinner] : [])
     );
   }, [pressed, disabled, styles, screenSize.width, fullWidth, marginTop]);
 
@@ -104,6 +111,14 @@ export const FilledButton = ({
       onPressOut={handlePressOut}
       style={containerStyles}
     >
+      {spinner && (
+        <View style={styles.spinnerContainer}>
+          <InlineOsehSpinner
+            size={{ type: "react-rerender", props: { height: 24 } }}
+            variant={spinnerVariant}
+          />
+        </View>
+      )}
       {children}
     </Pressable>
   );
