@@ -18,6 +18,7 @@ import { createLoadingJourneyShared } from "../../../journey/hooks/useJourneySha
 import { SplashScreen } from "../../../splash/SplashScreen";
 import { JourneyLobbyScreen } from "../../../journey/screens/JourneyLobbyScreen";
 import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
+import { JourneyStartScreen } from "../../../journey/screens/JourneyStartScreen";
 
 /**
  * The core screen where the user selects an emotion and the backend
@@ -142,7 +143,7 @@ export const PickEmotionJourney = ({
         return;
       }
 
-      if (screen !== "lobby") {
+      if (screen !== "lobby" && screen !== "start") {
         onFinishJourney();
         return;
       }
@@ -157,13 +158,7 @@ export const PickEmotionJourney = ({
   const forceSplash = useUnwrappedValueWithCallbacks(
     useMappedValueWithCallbacks(resources, (r) => r.forceSplash)
   );
-  const selectedJourneyVWC = useMappedValueWithCallbacks(
-    resources,
-    (r) => r.selected?.journey,
-    {
-      outputEqualityFn: (a, b) => a?.uid === b?.uid,
-    }
-  );
+  const selectedVWC = useMappedValueWithCallbacks(resources, (r) => r.selected);
   const sharedVWC = useMappedValueWithCallbacks(
     resources,
     (r) =>
@@ -190,20 +185,29 @@ export const PickEmotionJourney = ({
 
   return (
     <RenderGuardedComponent
-      props={selectedJourneyVWC}
-      component={(journey) => {
-        if (journey === undefined) {
+      props={selectedVWC}
+      component={(selected) => {
+        if (selected === null) {
           return <></>;
         }
         const props = {
-          journey: journey,
+          journey: selected.journey,
           shared: sharedVWC,
           setScreen,
           onJourneyFinished: onFinishJourney,
           isOnboarding: resources.get().isOnboarding,
         };
 
-        return <JourneyLobbyScreen {...props} />;
+        if (step.step === "lobby") {
+          return <JourneyLobbyScreen {...props} />;
+        }
+
+        return (
+          <JourneyStartScreen
+            {...props}
+            selectedEmotionAntonym={selected.word.antonym}
+          />
+        );
       }}
     />
   );

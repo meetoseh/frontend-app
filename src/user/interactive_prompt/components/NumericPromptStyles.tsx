@@ -69,6 +69,7 @@ export const styles = StyleSheet.create({
   },
   profilePictures: {
     marginTop: 20,
+    paddingHorizontal: 24,
     alignSelf: "center",
   },
 });
