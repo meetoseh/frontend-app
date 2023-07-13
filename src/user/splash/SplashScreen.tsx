@@ -1,20 +1,22 @@
 import { StatusBar } from "expo-status-bar";
 import {
-  Dispatch,
+  MutableRefObject,
   ReactElement,
-  RefObject,
-  SetStateAction,
   useCallback,
-  useEffect,
   useMemo,
   useRef,
 } from "react";
-import { useStateCompat as useState } from "../../shared/hooks/useStateCompat";
-import { View, ViewStyle } from "react-native";
+import { View } from "react-native";
 import { styles } from "./SplashScreenStyles";
-import LottieView from "lottie-react-native";
 import AnimatedLottieView from "lottie-react-native";
 import { useWindowSize } from "../../shared/hooks/useWindowSize";
+import {
+  Callbacks,
+  useWritableValueWithCallbacks,
+} from "../../shared/lib/Callbacks";
+import { useForwardBackwardEffect } from "../../shared/hooks/useForwardBackwardEffect";
+import { adaptValueWithCallbacksAsVariableStrategyProps } from "../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps";
+import { RenderGuardedComponent } from "../../shared/components/RenderGuardedComponent";
 
 const BRANDMARK_HOLD_TIME_MS = { forward: 750, backward: 500 };
 const BRANDMARK_WIDTH = (windowSize: {
@@ -49,47 +51,69 @@ type SplashScreenProps = {
 export const SplashScreen = ({ type }: SplashScreenProps): ReactElement => {
   const realType = type ?? "brandmark";
 
-  const animation = useRef<AnimatedLottieView>(null);
-  const [playerStyle, setPlayerStyle] = useState<ViewStyle>({});
-  const onAnimationFinishRef = useRef<((isCanceled: boolean) => void) | null>(
-    null
+  const playerVWC = useWritableValueWithCallbacks<
+    AnimatedLottieView | undefined
+  >(() => undefined);
+  const playerCallbackScheduled = useRef<boolean>(false);
+  const setPlayerRef = useCallback(
+    (player: AnimatedLottieView) => {
+      playerVWC.set(player);
+      if (!playerCallbackScheduled.current) {
+        playerCallbackScheduled.current = true;
+        setTimeout(() => {
+          playerCallbackScheduled.current = false;
+          playerVWC.callbacks.call(undefined);
+        }, 0);
+      }
+    },
+    [playerVWC]
   );
-  const windowSize = useWindowSize();
 
+  const animationFinished = useRef<Callbacks<boolean>>() as MutableRefObject<
+    Callbacks<boolean>
+  >;
+  if (animationFinished.current === undefined) {
+    animationFinished.current = new Callbacks<boolean>();
+  }
   const onAnimationFinishWrapper = useCallback((isCanceled: boolean) => {
-    if (onAnimationFinishRef.current) {
-      onAnimationFinishRef.current(isCanceled);
-    }
+    animationFinished.current.call(isCanceled);
   }, []);
 
-  const setOnAnimationFinish = useCallback(
-    (cb: ((isCanceled: boolean) => void) | null) => {
-      onAnimationFinishRef.current = cb;
-    },
-    []
-  );
+  const windowSize = useWindowSize();
 
-  useForwardBackwardEffect({
-    style: realType,
-    expectedStyle: "brandmark",
-    playerRef: animation,
-    windowSize: windowSize,
-    setOnAnimationFinish,
-    setPlayerStyle,
-    naturalAspectRatio: BRANDMARK_NATURAL_ASPECT_RATIO,
-    desiredWidth: BRANDMARK_WIDTH,
-    holdTime: BRANDMARK_HOLD_TIME_MS,
+  const { playerStyle: playerStyleBrandmark } = useForwardBackwardEffect({
+    enabled: { type: "react-rerender", props: realType === "brandmark" },
+    player: adaptValueWithCallbacksAsVariableStrategyProps(playerVWC),
+    onAnimationFinished: animationFinished.current,
+    animationPoints: {
+      type: "react-rerender",
+      props: { in: BRANDMARK_INPOINT, out: BRANDMARK_OUTPOINT },
+    },
+    size: {
+      type: "react-rerender",
+      props: {
+        aspectRatio: BRANDMARK_NATURAL_ASPECT_RATIO,
+        width: BRANDMARK_WIDTH(windowSize),
+      },
+    },
+    holdTime: { type: "react-rerender", props: BRANDMARK_HOLD_TIME_MS },
   });
-  useForwardBackwardEffect({
-    style: realType,
-    expectedStyle: "wordmark",
-    playerRef: animation,
-    windowSize: windowSize,
-    setOnAnimationFinish,
-    setPlayerStyle,
-    naturalAspectRatio: WORDMARK_NATURAL_ASPECT_RATIO,
-    desiredWidth: WORDMARK_WIDTH,
-    holdTime: WORDMARK_HOLD_TIME_MS,
+  const { playerStyle: playerStyleWordmark } = useForwardBackwardEffect({
+    enabled: { type: "react-rerender", props: realType === "wordmark" },
+    player: adaptValueWithCallbacksAsVariableStrategyProps(playerVWC),
+    onAnimationFinished: animationFinished.current,
+    animationPoints: {
+      type: "react-rerender",
+      props: { in: WORDMARK_INPOINT, out: WORDMARK_OUTPOINT },
+    },
+    size: {
+      type: "react-rerender",
+      props: {
+        aspectRatio: WORDMARK_NATURAL_ASPECT_RATIO,
+        width: WORDMARK_WIDTH(windowSize),
+      },
+    },
+    holdTime: { type: "react-rerender", props: WORDMARK_HOLD_TIME_MS },
   });
 
   const containerStyle = useMemo(() => {
@@ -99,134 +123,30 @@ export const SplashScreen = ({ type }: SplashScreenProps): ReactElement => {
     });
   }, [windowSize]);
 
+  const playerStyleVWC =
+    realType === "brandmark" ? playerStyleBrandmark : playerStyleWordmark;
   return (
     <View style={containerStyle}>
-      <LottieView
-        key={realType}
-        autoPlay={false}
-        autoSize={false}
-        loop={false}
-        ref={animation}
-        style={playerStyle}
-        onAnimationFinish={onAnimationFinishWrapper}
-        source={
-          realType === "wordmark"
-            ? require("./assets/wordmark.lottie.json")
-            : require("./assets/brandmark.lottie.json")
-        }
+      <RenderGuardedComponent
+        props={playerStyleVWC}
+        component={(playerStyle) => (
+          <AnimatedLottieView
+            key={realType}
+            autoPlay={false}
+            autoSize={false}
+            loop={false}
+            ref={setPlayerRef}
+            style={playerStyle}
+            onAnimationFinish={onAnimationFinishWrapper}
+            source={
+              realType === "wordmark"
+                ? require("./assets/wordmark.lottie.json")
+                : require("./assets/brandmark.lottie.json")
+            }
+          />
+        )}
       />
       <StatusBar style="light" />
     </View>
   );
-};
-
-const useForwardBackwardEffect = ({
-  style,
-  expectedStyle,
-  playerRef,
-  setOnAnimationFinish,
-  windowSize,
-  setPlayerStyle,
-  naturalAspectRatio,
-  desiredWidth,
-  holdTime,
-}: {
-  style: "wordmark" | "brandmark";
-  expectedStyle: "wordmark" | "brandmark";
-  playerRef: RefObject<AnimatedLottieView | undefined>;
-  setOnAnimationFinish: (cb: ((isCanceled: boolean) => void) | null) => void;
-  windowSize: { width: number; height: number };
-  setPlayerStyle: Dispatch<SetStateAction<ViewStyle>>;
-  naturalAspectRatio: number;
-  desiredWidth: (windowSize: { width: number; height: number }) => number;
-  holdTime: { forward: number; backward: number };
-}) => {
-  useEffect(() => {
-    if (style !== expectedStyle) {
-      return;
-    }
-
-    const player = playerRef.current;
-    if (player === null || player === undefined) {
-      return;
-    }
-    const inpoint = style === "wordmark" ? WORDMARK_INPOINT : BRANDMARK_INPOINT;
-    const outpoint =
-      style === "wordmark" ? WORDMARK_OUTPOINT : BRANDMARK_OUTPOINT;
-
-    let onAnimFinish: (() => void) | null = null;
-    setOnAnimationFinish((isCanceled) => {
-      if (isCanceled) {
-        return;
-      }
-      onAnimFinish?.();
-    });
-
-    const desWidth = Math.floor(desiredWidth(windowSize));
-    setPlayerStyle({
-      width: desWidth,
-      height: Math.floor(desWidth / naturalAspectRatio),
-    });
-
-    let state:
-      | "forward"
-      | "holding-after-forward"
-      | "backward"
-      | "holding-after-backward" = "forward";
-    let holdTimeout: NodeJS.Timeout | null = null;
-    player.play(inpoint, outpoint);
-
-    const onComplete = () => {
-      if (state !== "forward" && state !== "backward") {
-        return;
-      }
-
-      holdTimeout = setTimeout(onHoldFinished, holdTime[state]);
-      state =
-        state === "forward"
-          ? "holding-after-forward"
-          : "holding-after-backward";
-      onAnimFinish = null;
-    };
-    onAnimFinish = onComplete;
-
-    const onHoldFinished = () => {
-      if (
-        state !== "holding-after-forward" &&
-        state !== "holding-after-backward"
-      ) {
-        return;
-      }
-
-      holdTimeout = null;
-
-      onAnimFinish = onComplete;
-      if (state === "holding-after-forward") {
-        player.play(outpoint, inpoint);
-        state = "backward";
-      } else {
-        player.play(inpoint, outpoint);
-        state = "forward";
-      }
-    };
-
-    return () => {
-      if (holdTimeout !== null) {
-        clearTimeout(holdTimeout);
-        holdTimeout = null;
-      }
-
-      setOnAnimationFinish(null);
-    };
-  }, [
-    desiredWidth,
-    holdTime,
-    naturalAspectRatio,
-    playerRef,
-    setOnAnimationFinish,
-    setPlayerStyle,
-    style,
-    windowSize,
-    expectedStyle,
-  ]);
 };
