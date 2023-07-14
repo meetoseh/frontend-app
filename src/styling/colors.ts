@@ -8,6 +8,7 @@ export const TRANSPARENT_BLACK = 'rgba(0, 0, 0, 0.2)';
 export const PRIMARY_DEFAULT = '#446266';
 export const PRIMARY_DEFAULT_BACKGROUND = '#8A9A9D';
 export const PRIMARY_LIGHT = '#33494c';
+export const PRIMARY_DARK = '#1a383c';
 export const BLACK = '#000000';
 export const ERROR_DEFAULT = '#BA1A1A';
 export const TRANSPARENT = 'rgba(0, 0, 0, 0)';

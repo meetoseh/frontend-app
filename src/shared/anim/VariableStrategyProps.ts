@@ -98,31 +98,22 @@ export const useVariableStrategyPropsAsValueWithCallbacks = <P>(
 
   useEffect(() => {
     if (props.type === 'react-rerender') {
-      // adding this function improves error messages
-      const reactRerenderVSPCallback = () => {
+      if (!optsRef.current.equalityFn(result.get(), props.props)) {
         result.set(props.props);
         result.callbacks.call(undefined);
-      };
-      reactRerenderVSPCallback();
+      }
       return;
     }
 
-    let active = true;
     const propsGetter = props.props;
     const propsCallbacks = props.callbacks;
     propsCallbacks.add(handleChange);
     handleChange();
     return () => {
-      if (active) {
-        active = false;
-        propsCallbacks.remove(handleChange);
-      }
+      propsCallbacks.remove(handleChange);
     };
 
     function handleChange() {
-      if (!active) {
-        return;
-      }
       const val = propsGetter();
 
       if (optsRef.current.equalityFn(result.get(), val)) {

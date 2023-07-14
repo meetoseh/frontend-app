@@ -1,7 +1,7 @@
 import { PropsWithChildren, ReactElement, useEffect, useRef } from "react";
 import { ValueWithCallbacks } from "../lib/Callbacks";
 import { OsehImageState } from "./OsehImageState";
-import { ImageStyle, StyleProp, View, ViewStyle } from "react-native";
+import { ImageStyle, View, ViewStyle } from "react-native";
 import { styles } from "./OsehImageBackgroundFromStateValueWithCallbacksStyles";
 import { RenderGuardedComponent } from "../components/RenderGuardedComponent";
 import { OsehImageFromState } from "./OsehImageFromState";
@@ -11,8 +11,9 @@ import { OsehImageFromState } from "./OsehImageFromState";
  * before the image is available. Accepts children which are rendered on top of
  * the image.
  *
- * If a style is specified, it should not include the width and height, as those
- * are set by the state. However, if it does, it will override the state's values.
+ * If an imageStyle is specified, it should not include the width and height, as
+ * those are set by the state. However, if it does, it will override the state's
+ * values.
  *
  * Note that this is much more efficient than the standard
  * OsehImageBackgroundFromState via RenderGuardedComponent - this will

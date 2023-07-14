@@ -19,6 +19,8 @@ import { SplashScreen } from "../../../splash/SplashScreen";
 import { JourneyLobbyScreen } from "../../../journey/screens/JourneyLobbyScreen";
 import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
 import { JourneyStartScreen } from "../../../journey/screens/JourneyStartScreen";
+import { apiFetch } from "../../../../shared/lib/apiFetch";
+import { Journey } from "../../../journey/screens/Journey";
 
 /**
  * The core screen where the user selects an emotion and the backend
@@ -143,9 +145,36 @@ export const PickEmotionJourney = ({
         return;
       }
 
-      if (screen !== "lobby" && screen !== "start") {
+      if (screen !== "lobby" && screen !== "start" && screen !== "journey") {
         onFinishJourney();
         return;
+      }
+
+      if (screen === "journey") {
+        const audio = selected.shared.audio;
+        if (!audio.loaded) {
+          console.warn("Cannot go to journey screen without loaded audio.");
+          return;
+        }
+
+        if (audio.play === null) {
+          console.warn("Cannot go to journey screen without audio play.");
+          return;
+        }
+
+        apiFetch(
+          "/api/1/emotions/started_related_journey",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json; charset=utf-8" },
+            body: JSON.stringify({
+              emotion_user_uid: selected.emotionUserUid,
+            }),
+          },
+          loginContext
+        );
+
+        audio.play();
       }
 
       const newStep = { journeyUid: selected.journey.uid, step: screen };
@@ -202,12 +231,20 @@ export const PickEmotionJourney = ({
           return <JourneyLobbyScreen {...props} />;
         }
 
-        return (
-          <JourneyStartScreen
-            {...props}
-            selectedEmotionAntonym={selected.word.antonym}
-          />
-        );
+        if (step.step === "start") {
+          return (
+            <JourneyStartScreen
+              {...props}
+              selectedEmotionAntonym={selected.word.antonym}
+            />
+          );
+        }
+
+        if (step.step === "journey") {
+          return <Journey {...props} />;
+        }
+
+        return <></>;
       }}
     />
   );
