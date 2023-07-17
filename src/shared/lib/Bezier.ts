@@ -32,6 +32,9 @@ SOFTWARE.
 // Modified 02/20/2023 Timothy Moore:
 // - fixed a few additional lint errors related to let/var
 
+// Modified 04/04/2023 Timothy Moore:
+// - added easeInBack, easeOutBack, easeInOutBack
+
 // General Bézier Curve, any number of dimensions or control points
 //
 // All math from http://en.wikipedia.org/wiki/B%C3%A9zier_curve#Generalization
@@ -208,6 +211,36 @@ export const easeInOut = new Bezier([
   [0, 0],
   [0.42, 0.0],
   [0.58, 1.0],
+  [1, 1],
+]);
+
+/**
+ * https://easings.net/#easeInBack
+ */
+export const easeInBack = new Bezier([
+  [0, 0],
+  [0.36, 0],
+  [0.66, -0.56],
+  [1, 1],
+]);
+
+/**
+ * https://easings.net/#easeOutBack
+ */
+export const easeOutBack = new Bezier([
+  [0, 0],
+  [0.34, 1.56],
+  [0.64, 1],
+  [1, 1],
+]);
+
+/**
+ * https://easings.net/#easeInOutBack
+ */
+export const easeInOutBack = new Bezier([
+  [0, 0],
+  [0.68, -0.6],
+  [0.32, 1.6],
   [1, 1],
 ]);
 
