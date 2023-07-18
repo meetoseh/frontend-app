@@ -3,16 +3,12 @@ import {
   PropsWithChildren,
   ReactElement,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useRef,
 } from "react";
 import { styles } from "./JourneyStyles";
 import { JourneyScreenProps } from "../models/JourneyScreenProps";
-import { useFavoritedModal } from "../../favorites/hooks/useFavoritedModal";
-import { useUnfavoritedModal } from "../../favorites/hooks/useUnfavoritedModal";
-import { LoginContext } from "../../../shared/contexts/LoginContext";
 import {
   Callbacks,
   ValueWithCallbacks,
@@ -26,18 +22,16 @@ import { ease } from "../../../shared/lib/Bezier";
 import { useAnimatedValueWithCallbacks } from "../../../shared/anim/useAnimatedValueWithCallbacks";
 import { useValueWithCallbacksEffect } from "../../../shared/hooks/useValueWithCallbacksEffect";
 import { setVWC } from "../../../shared/lib/setVWC";
-import { adaptValueWithCallbacksAsVariableStrategyProps } from "../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps";
 import { WrappedAudioSound } from "../../../shared/content/OsehAudioContentState";
 import { AVPlaybackStatus } from "expo-av";
 import { Modals, ModalsOutlet } from "../../../shared/contexts/ModalContext";
 import { StyleProp, View, ViewStyle, Text, Pressable } from "react-native";
-import { apiFetch } from "../../../shared/lib/apiFetch";
-import { describeError } from "../../../shared/lib/describeError";
 import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks";
 import { CloseButton } from "../../../shared/components/CloseButton";
 import FullHeartIcon from "../icons/FullHeartIcon";
 import EmptyHeartIcon from "../icons/EmptyHeartIcon";
 import { StatusBar } from "expo-status-bar";
+import { useToggleFavorited } from "../hooks/useToggleFavorited";
 
 const HIDE_TIME = 10000;
 
@@ -63,19 +57,8 @@ export const Journey = ({
    */
   onCloseEarly?: (currentTime: number, totalTime: number) => void;
 }): ReactElement => {
-  const loginContext = useContext(LoginContext);
-  const containerRef = useRef<HTMLDivElement>(null);
   const controlsVisible = useWritableValueWithCallbacks<boolean>(() => true);
   const currentTimeVWC = useWritableValueWithCallbacks<number>(() => 0);
-  const showLikedUntilVWC = useWritableValueWithCallbacks<number | undefined>(
-    () => undefined
-  );
-  const showUnlikedUntilVWC = useWritableValueWithCallbacks<number | undefined>(
-    () => undefined
-  );
-  const likeErrorVWC = useWritableValueWithCallbacks<ReactElement | null>(
-    () => null
-  );
   const windowSize = useWindowSize();
   const onTapAnywhere = useRef<Callbacks<undefined>>() as MutableRefObject<
     Callbacks<undefined>
@@ -223,14 +206,6 @@ export const Journey = ({
   }, [shared, setScreen, controlsVisible, currentTimeVWC]);
 
   const modals = useWritableValueWithCallbacks<Modals>(() => []);
-  useFavoritedModal(
-    adaptValueWithCallbacksAsVariableStrategyProps(showLikedUntilVWC),
-    modals
-  );
-  useUnfavoritedModal(
-    adaptValueWithCallbacksAsVariableStrategyProps(showUnlikedUntilVWC),
-    modals
-  );
 
   const onClickedClose = useCallback(() => {
     shared.get().audio.stop?.();
@@ -268,56 +243,11 @@ export const Journey = ({
     )
   );
 
-  const onToggleFavorited = useCallback(async () => {
-    const favorited = shared.get().favorited;
-    if (favorited === null) {
-      return;
-    }
-
-    setVWC(showLikedUntilVWC, undefined);
-    setVWC(showUnlikedUntilVWC, undefined);
-    setVWC(likeErrorVWC, null);
-
-    try {
-      const response = await apiFetch(
-        "/api/1/users/me/journeys/likes" +
-          (favorited ? "?uid=" + encodeURIComponent(journey.uid) : ""),
-        favorited
-          ? {
-              method: "DELETE",
-            }
-          : {
-              method: "POST",
-              headers: { "Content-Type": "application/json; charset=utf-8" },
-              body: JSON.stringify({
-                journey_uid: journey.uid,
-              }),
-            },
-        loginContext
-      );
-      if (!response.ok) {
-        throw response;
-      }
-
-      const nowFavorited = !favorited;
-      shared.get().setFavorited(nowFavorited);
-      if (nowFavorited) {
-        setVWC(showLikedUntilVWC, Date.now() + 5000);
-      } else {
-        setVWC(showUnlikedUntilVWC, Date.now() + 5000);
-      }
-    } catch (err) {
-      const desc = await describeError(err);
-      setVWC(likeErrorVWC, desc);
-    }
-  }, [
+  const onToggleFavorited = useToggleFavorited({
+    modals,
+    journey,
     shared,
-    journey.uid,
-    loginContext,
-    showLikedUntilVWC,
-    showUnlikedUntilVWC,
-    likeErrorVWC,
-  ]);
+  });
 
   return (
     <View style={styles.container}>

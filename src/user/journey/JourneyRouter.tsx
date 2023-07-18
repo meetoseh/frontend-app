@@ -8,6 +8,7 @@ import { JourneyLobbyScreen } from "./screens/JourneyLobbyScreen";
 import { JourneyStartScreen } from "./screens/JourneyStartScreen";
 import { Journey } from "./screens/Journey";
 import { JourneyFeedbackScreen } from "./screens/JourneyFeedbackScreen";
+import { JourneyPostScreen } from "./screens/JourneyPostScreen";
 
 type JourneyRouterProps = {
   /**
@@ -49,16 +50,12 @@ export const JourneyRouter = ({
       journey,
       shared: sharedState,
       setScreen: (screen) => {
-        // todo: remove this if
-        if (
-          screen !== "lobby" &&
-          screen !== "start" &&
-          screen !== "journey" &&
-          screen !== "feedback"
-        ) {
+        if (screen === "share") {
+          // screen has been temporarily removed
           onFinished();
           return;
         }
+
         screen = screen as JourneyRouterScreenId;
 
         if (screen === "journey") {
@@ -121,9 +118,9 @@ export const JourneyRouter = ({
     return <JourneyFeedbackScreen {...screenProps} />;
   }
 
-  // if (screen === "post") {
-  //   return <JourneyPostScreen {...screenProps} />;
-  // }
+  if (screen === "post") {
+    return <JourneyPostScreen {...screenProps} />;
+  }
 
   // if (screen === "share") {
   //   return <JourneyShareScreen {...screenProps} />;

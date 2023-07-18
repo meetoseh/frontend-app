@@ -277,7 +277,7 @@ export const JourneyFeedbackScreen = ({
   return (
     <View style={styles.container}>
       <OsehImageBackgroundFromStateValueWithCallbacks
-        state={useMappedValueWithCallbacks(shared, (s) => s.darkenedImage)}
+        state={useMappedValueWithCallbacks(shared, (s) => s.blurredImage)}
         style={{ ...styles.innerContainer, height: screenSize.height }}
       >
         <CloseButton onPress={onX} />

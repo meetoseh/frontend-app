@@ -22,6 +22,7 @@ import { JourneyStartScreen } from "../../../journey/screens/JourneyStartScreen"
 import { apiFetch } from "../../../../shared/lib/apiFetch";
 import { Journey } from "../../../journey/screens/Journey";
 import { JourneyFeedbackScreen } from "../../../journey/screens/JourneyFeedbackScreen";
+import { JourneyPostScreen } from "../../../journey/screens/JourneyPostScreen";
 
 /**
  * The core screen where the user selects an emotion and the backend
@@ -146,12 +147,8 @@ export const PickEmotionJourney = ({
         return;
       }
 
-      if (
-        screen !== "lobby" &&
-        screen !== "start" &&
-        screen !== "journey" &&
-        screen !== "feedback"
-      ) {
+      if (screen === "share") {
+        // screen has been temporarily removed
         onFinishJourney();
         return;
       }
@@ -252,6 +249,15 @@ export const PickEmotionJourney = ({
 
         if (step.step === "feedback") {
           return <JourneyFeedbackScreen {...props} />;
+        }
+
+        if (step.step === "post") {
+          return (
+            <JourneyPostScreen
+              {...props}
+              classesTakenToday={state.get().classesTakenThisSession}
+            />
+          );
         }
 
         return <></>;

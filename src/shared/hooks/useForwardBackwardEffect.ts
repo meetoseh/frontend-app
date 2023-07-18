@@ -1,10 +1,15 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from "react";
 import AnimatedLottieView from "lottie-react-native";
 import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
-} from '../anim/VariableStrategyProps';
-import { Callbacks, ValueWithCallbacks, useWritableValueWithCallbacks } from '../lib/Callbacks';
+} from "../anim/VariableStrategyProps";
+import {
+  Callbacks,
+  ValueWithCallbacks,
+  useWritableValueWithCallbacks,
+} from "../lib/Callbacks";
+import { PixelRatio } from "react-native";
 
 type CalculableSize =
   | { width: number; height: number }
@@ -27,7 +32,7 @@ type UseForwardBackwardEffectProps = {
    * The callbacks which are invoked when the player completes its
    * current animation, where the boolean is true if the animation
    * was cancelled and false if the animation completed normally.
-   * 
+   *
    * This is a different from react web, where we can use event
    * listeners on the underlying AnimationItem rather than having
    * to provide a single callback as a prop to the player, which
@@ -38,11 +43,11 @@ type UseForwardBackwardEffectProps = {
   /**
    * The first and last frame of the animation. Changing this value
    * takes effect on the next animation cycle.
-   * 
+   *
    * This is different from react web, where we don't need to know
    * the exact frame numbers to play in reverse.
    */
-  animationPoints: VariableStrategyProps<{ in: number, out: number }>;
+  animationPoints: VariableStrategyProps<{ in: number; out: number }>;
 
   /**
    * The size to render the animation at, in pixels. May swap
@@ -78,47 +83,41 @@ type UseForwardBackwardEffectResult = {
   playerStyle: ValueWithCallbacks<{ width: number; height: number }>;
 };
 
-const pickNearestToAspectRatio = (
-  options: { width: number; height: number }[],
-  aspectRatio: number
-): { width: number; height: number } => {
-  let bestAspectRatio: number | null = null;
-  let bestOption: { width: number; height: number } | null = null;
-  for (const option of options) {
-    const optionAspectRatio = option.width / option.height;
-    if (
-      bestAspectRatio === null ||
-      Math.abs(optionAspectRatio - aspectRatio) < Math.abs(bestAspectRatio - aspectRatio)
-    ) {
-      bestAspectRatio = optionAspectRatio;
-      bestOption = option;
-    }
-  }
-  if (bestOption === null) {
-    throw new Error('No options provided');
-  }
-  return bestOption;
-};
+const computeSize = (
+  size: CalculableSize
+): {
+  width: number;
+  height: number;
+  paddingRight: number;
+  paddingBottom: number;
+} => {
+  if ("width" in size && "height" in size) {
+    const dpi = PixelRatio.get();
+    const scaledTarget = {
+      width: size.width * dpi,
+      height: size.height * dpi,
+    };
+    const scaledPadding = {
+      paddingRight: Math.ceil(scaledTarget.width) - scaledTarget.width,
+      paddingBottom: Math.ceil(scaledTarget.height) - scaledTarget.height,
+    };
 
-const computeSize = (size: CalculableSize): { width: number; height: number } => {
-  if ('width' in size && 'height' in size) {
-    if (size.width === Math.floor(size.width) && size.height === Math.floor(size.height)) {
-      return size;
-    }
-
-    return pickNearestToAspectRatio(
-      [
-        { width: Math.floor(size.width), height: Math.floor(size.height) },
-        { width: Math.floor(size.width), height: Math.ceil(size.height) },
-        { width: Math.ceil(size.width), height: Math.floor(size.height) },
-        { width: Math.ceil(size.width), height: Math.ceil(size.height) },
-      ],
-      size.width / size.height
-    );
-  } else if ('width' in size && 'aspectRatio' in size) {
-    return computeSize({ width: size.width, height: size.width / size.aspectRatio });
+    return {
+      width: scaledTarget.width / dpi,
+      height: scaledTarget.height / dpi,
+      paddingRight: scaledPadding.paddingRight / dpi,
+      paddingBottom: scaledPadding.paddingBottom / dpi,
+    };
+  } else if ("width" in size && "aspectRatio" in size) {
+    return computeSize({
+      width: size.width,
+      height: size.width / size.aspectRatio,
+    });
   } else {
-    return computeSize({ width: size.height * size.aspectRatio, height: size.height });
+    return computeSize({
+      width: size.height * size.aspectRatio,
+      height: size.height,
+    });
   }
 };
 
@@ -134,14 +133,26 @@ export const useForwardBackwardEffect = ({
   size: sizeVariableStrategy,
   holdTime: holdTimeVariableStrategy,
 }: UseForwardBackwardEffectProps): UseForwardBackwardEffectResult => {
-  const enabledVWC = useVariableStrategyPropsAsValueWithCallbacks(enabledVariableStrategy);
-  const playerVWC = useVariableStrategyPropsAsValueWithCallbacks(playerVariableStrategy);
-  const animationPointsVWC = useVariableStrategyPropsAsValueWithCallbacks(animationPointsVariableStrategy);
-  const sizeVWC = useVariableStrategyPropsAsValueWithCallbacks(sizeVariableStrategy);
-  const holdTimeVWC = useVariableStrategyPropsAsValueWithCallbacks(holdTimeVariableStrategy);
-  const playerSizeVWC = useWritableValueWithCallbacks<{ width: number; height: number }>(() =>
-    computeSize(sizeVWC.get())
+  const enabledVWC = useVariableStrategyPropsAsValueWithCallbacks(
+    enabledVariableStrategy
   );
+  const playerVWC = useVariableStrategyPropsAsValueWithCallbacks(
+    playerVariableStrategy
+  );
+  const animationPointsVWC = useVariableStrategyPropsAsValueWithCallbacks(
+    animationPointsVariableStrategy
+  );
+  const sizeVWC =
+    useVariableStrategyPropsAsValueWithCallbacks(sizeVariableStrategy);
+  const holdTimeVWC = useVariableStrategyPropsAsValueWithCallbacks(
+    holdTimeVariableStrategy
+  );
+  const playerSizeVWC = useWritableValueWithCallbacks<{
+    width: number;
+    height: number;
+    paddingRight: number;
+    paddingBottom: number;
+  }>(() => computeSize(sizeVWC.get()));
 
   useEffect(() => {
     let playerManagerCanceler: (() => void) | null = null;
@@ -168,37 +179,43 @@ export const useForwardBackwardEffect = ({
        * immediately.
        */
       let state:
-        | 'forward'
-        | 'holding-after-forward'
-        | 'backward'
-        | 'holding-after-backward' = 'forward';
+        | "forward"
+        | "holding-after-forward"
+        | "backward"
+        | "holding-after-backward" = "forward";
       let holdTimeout: NodeJS.Timeout | null = null;
 
       const onComplete = () => {
-        if (state !== 'forward' && state !== 'backward') {
+        if (state !== "forward" && state !== "backward") {
           return;
         }
 
         player.pause();
         holdTimeout = setTimeout(onHoldFinished, holdTimeVWC.get()[state]);
-        state = state === 'forward' ? 'holding-after-forward' : 'holding-after-backward';
+        state =
+          state === "forward"
+            ? "holding-after-forward"
+            : "holding-after-backward";
         onAnimationFinished.remove(onComplete);
       };
 
       const onHoldFinished = () => {
-        if (state !== 'holding-after-forward' && state !== 'holding-after-backward') {
+        if (
+          state !== "holding-after-forward" &&
+          state !== "holding-after-backward"
+        ) {
           return;
         }
 
         holdTimeout = null;
         const { in: inpoint, out: outpoint } = animationPointsVWC.get();
 
-        if (state === 'holding-after-forward') {
+        if (state === "holding-after-forward") {
           player.play(outpoint, inpoint);
-          state = 'backward';
+          state = "backward";
         } else {
           player.play(inpoint, outpoint);
-          state = 'forward';
+          state = "forward";
         }
 
         onAnimationFinished.add(onComplete);
@@ -213,7 +230,7 @@ export const useForwardBackwardEffect = ({
           holdTimeout = null;
         }
 
-        if (state === 'forward' || state === 'backward') {
+        if (state === "forward" || state === "backward") {
           onAnimationFinished.remove(onComplete);
         }
       };
@@ -253,7 +270,14 @@ export const useForwardBackwardEffect = ({
         handlePlayerChanged();
       }
     }
-  }, [enabledVWC, playerVWC, sizeVWC, holdTimeVWC, playerSizeVWC, onAnimationFinished]);
+  }, [
+    enabledVWC,
+    playerVWC,
+    sizeVWC,
+    holdTimeVWC,
+    playerSizeVWC,
+    onAnimationFinished,
+  ]);
 
   return useMemo(() => ({ playerStyle: playerSizeVWC }), [playerSizeVWC]);
 };
