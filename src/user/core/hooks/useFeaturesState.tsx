@@ -6,8 +6,14 @@ import { PickEmotionJourneyFeature } from "../features/pickEmotionJourney/PickEm
 import { useMappedValueWithCallbacks } from "../../../shared/hooks/useMappedValueWithCallbacks";
 import { useMappedValuesWithCallbacks } from "../../../shared/hooks/useMappedValuesWithCallbacks";
 import { ValueWithCallbacks } from "../../../shared/lib/Callbacks";
+import { FavoritesFeature } from "../features/favorites/FavoritesFeature";
 
-const features = [LoginFeature, RequestNameFeature, PickEmotionJourneyFeature];
+const features = [
+  LoginFeature,
+  RequestNameFeature,
+  FavoritesFeature,
+  PickEmotionJourneyFeature,
+];
 
 /**
  * Determines the current state of the various features the app supports. Once

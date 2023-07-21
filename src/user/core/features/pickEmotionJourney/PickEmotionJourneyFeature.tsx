@@ -537,6 +537,9 @@ export const PickEmotionJourneyFeature: Feature<
           onSelect,
           onFinishedJourney,
           takeAnotherClass,
+          gotoFavorites: () => {
+            allStatesVWC.get().favorites.setShow(true, true);
+          },
         };
       }
     );

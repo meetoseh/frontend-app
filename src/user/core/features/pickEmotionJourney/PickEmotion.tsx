@@ -160,6 +160,10 @@ export const PickEmotion = ({
     [tentativelyPressedVWC, resources]
   );
 
+  const onGotoFavoritesClick = useCallback(() => {
+    resources.get().gotoFavorites();
+  }, [resources]);
+
   const onGotoClassClick = useCallback(() => {
     gotoJourney();
   }, []);
@@ -237,10 +241,13 @@ export const PickEmotion = ({
               <Text style={styles.greetingAction}>Daily Check-in</Text>
             </View>
           </View>
-          <View style={styles.favoritesLink}>
+          <Pressable
+            onPress={onGotoFavoritesClick}
+            style={styles.favoritesLink}
+          >
             <EmptyHeart />
             <Text style={styles.favoritesLinkText}> Favorites</Text>
-          </View>
+          </Pressable>
         </View>
         <Text style={styles.questionText}>How do you want to feel today?</Text>
         <Words
