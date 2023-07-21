@@ -48,14 +48,15 @@ type InfiniteListProps<T extends object> = {
 
   /**
    * The component which converts from an item to a react element to render
-   * within a wrapping component. Most common implementations only need the
-   * first two arguments, but the full list and index are provided for when
-   * complicated joining is required.
+   * within a wrapping component. We will not attempt to render the first
+   * or last item that is loaded, meaning that the next and previous item
+   * is always available unless the item is the first or last in the list.
    */
   component: (
     item: ValueWithCallbacks<T>,
     replaceItem: (item: T) => void,
-    visible: ValueWithCallbacks<{ items: T[]; index: number }>
+    previous: ValueWithCallbacks<T | null>,
+    next: ValueWithCallbacks<T | null>
   ) => ReactElement;
 
   /**
@@ -63,6 +64,12 @@ type InfiniteListProps<T extends object> = {
    * with overflow-y scroll and their scrollbar is jacked
    */
   height: number;
+
+  /**
+   * The width of the listing; this is technically not required, but it
+   * avoids resizing when loading elements.
+   */
+  width: number;
 
   /**
    * The gap in pixels between items. Items are always full width, but their
@@ -76,14 +83,6 @@ type InfiniteListProps<T extends object> = {
    * is more accurate.
    */
   initialComponentHeight: number;
-
-  /**
-   * Except when `listing.definitelyNoneAbove`, we have this many items which
-   * are in the visible list but not actually rendered. This can be used for
-   * items which render based on the previous item (i.e., smooth transitions)
-   * in order to ensure they have enough context to get a fixed size.
-   */
-  preloadedAbove?: number;
 
   /**
    * The element to show if the list is still loading
@@ -107,14 +106,13 @@ export function InfiniteList<T extends object>({
   itemComparer,
   component,
   height,
+  width,
   gap,
   initialComponentHeight,
-  preloadedAbove = 1,
   loadingElement,
   emptyElement,
 }: InfiniteListProps<T>): ReactElement {
   const listingVWC = useListingItemsAsVWC(listingUntrackable);
-  const elementsVWC = useElementsNoDOM(listingVWC, component, itemComparer);
   const itemsUnloadedAboveVWC = useWritableValueWithCallbacks<number>(() => 0);
   const refreshingVWC = useMappedValueWithCallbacks(
     listingVWC,
@@ -142,10 +140,10 @@ export function InfiniteList<T extends object>({
   );
 
   const numAvailableElementsVWC = useMappedValuesWithCallbacks(
-    [listingVWC, elementsVWC, itemsUnloadedAboveVWC],
+    [listingVWC, itemsUnloadedAboveVWC],
     () =>
       listingVWC.get().definitelyNoneBelow
-        ? elementsVWC.get().length + itemsUnloadedAboveVWC.get()
+        ? (listingVWC.get().items?.length ?? 0) + itemsUnloadedAboveVWC.get()
         : 100_000
   );
 
@@ -191,13 +189,27 @@ export function InfiniteList<T extends object>({
       const endIndex =
         range.viewableItems[range.viewableItems.length - 1].index ?? 0;
 
-      if (startIndex - preloadedAbove <= itemsUnloadedAboveVWC.get()) {
+      const nearness = Math.max(endIndex - startIndex, 1) * 10;
+
+      let loadedStartIndex = itemsUnloadedAboveVWC.get();
+      if (loadedStartIndex > 0) {
+        // we don't want to render the first item as it wouldn't have
+        // the correct neighbor
+        loadedStartIndex += 1;
+      }
+
+      let loadedEndIndex =
+        itemsUnloadedAboveVWC.get() + (listingUntrackable.items?.length || 0);
+      if (!listingUntrackable.definitelyNoneBelow) {
+        // we don't want to render the last item as it wouldn't have
+        // the correct neighbor
+        loadedEndIndex -= 1;
+      }
+
+      if (startIndex <= loadedStartIndex + nearness) {
         handleStartReached(true);
       } else {
-        if (
-          endIndex >=
-          itemsUnloadedAboveVWC.get() + elementsVWC.get().length - 1
-        ) {
+        if (endIndex >= loadedEndIndex - nearness) {
           handleEndReached(true);
         }
       }
@@ -205,9 +217,8 @@ export function InfiniteList<T extends object>({
     [
       handleStartReached,
       handleEndReached,
-      elementsVWC,
       itemsUnloadedAboveVWC,
-      preloadedAbove,
+      listingUntrackable,
     ]
   );
 
@@ -257,33 +268,17 @@ export function InfiniteList<T extends object>({
                     }: {
                       index: number;
                     }): ReactElement => {
-                      const unloadedAbove = itemsUnloadedAboveVWC.get();
-                      const indexInElements = index - unloadedAbove;
-                      const elems = elementsVWC.get();
-                      const inner = (() => {
-                        if (
-                          indexInElements < 0 ||
-                          (unloadedAbove > 0 &&
-                            indexInElements < preloadedAbove) ||
-                          indexInElements >= elems.length
-                        ) {
-                          return (
-                            <View
-                              key="loading"
-                              style={{
-                                ...styles.loadingContainer,
-                                height: `${initialComponentHeight}px`,
-                              }}
-                            >
-                              <Text style={styles.loadingText}>Loading...</Text>
-                            </View>
-                          );
-                        }
-                        return elems[indexInElements].react;
-                      })();
                       return (
-                        <View key={index} style={{ paddingTop: gap }}>
-                          {inner}
+                        <View key={index} style={{ paddingTop: gap, width }}>
+                          <ElementFromListing
+                            listingVWC={listingVWC}
+                            unloadedAboveVWC={itemsUnloadedAboveVWC}
+                            height={initialComponentHeight}
+                            width={width}
+                            index={index}
+                            component={component}
+                            itemComparer={itemComparer}
+                          />
                         </View>
                       );
                     }}
@@ -332,59 +327,159 @@ function useListingItemsAsVWC<T extends object>(
   );
 }
 
-type ItemElement<T> = {
-  react: ReactElement;
-  item: WritableValueWithCallbacks<T>;
-  items: WritableValueWithCallbacks<{ items: T[]; index: number }>;
+const ElementFromListing = <T extends object>({
+  listingVWC,
+  unloadedAboveVWC,
+  height,
+  width,
+  index,
+  component,
+  itemComparer,
+}: {
+  listingVWC: ValueWithCallbacks<InfiniteListing<T>>;
+  unloadedAboveVWC: ValueWithCallbacks<number>;
+  height: number;
+  width: number;
+  index: number;
+  component: InfiniteListProps<T>["component"];
+  itemComparer: InfiniteListProps<T>["itemComparer"];
+}) => {
+  const itemAndNeighbors = useMappedValuesWithCallbacks(
+    [listingVWC, unloadedAboveVWC],
+    (): {
+      item: T;
+      previous: T | null;
+      next: T | null;
+    } | null => {
+      const listing = listingVWC.get();
+      const unloadedAbove = unloadedAboveVWC.get();
+      if (listing.items === null) {
+        return null;
+      }
+
+      const realIndex = index - unloadedAbove;
+      if (realIndex < 0 || realIndex >= listing.items.length) {
+        return null;
+      }
+
+      if (!listing.definitelyNoneAbove && realIndex === 0) {
+        return null;
+      }
+
+      if (
+        !listing.definitelyNoneBelow &&
+        realIndex === listing.items.length - 1
+      ) {
+        return null;
+      }
+
+      return {
+        item: listing.items[realIndex],
+        previous: realIndex === 0 ? null : listing.items[realIndex - 1],
+        next:
+          realIndex === listing.items.length - 1
+            ? null
+            : listing.items[realIndex + 1],
+      };
+    }
+  );
+
+  const haveData = useMappedValueWithCallbacks(
+    itemAndNeighbors,
+    (v) => v !== null
+  );
+
+  return (
+    <RenderGuardedComponent
+      props={haveData}
+      component={(haveData) => (
+        <ElementFromListingHaveData
+          haveData={haveData}
+          itemAndNeighbors={itemAndNeighbors}
+          height={height}
+          width={width}
+          component={component}
+          itemComparer={itemComparer}
+          listingVWC={listingVWC}
+        />
+      )}
+    />
+  );
 };
 
-function useElementsNoDOM<T extends object>(
-  listingVWC: ValueWithCallbacks<InfiniteListing<T>>,
-  component: InfiniteListProps<T>["component"],
-  itemComparer: InfiniteListProps<T>["itemComparer"]
-): ValueWithCallbacks<ItemElement<T>[]> {
-  const resultPackedVWC = useWritableValueWithCallbacks<ItemElement<T>[]>(
-    () => []
+const ElementFromListingHaveData = <T extends object>({
+  haveData,
+  itemAndNeighbors,
+  height,
+  width,
+  component,
+  itemComparer,
+  listingVWC,
+}: {
+  haveData: boolean;
+  itemAndNeighbors: ValueWithCallbacks<{
+    item: T;
+    previous: T | null;
+    next: T | null;
+  } | null>;
+  height: number;
+  width: number;
+  component: InfiniteListProps<T>["component"];
+  itemComparer: InfiniteListProps<T>["itemComparer"];
+  listingVWC: ValueWithCallbacks<InfiniteListing<T>>;
+}) => {
+  const initialItemAndNeighbors = itemAndNeighbors.get();
+  const item = useWritableValueWithCallbacks<T | undefined>(
+    () => initialItemAndNeighbors?.item
+  );
+  const previous = useWritableValueWithCallbacks<T | undefined | null>(
+    () => initialItemAndNeighbors?.previous
+  );
+  const next = useWritableValueWithCallbacks<T | undefined | null>(
+    () => initialItemAndNeighbors?.next
   );
 
-  useValueWithCallbacksEffect(
-    listingVWC,
-    useCallback(
-      (listing) => {
-        const items = listing.items ?? [];
-        const old = resultPackedVWC.get();
+  useValueWithCallbacksEffect(itemAndNeighbors, (v) => {
+    if (v !== null) {
+      setVWC(item, v.item, Object.is);
+      setVWC(previous, v.previous, Object.is);
+      setVWC(next, v.next, Object.is);
+    }
+    return undefined;
+  });
 
-        const result: ItemElement<T>[] = [];
-        for (let i = 0; i < items.length && i < old.length; i++) {
-          setVWC(old[i].item, items[i]);
-          setVWC(old[i].items, { items, index: i });
-          result.push(old[i]);
-        }
-        for (let i = result.length; i < items.length; i++) {
-          const newItem = createWritableValueWithCallbacks(items[i]);
-          const newItems = createWritableValueWithCallbacks({
-            items,
-            index: i,
-          });
-          const newReact = component(
-            newItem,
-            (newValue) => {
-              listing.replaceItem(
-                itemComparer.bind(undefined, newItem.get()),
-                newValue
-              );
-            },
-            newItems
-          );
-          result.push({ react: newReact, item: newItem, items: newItems });
-        }
+  if (!haveData || initialItemAndNeighbors === null) {
+    return <LoadingElement height={height} width={width} />;
+  }
 
-        setVWC(resultPackedVWC, result);
-        return undefined;
-      },
-      [resultPackedVWC, component, itemComparer]
-    )
+  return component(
+    item as WritableValueWithCallbacks<T>,
+    (newItem) => {
+      listingVWC
+        .get()
+        .replaceItem(itemComparer.bind(undefined, item.get() as T), newItem);
+    },
+    previous as WritableValueWithCallbacks<T | null>,
+    next as WritableValueWithCallbacks<T | null>
   );
+};
 
-  return resultPackedVWC;
-}
+const LoadingElement = ({
+  height,
+  width,
+}: {
+  height: number;
+  width: number;
+}) => {
+  return (
+    <View
+      style={{
+        ...styles.loadingContainer,
+        height,
+        width,
+      }}
+    >
+      <Text style={styles.loadingText}>Loading...</Text>
+    </View>
+  );
+};

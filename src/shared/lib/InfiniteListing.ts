@@ -275,6 +275,12 @@ export class ProceduralInfiniteListing<T extends object> {
   private locked: boolean;
 
   /**
+   * The maximum number of items available, or undefined for infinitely
+   * many.
+   */
+  private readonly maxItems: number | undefined;
+
+  /**
    * The number of items in the list at a time.
    */
   readonly visibleLimit: number;
@@ -315,7 +321,8 @@ export class ProceduralInfiniteListing<T extends object> {
     generator: (index: number) => T,
     visibleLimit: number,
     rotationLength: number = 1,
-    fakedNetworkDelay: number = 0
+    fakedNetworkDelay: number = 0,
+    maxItems: number | undefined = undefined
   ) {
     this.generator = generator;
     this.fakedNetworkDelay = fakedNetworkDelay;
@@ -323,6 +330,7 @@ export class ProceduralInfiniteListing<T extends object> {
     this.locked = false;
     this.visibleLimit = visibleLimit;
     this.rotationLength = rotationLength;
+    this.maxItems = maxItems;
     this.items = null;
     this.itemsChanged = new Callbacks();
     this.onShiftedEarlier = new Callbacks();
@@ -342,7 +350,10 @@ export class ProceduralInfiniteListing<T extends object> {
    * Always false, as we can always generate more items
    */
   get definitelyNoneBelow(): boolean {
-    return false;
+    if (this.maxItems === undefined) {
+      return false;
+    }
+    return this.firstIndex + this.visibleLimit >= this.maxItems;
   }
 
   /**
@@ -357,7 +368,12 @@ export class ProceduralInfiniteListing<T extends object> {
       );
     }
     this.items = [];
-    for (let i = 0; i < this.visibleLimit; i++) {
+    for (
+      let i = 0;
+      i < this.visibleLimit &&
+      (this.maxItems === undefined || i < this.maxItems);
+      i++
+    ) {
       this.items.push(this.generator(i));
     }
     this.itemsChanged.call(this.items);
@@ -414,7 +430,7 @@ export class ProceduralInfiniteListing<T extends object> {
         return;
       }
 
-      if (this.items === null) {
+      if (this.items === null || this.definitelyNoneBelow) {
         return;
       }
 
@@ -425,7 +441,13 @@ export class ProceduralInfiniteListing<T extends object> {
         );
       }
 
-      const numItemsLater = this.rotationLength;
+      let numItemsLater = this.rotationLength;
+      if (this.maxItems !== undefined) {
+        numItemsLater = Math.min(
+          numItemsLater,
+          this.maxItems - (this.firstIndex + this.items.length)
+        );
+      }
       const newItems = [];
       for (let i = 0; i < numItemsLater; i++) {
         newItems.push(this.generator(this.firstIndex + this.visibleLimit + i));
@@ -912,6 +934,26 @@ class CachedServerList<T extends object> {
         this.visible = response.items.slice(0, this.pageSize);
         this.after = response.items.slice(this.pageSize);
         this.moreAfter = response.haveMore;
+
+        while (this.moreAfter && this.visible.length < this.pageSize) {
+          const nextPage = this.serverList.loadAfter(
+            this.visible[this.visible.length - 1]
+          );
+          cancelers.add(nextPage.cancel);
+          const response = await nextPage.promise;
+          cancelers.remove(nextPage.cancel);
+          if (!active) {
+            throw new Error("Canceled");
+          }
+
+          const numForVisible = Math.min(
+            this.pageSize - this.visible.length,
+            response.items.length
+          );
+          this.visible.push(...response.items.slice(0, numForVisible));
+          this.after.push(...response.items.slice(numForVisible));
+          this.moreAfter = response.haveMore;
+        }
 
         active = false;
         this.locked = false;
