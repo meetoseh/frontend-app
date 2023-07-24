@@ -1,4 +1,10 @@
-import { ReactElement, useCallback, useContext, useMemo } from "react";
+import {
+  ReactElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+} from "react";
 import { useStateCompat as useState } from "../../../../shared/hooks/useStateCompat";
 import { Pressable, Text, View } from "react-native";
 import * as Linking from "expo-linking";
@@ -24,6 +30,17 @@ import { URLSearchParams } from "react-native-url-polyfill";
 import { FeatureComponentProps } from "../../models/Feature";
 import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
 import { useUnwrappedValueWithCallbacks } from "../../../../shared/hooks/useUnwrappedValueWithCallbacks";
+import {
+  LoginMessage,
+  ReadableLoginMessagePipe,
+  createReadPipeIfAvailable,
+  createWritePipe,
+} from "./LoginMessagePipe";
+import {
+  Callbacks,
+  useWritableValueWithCallbacks,
+} from "../../../../shared/lib/Callbacks";
+import { setVWC } from "../../../../shared/lib/setVWC";
 
 const DEV_ACCOUNT_USER_IDENTITY_ID = "guest9833";
 
@@ -64,6 +81,7 @@ export const Login = ({
   resources,
 }: FeatureComponentProps<LoginState, LoginResources>) => {
   const loginContext = useContext(LoginContext);
+  const checkedMessagePipeVWC = useWritableValueWithCallbacks(() => false);
   const [error, setError] = useState<ReactElement | null>(null);
   const [pressingGoogle, setPressingGoogle] = useState(false);
   const [pressingApple, setPressingApple] = useState(false);
@@ -86,71 +104,149 @@ export const Login = ({
     setPressingApple(false);
   }, []);
 
+  const onMessageFromPipe = useCallback(
+    (result: LoginMessage) => {
+      if (result.type === "cancel") {
+        setError(
+          <ErrorBanner>
+            <ErrorBannerText>
+              Authorization failed: cancelled by user
+            </ErrorBannerText>
+          </ErrorBanner>
+        );
+      } else if (result.type === "dismiss") {
+        console.log("dismissed by user; ignoring");
+      } else if (result.type === "unknown") {
+        setError(
+          <ErrorBanner>
+            <ErrorBannerText>
+              Authorization failed: unknown result ({result.rawType})
+            </ErrorBannerText>
+          </ErrorBanner>
+        );
+      } else if (result.type === "error") {
+        setError(
+          <ErrorBanner>
+            <ErrorBannerText>
+              Authorization failed: {result.message}
+            </ErrorBannerText>
+          </ErrorBanner>
+        );
+      } else {
+        // ensures no missing cases
+        ((t: "success") => {})(result.type);
+
+        const { idToken, refreshToken, onboard } = result;
+        loginContext.setAuthTokens.call(undefined, {
+          idToken,
+          refreshToken: refreshToken ?? null,
+        });
+        state.get().setOnboard.call(undefined, onboard);
+      }
+    },
+    [loginContext.setAuthTokens, state]
+  );
+
+  useEffect(() => {
+    if (checkedMessagePipeVWC.get()) {
+      return;
+    }
+
+    let active = true;
+    let cancelers = new Callbacks<undefined>();
+    checkPipe();
+    return () => {
+      active = false;
+      cancelers.call(undefined);
+    };
+
+    async function checkPipe() {
+      if (!active) {
+        return;
+      }
+
+      let reader: ReadableLoginMessagePipe | null = null;
+      try {
+        reader = await createReadPipeIfAvailable();
+      } catch (e) {
+        console.log("login failed to create read pipe: ", e);
+        setVWC(checkedMessagePipeVWC, true);
+        return;
+      }
+
+      if (reader === null) {
+        setVWC(checkedMessagePipeVWC, true);
+        return;
+      }
+      try {
+        const readCancelablePromise = reader.read();
+        cancelers.add(() => readCancelablePromise.cancel());
+        let timeoutPromise = new Promise<void>((resolve) =>
+          setTimeout(resolve, 3000)
+        );
+        try {
+          await Promise.race([timeoutPromise, readCancelablePromise.promise]);
+        } finally {
+          readCancelablePromise.cancel();
+        }
+
+        const read = await readCancelablePromise.promise;
+        if (!active) {
+          return;
+        }
+        onMessageFromPipe(read);
+      } finally {
+        await reader.close();
+        if (active) {
+          setVWC(checkedMessagePipeVWC, true);
+        }
+      }
+    }
+  }, [onMessageFromPipe, checkedMessagePipeVWC]);
+
   const onContinueWithProvider = useCallback(
     async (provider: "Google" | "SignInWithApple") => {
       setError(null);
       try {
         const { url, redirectUrl } = await prepareLink(provider);
-        const result = await WebBrowser.openAuthSessionAsync(url, redirectUrl);
-        if (result.type === "cancel") {
-          setError(
-            <ErrorBanner>
-              <ErrorBannerText>
-                Authorization failed: cancelled by user
-              </ErrorBannerText>
-            </ErrorBanner>
+        const pipe = await createWritePipe();
+        try {
+          const result = await WebBrowser.openAuthSessionAsync(
+            url,
+            redirectUrl
           );
-          return;
-        } else if (result.type === "dismiss") {
-          console.log("dismissed by user; ignoring");
-          return;
-        } else if (result.type !== "success") {
-          setError(
-            <ErrorBanner>
-              <ErrorBannerText>
-                Authorization failed: unknown error
-              </ErrorBannerText>
-            </ErrorBanner>
+          if (result.type === "cancel") {
+            pipe.send({ type: "cancel" });
+            return;
+          } else if (result.type === "dismiss") {
+            pipe.send({ type: "dismiss" });
+            return;
+          } else if (result.type !== "success") {
+            pipe.send({ type: "unknown", rawType: result.type });
+            return;
+          }
+          const params = new URLSearchParams(
+            result.url.substring(result.url.indexOf("#") + 1)
           );
-          return;
+          if (params.get("auth_error") === "1") {
+            const errorMessage = params.get("auth_error_message");
+            pipe.send({ type: "error", message: errorMessage ?? "" });
+            return;
+          }
+
+          const idToken = params.get("id_token");
+          if (!idToken) {
+            pipe.send({ type: "error", message: "no id token" });
+            return;
+          }
+
+          const refreshToken = params.get("refresh_token") ?? undefined;
+          const onboard = params.get("onboard") === "1";
+
+          pipe.send({ type: "success", idToken, refreshToken, onboard });
+        } finally {
+          setTimeout(pipe.close, 3000);
         }
-        const params = new URLSearchParams(
-          result.url.substring(result.url.indexOf("#") + 1)
-        );
-        if (params.get("auth_error") === "1") {
-          const errorMessage = params.get("auth_error_message");
-          setError(
-            <ErrorBanner>
-              <ErrorBannerText>
-                Authorization failed: {errorMessage}
-              </ErrorBannerText>
-            </ErrorBanner>
-          );
-          return;
-        }
-
-        const idToken = params.get("id_token");
-        if (!idToken) {
-          setError(
-            <ErrorBanner>
-              <ErrorBannerText>
-                Authorization failed: no id token
-              </ErrorBannerText>
-            </ErrorBanner>
-          );
-          return;
-        }
-
-        const refreshToken = params.get("refresh_token") ?? null;
-        const onboard = params.get("onboard") === "1";
-
-        const tokenResponse = {
-          idToken,
-          refreshToken,
-        };
-
-        loginContext.setAuthTokens.apply(undefined, [tokenResponse]);
-        state.get().setOnboard.call(undefined, onboard);
       } catch (e) {
         setError(await describeError(e));
       }
@@ -237,7 +333,11 @@ export const Login = ({
     useMappedValueWithCallbacks(resources, (r) => r.background)
   );
 
-  if (goingToApple || goingToGoogle) {
+  const checkedMessagePipe = useUnwrappedValueWithCallbacks(
+    checkedMessagePipeVWC
+  );
+
+  if (goingToApple || goingToGoogle || !checkedMessagePipe) {
     if (pressingApple) {
       setPressingApple(false);
     }

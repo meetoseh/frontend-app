@@ -10,6 +10,7 @@ import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks"
 import { useOsehImageStateValueWithCallbacks } from "../../../../shared/images/useOsehImageStateValueWithCallbacks";
 import { OsehImageProps } from "../../../../shared/images/OsehImageProps";
 import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMappedValuesWithCallbacks";
+import { setVWC } from "../../../../shared/lib/setVWC";
 
 /**
  * Presents the user with the ability to login when they are logged out.
@@ -44,15 +45,14 @@ export const LoginFeature: Feature<LoginState, LoginResources> = {
         if (!active) {
           return;
         }
-        state.set({
+        setVWC(state, {
           required:
             loginContext.state === "loading"
               ? undefined
               : loginContext.state !== "logged-in",
           onboard: loginContext.state === "loading" ? undefined : onboard.get(),
           setOnboard: (v) => {
-            onboard.set(v);
-            onboard.callbacks.call(undefined);
+            setVWC(onboard, v);
           },
         });
       }
