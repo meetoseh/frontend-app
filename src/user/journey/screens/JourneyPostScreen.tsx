@@ -160,7 +160,11 @@ export const JourneyPostScreen = ({
   }, [onJourneyFinished]);
 
   const modals = useWritableValueWithCallbacks<Modals>(() => []);
-  const onToggleFavorited = useToggleFavorited({ journey, shared, modals });
+  const onToggleFavorited = useToggleFavorited({
+    modals,
+    journey: { type: "react-rerender", props: journey },
+    shared,
+  });
 
   const blurredImage = useMappedValueWithCallbacks(
     shared,

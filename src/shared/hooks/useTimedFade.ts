@@ -1,31 +1,33 @@
-import { RefObject, useEffect } from 'react';
-import { BezierAnimation, animIsComplete, calculateAnimValue } from '../lib/BezierAnimation';
-import { ease } from '../lib/Bezier';
-import { StyleProp, View, ViewStyle } from 'react-native';
+import { useEffect } from "react";
+import {
+  BezierAnimation,
+  animIsComplete,
+  calculateAnimValue,
+} from "../lib/BezierAnimation";
+import { ease } from "../lib/Bezier";
+import {
+  ValueWithCallbacks,
+  useWritableValueWithCallbacks,
+} from "../lib/Callbacks";
+import { setVWC } from "../lib/setVWC";
 
 /**
- * Fades the container in immediately, then fades it out such that its completely
- * faded out by the given time. This takes over managing the style of the given
- * ref in native, so needs the base style.
+ * Creates a value with callbacks whose current value represents the
+ * opacity (0-1) that a container should have if it's desired that
+ * the container be faded in when this hook is mounted and faded out
+ * completely at the given time.
  *
- * @param containerRef The container to fade in / out
  * @param until The time at which the container should be faded out
  * @param duration How long the fade in / out should take
+ * @return A value with callbacks that represents the opacity of the container
  */
 export const useTimedFade = (
-  containerRef: RefObject<View | null>,
-  baseStyle: StyleProp<ViewStyle>,
   until: number,
   duration: number = 350
-) => {
+): ValueWithCallbacks<number> => {
+  const opacity = useWritableValueWithCallbacks(() => 0);
   useEffect(() => {
-    if (containerRef.current === null) {
-      return;
-    }
-
-    const container = containerRef.current;
-
-    let step: 'in' | 'out' = 'in';
+    let step: "in" | "out" = "in";
     let opacityAnim: BezierAnimation = {
       from: 0,
       to: 1,
@@ -51,10 +53,10 @@ export const useTimedFade = (
       }
 
       if (animIsComplete(opacityAnim, now)) {
-        if (step === 'in') {
+        if (step === "in") {
           const epochNow = Date.now();
           const fadeOutAt = until - duration;
-          step = 'out';
+          step = "out";
           opacityAnim = {
             from: 1,
             to: 0,
@@ -67,11 +69,7 @@ export const useTimedFade = (
               timeout = null;
               requestAnimationFrame(onFrame);
             }, fadeOutAt - epochNow);
-            container.setNativeProps({
-              style: Object.assign({}, baseStyle, {
-                opacity: 1
-              })
-            });
+            setVWC(opacity, 1);
             return;
           }
         } else {
@@ -79,12 +77,9 @@ export const useTimedFade = (
         }
       }
 
-      container.setNativeProps({
-        style: Object.assign({}, baseStyle, {
-          opacity: calculateAnimValue(opacityAnim, now)
-        })
-      });
+      setVWC(opacity, calculateAnimValue(opacityAnim, now));
       requestAnimationFrame(onFrame);
     }
-  }, [containerRef, baseStyle, until, duration]);
+  }, [opacity, until, duration]);
+  return opacity;
 };

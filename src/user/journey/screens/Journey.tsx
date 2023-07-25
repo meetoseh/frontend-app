@@ -245,7 +245,7 @@ export const Journey = ({
 
   const onToggleFavorited = useToggleFavorited({
     modals,
-    journey,
+    journey: { type: "react-rerender", props: journey },
     shared,
   });
 

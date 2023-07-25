@@ -27,6 +27,7 @@ import {
   ModalProvider,
   Modals,
 } from "../../../../shared/contexts/ModalContext";
+import { JourneyRouter } from "../../../journey/JourneyRouter";
 
 /**
  * The top-level component which shows the favorites/history/courses tabbed pane.
@@ -87,127 +88,152 @@ export const Favorites = ({
   const innerWidth = Math.min(screenSize.width, styles.content.maxWidth) - 64;
 
   return (
-    <View style={styles.container}>
-      <OsehImageBackgroundFromStateValueWithCallbacks
-        state={background}
-        style={{ ...styles.innerContainer, height: screenSize.height }}
-      >
-        <ModalProvider>
-          <CloseButton onPress={onCloseClick} />
-          <View
-            style={{
-              ...styles.content,
-              paddingTop: styles.content.paddingTop + topBarHeight,
-              width: screenSize.width,
-            }}
-          >
-            <View style={{ ...styles.profile, width: innerWidth }}>
-              <MyProfilePicture
-                imageHandler={imageHandler}
-                style={styles.profilePicture}
-              />
-              <Text style={styles.profileName}>
-                {loginContext.userAttributes?.name}
-              </Text>
-            </View>
-            <RenderGuardedComponent
-              props={tabVWC}
-              component={(tab) => (
-                <>
-                  <ScrollView
-                    style={{
-                      width: innerWidth,
-                      flexGrow: 0,
-                    }}
-                    contentContainerStyle={styles.tabs}
-                    fadingEdgeLength={20}
-                    horizontal
-                  >
-                    <Pressable
-                      onPress={gotoFavorites}
-                      style={Object.assign(
-                        {},
-                        styles.tab,
-                        tab === "favorites" ? styles.activeTab : undefined
-                      )}
-                    >
-                      <Text
-                        style={Object.assign(
-                          {},
-                          styles.tabText,
-                          tab === "favorites" ? styles.activeTabText : undefined
-                        )}
-                      >
-                        Favorites
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={gotoHistory}
-                      style={Object.assign(
-                        {},
-                        styles.tab,
-                        styles.tabNotFirstChild,
-                        tab === "history" ? styles.activeTab : undefined
-                      )}
-                    >
-                      <Text
-                        style={Object.assign(
-                          {},
-                          styles.tabText,
-                          tab === "history" ? styles.activeTabText : undefined
-                        )}
-                      >
-                        History
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={gotoCourses}
-                      style={Object.assign(
-                        {},
-                        styles.tab,
-                        styles.tabNotFirstChild,
-                        tab === "courses" ? styles.activeTab : undefined
-                      )}
-                    >
-                      <Text
-                        style={Object.assign(
-                          {},
-                          styles.tabText,
-                          tab === "courses" ? styles.activeTabText : undefined
-                        )}
-                      >
-                        Owned
-                      </Text>
-                    </Pressable>
-                  </ScrollView>
-                  <View
-                    style={Object.assign(
-                      {},
-                      styles.tabContent,
-                      tab === "courses" ? styles.tabContentCourses : undefined
-                    )}
-                    onLayout={(e) => {
-                      const top = e.nativeEvent?.layout?.y;
-                      if (top !== undefined) {
-                        setVWC(listTop, top);
-                      }
-                    }}
-                  >
-                    {tab === "history" && (
-                      <HistoryList
-                        showJourney={setJourney}
-                        listHeight={listHeight}
-                        imageHandler={imageHandler}
-                      />
-                    )}
-                  </View>
-                </>
-              )}
+    <RenderGuardedComponent
+      props={journeyVWC}
+      component={(journey) => {
+        if (journey !== null) {
+          return (
+            <JourneyRouter
+              journey={journey}
+              onFinished={onJourneyFinished}
+              isOnboarding={false}
             />
+          );
+        }
+
+        return (
+          <View style={styles.container}>
+            <OsehImageBackgroundFromStateValueWithCallbacks
+              state={background}
+              style={{ ...styles.innerContainer, height: screenSize.height }}
+            >
+              <ModalProvider>
+                <CloseButton onPress={onCloseClick} />
+                <View
+                  style={{
+                    ...styles.content,
+                    paddingTop: styles.content.paddingTop + topBarHeight,
+                    width: screenSize.width,
+                  }}
+                >
+                  <View style={{ ...styles.profile, width: innerWidth }}>
+                    <MyProfilePicture
+                      imageHandler={imageHandler}
+                      style={styles.profilePicture}
+                    />
+                    <Text style={styles.profileName}>
+                      {loginContext.userAttributes?.name}
+                    </Text>
+                  </View>
+                  <RenderGuardedComponent
+                    props={tabVWC}
+                    component={(tab) => (
+                      <>
+                        <ScrollView
+                          style={{
+                            width: innerWidth,
+                            flexGrow: 0,
+                          }}
+                          contentContainerStyle={styles.tabs}
+                          fadingEdgeLength={20}
+                          horizontal
+                        >
+                          <Pressable
+                            onPress={gotoFavorites}
+                            style={Object.assign(
+                              {},
+                              styles.tab,
+                              tab === "favorites" ? styles.activeTab : undefined
+                            )}
+                          >
+                            <Text
+                              style={Object.assign(
+                                {},
+                                styles.tabText,
+                                tab === "favorites"
+                                  ? styles.activeTabText
+                                  : undefined
+                              )}
+                            >
+                              Favorites
+                            </Text>
+                          </Pressable>
+                          <Pressable
+                            onPress={gotoHistory}
+                            style={Object.assign(
+                              {},
+                              styles.tab,
+                              styles.tabNotFirstChild,
+                              tab === "history" ? styles.activeTab : undefined
+                            )}
+                          >
+                            <Text
+                              style={Object.assign(
+                                {},
+                                styles.tabText,
+                                tab === "history"
+                                  ? styles.activeTabText
+                                  : undefined
+                              )}
+                            >
+                              History
+                            </Text>
+                          </Pressable>
+                          <Pressable
+                            onPress={gotoCourses}
+                            style={Object.assign(
+                              {},
+                              styles.tab,
+                              styles.tabNotFirstChild,
+                              tab === "courses" ? styles.activeTab : undefined
+                            )}
+                          >
+                            <Text
+                              style={Object.assign(
+                                {},
+                                styles.tabText,
+                                tab === "courses"
+                                  ? styles.activeTabText
+                                  : undefined
+                              )}
+                            >
+                              Owned
+                            </Text>
+                          </Pressable>
+                        </ScrollView>
+                        <View
+                          style={Object.assign(
+                            {},
+                            styles.tabContent,
+                            tab === "courses"
+                              ? styles.tabContentCourses
+                              : undefined
+                          )}
+                          onLayout={(e) => {
+                            const top = e.nativeEvent?.layout?.y;
+                            if (top !== undefined) {
+                              setVWC(listTop, top);
+                            }
+                          }}
+                        >
+                          {tab === "history" && (
+                            <HistoryList
+                              showJourney={setJourney}
+                              listHeight={listHeight}
+                              imageHandler={imageHandler}
+                            />
+                          )}
+                        </View>
+                      </>
+                    )}
+                  />
+                </View>
+              </ModalProvider>
+            </OsehImageBackgroundFromStateValueWithCallbacks>
+            <StatusBar style="light" />
           </View>
-        </ModalProvider>
-      </OsehImageBackgroundFromStateValueWithCallbacks>
-      <StatusBar style="light" />
-    </View>
+        );
+      }}
+    />
   );
 };

@@ -16,6 +16,7 @@ import { View, Text } from "react-native";
 import FullGreenHeart from "../icons/FullGreenHeart";
 import { WritableValueWithCallbacks } from "../../../shared/lib/Callbacks";
 import { useTopBarHeight } from "../../../shared/hooks/useTopBarHeight";
+import { useValueWithCallbacksEffect } from "../../../shared/hooks/useValueWithCallbacksEffect";
 
 /**
  * Shows a basic popup at the top of the screen the a message like
@@ -50,19 +51,27 @@ const Modal = ({ until }: { until: number }) => {
   const windowSize = useWindowSize();
   const topBarHeight = useTopBarHeight();
 
-  const baseContainerStyle = useMemo(
+  const opacity = useTimedFade(until);
+
+  const createStyle = useCallback(
     () => ({
       ...styles.container,
       top: 24 + topBarHeight,
       width: windowSize.width - 80,
+      opacity: opacity.get(),
     }),
-    [windowSize.width, topBarHeight]
+    [topBarHeight, windowSize.width, opacity]
   );
 
-  useTimedFade(containerRef, baseContainerStyle, until);
+  useValueWithCallbacksEffect(
+    opacity,
+    useCallback((): undefined => {
+      containerRef.current?.setNativeProps({ style: createStyle() });
+    }, [createStyle])
+  );
 
   return (
-    <View style={baseContainerStyle} ref={containerRef}>
+    <View style={createStyle()} ref={containerRef}>
       <View style={styles.innerContainer}>
         <FullGreenHeart />
         <Text style={styles.text}>Added to your favorites</Text>
