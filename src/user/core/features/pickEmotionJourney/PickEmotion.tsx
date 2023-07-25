@@ -164,6 +164,10 @@ export const PickEmotion = ({
     resources.get().gotoFavorites();
   }, [resources]);
 
+  const onGotoSettingsClick = useCallback(() => {
+    resources.get().gotoSettings();
+  }, [resources]);
+
   const onGotoClassClick = useCallback(() => {
     gotoJourney();
   }, []);
@@ -220,7 +224,7 @@ export const PickEmotion = ({
         style={Object.assign({ paddingTop: topBarHeight }, styles.content)}
       >
         <View style={styles.topNav}>
-          <View style={styles.settingsLink}>
+          <Pressable style={styles.settingsLink} onPress={onGotoSettingsClick}>
             <RenderGuardedComponent
               props={profilePicture}
               component={(pic) => (
@@ -240,7 +244,7 @@ export const PickEmotion = ({
               </Text>
               <Text style={styles.greetingAction}>Daily Check-in</Text>
             </View>
-          </View>
+          </Pressable>
           <Pressable
             onPress={onGotoFavoritesClick}
             style={styles.favoritesLink}

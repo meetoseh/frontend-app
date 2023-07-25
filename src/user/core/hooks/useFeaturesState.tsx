@@ -7,10 +7,12 @@ import { useMappedValueWithCallbacks } from "../../../shared/hooks/useMappedValu
 import { useMappedValuesWithCallbacks } from "../../../shared/hooks/useMappedValuesWithCallbacks";
 import { ValueWithCallbacks } from "../../../shared/lib/Callbacks";
 import { FavoritesFeature } from "../features/favorites/FavoritesFeature";
+import { SettingsFeature } from "../features/settings/SettingsFeature";
 
 const features = [
   LoginFeature,
   RequestNameFeature,
+  SettingsFeature,
   FavoritesFeature,
   PickEmotionJourneyFeature,
 ];

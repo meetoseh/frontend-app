@@ -1,5 +1,7 @@
-import { PropsWithChildren, ReactElement } from 'react';
-import styles from './modals.module.css';
+import { PropsWithChildren, ReactElement } from "react";
+import { Pressable, ViewStyle } from "react-native";
+import { styles } from "./ModalWrapperStyles";
+import { useWindowSize } from "../hooks/useWindowSize";
 
 type ModalProps = {
   /**
@@ -13,6 +15,11 @@ type ModalProps = {
    * Default false.
    */
   minimalStyling?: boolean | undefined;
+
+  /**
+   * Styling to apply to the inner container, if desired
+   */
+  innerContainerStyle?: ViewStyle | undefined;
 };
 
 /**
@@ -23,25 +30,29 @@ export const ModalWrapper = ({
   children,
   onClosed,
   minimalStyling = undefined,
+  innerContainerStyle = undefined,
 }: PropsWithChildren<ModalProps>): ReactElement => {
   if (minimalStyling === undefined) {
     minimalStyling = false;
   }
 
+  const windowSize = useWindowSize();
+
   return (
-    <div
-      className={`${styles.container} ${minimalStyling ? styles.minimal : styles.normal}`}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClosed();
-      }}>
-      <div
-        className={styles.innerContainer}
-        onClick={(e) => {
-          e.stopPropagation();
-        }}>
+    <Pressable
+      style={{
+        ...styles.container,
+        ...(minimalStyling ? styles.minimalContainer : styles.normalContainer),
+        width: windowSize.width,
+        height: windowSize.height,
+      }}
+      onPress={() => onClosed()}
+    >
+      <Pressable
+        style={Object.assign(styles.innerContainer, innerContainerStyle)}
+      >
         {children}
-      </div>
-    </div>
+      </Pressable>
+    </Pressable>
   );
 };
