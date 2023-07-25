@@ -28,6 +28,8 @@ import {
   Modals,
 } from "../../../../shared/contexts/ModalContext";
 import { JourneyRouter } from "../../../journey/JourneyRouter";
+import { FavoritesList } from "../../../favorites/components/FavoritesList";
+import { CourseJourneysList } from "../../../favorites/components/CourseJourneysList";
 
 /**
  * The top-level component which shows the favorites/history/courses tabbed pane.
@@ -216,8 +218,22 @@ export const Favorites = ({
                             }
                           }}
                         >
+                          {tab === "favorites" && (
+                            <FavoritesList
+                              showJourney={setJourney}
+                              listHeight={listHeight}
+                              imageHandler={imageHandler}
+                            />
+                          )}
                           {tab === "history" && (
                             <HistoryList
+                              showJourney={setJourney}
+                              listHeight={listHeight}
+                              imageHandler={imageHandler}
+                            />
+                          )}
+                          {tab === "courses" && (
+                            <CourseJourneysList
                               showJourney={setJourney}
                               listHeight={listHeight}
                               imageHandler={imageHandler}
