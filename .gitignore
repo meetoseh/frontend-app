@@ -13,6 +13,7 @@ web-build/
 /start.bat
 /build-android.bat
 /build-android-preview.bat
+/ios.bat
 /android
 /*.apks
 /ios

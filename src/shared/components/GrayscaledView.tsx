@@ -1,9 +1,9 @@
-import { StyleProp, ViewStyle, Image, PixelRatio } from "react-native";
+import { ViewStyle, Image, PixelRatio } from "react-native";
 import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
 } from "../anim/VariableStrategyProps";
-import { PropsWithChildren, ReactElement, useCallback, useRef } from "react";
+import { ReactElement, useCallback } from "react";
 import {
   WritableValueWithCallbacks,
   useWritableValueWithCallbacks,
@@ -16,6 +16,7 @@ import { useMappedValuesWithCallbacks } from "../hooks/useMappedValuesWithCallba
 import { GrayscaledImage } from "../anim/GrayscaledImage";
 import { adaptValueWithCallbacksAsVariableStrategyProps } from "../lib/adaptValueWithCallbacksAsVariableStrategyProps";
 import { useValuesWithCallbacksEffect } from "../hooks/useValuesWithCallbacksEffect";
+import * as FileSystem from "expo-file-system";
 
 type GrayscaledViewProps = {
   /**
@@ -107,13 +108,16 @@ export const GrayscaledView = ({
             return;
           }
 
+          const infoPromise = FileSystem.getInfoAsync(uri);
           Image.getSize(
             uri,
             (width, height) => {
-              if (!active) {
-                return;
-              }
-              setVWC(imageWVWC, { uri, width, height });
+              infoPromise.then((info) => {
+                if (!active) {
+                  return;
+                }
+                setVWC(imageWVWC, { uri: info.uri, width, height });
+              });
             },
             (err) => {
               console.warn("grayscaled view failed to get size: " + err);
@@ -169,6 +173,7 @@ export const GrayscaledView = ({
           width: img.width / pixelsPerPoint,
           height: img.height / pixelsPerPoint,
         };
+
         return (
           <GrayscaledImage
             strength={adaptValueWithCallbacksAsVariableStrategyProps(

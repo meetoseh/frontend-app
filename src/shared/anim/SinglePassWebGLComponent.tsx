@@ -222,8 +222,8 @@ export function SinglePassWebGLComponent<
         height: e.nativeEvent.layout.height,
       };
       if (
-        renderedSize.width !== shownSize.width ||
-        renderedSize.height !== shownSize.height
+        Math.abs(renderedSize.width - shownSize.width) >= 1 ||
+        Math.abs(renderedSize.height - shownSize.height) >= 1
       ) {
         const onDoneRemounting = () => {
           remountDone.current.remove(onDoneRemounting);

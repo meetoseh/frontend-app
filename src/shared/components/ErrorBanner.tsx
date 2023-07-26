@@ -7,6 +7,7 @@ import {
 } from "react";
 import { useStateCompat as useState } from "../hooks/useStateCompat";
 import {
+  Platform,
   Pressable,
   StatusBar,
   StyleProp,
@@ -30,7 +31,10 @@ export const ErrorBanner = ({
     if (dismissed) {
       return { display: "none" };
     }
-    const top = StatusBar.currentHeight ?? 0;
+    const top = Platform.select({
+      android: StatusBar.currentHeight ?? 0,
+      ios: 54,
+    });
     return Object.assign({}, styles.container, { top });
   }, [dismissed]);
 

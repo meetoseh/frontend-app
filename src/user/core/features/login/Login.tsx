@@ -41,6 +41,7 @@ import {
   useWritableValueWithCallbacks,
 } from "../../../../shared/lib/Callbacks";
 import { setVWC } from "../../../../shared/lib/setVWC";
+import { useIsMounted } from "../../../../shared/hooks/useIsMounted";
 
 const DEV_ACCOUNT_USER_IDENTITY_ID = "guest9833";
 
@@ -87,6 +88,7 @@ export const Login = ({
   const [pressingApple, setPressingApple] = useState(false);
   const [goingToGoogle, setGoingToGoogle] = useState(false);
   const [goingToApple, setGoingToApple] = useState(false);
+  const mountedVWC = useIsMounted();
 
   const onGooglePressIn = useCallback(() => {
     setPressingGoogle(true);
@@ -210,19 +212,31 @@ export const Login = ({
       try {
         const { url, redirectUrl } = await prepareLink(provider);
         const pipe = await createWritePipe();
+
+        const sendPipeMessageOrApplyImmediately = (msg: LoginMessage) => {
+          if (mountedVWC.get()) {
+            onMessageFromPipe(msg);
+          } else {
+            pipe.send(msg);
+          }
+        };
+
         try {
           const result = await WebBrowser.openAuthSessionAsync(
             url,
             redirectUrl
           );
           if (result.type === "cancel") {
-            pipe.send({ type: "cancel" });
+            sendPipeMessageOrApplyImmediately({ type: "cancel" });
             return;
           } else if (result.type === "dismiss") {
-            pipe.send({ type: "dismiss" });
+            sendPipeMessageOrApplyImmediately({ type: "dismiss" });
             return;
           } else if (result.type !== "success") {
-            pipe.send({ type: "unknown", rawType: result.type });
+            sendPipeMessageOrApplyImmediately({
+              type: "unknown",
+              rawType: result.type,
+            });
             return;
           }
           const params = new URLSearchParams(
@@ -230,20 +244,31 @@ export const Login = ({
           );
           if (params.get("auth_error") === "1") {
             const errorMessage = params.get("auth_error_message");
-            pipe.send({ type: "error", message: errorMessage ?? "" });
+            sendPipeMessageOrApplyImmediately({
+              type: "error",
+              message: errorMessage ?? "",
+            });
             return;
           }
 
           const idToken = params.get("id_token");
           if (!idToken) {
-            pipe.send({ type: "error", message: "no id token" });
+            sendPipeMessageOrApplyImmediately({
+              type: "error",
+              message: "no id token",
+            });
             return;
           }
 
           const refreshToken = params.get("refresh_token") ?? undefined;
           const onboard = params.get("onboard") === "1";
 
-          pipe.send({ type: "success", idToken, refreshToken, onboard });
+          sendPipeMessageOrApplyImmediately({
+            type: "success",
+            idToken,
+            refreshToken,
+            onboard,
+          });
         } finally {
           setTimeout(pipe.close, 3000);
         }
@@ -251,7 +276,7 @@ export const Login = ({
         setError(await describeError(e));
       }
     },
-    [loginContext.setAuthTokens, state]
+    [loginContext.setAuthTokens, state, onMessageFromPipe, mountedVWC]
   );
 
   const onContinueWithGoogle = useCallback(async () => {
