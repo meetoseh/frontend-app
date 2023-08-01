@@ -473,10 +473,10 @@ export const LoginProvider = ({
         setState("logged-in");
       } else {
         await Promise.all([storeAuthTokens(null), storeUserAttributes(null)]);
+        setState("logged-out");
         setLogoutCounter((counter) => counter + 1);
         setAuthTokens(null);
         setUserAttributes(null);
-        setState("logged-out");
       }
     },
     [state]
@@ -524,7 +524,10 @@ export const LoginProvider = ({
         return;
       }
 
-      if (tokens === null) {
+      if (tokens === null || attributes === null) {
+        setAuthTokens(null);
+        setUserAttributes(null);
+        await Promise.all([storeAuthTokens(null), storeUserAttributes(null)]);
         setState("logged-out");
         return;
       }

@@ -2,7 +2,7 @@ module.exports = {
   expo: {
     name: "Oseh",
     slug: "frontend-app",
-    version: "1.0.2",
+    version: "1.0.3",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
@@ -25,6 +25,9 @@ module.exports = {
       associatedDomains: ["applinks:oseh.io"],
       config: {
         usesNonExemptEncryption: false,
+      },
+      infoPlist: {
+        UIBackgroundModes: ["audio"],
       },
     },
     android: {

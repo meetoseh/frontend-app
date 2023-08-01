@@ -3,6 +3,8 @@ import { LoginProvider } from "./src/shared/contexts/LoginContext";
 import { SplashScreen } from "./src/user/splash/SplashScreen";
 import { useFeaturesState } from "./src/user/core/hooks/useFeaturesState";
 import { RenderGuardedComponent } from "./src/shared/components/RenderGuardedComponent";
+import { useConfigureBackgroundAudio } from "./src/shared/hooks/useConfigureBackgroundAudio";
+import { useMappedValuesWithCallbacks } from "./src/shared/hooks/useMappedValuesWithCallbacks";
 
 export default function App() {
   return (
@@ -30,13 +32,33 @@ const AppInner = () => {
     "OpenSans-SemiBold": require("./assets/fonts/OpenSans-SemiBold.ttf"),
     "OpenSans-SemiBoldItalic": require("./assets/fonts/OpenSans-SemiBoldItalic.ttf"),
   });
+  const audioConfiguredVWC = useConfigureBackgroundAudio();
   const featureVWC = useFeaturesState();
+
+  const featureIfReadyVWC = useMappedValuesWithCallbacks(
+    [featureVWC, audioConfiguredVWC],
+    () => {
+      const feature = featureVWC.get();
+      const audioConfigured = audioConfiguredVWC.get();
+
+      if (
+        feature === null ||
+        feature === undefined ||
+        !audioConfigured ||
+        !fontsLoaded
+      ) {
+        return null;
+      }
+
+      return feature;
+    }
+  );
 
   return (
     <RenderGuardedComponent
-      props={featureVWC}
+      props={featureIfReadyVWC}
       component={(feature) => {
-        if (!fontsLoaded || feature === null || feature === undefined) {
+        if (feature === null) {
           return <SplashScreen type="wordmark" />;
         }
 

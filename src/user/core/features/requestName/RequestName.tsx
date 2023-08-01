@@ -80,7 +80,9 @@ export const RequestName = ({
 
       const data: { given_name: string; family_name: string } =
         await response.json();
+      console.log("set name:", `${data.given_name} ${data.family_name}`);
       if (loginContext.userAttributes !== null) {
+        console.log("setting user attributes");
         loginContext.setUserAttributes({
           ...loginContext.userAttributes,
           name: data.given_name + " " + data.family_name,

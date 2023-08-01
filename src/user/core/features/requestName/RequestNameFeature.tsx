@@ -11,6 +11,7 @@ import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMapped
 import { OsehImageProps } from "../../../../shared/images/OsehImageProps";
 import { useWindowSizeValueWithCallbacks } from "../../../../shared/hooks/useWindowSize";
 import { useOsehImageStateValueWithCallbacks } from "../../../../shared/images/useOsehImageStateValueWithCallbacks";
+import { setVWC } from "../../../../shared/lib/setVWC";
 
 const backgroundImageUid = "oseh_if_hH68hcmVBYHanoivLMgstg";
 
@@ -26,14 +27,17 @@ export const RequestNameFeature: Feature<
   useWorldState: () => {
     const loginContext = useContext(LoginContext);
 
-    const givenName = loginContext.userAttributes?.givenName;
+    let givenName = loginContext.userAttributes?.givenName;
+    if (loginContext.state === "logged-in" && givenName === undefined) {
+      givenName = null;
+    }
+
     const result = useWritableValueWithCallbacks<RequestNameState>(() => ({
       givenName,
     }));
 
     if (result.get().givenName !== givenName) {
-      result.set({ givenName });
-      result.callbacks.call(undefined);
+      setVWC(result, { givenName });
     }
 
     return result;
@@ -76,7 +80,9 @@ export const RequestNameFeature: Feature<
       return undefined;
     }
 
-    return worldState.givenName === "Anonymous";
+    return (
+      worldState.givenName === null || worldState.givenName === "Anonymous"
+    );
   },
 
   component: (worldState, resources) => (
