@@ -23,7 +23,7 @@ export const styles = StyleSheet.create({
     paddingTop: 32,
   },
   profilePic: {
-    borderRadius: 30,
+    borderRadius: 22.5,
     marginRight: 10,
   },
   settingsLink: {
@@ -86,7 +86,7 @@ export const styles = StyleSheet.create({
   wordPressable: {
     paddingTop: 12,
     paddingRight: 14,
-    paddingBottom: 12,
+    paddingBottom: 9,
     paddingLeft: 14,
   },
   votesView: {

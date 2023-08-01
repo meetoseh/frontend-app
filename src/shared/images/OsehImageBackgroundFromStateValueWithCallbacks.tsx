@@ -23,6 +23,7 @@ export const OsehImageBackgroundFromStateValueWithCallbacks = ({
   children,
   state,
   style,
+  styleVWC,
   imageStyle,
 }: PropsWithChildren<{
   state: ValueWithCallbacks<OsehImageState>;
@@ -31,11 +32,16 @@ export const OsehImageBackgroundFromStateValueWithCallbacks = ({
    */
   style?: ViewStyle | undefined;
   /**
+   * If specified, added after the style without rerendering the children.
+   */
+  styleVWC?: ValueWithCallbacks<ViewStyle>;
+  /**
    * Additional styles to apply to the image.
    */
   imageStyle?: ImageStyle | undefined;
 }>): ReactElement => {
   const containerRef = useRef<View>(null);
+  const childContainerRef = useRef<View>(null);
 
   useEffect(() => {
     if (containerRef.current === null) {
@@ -82,6 +88,30 @@ export const OsehImageBackgroundFromStateValueWithCallbacks = ({
     }
   }, [state]);
 
+  useEffect(() => {
+    if (childContainerRef.current === null || styleVWC === undefined) {
+      return;
+    }
+
+    const ref = childContainerRef.current;
+    styleVWC.callbacks.add(handleStyleChange);
+    handleStyleChange();
+    return () => {
+      styleVWC.callbacks.remove(handleStyleChange);
+    };
+
+    function handleStyleChange() {
+      ref.setNativeProps({
+        style: Object.assign(
+          {},
+          styles.childrenContainer,
+          style,
+          styleVWC?.get()
+        ),
+      });
+    }
+  }, [style, styleVWC]);
+
   return (
     <View
       style={{
@@ -101,7 +131,15 @@ export const OsehImageBackgroundFromStateValueWithCallbacks = ({
           />
         )}
       />
-      <View style={Object.assign({}, styles.childrenContainer, style)}>
+      <View
+        ref={childContainerRef}
+        style={Object.assign(
+          {},
+          styles.childrenContainer,
+          style,
+          styleVWC?.get()
+        )}
+      >
         {children}
       </View>
     </View>

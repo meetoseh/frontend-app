@@ -1,21 +1,22 @@
-import * as FileSystem from 'expo-file-system';
-import { SaveFormat, manipulateAsync } from 'expo-image-manipulator';
+import * as FileSystem from "expo-file-system";
+import { SaveFormat, manipulateAsync } from "expo-image-manipulator";
 
 const cropImageUnsafe = async (
   src: string,
   cropTo: { width: number; height: number },
   cacheableIdentifier: string
 ): Promise<string> => {
-  const targetFolder = FileSystem.cacheDirectory + 'cropped-images/';
+  const targetFolder = FileSystem.cacheDirectory + "cropped-images/";
   const dirInfo = await FileSystem.getInfoAsync(targetFolder);
   if (!dirInfo.exists) {
     await FileSystem.makeDirectoryAsync(targetFolder, { intermediates: true });
   }
 
-  const format = cropTo.width * cropTo.height < 600 * 600 ? SaveFormat.PNG : SaveFormat.JPEG;
-  const ext = format === SaveFormat.PNG ? 'png' : 'jpeg';
+  const format =
+    cropTo.width * cropTo.height < 600 * 600 ? SaveFormat.PNG : SaveFormat.JPEG;
+  const ext = format === SaveFormat.PNG ? "png" : "jpeg";
 
-  const targetFile = targetFolder + cacheableIdentifier + '.' + ext;
+  const targetFile = targetFolder + cacheableIdentifier + "." + ext;
   const fileInfo = await FileSystem.getInfoAsync(targetFile);
   if (fileInfo.exists) {
     return targetFile;
@@ -27,20 +28,104 @@ const cropImageUnsafe = async (
       await FileSystem.deleteAsync(unmodified.uri);
     }
   } catch (e) {
-    console.error(`Failed to delete useless artifact file at ${unmodified.uri}: ${e}`);
+    console.error(
+      `Failed to delete useless artifact file at ${unmodified.uri}: ${e}`
+    );
   }
-  if (unmodified.width === cropTo.width && unmodified.height === cropTo.height) {
+  if (
+    unmodified.width === cropTo.width &&
+    unmodified.height === cropTo.height
+  ) {
     return src;
   }
 
   const imgWidth = unmodified.width;
   const imgHeight = unmodified.height;
-  const leftCrop = Math.floor((imgWidth - cropTo.width) / 2);
-  const topCrop = Math.floor((imgHeight - cropTo.height) / 2);
+
+  // we will center-crop to the correct aspect ratio,
+  // then scale down to the correct size
+
+  const imgAspectRatio = imgWidth / imgHeight;
+  const expectedAspectRatio = cropTo.width / cropTo.height;
+
+  let manipulation: {
+    crop?: { left: number; top: number; width: number; height: number };
+    rescale?: { width: number; height: number };
+    resultSize: { width: number; height: number };
+  } = { resultSize: { width: imgWidth, height: imgHeight } };
+
+  if (expectedAspectRatio > imgAspectRatio) {
+    // we want it to be wider, so we crop the top and bottom
+    const expectedHeight = Math.min(
+      imgHeight,
+      Math.round(expectedAspectRatio * imgWidth)
+    );
+
+    if (expectedHeight < imgHeight) {
+      const amtToCrop = imgHeight - expectedHeight;
+      const cropFromTop = Math.floor(amtToCrop / 2);
+      manipulation.crop = {
+        left: 0,
+        top: cropFromTop,
+        width: imgWidth,
+        height: expectedHeight,
+      };
+      manipulation.resultSize.height = expectedHeight;
+    }
+  } else if (expectedAspectRatio < imgAspectRatio) {
+    // we want it to be taller, so we crop the left and right
+    const expectedWidth = Math.min(
+      imgWidth,
+      Math.round(imgHeight / expectedAspectRatio)
+    );
+
+    if (expectedWidth < imgWidth) {
+      const amtToCrop = imgWidth - expectedWidth;
+      const cropFromLeft = Math.floor(amtToCrop / 2);
+      manipulation.crop = {
+        left: cropFromLeft,
+        top: 0,
+        width: expectedWidth,
+        height: imgHeight,
+      };
+      manipulation.resultSize.width = expectedWidth;
+    }
+  }
+
+  if (
+    manipulation.resultSize.width !== cropTo.width ||
+    manipulation.resultSize.height !== cropTo.height
+  ) {
+    manipulation.rescale = { width: cropTo.width, height: cropTo.height };
+    manipulation.resultSize = { width: cropTo.width, height: cropTo.height };
+  }
 
   const result = await manipulateAsync(
     src,
-    [{ crop: { originX: leftCrop, originY: topCrop, ...cropTo } }],
+    [
+      ...(manipulation.crop
+        ? [
+            {
+              crop: {
+                originX: manipulation.crop.left,
+                originY: manipulation.crop.top,
+                width: manipulation.crop.width,
+                height: manipulation.crop.height,
+              },
+            },
+          ]
+        : []),
+      ...(manipulation.rescale
+        ? [
+            {
+              resize: {
+                width: manipulation.rescale.width,
+                height: manipulation.rescale.height,
+              },
+            },
+          ]
+        : []),
+    ],
     { compress: 1, format }
   );
   await FileSystem.moveAsync({ from: result.uri, to: targetFile });
@@ -69,7 +154,7 @@ export const cropImage = async (
   try {
     return await cropImageUnsafe(src, cropTo, cacheableIdentifier);
   } catch (e) {
-    console.error('Error cropping image', e);
+    console.error("Error cropping image", e);
     return src;
   }
 };

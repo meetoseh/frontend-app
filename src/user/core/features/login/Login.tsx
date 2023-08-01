@@ -4,9 +4,10 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
 } from "react";
 import { useStateCompat as useState } from "../../../../shared/hooks/useStateCompat";
-import { Pressable, Text, View } from "react-native";
+import { Platform, Pressable, Text, View } from "react-native";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { styles } from "./LoginScreenStyles";
@@ -46,7 +47,7 @@ import { useIsMounted } from "../../../../shared/hooks/useIsMounted";
 const DEV_ACCOUNT_USER_IDENTITY_ID = "guest9833";
 
 const prepareLink = async (
-  provider: "Google" | "SignInWithApple"
+  provider: "Google" | "SignInWithApple" | "Direct"
 ): Promise<{ url: string; redirectUrl: string }> => {
   const redirectUrl = Linking.createURL("login_callback");
   const response = await apiFetch(
@@ -207,7 +208,12 @@ export const Login = ({
   }, [onMessageFromPipe, checkedMessagePipeVWC]);
 
   const onContinueWithProvider = useCallback(
-    async (provider: "Google" | "SignInWithApple") => {
+    async (provider: "Google" | "SignInWithApple" | "Direct") => {
+      const options: WebBrowser.AuthSessionOpenOptions = {};
+      if (Platform.OS === "ios" && provider === "Google") {
+        options.preferEphemeralSession = true;
+      }
+
       setError(null);
       try {
         const { url, redirectUrl } = await prepareLink(provider);
@@ -224,7 +230,8 @@ export const Login = ({
         try {
           const result = await WebBrowser.openAuthSessionAsync(
             url,
-            redirectUrl
+            redirectUrl,
+            options
           );
           if (result.type === "cancel") {
             sendPipeMessageOrApplyImmediately({ type: "cancel" });
@@ -313,7 +320,7 @@ export const Login = ({
     );
   }, [pressingApple]);
 
-  const onPressMessage = useCallback(async () => {
+  const onLongPressMessage = useCallback(async () => {
     if (Constants.expoConfig?.extra?.environment !== "dev") {
       return;
     }
@@ -354,6 +361,34 @@ export const Login = ({
     }
   }, [loginContext, state]);
 
+  const numDirectAccClicks = useWritableValueWithCallbacks<number[]>(() => []);
+  const handlingDirectAccClick = useRef(false);
+  const onPressMessage = useCallback(async () => {
+    if (handlingDirectAccClick.current) {
+      return;
+    }
+
+    handlingDirectAccClick.current = true;
+    try {
+      const clickAt = Date.now();
+      const oldArr = numDirectAccClicks.get();
+      const newArr = [...oldArr, clickAt];
+      while (newArr[0] < clickAt - 5000) {
+        newArr.shift();
+      }
+      setVWC(numDirectAccClicks, newArr);
+
+      if (newArr.length < 3) {
+        return;
+      }
+      onContinueWithProvider("Direct");
+    } catch (e) {
+      setError(await describeError(e));
+    } finally {
+      handlingDirectAccClick.current = false;
+    }
+  }, [numDirectAccClicks]);
+
   const background = useUnwrappedValueWithCallbacks(
     useMappedValueWithCallbacks(resources, (r) => r.background)
   );
@@ -377,7 +412,11 @@ export const Login = ({
       {error}
       <OsehImageBackgroundFromState state={background} style={styles.content}>
         <OsehBrandmarkWhite width={163} height={40} style={styles.logo} />
-        <Text style={styles.message} onPress={onPressMessage}>
+        <Text
+          style={styles.message}
+          onLongPress={onLongPressMessage}
+          onPress={onPressMessage}
+        >
           Make mindfulness a daily part of your life in 60 seconds.
         </Text>
         <View style={styles.continueWithGoogleContainer}>

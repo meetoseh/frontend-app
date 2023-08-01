@@ -8,6 +8,13 @@ export const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
   },
+  containerKeyboardVisible: {
+    flex: 1,
+    alignItems: "center",
+    flexDirection: "column",
+    justifyContent: "flex-start",
+    paddingTop: 100,
+  },
   title: {
     color: Colors.WHITE,
     fontFamily: "OpenSans-Regular",
