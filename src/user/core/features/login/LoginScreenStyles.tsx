@@ -1,5 +1,5 @@
-import { Platform, StyleSheet } from 'react-native';
-import * as Colors from '../../../../styling/colors';
+import { Platform, StyleSheet } from "react-native";
+import * as Colors from "../../../../styling/colors";
 
 export const styles = StyleSheet.create({
   apple: {
@@ -8,56 +8,46 @@ export const styles = StyleSheet.create({
     width: 18,
   },
   container: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: Colors.WHITE,
-    flexDirection: 'column',
-    flex: 1,
-    justifyContent: 'center',
+    flexDirection: "column",
+    justifyContent: "center",
   },
   content: {
-    alignItems: 'stretch',
-    flex: 1,
-    justifyContent: 'flex-end',
+    alignItems: "center",
+    justifyContent: "flex-end",
+    paddingBottom: 60,
   },
   continueWithApple: {
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    height: 56,
+    maxWidth: 328,
     borderColor: Colors.WHITE,
     borderRadius: 100,
-    borderStyle: 'solid',
+    borderStyle: "solid",
     borderWidth: 2,
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    maxHeight: 56,
-  },
-  continueWithAppleContainer: {
-    alignItems: 'stretch',
-    flex: 1,
-    justifyContent: 'center',
-    marginBottom: 60,
-    maxHeight: 56,
-    maxWidth: 390,
-    paddingLeft: 24,
-    paddingRight: 24,
   },
   continueWithApplePressed: {
     backgroundColor: Colors.TRANSPARENT_WHITE,
   },
   continueWithAppleText: {
     color: Colors.WHITE,
-    fontFamily: 'OpenSans-Regular',
+    fontFamily: "OpenSans-Regular",
     fontSize: 16,
     letterSpacing: 0.25,
     lineHeight: 24,
   },
   continueWithGoogle: {
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    height: 56,
+    maxWidth: 328,
     backgroundColor: Colors.PRIMARY_DEFAULT,
     borderRadius: 100,
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    maxHeight: 56,
+    marginBottom: 32,
 
     ...Platform.select({
       ios: {
@@ -71,22 +61,12 @@ export const styles = StyleSheet.create({
       },
     }),
   },
-  continueWithGoogleContainer: {
-    alignItems: 'stretch',
-    flex: 1,
-    justifyContent: 'center',
-    marginBottom: 32,
-    maxHeight: 56,
-    maxWidth: 390,
-    paddingLeft: 24,
-    paddingRight: 24,
-  },
   continueWithGooglePressed: {
     backgroundColor: Colors.PRIMARY_LIGHT,
   },
   continueWithGoogleText: {
     color: Colors.WHITE,
-    fontFamily: 'OpenSans-Regular',
+    fontFamily: "OpenSans-Regular",
     fontSize: 16,
     letterSpacing: 0.25,
     lineHeight: 24,
@@ -98,28 +78,28 @@ export const styles = StyleSheet.create({
   },
   header: {
     color: Colors.WHITE,
-    fontFamily: 'OpenSans-Regular',
+    fontFamily: "OpenSans-Regular",
     fontSize: 24,
     lineHeight: 32,
     marginBottom: 40,
     maxWidth: 390,
     paddingLeft: 24,
     paddingRight: 24,
-    textAlign: 'center',
+    textAlign: "center",
   },
   logo: {
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   message: {
-    alignSelf: 'center',
+    alignSelf: "center",
     color: Colors.WHITE,
-    fontFamily: 'OpenSans-Light',
+    fontFamily: "OpenSans-Light",
     fontSize: 16,
     letterSpacing: 0.25,
     lineHeight: 28,
     marginBottom: 60,
     marginTop: 32,
     maxWidth: 262,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });

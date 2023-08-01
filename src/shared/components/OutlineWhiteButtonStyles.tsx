@@ -12,7 +12,7 @@ export const styles = StyleSheet.create({
     flex: undefined,
     flexDirection: "row",
     justifyContent: "center",
-    maxHeight: 56,
+    minHeight: 56,
   },
 
   containerWithSpinner: {

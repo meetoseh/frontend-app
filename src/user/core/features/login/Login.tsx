@@ -3,11 +3,9 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useRef,
 } from "react";
-import { useStateCompat as useState } from "../../../../shared/hooks/useStateCompat";
-import { Platform, Pressable, Text, View } from "react-native";
+import { Platform, StyleProp, Text, TextStyle, View } from "react-native";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { styles } from "./LoginScreenStyles";
@@ -43,6 +41,9 @@ import {
 } from "../../../../shared/lib/Callbacks";
 import { setVWC } from "../../../../shared/lib/setVWC";
 import { useIsMounted } from "../../../../shared/hooks/useIsMounted";
+import { FilledPrimaryButton } from "../../../../shared/components/FilledPrimaryButton";
+import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
+import { OutlineWhiteButton } from "../../../../shared/components/OutlineWhiteButton";
 
 const DEV_ACCOUNT_USER_IDENTITY_ID = "guest9833";
 
@@ -84,33 +85,34 @@ export const Login = ({
 }: FeatureComponentProps<LoginState, LoginResources>) => {
   const loginContext = useContext(LoginContext);
   const checkedMessagePipeVWC = useWritableValueWithCallbacks(() => false);
-  const [error, setError] = useState<ReactElement | null>(null);
-  const [pressingGoogle, setPressingGoogle] = useState(false);
-  const [pressingApple, setPressingApple] = useState(false);
-  const [goingToGoogle, setGoingToGoogle] = useState(false);
-  const [goingToApple, setGoingToApple] = useState(false);
+  const errorVWC = useWritableValueWithCallbacks<ReactElement | null>(
+    () => null
+  );
   const mountedVWC = useIsMounted();
-
-  const onGooglePressIn = useCallback(() => {
-    setPressingGoogle(true);
-  }, []);
-
-  const onGooglePressOut = useCallback(() => {
-    setPressingGoogle(false);
-  }, []);
-
-  const onApplePressIn = useCallback(() => {
-    setPressingApple(true);
-  }, []);
-
-  const onApplePressOut = useCallback(() => {
-    setPressingApple(false);
-  }, []);
+  const googleTextStyleVWC = useWritableValueWithCallbacks<
+    StyleProp<TextStyle>
+  >(() => undefined);
+  const updateGoogleTextStyle = useCallback(
+    (v: StyleProp<TextStyle>) => {
+      setVWC(googleTextStyleVWC, v);
+    },
+    [googleTextStyleVWC]
+  );
+  const appleTextStyleVWC = useWritableValueWithCallbacks<StyleProp<TextStyle>>(
+    () => undefined
+  );
+  const updateAppleTextStyle = useCallback(
+    (v: StyleProp<TextStyle>) => {
+      setVWC(appleTextStyleVWC, v);
+    },
+    [appleTextStyleVWC]
+  );
 
   const onMessageFromPipe = useCallback(
     (result: LoginMessage) => {
       if (result.type === "cancel") {
-        setError(
+        setVWC(
+          errorVWC,
           <ErrorBanner>
             <ErrorBannerText>
               Authorization failed: cancelled by user
@@ -120,7 +122,8 @@ export const Login = ({
       } else if (result.type === "dismiss") {
         console.log("dismissed by user; ignoring");
       } else if (result.type === "unknown") {
-        setError(
+        setVWC(
+          errorVWC,
           <ErrorBanner>
             <ErrorBannerText>
               Authorization failed: unknown result ({result.rawType})
@@ -128,7 +131,8 @@ export const Login = ({
           </ErrorBanner>
         );
       } else if (result.type === "error") {
-        setError(
+        setVWC(
+          errorVWC,
           <ErrorBanner>
             <ErrorBannerText>
               Authorization failed: {result.message}
@@ -214,7 +218,7 @@ export const Login = ({
         options.preferEphemeralSession = true;
       }
 
-      setError(null);
+      setVWC(errorVWC, null);
       try {
         const { url, redirectUrl } = await prepareLink(provider);
         const pipe = await createWritePipe();
@@ -280,52 +284,26 @@ export const Login = ({
           setTimeout(pipe.close, 3000);
         }
       } catch (e) {
-        setError(await describeError(e));
+        setVWC(errorVWC, await describeError(e));
       }
     },
     [loginContext.setAuthTokens, state, onMessageFromPipe, mountedVWC]
   );
 
   const onContinueWithGoogle = useCallback(async () => {
-    setGoingToGoogle(true);
-    try {
-      onContinueWithProvider("Google");
-    } finally {
-      setGoingToGoogle(false);
-    }
+    onContinueWithProvider("Google");
   }, [onContinueWithProvider]);
 
   const onContinueWithApple = useCallback(async () => {
-    setGoingToApple(true);
-    try {
-      onContinueWithProvider("SignInWithApple");
-    } finally {
-      setGoingToApple(false);
-    }
+    onContinueWithProvider("SignInWithApple");
   }, [onContinueWithProvider]);
-
-  const googleStyles = useMemo(() => {
-    return Object.assign(
-      {},
-      styles.continueWithGoogle,
-      pressingGoogle ? styles.continueWithGooglePressed : {}
-    );
-  }, [pressingGoogle]);
-
-  const appleStyles = useMemo(() => {
-    return Object.assign(
-      {},
-      styles.continueWithApple,
-      pressingApple ? styles.continueWithApplePressed : {}
-    );
-  }, [pressingApple]);
 
   const onLongPressMessage = useCallback(async () => {
     if (Constants.expoConfig?.extra?.environment !== "dev") {
       return;
     }
 
-    setError(null);
+    setVWC(errorVWC, null);
     try {
       const response = await apiFetch(
         "/api/1/dev/login",
@@ -357,7 +335,7 @@ export const Login = ({
       });
       state.get().setOnboard.call(undefined, data.onboard);
     } catch (e) {
-      setError(await describeError(e));
+      setVWC(errorVWC, await describeError(e));
     }
   }, [loginContext, state]);
 
@@ -383,7 +361,7 @@ export const Login = ({
       }
       onContinueWithProvider("Direct");
     } catch (e) {
-      setError(await describeError(e));
+      setVWC(errorVWC, await describeError(e));
     } finally {
       handlingDirectAccClick.current = false;
     }
@@ -397,19 +375,16 @@ export const Login = ({
     checkedMessagePipeVWC
   );
 
-  if (goingToApple || goingToGoogle || !checkedMessagePipe) {
-    if (pressingApple) {
-      setPressingApple(false);
-    }
-    if (pressingGoogle) {
-      setPressingGoogle(false);
-    }
+  if (!checkedMessagePipe) {
     return <SplashScreen />;
   }
 
   return (
     <View style={styles.container}>
-      {error}
+      <RenderGuardedComponent
+        props={errorVWC}
+        component={(error) => error ?? <></>}
+      />
       <OsehImageBackgroundFromState state={background} style={styles.content}>
         <OsehBrandmarkWhite width={163} height={40} style={styles.logo} />
         <Text
@@ -419,32 +394,33 @@ export const Login = ({
         >
           Make mindfulness a daily part of your life in 60 seconds.
         </Text>
-        <View style={styles.continueWithGoogleContainer}>
-          <Pressable
-            style={googleStyles}
-            onPress={onContinueWithGoogle}
-            onPressIn={onGooglePressIn}
-            onPressOut={onGooglePressOut}
-          >
-            <Google style={styles.google} />
-            <Text style={styles.continueWithGoogleText}>
-              Continue with Google
-            </Text>
-          </Pressable>
-        </View>
-        <View style={styles.continueWithAppleContainer}>
-          <Pressable
-            style={appleStyles}
-            onPress={onContinueWithApple}
-            onPressIn={onApplePressIn}
-            onPressOut={onApplePressOut}
-          >
-            <Apple style={styles.apple} />
-            <Text style={styles.continueWithAppleText}>
-              Continue with Apple
-            </Text>
-          </Pressable>
-        </View>
+        <FilledPrimaryButton
+          onPress={onContinueWithGoogle}
+          setTextStyle={updateGoogleTextStyle}
+          fullWidth
+        >
+          <Google style={styles.google} />
+          <RenderGuardedComponent
+            props={googleTextStyleVWC}
+            component={(textStyle) => (
+              <Text style={textStyle}>Continue with Google</Text>
+            )}
+          />
+        </FilledPrimaryButton>
+        <View style={{ height: 32 }} />
+        <OutlineWhiteButton
+          onPress={onContinueWithApple}
+          setTextStyle={updateAppleTextStyle}
+          fullWidth
+        >
+          <Apple style={styles.apple} />
+          <RenderGuardedComponent
+            props={appleTextStyleVWC}
+            component={(textStyle) => (
+              <Text style={textStyle}>Continue with Google</Text>
+            )}
+          />
+        </OutlineWhiteButton>
       </OsehImageBackgroundFromState>
       <StatusBar style="light" />
     </View>

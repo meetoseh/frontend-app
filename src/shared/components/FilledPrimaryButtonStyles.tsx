@@ -7,6 +7,7 @@ export const styles = StyleSheet.create({
     backgroundColor: Colors.PRIMARY_DEFAULT,
     borderRadius: 100,
     flex: undefined,
+    flexDirection: "row",
     justifyContent: "center",
     minHeight: 56,
 

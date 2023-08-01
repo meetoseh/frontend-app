@@ -58,11 +58,21 @@ export const FilledButton = ({
   }, []);
 
   const containerStyles = useMemo(() => {
+    let fullWidthMargin = 24;
+    if (screenSize.width - fullWidthMargin * 2 > 400) {
+      fullWidthMargin = Math.floor((screenSize.width - 400) / 2);
+    }
     return Object.assign(
       {},
       styles.container,
       ...(fullWidth
-        ? [{ width: screenSize.width - 48, marginLeft: 24, marginRight: 24 }]
+        ? [
+            {
+              width: screenSize.width - fullWidthMargin * 2,
+              marginLeft: fullWidthMargin,
+              marginRight: fullWidthMargin,
+            },
+          ]
         : []),
       ...(marginTop ? [{ marginTop }] : []),
       ...(pressed ? [styles.pressed] : []),
