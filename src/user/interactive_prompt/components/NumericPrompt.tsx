@@ -34,14 +34,7 @@ import { PromptProps } from "../models/PromptProps";
 import { PromptSettings } from "../models/PromptSettings";
 import { usePromptResources } from "../hooks/usePromptResources";
 import { apiFetch } from "../../../shared/lib/apiFetch";
-import {
-  Pressable,
-  View,
-  Text,
-  TextInput,
-  StyleProp,
-  TextStyle,
-} from "react-native";
+import { View, Text, TextInput, StyleProp, TextStyle } from "react-native";
 import { CustomButtonProps } from "../../../shared/models/CustomButtonProps";
 import { FilledPrimaryButton } from "../../../shared/components/FilledPrimaryButton";
 import { LinkButton } from "../../../shared/components/LinkButton";
