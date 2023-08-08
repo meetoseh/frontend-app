@@ -5,6 +5,12 @@ import { useFeaturesState } from "./src/user/core/hooks/useFeaturesState";
 import { RenderGuardedComponent } from "./src/shared/components/RenderGuardedComponent";
 import { useConfigureBackgroundAudio } from "./src/shared/hooks/useConfigureBackgroundAudio";
 import { useMappedValuesWithCallbacks } from "./src/shared/hooks/useMappedValuesWithCallbacks";
+import { useWritableValueWithCallbacks } from "./src/shared/lib/Callbacks";
+import { useValueWithCallbacksEffect } from "./src/shared/hooks/useValueWithCallbacksEffect";
+import { useCallback } from "react";
+import { setVWC } from "./src/shared/lib/setVWC";
+import { View } from "react-native";
+import { StatusBar } from "expo-status-bar";
 
 export default function App() {
   return (
@@ -54,12 +60,58 @@ const AppInner = () => {
     }
   );
 
+  const flashGreenVWC = useWritableValueWithCallbacks<boolean>(() => false);
+  useValueWithCallbacksEffect(
+    featureIfReadyVWC,
+    useCallback((feature) => {
+      if (feature !== null) {
+        setVWC(flashGreenVWC, true);
+        return undefined;
+      }
+
+      if (!flashGreenVWC.get()) {
+        return undefined;
+      }
+
+      let active = true;
+      let timeout: NodeJS.Timeout | null = setTimeout(() => {
+        if (!active) {
+          return;
+        }
+        timeout = null;
+        setVWC(flashGreenVWC, false);
+      }, 1000);
+      return () => {
+        active = false;
+        if (timeout !== null) {
+          clearTimeout(timeout);
+          timeout = null;
+        }
+      };
+    }, [])
+  );
+
   return (
     <RenderGuardedComponent
       props={featureIfReadyVWC}
       component={(feature) => {
         if (feature === null) {
-          return <SplashScreen type="wordmark" />;
+          return (
+            <RenderGuardedComponent
+              props={flashGreenVWC}
+              component={(flashGreen) => {
+                if (!flashGreen) {
+                  return <SplashScreen type="wordmark" />;
+                }
+
+                return (
+                  <View style={{ flex: 1, backgroundColor: "#253a41" }}>
+                    <StatusBar style="light" />
+                  </View>
+                );
+              }}
+            />
+          );
         }
 
         return feature;

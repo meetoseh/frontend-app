@@ -32,6 +32,7 @@ module.exports = {
     },
     android: {
       package: "com.oseh.frontendapp",
+      googleServicesFile: "./google-services.json",
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#000000",
@@ -46,6 +47,15 @@ module.exports = {
         projectId: "ca696af6-0efc-46f2-857c-a0eb920dc1df",
       },
     },
-    plugins: ["./plugins/fix-rn-32931.js"],
+    plugins: [
+      "./plugins/fix-rn-32931.js",
+      [
+        "expo-notifications",
+        {
+          icon: "./assets/android-notification-icon.png",
+          color: "#446266",
+        },
+      ],
+    ],
   },
 };

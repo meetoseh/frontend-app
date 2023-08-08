@@ -1,3 +1,5 @@
+import { LinearGradientState } from "../shared/anim/LinearGradientBackground";
+
 export const WHITE = "#FFFFFF";
 /**
  * Used, for example, to indicate that a transparent button is
@@ -42,3 +44,17 @@ export const TRANSPARENT_LIGHT_GRAY = "rgba(245, 245, 245, 0.7)";
 export const TRANSPARENT_PRIMARY_DEFAULT = "rgba(68, 98, 102, 0.4)";
 export const SLIGHTLY_TRANSPARENT_PRIMARY_DEFAULT =
   "background: rgba(68, 98, 102, 0.9)";
+
+export const STANDARD_BLACK_GRAY_GRADIENT: LinearGradientState = {
+  stops: [
+    {
+      color: [0, 0, 0, 1],
+      offset: 0,
+    },
+    {
+      color: [25, 28, 29, 1],
+      offset: 0.37,
+    },
+  ],
+  angleDegreesClockwiseFromTop: 180,
+};

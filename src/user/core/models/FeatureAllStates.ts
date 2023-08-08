@@ -1,3 +1,4 @@
+import { AppNotifsState } from "../features/appNotifs/AppNotifsState";
 import { FavoritesState } from "../features/favorites/FavoritesState";
 import { LoginState } from "../features/login/LoginState";
 import { PickEmotionJourneyState } from "../features/pickEmotionJourney/PickEmotionJourneyState";
@@ -10,4 +11,5 @@ export type FeatureAllStates = {
   requestName: RequestNameState;
   pickEmotionJourney: PickEmotionJourneyState;
   settings: SettingsState;
+  appNotifs: AppNotifsState;
 };

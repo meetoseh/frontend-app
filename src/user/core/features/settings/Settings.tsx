@@ -39,26 +39,10 @@ import {
   ErrorBanner,
   ErrorBannerText,
 } from "../../../../shared/components/ErrorBanner";
-import {
-  LinearGradientBackground,
-  LinearGradientState,
-} from "../../../../shared/anim/LinearGradientBackground";
+import { LinearGradientBackground } from "../../../../shared/anim/LinearGradientBackground";
 import * as Linking from "expo-linking";
 import { CloseButton } from "../../../../shared/components/CloseButton";
-
-const GRADIENT: LinearGradientState = {
-  stops: [
-    {
-      color: [0, 0, 0, 1],
-      offset: 0,
-    },
-    {
-      color: [25, 28, 29, 1],
-      offset: 0.37,
-    },
-  ],
-  angleDegreesClockwiseFromTop: 180,
-};
+import { STANDARD_BLACK_GRAY_GRADIENT } from "../../../../styling/colors";
 
 /**
  * Shows a basic settings screen for the user. Requires a login context and a modal
@@ -138,7 +122,7 @@ export const Settings = ({
             <LinearGradientBackground
               state={{
                 type: "react-rerender",
-                props: GRADIENT,
+                props: STANDARD_BLACK_GRAY_GRADIENT,
               }}
             >
               <View

@@ -12,3 +12,7 @@ This file lists the keys we use within the insecure store. This refers to the
 
 - `user_attributes`: goes to a jsonified value of UserAttributes from
   [LoginContext](../../src/shared/contexts/LoginContext.tsx)
+- `inapp-notifications` - see [useInappNotification](../../src/shared/hooks/useInappNotification.ts)
+- `inapp-notification-{uid}` - see [useInappNotification](../../src/shared/hooks/useInappNotification.ts)
+- `appNotifs-lastRequestedLocally` - see [AppNotifsStore](../../src/user/core/features/appNotifs/AppNotifsStore.ts)
+- `appNotifs-tokenUserAssociation` - see [AppNotifsStore](../../src/user/core/features/appNotifs/AppNotifsStore.ts)

@@ -14,7 +14,7 @@ import { SplashScreen } from "../../../splash/SplashScreen";
 import Google from "./icons/Google";
 import Apple from "./icons/Apple";
 import { StatusBar } from "expo-status-bar";
-import OsehBrandmarkWhite from "./icons/OsehBrandmarkWhite";
+import OsehWordmarkWhite from "./icons/OsehWordmarkWhite";
 import { LoginContext } from "../../../../shared/contexts/LoginContext";
 import { apiFetch } from "../../../../shared/lib/apiFetch";
 import { LoginResources } from "./LoginResources";
@@ -386,7 +386,7 @@ export const Login = ({
         component={(error) => error ?? <></>}
       />
       <OsehImageBackgroundFromState state={background} style={styles.content}>
-        <OsehBrandmarkWhite width={163} height={40} style={styles.logo} />
+        <OsehWordmarkWhite width={163} height={40} style={styles.logo} />
         <Text
           style={styles.message}
           onLongPress={onLongPressMessage}
@@ -403,7 +403,7 @@ export const Login = ({
           <RenderGuardedComponent
             props={googleTextStyleVWC}
             component={(textStyle) => (
-              <Text style={textStyle}>Continue with Google</Text>
+              <Text style={textStyle}>Sign in with Google</Text>
             )}
           />
         </FilledPrimaryButton>
@@ -417,7 +417,7 @@ export const Login = ({
           <RenderGuardedComponent
             props={appleTextStyleVWC}
             component={(textStyle) => (
-              <Text style={textStyle}>Continue with Google</Text>
+              <Text style={textStyle}>Sign in with Apple</Text>
             )}
           />
         </OutlineWhiteButton>

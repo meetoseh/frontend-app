@@ -18,6 +18,7 @@ web-build/
 /*.apks
 /ios
 /oseh-*.json
+/pc-*.json
 
 # macOS
 .DS_Store
