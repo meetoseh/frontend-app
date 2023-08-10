@@ -43,6 +43,7 @@ import { LinearGradientBackground } from "../../../../shared/anim/LinearGradient
 import * as Linking from "expo-linking";
 import { CloseButton } from "../../../../shared/components/CloseButton";
 import { STANDARD_BLACK_GRAY_GRADIENT } from "../../../../styling/colors";
+import { FullscreenView } from "../../../../shared/components/FullscreenView";
 
 /**
  * Shows a basic settings screen for the user. Requires a login context and a modal
@@ -125,13 +126,7 @@ export const Settings = ({
                 props: STANDARD_BLACK_GRAY_GRADIENT,
               }}
             >
-              <View
-                style={{
-                  ...styles.background,
-                  width: windowSize.width,
-                  height: windowSize.height,
-                }}
-              >
+              <FullscreenView style={styles.background}>
                 <CloseButton onPress={onClickX} />
                 <View
                   style={{ ...styles.content, width: windowSize.width - 64 }}
@@ -187,7 +182,7 @@ export const Settings = ({
                     </Pressable>
                   </View>
                 </View>
-              </View>
+              </FullscreenView>
             </LinearGradientBackground>
             <ModalsOutlet modals={modals} />
             <StatusBar style="light" />

@@ -15,6 +15,7 @@ export const styles = StyleSheet.create({
   },
   topNav: {
     flexDirection: "row",
+    flexWrap: "wrap",
     justifyContent: "space-between",
     paddingLeft: 32,
     /* On the right, we want the padding on the favorites to be clickable,
@@ -28,6 +29,7 @@ export const styles = StyleSheet.create({
   },
   settingsLink: {
     flexDirection: "row",
+    alignItems: "center",
   },
   settingsMessages: {
     flexDirection: "column",
@@ -52,10 +54,10 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingTop: 13,
-    paddingBottom: 13,
-    paddingLeft: 26,
-    paddingRight: 26,
+    paddingTop: 12.5,
+    paddingBottom: 12.5,
+    paddingLeft: 25,
+    paddingRight: 25,
   },
   favoritesLinkText: {
     fontFamily: "OpenSans-Regular",
@@ -98,7 +100,8 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    height: 12,
+    paddingTop: 12,
+    paddingBottom: 9,
   },
   votesText: {
     fontFamily: "OpenSans-Regular",

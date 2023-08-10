@@ -9,6 +9,7 @@ import { RenderGuardedComponent } from "../../../shared/components/RenderGuarded
 import { useUnwrappedValueWithCallbacks } from "../../../shared/hooks/useUnwrappedValueWithCallbacks";
 import { View, Text } from "react-native";
 import { OsehImageFromState } from "../../../shared/images/OsehImageFromState";
+import { useIsEffectivelyTinyScreen } from "../../../shared/hooks/useIsEffectivelyTinyScreen";
 
 export type HereSettings =
   | {
@@ -43,6 +44,7 @@ export const ProfilePictures = ({
     profilePictures,
     (pp) => Math.ceil(pp.additionalUsers)
   );
+  const isTinyScreen = useIsEffectivelyTinyScreen();
 
   return (
     <View style={styles.container}>
@@ -71,7 +73,15 @@ export const ProfilePictures = ({
           const type = trueHereSettings.type;
           if (type === "filled") {
             return (
-              <View style={styles.hereSettingsFilledContainer}>
+              <View
+                style={Object.assign(
+                  {},
+                  styles.hereSettingsFilledContainer,
+                  isTinyScreen
+                    ? styles.accessibleHereSettingsFilledContainer
+                    : undefined
+                )}
+              >
                 <Text style={styles.hereSettingsFilledText}>{textContent}</Text>
               </View>
             );

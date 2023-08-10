@@ -60,7 +60,9 @@ export const styles = StyleSheet.create({
   },
   weekdays: {
     flexDirection: "row",
-    flexWrap: "nowrap",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 10,
   },
   weekday: {

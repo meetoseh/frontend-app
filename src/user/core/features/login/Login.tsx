@@ -44,6 +44,7 @@ import { useIsMounted } from "../../../../shared/hooks/useIsMounted";
 import { FilledPrimaryButton } from "../../../../shared/components/FilledPrimaryButton";
 import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
 import { OutlineWhiteButton } from "../../../../shared/components/OutlineWhiteButton";
+import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks";
 
 const DEV_ACCOUNT_USER_IDENTITY_ID = "guest9833";
 
@@ -367,10 +368,10 @@ export const Login = ({
     }
   }, [numDirectAccClicks]);
 
-  const background = useUnwrappedValueWithCallbacks(
-    useMappedValueWithCallbacks(resources, (r) => r.background)
+  const backgroundVWC = useMappedValueWithCallbacks(
+    resources,
+    (r) => r.background
   );
-
   const checkedMessagePipe = useUnwrappedValueWithCallbacks(
     checkedMessagePipeVWC
   );
@@ -385,7 +386,10 @@ export const Login = ({
         props={errorVWC}
         component={(error) => error ?? <></>}
       />
-      <OsehImageBackgroundFromState state={background} style={styles.content}>
+      <OsehImageBackgroundFromStateValueWithCallbacks
+        state={backgroundVWC}
+        style={styles.content}
+      >
         <OsehWordmarkWhite width={163} height={40} style={styles.logo} />
         <Text
           style={styles.message}
@@ -421,7 +425,7 @@ export const Login = ({
             )}
           />
         </OutlineWhiteButton>
-      </OsehImageBackgroundFromState>
+      </OsehImageBackgroundFromStateValueWithCallbacks>
       <StatusBar style="light" />
     </View>
   );

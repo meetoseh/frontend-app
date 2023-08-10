@@ -28,6 +28,11 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  accessibleHereSettingsFilledContainer: {
+    width: undefined,
+    paddingLeft: 8,
+    paddingRight: 8,
+  },
   hereSettingsFilledText: {
     fontFamily: "OpenSans-Regular",
     fontSize: 10,

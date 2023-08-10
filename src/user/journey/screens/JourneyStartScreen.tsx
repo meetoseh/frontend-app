@@ -10,6 +10,7 @@ import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../shared/
 import { useWindowSize } from "../../../shared/hooks/useWindowSize";
 import { useTopBarHeight } from "../../../shared/hooks/useTopBarHeight";
 import { FilledInvertedButton } from "../../../shared/components/FilledInvertedButton";
+import { useIsEffectivelyTinyScreen } from "../../../shared/hooks/useIsEffectivelyTinyScreen";
 
 /**
  * Shows a screen allowing the user to perform an interaction to start the
@@ -48,13 +49,21 @@ export const JourneyStartScreen = ({
   );
   const topBarHeight = useTopBarHeight();
   const windowSize = useWindowSize();
+  const isTinyScreen = useIsEffectivelyTinyScreen();
 
   if (selectedEmotionAntonym === undefined) {
     return (
       <View style={styles.container}>
         <OsehImageBackgroundFromStateValueWithCallbacks
           state={darkenedImage}
-          style={{ ...styles.innerContainer, height: windowSize.height }}
+          style={
+            !isTinyScreen
+              ? styles.innerContainer
+              : {
+                  ...styles.innerContainer,
+                  paddingVertical: 40,
+                }
+          }
         >
           <View
             style={{

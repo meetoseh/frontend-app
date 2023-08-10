@@ -10,6 +10,7 @@ import { CloseButton } from "../../../shared/components/CloseButton";
 import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks";
 import { useTopBarHeight } from "../../../shared/hooks/useTopBarHeight";
 import { useWindowSize } from "../../../shared/hooks/useWindowSize";
+import { useIsEffectivelyTinyScreen } from "../../../shared/hooks/useIsEffectivelyTinyScreen";
 
 /**
  * Shows the screen for the lobby prior to the actual class, where the user
@@ -43,20 +44,26 @@ export const JourneyLobbyScreen = ({
   }, [setScreen]);
 
   const topBarHeight = useTopBarHeight();
-  const screenSize = useWindowSize();
+  const isTinyScreen = useIsEffectivelyTinyScreen();
 
   return (
     <View style={styles.container}>
       <OsehImageBackgroundFromStateValueWithCallbacks
         state={useMappedValueWithCallbacks(shared, (s) => s.darkenedImage)}
-        style={{ ...styles.innerContainer, height: screenSize.height }}
+        style={styles.innerContainer}
       >
         <CloseButton onPress={gotoStartPrivileged} />
         <View
           style={{
             ...styles.content,
-            paddingTop: styles.content.paddingTop + topBarHeight,
-            maxHeight: styles.content.maxHeight + topBarHeight,
+            paddingTop:
+              styles.content.paddingTop +
+              topBarHeight +
+              (isTinyScreen ? 40 : 0),
+            paddingBottom: isTinyScreen ? 40 : 0,
+            maxHeight: isTinyScreen
+              ? undefined
+              : styles.content.maxHeight + topBarHeight,
           }}
         >
           <JourneyPrompt

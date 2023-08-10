@@ -14,6 +14,7 @@ import {
   TextInput,
   TextStyle,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { FeatureComponentProps } from "../../models/Feature";
 import { PickEmotionJourneyResources } from "./PickEmotionJourneyResources";
@@ -52,6 +53,7 @@ import { FilledInvertedButton } from "../../../../shared/components/FilledInvert
 import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks";
 import { useTopBarHeight } from "../../../../shared/hooks/useTopBarHeight";
 import { StatusBar } from "expo-status-bar";
+import { useIsEffectivelyTinyScreen } from "../../../../shared/hooks/useIsEffectivelyTinyScreen";
 
 /**
  * The settings for the profile pictures
@@ -207,6 +209,7 @@ export const PickEmotion = ({
   );
 
   const topBarHeight = useTopBarHeight();
+  const isTinyScreen = useIsEffectivelyTinyScreen();
 
   return (
     <View style={styles.container}>
@@ -253,7 +256,19 @@ export const PickEmotion = ({
             <Text style={styles.favoritesLinkText}> Favorites</Text>
           </Pressable>
         </View>
-        <Text style={styles.questionText}>How do you want to feel today?</Text>
+        <Text
+          style={Object.assign(
+            {},
+            styles.questionText,
+            isTinyScreen
+              ? {
+                  marginTop: 20,
+                }
+              : undefined
+          )}
+        >
+          How do you want to feel today?
+        </Text>
         <Words
           optionsVWC={wordsVWC}
           onWordClick={onWordClick}
@@ -443,6 +458,39 @@ const computeVerticalPositions = (
   };
 };
 
+/**
+ * An alternative computation for the vertical layout more appropriate
+ * for screens which are effectively tiny (usually by effect of accessibility
+ * settings)
+ */
+const computeVerticalPositionsTiny = (
+  windowSize: Size,
+  words: Size[]
+): { positions: Pos[]; size: Size } => {
+  // single-column layout, left-aligned, with an 12px vertical gap
+  // 20px from the left edge
+  const yGap = 12;
+  const x = 20;
+
+  const positions: Pos[] = [];
+  let y = 0;
+  for (let i = 0; i < words.length; i++) {
+    if (i > 0) {
+      y += yGap;
+    }
+    positions.push({ x, y });
+    y += words[i].height;
+  }
+
+  return {
+    positions,
+    size: {
+      width: windowSize.width,
+      height: y + words[words.length - 1].height,
+    },
+  };
+};
+
 const Words = ({
   optionsVWC,
   onWordClick,
@@ -483,6 +531,7 @@ const Words = ({
       height: 0,
     }))
   );
+  const isTinyScreen = useIsEffectivelyTinyScreen();
 
   useEffect(() => {
     let active = true;
@@ -583,6 +632,8 @@ const Words = ({
       const target =
         layout === "horizontal"
           ? computeHorizontalPositions(windowSize, sizes)
+          : isTinyScreen
+          ? computeVerticalPositionsTiny(windowSize, sizes)
           : computeVerticalPositions(windowSize, sizes);
 
       wordPositionsVWC.set(target.positions);
@@ -1129,6 +1180,7 @@ const Votes = ({
       }
     }
   );
+  const windowDimensions = useWindowDimensions();
 
   useEffect(() => {
     let active = true;
@@ -1175,7 +1227,7 @@ const Votes = ({
 
       target.set({
         left: pos.x + size.width + 6,
-        top: pos.y + 11,
+        top: pos.y,
         opacity: 1,
         textContent:
           pressed.votes !== null

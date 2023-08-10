@@ -29,6 +29,7 @@ import { useStateCompat } from "../../../shared/hooks/useStateCompat";
 import FullHeartIcon from "../icons/FullHeartIcon";
 import EmptyHeartIcon from "../icons/EmptyHeartIcon";
 import { LinkButton } from "../../../shared/components/LinkButton";
+import { useIsEffectivelyTinyScreen } from "../../../shared/hooks/useIsEffectivelyTinyScreen";
 
 type DayOfWeek =
   | "Monday"
@@ -368,12 +369,19 @@ export const JourneyPostScreen = ({
   const screenSize = useWindowSize();
   const topBarHeight = useTopBarHeight();
   const innerWidth = Math.min(screenSize.width, styles.content.maxWidth) - 64;
+  const isTinyScreen = useIsEffectivelyTinyScreen();
 
   return (
     <View style={styles.container}>
       <OsehImageBackgroundFromStateValueWithCallbacks
         state={useMappedValueWithCallbacks(shared, (s) => s.blurredImage)}
-        style={{ ...styles.innerContainer, height: screenSize.height }}
+        style={
+          !isTinyScreen
+            ? styles.innerContainer
+            : {
+                paddingVertical: 40,
+              }
+        }
       >
         <CloseButton onPress={onCloseClick} />
         <View

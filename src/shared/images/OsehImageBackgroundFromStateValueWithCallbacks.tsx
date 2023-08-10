@@ -1,10 +1,17 @@
-import { PropsWithChildren, ReactElement, useEffect, useRef } from "react";
+import {
+  PropsWithChildren,
+  ReactElement,
+  RefObject,
+  useEffect,
+  useRef,
+} from "react";
 import { ValueWithCallbacks } from "../lib/Callbacks";
 import { OsehImageState } from "./OsehImageState";
-import { ImageStyle, View, ViewStyle } from "react-native";
+import { ImageStyle, ScrollView, View, ViewStyle } from "react-native";
 import { styles } from "./OsehImageBackgroundFromStateValueWithCallbacksStyles";
 import { RenderGuardedComponent } from "../components/RenderGuardedComponent";
 import { OsehImageFromState } from "./OsehImageFromState";
+import { useIsEffectivelyTinyScreen } from "../hooks/useIsEffectivelyTinyScreen";
 
 /**
  * Uses the standard rendering for the given oseh image state, using a placeholder
@@ -18,6 +25,8 @@ import { OsehImageFromState } from "./OsehImageFromState";
  * Note that this is much more efficient than the standard
  * OsehImageBackgroundFromState via RenderGuardedComponent - this will
  * reduce the number of child rerenders caused by the image changing.
+ *
+ * For accessibility, if font scaling is enabled, the body becomes scrollable
  */
 export const OsehImageBackgroundFromStateValueWithCallbacks = ({
   children,
@@ -25,6 +34,7 @@ export const OsehImageBackgroundFromStateValueWithCallbacks = ({
   style,
   styleVWC,
   imageStyle,
+  disableAccessibilityScrolling,
 }: PropsWithChildren<{
   state: ValueWithCallbacks<OsehImageState>;
   /**
@@ -39,9 +49,16 @@ export const OsehImageBackgroundFromStateValueWithCallbacks = ({
    * Additional styles to apply to the image.
    */
   imageStyle?: ImageStyle | undefined;
+  /**
+   * If true, disables accessibility scrolling on the body. This should only
+   * be used if there is a scrollable container inside the body.
+   */
+  disableAccessibilityScrolling?: boolean;
 }>): ReactElement => {
   const containerRef = useRef<View>(null);
-  const childContainerRef = useRef<View>(null);
+  const childContainerRef = useRef<View | ScrollView>(null);
+  const isTinyScreen =
+    disableAccessibilityScrolling !== true && useIsEffectivelyTinyScreen();
 
   useEffect(() => {
     if (containerRef.current === null) {
@@ -85,6 +102,15 @@ export const OsehImageBackgroundFromStateValueWithCallbacks = ({
           height: newSize.height,
         },
       });
+
+      if (isTinyScreen && childContainerRef.current !== null) {
+        childContainerRef.current.setNativeProps({
+          style: {
+            width: newSize.width,
+            height: newSize.height,
+          },
+        });
+      }
     }
   }, [state]);
 
@@ -95,22 +121,43 @@ export const OsehImageBackgroundFromStateValueWithCallbacks = ({
 
     const ref = childContainerRef.current;
     styleVWC.callbacks.add(handleStyleChange);
+    state.callbacks.add(handleStyleChange);
     handleStyleChange();
     return () => {
       styleVWC.callbacks.remove(handleStyleChange);
+      state.callbacks.remove(handleStyleChange);
     };
 
     function handleStyleChange() {
-      ref.setNativeProps({
-        style: Object.assign(
-          {},
-          styles.childrenContainer,
-          style,
-          styleVWC?.get()
-        ),
-      });
+      const contentContainerStyle = Object.assign(
+        {},
+        styles.childrenContainer,
+        style,
+        styleVWC?.get(),
+        {
+          width: state.get().displayWidth,
+        },
+        isTinyScreen
+          ? {
+              paddingBottom: 40,
+              minHeight: state.get().displayHeight,
+            }
+          : {
+              height: state.get().displayHeight,
+            }
+      );
+
+      if (isTinyScreen) {
+        ref.setNativeProps({
+          contentContainerStyle: contentContainerStyle,
+        });
+      } else {
+        ref.setNativeProps({
+          style: contentContainerStyle,
+        });
+      }
     }
-  }, [style, styleVWC]);
+  }, [style, styleVWC, isTinyScreen]);
 
   return (
     <View
@@ -131,17 +178,45 @@ export const OsehImageBackgroundFromStateValueWithCallbacks = ({
           />
         )}
       />
-      <View
-        ref={childContainerRef}
-        style={Object.assign(
-          {},
-          styles.childrenContainer,
-          style,
-          styleVWC?.get()
-        )}
-      >
-        {children}
-      </View>
+      {!isTinyScreen && (
+        <View
+          ref={childContainerRef as RefObject<View>}
+          style={Object.assign(
+            {},
+            styles.childrenContainer,
+            style,
+            styleVWC?.get(),
+            {
+              width: state.get().displayWidth,
+              height: state.get().displayHeight,
+            }
+          )}
+        >
+          {children}
+        </View>
+      )}
+      {isTinyScreen && (
+        <ScrollView
+          ref={childContainerRef as RefObject<ScrollView>}
+          style={{
+            width: state.get().displayWidth,
+            height: state.get().displayHeight,
+          }}
+          contentContainerStyle={Object.assign(
+            {},
+            styles.childrenContainer,
+            style,
+            styleVWC?.get(),
+            {
+              paddingBottom: 40,
+              width: state.get().displayWidth,
+              minHeight: state.get().displayHeight,
+            }
+          )}
+        >
+          {children}
+        </ScrollView>
+      )}
     </View>
   );
 };

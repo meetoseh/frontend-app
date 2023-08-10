@@ -108,6 +108,7 @@ export const Favorites = ({
             <OsehImageBackgroundFromStateValueWithCallbacks
               state={background}
               style={{ ...styles.innerContainer, height: screenSize.height }}
+              disableAccessibilityScrolling
             >
               <ModalProvider>
                 <CloseButton onPress={onCloseClick} />

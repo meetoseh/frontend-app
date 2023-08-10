@@ -55,6 +55,7 @@ import { CustomButtonProps } from "../../../shared/models/CustomButtonProps";
 import { useStateCompat } from "../../../shared/hooks/useStateCompat";
 import { FilledInvertedButton } from "../../../shared/components/FilledInvertedButton";
 import { LinkButton } from "../../../shared/components/LinkButton";
+import { useIsEffectivelyTinyScreen } from "../../../shared/hooks/useIsEffectivelyTinyScreen";
 
 /**
  * Asks the user for feedback about the journey so that we can curate the
@@ -273,12 +274,21 @@ export const JourneyFeedbackScreen = ({
   const topBarHeight = useTopBarHeight();
   const responseButtonWidths =
     Math.min(screenSize.width, styles.content.maxWidth) - 64;
+  const isTinyScreen = useIsEffectivelyTinyScreen();
 
   return (
     <View style={styles.container}>
       <OsehImageBackgroundFromStateValueWithCallbacks
         state={useMappedValueWithCallbacks(shared, (s) => s.blurredImage)}
-        style={{ ...styles.innerContainer, height: screenSize.height }}
+        style={
+          !isTinyScreen
+            ? styles.innerContainer
+            : {
+                ...styles.innerContainer,
+                paddingTop: 40,
+                paddingBottom: 40,
+              }
+        }
       >
         <CloseButton onPress={onX} />
         <View

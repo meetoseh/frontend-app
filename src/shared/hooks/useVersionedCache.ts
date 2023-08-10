@@ -47,14 +47,11 @@ export const useVersionedCache = (
           cacheVersionFile
         );
         if (cacheVersion === version) {
-          console.log("Cache version matches");
           return;
         }
       }
 
-      console.log("Clearing cache");
       await clearCache();
-      console.log("Writing cache version file");
       await FileSystem.writeAsStringAsync(cacheVersionFile, version);
     }
 
