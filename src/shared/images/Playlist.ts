@@ -327,15 +327,12 @@ export const selectBestItemUsingPixelRatio = ({
       height: logical.height * pixelRatio,
     };
     const item = selectBestItem(playlist, usesWebp, want);
+    if (item.width === want.width && item.height === want.height) {
+      return { item };
+    }
 
     const satisfactorilyLarge =
       item.width >= want.width && item.height >= want.height;
-    if (pixelRatio === preferredPixelRatio && satisfactorilyLarge) {
-      if (item.width === want.width && item.height === want.height) {
-        return { item };
-      }
-      return { item, cropTo: { width: want.width, height: want.height } };
-    }
     if (satisfactorilyLarge) {
       return {
         item,

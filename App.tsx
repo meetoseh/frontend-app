@@ -11,8 +11,18 @@ import { useCallback } from "react";
 import { setVWC } from "./src/shared/lib/setVWC";
 import { View } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import { useVersionedCache } from "./src/shared/hooks/useVersionedCache";
+import { useUnwrappedValueWithCallbacks } from "./src/shared/hooks/useUnwrappedValueWithCallbacks";
 
 export default function App() {
+  // We don't want to load the features at all while the cache cannot be read.
+  const cacheReadyVWC = useVersionedCache("1.0.4");
+  const cacheReady = useUnwrappedValueWithCallbacks(cacheReadyVWC);
+
+  if (!cacheReady) {
+    return <SplashScreen />;
+  }
+
   return (
     <LoginProvider>
       <AppInner />

@@ -58,7 +58,7 @@ const cropImageUnsafe = async (
     // we want it to be wider, so we crop the top and bottom
     const expectedHeight = Math.min(
       imgHeight,
-      Math.round(expectedAspectRatio * imgWidth)
+      Math.round(imgWidth / expectedAspectRatio)
     );
 
     if (expectedHeight < imgHeight) {
@@ -76,7 +76,7 @@ const cropImageUnsafe = async (
     // we want it to be taller, so we crop the left and right
     const expectedWidth = Math.min(
       imgWidth,
-      Math.round(imgHeight / expectedAspectRatio)
+      Math.round(imgHeight * expectedAspectRatio)
     );
 
     if (expectedWidth < imgWidth) {
