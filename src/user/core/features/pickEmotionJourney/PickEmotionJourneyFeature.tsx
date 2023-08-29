@@ -33,6 +33,8 @@ import { OsehImageProps } from "../../../../shared/images/OsehImageProps";
 import { apiFetch } from "../../../../shared/lib/apiFetch";
 import { describeError } from "../../../../shared/lib/describeError";
 import { convertUsingKeymap } from "../../../../shared/lib/CrudFetcher";
+import { useLogoutHandler } from "../../../../shared/hooks/useLogoutHandler";
+import { setVWC } from "../../../../shared/lib/setVWC";
 
 type Selected = {
   word: Emotion;
@@ -118,6 +120,10 @@ export const PickEmotionJourneyFeature: Feature<
       useReactManagedValueAsValueWithCallbacks(onSelection);
     const onFinishedClassVWC =
       useReactManagedValueAsValueWithCallbacks(onFinishedClass);
+
+    useLogoutHandler(() => {
+      setVWC(classesTakenThisSessionVWC, 0);
+    });
 
     return useMappedValuesWithCallbacks(
       [

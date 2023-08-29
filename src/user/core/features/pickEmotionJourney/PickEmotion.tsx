@@ -14,7 +14,6 @@ import {
   TextInput,
   TextStyle,
   View,
-  useWindowDimensions,
 } from "react-native";
 import { FeatureComponentProps } from "../../models/Feature";
 import { PickEmotionJourneyResources } from "./PickEmotionJourneyResources";
@@ -54,6 +53,7 @@ import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../../shar
 import { useTopBarHeight } from "../../../../shared/hooks/useTopBarHeight";
 import { StatusBar } from "expo-status-bar";
 import { useIsEffectivelyTinyScreen } from "../../../../shared/hooks/useIsEffectivelyTinyScreen";
+import { setVWC } from "../../../../shared/lib/setVWC";
 
 /**
  * The settings for the profile pictures
@@ -1140,8 +1140,7 @@ const Votes = ({
   wordSizesVWC: ValueWithCallbacks<Size[]>;
 }): ReactElement => {
   const containerRef = useRef<View>(null);
-  const inputRef = useRef<TextInput>(null);
-  const inputTextValue = useRef("");
+  const textContent = useWritableValueWithCallbacks<string>(() => "+0 votes");
   const target = useAnimatedValueWithCallbacks<VotesSetting>(
     { progress: 0, left: 0, top: 0, opacity: 0, textContent: "+0 votes" },
     () => [
@@ -1156,11 +1155,10 @@ const Votes = ({
       new TrivialAnimator("textContent"),
     ],
     (val) => {
-      if (containerRef.current === null || inputRef.current === null) {
+      if (containerRef.current === null) {
         return;
       }
       const container = containerRef.current;
-      const input = inputRef.current;
       container.setNativeProps({
         style: {
           ...styles.votesView,
@@ -1171,16 +1169,9 @@ const Votes = ({
           val.progress !== 0 && val.progress !== 1,
         shouldRasterizeIOS: val.progress !== 0 && val.progress !== 1,
       });
-
-      if (val.textContent !== inputTextValue.current) {
-        inputTextValue.current = val.textContent;
-        input.setNativeProps({
-          text: val.textContent,
-        });
-      }
+      setVWC(textContent, val.textContent, (a, b) => a === b);
     }
   );
-  const windowDimensions = useWindowDimensions();
 
   useEffect(() => {
     let active = true;
@@ -1241,7 +1232,11 @@ const Votes = ({
 
   return (
     <View style={styles.votesView} ref={containerRef} pointerEvents="none">
-      <TextInput style={styles.votesText} ref={inputRef} defaultValue="" />
+      {/* using a text input here causes wildly different behaviors depending on platform & device */}
+      <RenderGuardedComponent
+        props={textContent}
+        component={(txt) => <Text style={styles.votesText}>{txt}</Text>}
+      />
     </View>
   );
 };

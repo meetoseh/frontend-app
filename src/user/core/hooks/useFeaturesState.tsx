@@ -10,12 +10,14 @@ import { FavoritesFeature } from "../features/favorites/FavoritesFeature";
 import { SettingsFeature } from "../features/settings/SettingsFeature";
 import { AppNotifsFeature } from "../features/appNotifs/AppNotifsFeature";
 import { SignupRewardFeature } from "../features/signupReward/SignupRewardFeature";
+import { GoalDaysPerWeekFeature } from "../features/goalDaysPerWeek/GoalDaysPerWeekFeature";
 
 const features = [
   LoginFeature,
   RequestNameFeature,
   SignupRewardFeature,
   AppNotifsFeature,
+  GoalDaysPerWeekFeature,
   SettingsFeature,
   FavoritesFeature,
   PickEmotionJourneyFeature,

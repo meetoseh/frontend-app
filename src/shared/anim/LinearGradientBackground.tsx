@@ -20,6 +20,14 @@ export type ColorStop = {
 export type LinearGradientState = {
   stops: ColorStop[];
   angleDegreesClockwiseFromTop: number;
+  /**
+   * If specified, used to round the edges by excluding the outside
+   * of a circle with this radius in logical pixels on each corner.
+   * This will look better than setting a border radius with overflow
+   * hidden on a containing view, since that implementation does not
+   * use partial opacity pixels to smooth the rounding.
+   */
+  borderRadius?: number;
 };
 
 export type LinearGradientProps = {
@@ -27,7 +35,7 @@ export type LinearGradientProps = {
 };
 
 type Attributes = "position";
-type Uniforms = "resolution";
+type Uniforms = "resolution" | "radius";
 type Buffers = "position";
 type Textures = never;
 
@@ -225,6 +233,7 @@ const LinearGradientRenderer: SinglePassWebGLComponentRenderer<
       attribute vec2 a_position;
     
       uniform vec2 u_resolution;
+      uniform float u_radius;
 
       varying vec2 v_position;
     
@@ -253,6 +262,7 @@ const LinearGradientRenderer: SinglePassWebGLComponentRenderer<
       precision highp float;
 
       uniform vec2 u_resolution;
+      uniform float u_radius;
 
       varying vec2 v_position;
 
@@ -261,13 +271,25 @@ const LinearGradientRenderer: SinglePassWebGLComponentRenderer<
       }
 
       void main(void) {
-        gl_FragColor = computeColor(${createComputeTExpression(
+        vec4 gradientColor = computeColor(${createComputeTExpression(
           props.angleDegreesClockwiseFromTop,
           "v_position.x",
           "v_position.y",
           gl.drawingBufferWidth,
           gl.drawingBufferHeight
         )});
+        
+        float edgeSmoothness = 1.0;
+        vec2 center = u_resolution / 2.0;
+        vec2 positionAsIfTopRight = abs(v_position - center) + center;
+        vec2 vecCircleCenterToPosition = positionAsIfTopRight - (u_resolution - vec2(u_radius, u_radius));
+        float distanceFromCircleCenter = length(vecCircleCenterToPosition);
+        bool isTopRightOfCircle = vecCircleCenterToPosition.x >= 0.0 && vecCircleCenterToPosition.y >= 0.0;
+        float opacity = (
+          1.0 
+          - float(isTopRightOfCircle) * smoothstep(u_radius, u_radius + edgeSmoothness, distanceFromCircleCenter)
+        );
+        gl_FragColor = gradientColor * opacity;
       }
       `
     );
@@ -315,6 +337,11 @@ const LinearGradientRenderer: SinglePassWebGLComponentRenderer<
       throw new Error("Failed to get resolution location");
     }
 
+    const radiusLocation = gl.getUniformLocation(program, "u_radius");
+    if (radiusLocation === null) {
+      throw new Error("Failed to get radius location");
+    }
+
     return {
       gl,
       program,
@@ -323,6 +350,7 @@ const LinearGradientRenderer: SinglePassWebGLComponentRenderer<
       },
       uniforms: {
         resolution: resolutionLocation,
+        radius: radiusLocation,
       },
       buffers: {
         position: positionBuffer,
@@ -351,6 +379,7 @@ const LinearGradientRenderer: SinglePassWebGLComponentRenderer<
       gl.drawingBufferWidth,
       gl.drawingBufferHeight
     );
+    gl.uniform1f(state.uniforms.radius, (props.borderRadius ?? 0) * dpi);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
     gl.disableVertexAttribArray(state.attributes.position);

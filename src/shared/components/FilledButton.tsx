@@ -10,6 +10,40 @@ import { Pressable, TextStyle, View, ViewStyle } from "react-native";
 import { CustomButtonProps } from "../models/CustomButtonProps";
 import { useWindowSize } from "../hooks/useWindowSize";
 import { InlineOsehSpinner } from "./InlineOsehSpinner";
+import {
+  LinearGradientBackground,
+  LinearGradientState,
+} from "../anim/LinearGradientBackground";
+
+type GradientStyleProps = {
+  gradient?: LinearGradientState;
+};
+
+const TRANSPARENT_GRADIENT: LinearGradientState = {
+  stops: [
+    {
+      color: [0, 0, 0, 0],
+      offset: 0,
+    },
+    {
+      color: [0, 0, 0, 0],
+      offset: 1,
+    },
+  ],
+  angleDegreesClockwiseFromTop: 0,
+};
+
+const liftedToOuterStyles: (keyof ViewStyle)[] = [
+  "margin",
+  "marginBottom",
+  "marginTop",
+  "marginLeft",
+  "marginRight",
+  "marginStart",
+  "marginEnd",
+  "marginVertical",
+  "marginHorizontal",
+];
 
 /**
  * A basic filled button using the given styles.
@@ -28,9 +62,9 @@ export const FilledButton = ({
 }: PropsWithChildren<
   CustomButtonProps & {
     styles: {
-      container: ViewStyle & { flex: undefined };
-      pressed: ViewStyle;
-      disabled: ViewStyle;
+      container: ViewStyle & { flex: undefined } & GradientStyleProps;
+      pressed: ViewStyle & GradientStyleProps;
+      disabled: ViewStyle & GradientStyleProps;
       text: TextStyle & { color: string };
       pressedText: TextStyle & { color: string };
       disabledText: TextStyle & { color: string };
@@ -85,6 +119,33 @@ export const FilledButton = ({
     );
   }, [pressed, disabled, styles, screenSize.width, fullWidth, marginTop]);
 
+  const childrenContainerStyles = useMemo(() => {
+    const cp = Object.assign({}, containerStyles);
+    if ("gradient" in containerStyles) {
+      delete cp.gradient;
+    }
+
+    for (const key of liftedToOuterStyles) {
+      if (key in containerStyles) {
+        delete cp[key];
+      }
+    }
+
+    return cp;
+  }, [containerStyles]);
+
+  const pressableStyles = useMemo(() => {
+    const result: ViewStyle = {};
+
+    for (const key of liftedToOuterStyles) {
+      if (key in containerStyles) {
+        result[key] = containerStyles[key];
+      }
+    }
+
+    return result;
+  }, [containerStyles]);
+
   useEffect(() => {
     if (!setTextStyle) {
       return;
@@ -118,22 +179,34 @@ export const FilledButton = ({
     setForegroundColor(styles.text.color);
   }, [pressed, disabled, setForegroundColor, styles]);
 
+  // we need to always support the gradient to avoid
+  // losing press events when switching :/
+
   return (
     <Pressable
-      onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      style={containerStyles}
+      onPress={handlePress}
+      style={pressableStyles}
     >
-      {spinner && (
-        <View style={styles.spinnerContainer}>
-          <InlineOsehSpinner
-            size={{ type: "react-rerender", props: { height: 24 } }}
-            variant={spinnerVariant}
-          />
+      <LinearGradientBackground
+        state={{
+          type: "react-rerender",
+          props: containerStyles.gradient ?? TRANSPARENT_GRADIENT,
+        }}
+      >
+        <View style={childrenContainerStyles}>
+          {spinner && (
+            <View style={styles.spinnerContainer}>
+              <InlineOsehSpinner
+                size={{ type: "react-rerender", props: { height: 24 } }}
+                variant={spinnerVariant}
+              />
+            </View>
+          )}
+          {children}
         </View>
-      )}
-      {children}
+      </LinearGradientBackground>
     </Pressable>
   );
 };
