@@ -20,11 +20,10 @@ import {
   useWritableValueWithCallbacks,
 } from "../../../../shared/lib/Callbacks";
 import { setVWC } from "../../../../shared/lib/setVWC";
-import { OsehImageFromStateValueWithCallbacks } from "../../../../shared/images/OsehImageFromStateValueWithCallbacks";
 import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
 import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
 import { useErrorModal } from "../../../../shared/hooks/useErrorModal";
-import { ModalContext, Modals } from "../../../../shared/contexts/ModalContext";
+import { Modals, ModalsOutlet } from "../../../../shared/contexts/ModalContext";
 import { apiFetch } from "../../../../shared/lib/apiFetch";
 import { describeError } from "../../../../shared/lib/describeError";
 import { View, Text, TextStyle, StyleProp } from "react-native";
@@ -162,6 +161,7 @@ export const GoalDaysPerWeek = ({
           </View>
         </View>
       </OsehImageBackgroundFromStateValueWithCallbacks>
+      <ModalsOutlet modals={modals} />
       <StatusBar style="light" />
     </View>
   );
