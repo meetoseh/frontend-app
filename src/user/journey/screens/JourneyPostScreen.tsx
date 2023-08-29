@@ -337,8 +337,7 @@ export const JourneyPostScreen = ({
         return (
           <Text style={styles.goalTextText}>
             You&rsquo;ve reached your goal of {goal}&nbsp;day
-            {goal === 1 ? "" : "s"}
-            this&nbsp;week!&nbsp;🎉
+            {goal === 1 ? "" : "s"} this&nbsp;week!&nbsp;🎉
           </Text>
         );
       }

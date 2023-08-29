@@ -71,6 +71,10 @@ export const FilledButton = ({
               width: screenSize.width - fullWidthMargin * 2,
               marginLeft: fullWidthMargin,
               marginRight: fullWidthMargin,
+              paddingHorizontal: undefined,
+              paddingLeft: undefined,
+              paddingRight: undefined,
+              padding: undefined,
             },
           ]
         : []),

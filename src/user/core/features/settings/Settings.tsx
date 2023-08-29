@@ -4,10 +4,7 @@ import { FeatureComponentProps } from "../../models/Feature";
 import { SettingsResources } from "./SettingsResources";
 import { SettingsState } from "./SettingsState";
 import { styles } from "./SettingsStyles";
-import {
-  useWindowSize,
-  useWindowSizeValueWithCallbacks,
-} from "../../../../shared/hooks/useWindowSize";
+import { useWindowSize } from "../../../../shared/hooks/useWindowSize";
 import {
   ValueWithCallbacks,
   WritableValueWithCallbacks,
@@ -56,7 +53,6 @@ export const Settings = ({
   const loginContext = useContext(LoginContext);
   const modals = useWritableValueWithCallbacks((): Modals => []);
   const modalContext: ModalContextValue = useMemo(() => ({ modals }), [modals]);
-  const windowSizeVWC = useWindowSizeValueWithCallbacks();
   const errorVWC = useWritableValueWithCallbacks<ReactElement | null>(
     () => null
   );
@@ -75,6 +71,9 @@ export const Settings = ({
   const logout = useCallback(() => {
     if (loginContext.state === "logged-in") {
       loginContext.setAuthTokens(null);
+      // a delay is an easy way to avoid flashing the homescreen while
+      // logout finishes as contexts are slower than setShow
+      setTimeout(() => state.get().setShow(false, true), 1000);
     }
   }, [loginContext]);
 

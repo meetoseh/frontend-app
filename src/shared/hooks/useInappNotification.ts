@@ -167,6 +167,13 @@ export const useInappNotificationValueWithCallbacks = (
         return;
       }
 
+      if (loginContext.state === "logged-out") {
+        withStorageLock(async () => {
+          await removeAllStateUnsafe();
+        });
+        return;
+      }
+
       if (
         loginContext.state !== "logged-in" ||
         loginContext.userAttributes === null
@@ -397,8 +404,7 @@ const withStorageLock = async <T>(fn: () => Promise<T>): Promise<T> => {
   const result = new Promise<T>((resolve, reject) => {
     __lockQueue.push(async () => {
       try {
-        const result = await withStorageLock(fn);
-        resolve(result);
+        resolve(await fn());
       } catch (e) {
         reject(e);
       }
@@ -526,4 +532,20 @@ const pruneExpiredStateUnsafe = async (
     await AsyncStorage.removeItem(`inapp-notification-${uid}`);
   }
   await storeUidsUnsafe(newUids);
+};
+
+/**
+ * Removes all inapp notifications from storage, without acquiring the
+ * storage lock.
+ */
+const removeAllStateUnsafe = async (): Promise<void> => {
+  const uids = await fetchStoredUidsUnsafe();
+
+  for (const uid of uids) {
+    if (AsyncStorage.getItem(`inapp-notification-${uid}`) !== null) {
+      await AsyncStorage.removeItem(`inapp-notification-${uid}`);
+    }
+  }
+
+  await storeUidsUnsafe([]);
 };

@@ -9,10 +9,12 @@ import { ValueWithCallbacks } from "../../../shared/lib/Callbacks";
 import { FavoritesFeature } from "../features/favorites/FavoritesFeature";
 import { SettingsFeature } from "../features/settings/SettingsFeature";
 import { AppNotifsFeature } from "../features/appNotifs/AppNotifsFeature";
+import { SignupRewardFeature } from "../features/signupReward/SignupRewardFeature";
 
 const features = [
   LoginFeature,
   RequestNameFeature,
+  SignupRewardFeature,
   AppNotifsFeature,
   SettingsFeature,
   FavoritesFeature,

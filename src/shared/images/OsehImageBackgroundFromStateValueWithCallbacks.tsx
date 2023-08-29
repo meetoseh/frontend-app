@@ -58,7 +58,7 @@ export const OsehImageBackgroundFromStateValueWithCallbacks = ({
   const containerRef = useRef<View>(null);
   const childContainerRef = useRef<View | ScrollView>(null);
   const isTinyScreen =
-    disableAccessibilityScrolling !== true && useIsEffectivelyTinyScreen();
+    useIsEffectivelyTinyScreen() && disableAccessibilityScrolling !== true;
 
   useEffect(() => {
     if (containerRef.current === null) {

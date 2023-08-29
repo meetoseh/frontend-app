@@ -10,6 +10,7 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     minHeight: 56,
+    paddingHorizontal: 47.5,
 
     ...Platform.select({
       ios: {

@@ -24,7 +24,6 @@ import {
   ErrorBannerText,
 } from "../../../../shared/components/ErrorBanner";
 import { describeError } from "../../../../shared/lib/describeError";
-import { OsehImageBackgroundFromState } from "../../../../shared/images/OsehImageBackgroundFromState";
 import { URLSearchParams } from "react-native-url-polyfill";
 import { FeatureComponentProps } from "../../models/Feature";
 import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
@@ -46,7 +45,7 @@ import { RenderGuardedComponent } from "../../../../shared/components/RenderGuar
 import { OutlineWhiteButton } from "../../../../shared/components/OutlineWhiteButton";
 import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks";
 
-const DEV_ACCOUNT_USER_IDENTITY_ID = "guest9833";
+const DEV_ACCOUNT_USER_IDENTITY_ID = "guest9838";
 
 const prepareLink = async (
   provider: "Google" | "SignInWithApple" | "Direct"

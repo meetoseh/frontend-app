@@ -13,6 +13,7 @@ import { View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useVersionedCache } from "./src/shared/hooks/useVersionedCache";
 import { useUnwrappedValueWithCallbacks } from "./src/shared/hooks/useUnwrappedValueWithCallbacks";
+import { InterestsAutoProvider } from "./src/shared/contexts/InterestsContext";
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
@@ -25,7 +26,9 @@ export default function App() {
 
   return (
     <LoginProvider>
-      <AppInner />
+      <InterestsAutoProvider>
+        <AppInner />
+      </InterestsAutoProvider>
     </LoginProvider>
   );
 }
