@@ -11,6 +11,7 @@ import {
 import { useMappedValuesWithCallbacks } from "./useMappedValuesWithCallbacks";
 import { useUnwrappedValueWithCallbacks } from "./useUnwrappedValueWithCallbacks";
 import { apiFetch } from "../lib/apiFetch";
+import { setVWC } from "../lib/setVWC";
 
 /**
  * Describes a session for an in-app notification. A session is a reusable
@@ -104,6 +105,8 @@ export const useInappNotificationSessionValueWithCallbacks = (
     (): InappNotificationSession | null => {
       const props = propsVWC.get();
       if (props.uid === null) {
+        setVWC(sessionVWC, null);
+        sessionPromiseRef.current = null;
         return null;
       }
 
@@ -236,13 +239,19 @@ export const useStartSession = (
       return;
     }
 
+    let active = true;
     sessionVWC.callbacks.add(handleSessionChanged);
     handleSessionChanged();
     return () => {
+      active = false;
       sessionVWC.callbacks.remove(handleSessionChanged);
     };
 
     function handleSessionChanged() {
+      if (!active) {
+        return;
+      }
+
       const session = sessionVWC.get();
       if (started.current || session === null) {
         return;

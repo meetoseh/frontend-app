@@ -4,6 +4,7 @@ import { GoalDaysPerWeekState } from "../features/goalDaysPerWeek/GoalDaysPerWee
 import { LoginState } from "../features/login/LoginState";
 import { PickEmotionJourneyState } from "../features/pickEmotionJourney/PickEmotionJourneyState";
 import { RequestNameState } from "../features/requestName/RequestNameState";
+import { RequestPhoneState } from "../features/requestPhone/RequestPhoneState";
 import { SettingsState } from "../features/settings/SettingsState";
 import { SignupRewardState } from "../features/signupReward/SignupRewardState";
 
@@ -16,4 +17,5 @@ export type FeatureAllStates = {
   appNotifs: AppNotifsState;
   signupReward: SignupRewardState;
   goalDaysPerWeek: GoalDaysPerWeekState;
+  requestPhone: RequestPhoneState;
 };

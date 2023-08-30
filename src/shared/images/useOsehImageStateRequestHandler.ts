@@ -23,6 +23,7 @@ import { USES_WEBP } from "./usesWebp";
 import { downloadItem } from "./downloadItem";
 import { cropImage } from "./cropImage";
 import { InteractionManager, PixelRatio } from "react-native";
+import { HTTP_API_URL } from "../lib/apiFetch";
 
 /**
  * Describes a manually ref-counted reference to a given OsehImageState. While
@@ -346,7 +347,7 @@ export const useOsehImageStateRequestHandler = ({
         console.error(
           "error while loading image: ",
           req.props,
-          "\n\nerror: ",
+          `from API url ${HTTP_API_URL}\n\nerror: `,
           e
         );
         req.released = true;

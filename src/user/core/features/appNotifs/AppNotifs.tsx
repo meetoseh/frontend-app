@@ -19,6 +19,7 @@ import Svg, { Circle } from "react-native-svg";
 import { FilledInvertedButton } from "../../../../shared/components/FilledInvertedButton";
 import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
 import { LinkButton } from "../../../../shared/components/LinkButton";
+import { FullscreenView } from "../../../../shared/components/FullscreenView";
 
 /**
  * Displays our screen asking the user if they want to receive notifications. We
@@ -115,13 +116,7 @@ export const AppNotifs = ({
           props: STANDARD_BLACK_GRAY_GRADIENT,
         }}
       >
-        <View
-          style={{
-            ...styles.background,
-            width: windowSize.width,
-            height: windowSize.height,
-          }}
-        >
+        <FullscreenView style={styles.background}>
           <View style={{ ...styles.content, width: windowSize.width - 64 }}>
             <View style={styles.appWithBadge}>
               <View style={styles.appIcon}>
@@ -170,7 +165,7 @@ export const AppNotifs = ({
               />
             </LinkButton>
           </View>
-        </View>
+        </FullscreenView>
       </LinearGradientBackground>
       <StatusBar style="light" />
     </View>

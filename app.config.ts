@@ -56,6 +56,7 @@ module.exports = {
           color: "#446266",
         },
       ],
+      "expo-localization",
     ],
   },
 };

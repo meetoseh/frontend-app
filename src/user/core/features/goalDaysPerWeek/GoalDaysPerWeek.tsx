@@ -31,6 +31,7 @@ import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../../shar
 import { StatusBar } from "expo-status-bar";
 import { FilledInvertedButton } from "../../../../shared/components/FilledInvertedButton";
 import { FilledButton } from "../../../../shared/components/FilledButton";
+import { useTimedValueWithCallbacks } from "../../../../shared/hooks/useTimedValue";
 
 export const GoalDaysPerWeek = ({
   state,
@@ -48,6 +49,11 @@ export const GoalDaysPerWeek = ({
   const interests = useContext(InterestsContext);
   const goal = useWritableValueWithCallbacks<number>(() => 3);
   const error = useWritableValueWithCallbacks<ReactElement | null>(() => null);
+  const preventClickBleedthrough = useTimedValueWithCallbacks(
+    true,
+    false,
+    1000
+  );
 
   const boundSetGoals = useMemo<(() => void)[]>(() => {
     return [1, 2, 3, 4, 5, 6, 7].map((i) => () => setVWC(goal, i));
@@ -84,6 +90,10 @@ export const GoalDaysPerWeek = ({
   );
 
   const onFinish = useCallback(async () => {
+    if (preventClickBleedthrough.get()) {
+      return;
+    }
+
     const selected = goal.get();
     resources.get().session?.storeAction?.call(undefined, "set_goal", {
       days_per_week: selected,
@@ -148,16 +158,22 @@ export const GoalDaysPerWeek = ({
             ))}
           </View>
           <View style={styles.submitContainer}>
-            <FilledInvertedButton
-              setTextStyle={updateSubmitTextStyle}
-              fullWidth
-              onPress={onFinish}
-            >
-              <RenderGuardedComponent
-                props={submitTextStyle}
-                component={(style) => <Text style={style}>Set Goal</Text>}
-              />
-            </FilledInvertedButton>
+            <RenderGuardedComponent
+              props={preventClickBleedthrough}
+              component={(disabled) => (
+                <FilledInvertedButton
+                  setTextStyle={updateSubmitTextStyle}
+                  fullWidth
+                  onPress={onFinish}
+                  disabled={disabled}
+                >
+                  <RenderGuardedComponent
+                    props={submitTextStyle}
+                    component={(style) => <Text style={style}>Set Goal</Text>}
+                  />
+                </FilledInvertedButton>
+              )}
+            />
           </View>
         </View>
       </OsehImageBackgroundFromStateValueWithCallbacks>
