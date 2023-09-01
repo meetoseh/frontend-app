@@ -33,6 +33,7 @@ module.exports = {
     android: {
       package: "com.oseh.frontendapp",
       googleServicesFile: "./google-services.json",
+      versionCode: 2 /* 1.0.5 */,
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#000000",
