@@ -71,7 +71,9 @@ export const JourneyStartScreen = ({
             style={{
               ...styles.content,
               paddingTop: styles.content.paddingTop + topBarHeight,
-              maxHeight: styles.content.maxHeight + topBarHeight,
+              maxHeight: isTinyScreen
+                ? undefined
+                : styles.content.maxHeight + topBarHeight,
               width: contentWidth,
             }}
           >
@@ -110,13 +112,18 @@ export const JourneyStartScreen = ({
     <View style={styles.container}>
       <OsehImageBackgroundFromStateValueWithCallbacks
         state={darkenedImage}
-        style={{ ...styles.innerContainer, height: windowSize.height }}
+        style={{
+          ...styles.innerContainer,
+          height: isTinyScreen ? undefined : windowSize.height,
+        }}
       >
         <View
           style={{
             ...styles.content,
             paddingTop: styles.content.paddingTop + topBarHeight,
-            maxHeight: styles.content.maxHeight + topBarHeight,
+            maxHeight: isTinyScreen
+              ? undefined
+              : styles.content.maxHeight + topBarHeight,
           }}
         >
           <Text style={styles.title}>
