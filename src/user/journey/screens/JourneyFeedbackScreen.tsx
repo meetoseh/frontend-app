@@ -56,6 +56,7 @@ import { useStateCompat } from "../../../shared/hooks/useStateCompat";
 import { FilledInvertedButton } from "../../../shared/components/FilledInvertedButton";
 import { LinkButton } from "../../../shared/components/LinkButton";
 import { useIsEffectivelyTinyScreen } from "../../../shared/hooks/useIsEffectivelyTinyScreen";
+import { useContentWidth } from "../../../shared/lib/useContentWidth";
 
 /**
  * Asks the user for feedback about the journey so that we can curate the
@@ -272,8 +273,7 @@ export const JourneyFeedbackScreen = ({
 
   const screenSize = useWindowSize();
   const topBarHeight = useTopBarHeight();
-  const responseButtonWidths =
-    Math.min(screenSize.width, styles.content.maxWidth) - 64;
+  const contentWidth = useContentWidth();
   const isTinyScreen = useIsEffectivelyTinyScreen();
 
   return (
@@ -298,13 +298,13 @@ export const JourneyFeedbackScreen = ({
             width: screenSize.width,
           }}
         >
-          <Text style={{ ...styles.title, width: responseButtonWidths }}>
+          <Text style={{ ...styles.title, width: contentWidth }}>
             How did that feel?
           </Text>
           <View
             style={{
               ...styles.answers,
-              width: responseButtonWidths,
+              width: contentWidth,
             }}
           >
             <FeedbackButton
@@ -343,7 +343,7 @@ export const JourneyFeedbackScreen = ({
               >(() => ({}));
               const props: CustomButtonProps = {
                 setTextStyle,
-                fullWidth: true,
+                width: contentWidth,
                 marginTop: 60,
                 onPress: onContinue,
               };
@@ -363,7 +363,7 @@ export const JourneyFeedbackScreen = ({
               }
             }}
           />
-          <Text style={{ ...styles.infoText, width: responseButtonWidths }}>
+          <Text style={{ ...styles.infoText, width: contentWidth }}>
             Your ratings will be used to personalize your experience
           </Text>
         </View>

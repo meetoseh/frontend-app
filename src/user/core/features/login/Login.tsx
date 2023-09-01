@@ -44,6 +44,7 @@ import { FilledPrimaryButton } from "../../../../shared/components/FilledPrimary
 import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
 import { OutlineWhiteButton } from "../../../../shared/components/OutlineWhiteButton";
 import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks";
+import { useContentWidth } from "../../../../shared/lib/useContentWidth";
 
 const DEV_ACCOUNT_USER_IDENTITY_ID = "guest9847";
 
@@ -375,6 +376,8 @@ export const Login = ({
     checkedMessagePipeVWC
   );
 
+  const contentWidth = useContentWidth();
+
   if (!checkedMessagePipe) {
     return <SplashScreen />;
   }
@@ -387,7 +390,7 @@ export const Login = ({
       />
       <OsehImageBackgroundFromStateValueWithCallbacks
         state={backgroundVWC}
-        style={styles.content}
+        style={{ ...styles.content, width: contentWidth }}
       >
         <OsehWordmarkWhite width={163} height={40} style={styles.logo} />
         <Text
@@ -400,7 +403,7 @@ export const Login = ({
         <FilledPrimaryButton
           onPress={onContinueWithGoogle}
           setTextStyle={updateGoogleTextStyle}
-          fullWidth
+          width={contentWidth}
         >
           <Google style={styles.google} />
           <RenderGuardedComponent
@@ -414,7 +417,7 @@ export const Login = ({
         <OutlineWhiteButton
           onPress={onContinueWithApple}
           setTextStyle={updateAppleTextStyle}
-          fullWidth
+          width={contentWidth}
         >
           <Apple style={styles.apple} />
           <RenderGuardedComponent

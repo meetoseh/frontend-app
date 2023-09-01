@@ -33,10 +33,9 @@ export type CustomButtonProps = {
   setForegroundColor?: (color: string) => void;
 
   /**
-   * If set to true, the container will use the screen size to determine its width,
-   * with appropriate padding on the left and right. Default false.
+   * If specified, this button will have this width in pixels.
    */
-  fullWidth?: boolean;
+  width?: number;
 
   /**
    * If specified, the button will have a margin on the top of this value.

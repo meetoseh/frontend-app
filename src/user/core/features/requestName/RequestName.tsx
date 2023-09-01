@@ -18,6 +18,7 @@ import { useErrorModal } from "../../../../shared/hooks/useErrorModal";
 import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
 import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks";
 import { useKeyboardVisibleValueWithCallbacks } from "../../../../shared/lib/useKeyboardVisibleValueWithCallbacks";
+import { useContentWidth } from "../../../../shared/lib/useContentWidth";
 
 /**
  * Prompts the user their name.
@@ -103,46 +104,36 @@ export const RequestName = ({
   const modals = useWritableValueWithCallbacks<Modals>(() => []);
   useErrorModal(modals, errorVWC, "request name");
 
+  const contentWidth = useContentWidth();
+
   return (
     <OsehImageBackgroundFromStateValueWithCallbacks
       state={useMappedValueWithCallbacks(resources, (r) => r.background)}
       styleVWC={useMappedValueWithCallbacks(keyboardVisibleVWC, (v) => {
         if (v) {
-          return styles.containerKeyboardVisible;
+          return { ...styles.containerKeyboardVisible, width: contentWidth };
         } else {
-          return styles.container;
+          return { ...styles.container, width: contentWidth };
         }
       })}
     >
       <Text style={styles.title}>What{RSQUO}s Your Name?</Text>
-      <RenderGuardedComponent
-        props={firstNameVWC}
-        component={(firstName) => (
-          <OsehTextInput
-            type="text"
-            label="First Name"
-            value={firstName}
-            onChange={(v) => setVWC(firstNameVWC, v)}
-            bonusTextInputProps={{ autoComplete: "name-given" }}
-            disabled={false}
-            inputStyle={"white"}
-          />
-        )}
+      <OsehTextInput
+        type="text"
+        label="First Name"
+        onChange={(v) => setVWC(firstNameVWC, v)}
+        bonusTextInputProps={{ autoComplete: "name-given" }}
+        disabled={false}
+        inputStyle={"white"}
       />
       <View style={styles.inputSpacing} />
-      <RenderGuardedComponent
-        props={lastNameVWC}
-        component={(lastName) => (
-          <OsehTextInput
-            type="text"
-            label="Last Name"
-            value={lastName}
-            onChange={(v) => setVWC(lastNameVWC, v)}
-            bonusTextInputProps={{ autoComplete: "name-family" }}
-            disabled={false}
-            inputStyle={"white"}
-          />
-        )}
+      <OsehTextInput
+        type="text"
+        label="Last Name"
+        onChange={(v) => setVWC(lastNameVWC, v)}
+        bonusTextInputProps={{ autoComplete: "name-family" }}
+        disabled={false}
+        inputStyle={"white"}
       />
       <View style={styles.inputSubmitSpacing} />
       <RenderGuardedComponent
@@ -152,7 +143,7 @@ export const RequestName = ({
             onPress={onSubmit}
             disabled={saving}
             setTextStyle={updateSaveTextStyleVWC}
-            fullWidth
+            width={contentWidth}
           >
             <RenderGuardedComponent
               props={saveTextStyleVWC}

@@ -398,7 +398,6 @@ export const NumericPrompt = (
                     : finishEarly.cta
                   : "Skip";
                 const props: CustomButtonProps = {
-                  fullWidth: true,
                   onPress: resources.onSkip,
                   setTextStyle,
                 };

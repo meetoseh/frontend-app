@@ -215,7 +215,6 @@ export const WordPrompt = (props: WordPromptProps): ReactElement => {
                     : finishEarly.cta
                   : "Skip";
                 const props: CustomButtonProps = {
-                  fullWidth: true,
                   onPress: resources.onSkip,
                   setTextStyle,
                 };

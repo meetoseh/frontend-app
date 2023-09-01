@@ -20,6 +20,7 @@ import { FilledInvertedButton } from "../../../../shared/components/FilledInvert
 import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
 import { LinkButton } from "../../../../shared/components/LinkButton";
 import { FullscreenView } from "../../../../shared/components/FullscreenView";
+import { useContentWidth } from "../../../../shared/lib/useContentWidth";
 
 /**
  * Displays our screen asking the user if they want to receive notifications. We
@@ -106,7 +107,7 @@ export const AppNotifs = ({
     () => undefined
   );
 
-  const windowSize = useWindowSize();
+  const contentWidth = useContentWidth();
 
   return (
     <View style={styles.container}>
@@ -117,7 +118,7 @@ export const AppNotifs = ({
         }}
       >
         <FullscreenView style={styles.background}>
-          <View style={{ ...styles.content, width: windowSize.width - 64 }}>
+          <View style={{ ...styles.content, width: contentWidth }}>
             <View style={styles.appWithBadge}>
               <View style={styles.appIcon}>
                 <OsehBrandmarkWhite />
@@ -140,7 +141,7 @@ export const AppNotifs = ({
                 (s: StyleProp<TextStyle>) => setVWC(textStyleVWC, s),
                 [textStyleVWC]
               )}
-              fullWidth
+              width={contentWidth}
               marginTop={40}
             >
               <RenderGuardedComponent
@@ -152,7 +153,7 @@ export const AppNotifs = ({
             </FilledInvertedButton>
             <LinkButton
               onPress={doSkip}
-              fullWidth
+              width={contentWidth}
               marginTop={24}
               setTextStyle={useCallback(
                 (s: StyleProp<TextStyle>) => setVWC(linkTextStyleVWC, s),

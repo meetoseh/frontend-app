@@ -14,7 +14,6 @@ export const styles = StyleSheet.create({
     alignItems: "center",
   },
   content: {
-    maxWidth: 390,
     maxHeight: 704,
     flexDirection: "column",
     justifyContent: "center",
@@ -65,5 +64,8 @@ export const styles = StyleSheet.create({
   },
   skipForNowContainer: {
     marginBottom: 35,
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

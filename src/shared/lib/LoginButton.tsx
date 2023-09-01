@@ -1,7 +1,7 @@
-import { useCallback, useContext, useEffect } from 'react';
-import { LoginContext } from './contexts/LoginContext';
+import { useCallback, useContext, useEffect } from "react";
+import { LoginContext } from "../contexts/LoginContext";
 
-const LOGIN_URL = '/login';
+const LOGIN_URL = "/login";
 
 /**
  * Creates a component which shows a login button (if the user is not logged in)
@@ -20,14 +20,14 @@ export const LoginButton = (): React.ReactElement => {
   );
 
   useEffect(() => {
-    localStorage.setItem('login-redirect', window.location.pathname);
+    localStorage.setItem("login-redirect", window.location.pathname);
 
     return () => {
-      localStorage.removeItem('login-redirect');
+      localStorage.removeItem("login-redirect");
     };
   }, []);
 
-  return loginContext.state === 'logged-in' ? (
+  return loginContext.state === "logged-in" ? (
     <button onClick={logout}>Logout</button>
   ) : (
     <a href={LOGIN_URL}>Login</a>

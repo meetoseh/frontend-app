@@ -27,11 +27,14 @@ import * as Colors from "../../../../styling/colors";
 import Check from "./icons/Check";
 import { OsehImageFromStateValueWithCallbacks } from "../../../../shared/images/OsehImageFromStateValueWithCallbacks";
 import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
-import { FilledPrimaryButton } from "../../../../shared/components/FilledPrimaryButton";
 import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks";
 import { setVWC } from "../../../../shared/lib/setVWC";
 import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
 import { FilledInvertedButton } from "../../../../shared/components/FilledInvertedButton";
+import {
+  useTimedValue,
+  useTimedValueWithCallbacks,
+} from "../../../../shared/hooks/useTimedValue";
 
 /**
  * Rewards the user for completing signup.
@@ -41,6 +44,11 @@ export const SignupReward = ({
   resources,
 }: FeatureComponentProps<SignupRewardState, SignupRewardResources>) => {
   const interests = useContext(InterestsContext);
+  const clickBleedthroughProtection = useTimedValueWithCallbacks(
+    true,
+    false,
+    1000
+  );
   useStartSession({
     type: "callbacks",
     props: () => resources.get().session,
@@ -59,6 +67,10 @@ export const SignupReward = ({
   }, [interests, resources]);
 
   const onFinish = useCallback(() => {
+    if (clickBleedthroughProtection.get()) {
+      return;
+    }
+
     resources.get().session?.storeAction?.call(undefined, "next", null);
     resources.get().session?.reset?.call(undefined);
     state.get().ian?.onShown?.call(undefined);

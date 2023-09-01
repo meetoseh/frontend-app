@@ -309,7 +309,6 @@ export const ColorPrompt = (
                     : finishEarly.cta
                   : "Skip";
                 const props: CustomButtonProps = {
-                  fullWidth: true,
                   onPress: resources.onSkip,
                   setTextStyle,
                 };

@@ -11,6 +11,7 @@ import { useWindowSize } from "../../../shared/hooks/useWindowSize";
 import { useTopBarHeight } from "../../../shared/hooks/useTopBarHeight";
 import { FilledInvertedButton } from "../../../shared/components/FilledInvertedButton";
 import { useIsEffectivelyTinyScreen } from "../../../shared/hooks/useIsEffectivelyTinyScreen";
+import { useContentWidth } from "../../../shared/lib/useContentWidth";
 
 /**
  * Shows a screen allowing the user to perform an interaction to start the
@@ -50,6 +51,7 @@ export const JourneyStartScreen = ({
   const topBarHeight = useTopBarHeight();
   const windowSize = useWindowSize();
   const isTinyScreen = useIsEffectivelyTinyScreen();
+  const contentWidth = useContentWidth();
 
   if (selectedEmotionAntonym === undefined) {
     return (
@@ -70,6 +72,7 @@ export const JourneyStartScreen = ({
               ...styles.content,
               paddingTop: styles.content.paddingTop + topBarHeight,
               maxHeight: styles.content.maxHeight + topBarHeight,
+              width: contentWidth,
             }}
           >
             <Text style={styles.title}>Your Class is Ready</Text>
@@ -83,7 +86,7 @@ export const JourneyStartScreen = ({
             </Text>
             <View style={styles.skipForNowContainer}>
               <FilledInvertedButton
-                fullWidth
+                width={contentWidth}
                 onPress={onSkipClick}
                 disabled={!audioReady}
                 spinner={!audioReady}
@@ -124,7 +127,7 @@ export const JourneyStartScreen = ({
           </Text>
           <View style={styles.skipForNowContainer}>
             <FilledInvertedButton
-              fullWidth
+              width={contentWidth}
               onPress={onSkipClick}
               disabled={!audioReady}
               spinner={!audioReady}

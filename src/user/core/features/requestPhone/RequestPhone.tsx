@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useContext, useRef } from "react";
+import { ReactElement, useCallback, useContext } from "react";
 import { LoginContext } from "../../../../shared/contexts/LoginContext";
 import { useTimezone } from "../../../../shared/hooks/useTimezone";
 import { FeatureComponentProps } from "../../models/Feature";
@@ -9,17 +9,13 @@ import {
   InterestsContext,
   InterestsContextValue,
 } from "../../../../shared/contexts/InterestsContext";
-import {
-  useWindowSize,
-  useWindowSizeValueWithCallbacks,
-} from "../../../../shared/hooks/useWindowSize";
+import { useWindowSize } from "../../../../shared/hooks/useWindowSize";
 import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks";
 import { setVWC } from "../../../../shared/lib/setVWC";
 import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
 import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMappedValuesWithCallbacks";
 import { useErrorModal } from "../../../../shared/hooks/useErrorModal";
 import { describeError } from "../../../../shared/lib/describeError";
-import { SplashScreen } from "../../../splash/SplashScreen";
 import { apiFetch } from "../../../../shared/lib/apiFetch";
 import { View, Text, TextInput, StyleProp, TextStyle } from "react-native";
 import { styles } from "./RequestPhoneStyles";
@@ -30,29 +26,19 @@ import { LinearGradientBackground } from "../../../../shared/anim/LinearGradient
 import { FullscreenView } from "../../../../shared/components/FullscreenView";
 import { StatusBar } from "expo-status-bar";
 import Messages from "./icons/Messages";
-import Svg, { Circle } from "react-native-svg";
-import IOSMessages from "./icons/IOSMessages";
 import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
 import { useKeyboardVisibleValueWithCallbacks } from "../../../../shared/lib/useKeyboardVisibleValueWithCallbacks";
 import { useValueWithCallbacksEffect } from "../../../../shared/hooks/useValueWithCallbacksEffect";
-import { useValuesWithCallbacksEffect } from "../../../../shared/hooks/useValuesWithCallbacksEffect";
-import {
-  inferAnimators,
-  useAnimationLoop,
-} from "../../../../shared/anim/AnimationLoop";
+import { inferAnimators } from "../../../../shared/anim/AnimationLoop";
 import { useAnimatedValueWithCallbacks } from "../../../../shared/anim/useAnimatedValueWithCallbacks";
-import {
-  ease,
-  easeIn,
-  easeInOutBack,
-  easeOut,
-} from "../../../../shared/lib/Bezier";
+import { easeIn } from "../../../../shared/lib/Bezier";
 import { FilledInvertedButton } from "../../../../shared/components/FilledInvertedButton";
 import {
   ErrorBanner,
   ErrorBannerText,
 } from "../../../../shared/components/ErrorBanner";
 import { LinkButton } from "../../../../shared/components/LinkButton";
+import { useContentWidth } from "../../../../shared/lib/useContentWidth";
 
 /**
  * Prompts the user for their phone number, then verifies it.
@@ -349,8 +335,7 @@ export const RequestPhone = ({
   useErrorModal(modals, error, "request or verify phone");
 
   const windowSize = useWindowSize();
-  const contentWidth =
-    windowSize.width < 390 ? windowSize.width - 32 : windowSize.width - 64;
+  const contentWidth = useContentWidth();
   const contentView = useWritableValueWithCallbacks<View | null>(() => null);
   const renderedContentOffset = useWritableValueWithCallbacks<{
     translateY: number;
@@ -533,7 +518,7 @@ export const RequestPhone = ({
                       component={(disabled) => (
                         <>
                           <FilledInvertedButton
-                            fullWidth
+                            width={contentWidth}
                             disabled={disabled}
                             onPress={onStartPhone}
                             spinner={disabled}
@@ -547,7 +532,7 @@ export const RequestPhone = ({
                             />
                           </FilledInvertedButton>
                           <LinkButton
-                            fullWidth
+                            width={contentWidth}
                             disabled={disabled}
                             onPress={onSkipPhone}
                             spinner={false}
@@ -621,7 +606,7 @@ export const RequestPhone = ({
                       component={(disabled) => (
                         <>
                           <FilledInvertedButton
-                            fullWidth
+                            width={contentWidth}
                             disabled={disabled}
                             onPress={onVerifyPhone}
                             spinner={disabled}
@@ -635,7 +620,7 @@ export const RequestPhone = ({
                             />
                           </FilledInvertedButton>
                           <LinkButton
-                            fullWidth
+                            width={contentWidth}
                             disabled={disabled}
                             onPress={onBackVerify}
                             spinner={false}

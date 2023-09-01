@@ -64,7 +64,6 @@ export const styles = StyleSheet.create({
     zIndex: 2,
   },
   content: {
-    maxWidth: 440,
     flexDirection: "row",
     flexWrap: "nowrap",
     justifyContent: "space-between",

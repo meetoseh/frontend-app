@@ -14,7 +14,6 @@ export const styles = StyleSheet.create({
     alignItems: "center",
   },
   content: {
-    maxWidth: 454,
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",

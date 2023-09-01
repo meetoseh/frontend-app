@@ -54,6 +54,7 @@ import { useTopBarHeight } from "../../../../shared/hooks/useTopBarHeight";
 import { StatusBar } from "expo-status-bar";
 import { useIsEffectivelyTinyScreen } from "../../../../shared/hooks/useIsEffectivelyTinyScreen";
 import { setVWC } from "../../../../shared/lib/setVWC";
+import { useContentWidth } from "../../../../shared/lib/useContentWidth";
 
 /**
  * The settings for the profile pictures
@@ -1251,6 +1252,7 @@ const Bottom = ({
   const [btnTextStyle, setBtnTextStyle] = useState<StyleProp<TextStyle>>(
     () => ({})
   );
+  const contentWidth = useContentWidth();
 
   return (
     <>
@@ -1263,7 +1265,7 @@ const Bottom = ({
       <FilledInvertedButton
         onPress={onGotoClassClick}
         setTextStyle={setBtnTextStyle}
-        fullWidth
+        width={contentWidth}
       >
         <Text style={btnTextStyle}>Take Me To Class</Text>
       </FilledInvertedButton>

@@ -30,6 +30,7 @@ import FullHeartIcon from "../icons/FullHeartIcon";
 import EmptyHeartIcon from "../icons/EmptyHeartIcon";
 import { LinkButton } from "../../../shared/components/LinkButton";
 import { useIsEffectivelyTinyScreen } from "../../../shared/hooks/useIsEffectivelyTinyScreen";
+import { useContentWidth } from "../../../shared/lib/useContentWidth";
 
 type DayOfWeek =
   | "Monday"
@@ -367,7 +368,7 @@ export const JourneyPostScreen = ({
 
   const screenSize = useWindowSize();
   const topBarHeight = useTopBarHeight();
-  const innerWidth = Math.min(screenSize.width, styles.content.maxWidth) - 64;
+  const contentWidth = useContentWidth();
   const isTinyScreen = useIsEffectivelyTinyScreen();
 
   return (
@@ -449,7 +450,7 @@ export const JourneyPostScreen = ({
             component={(goalText) => (
               <>
                 {goalText && (
-                  <View style={{ ...styles.goal, width: innerWidth }}>
+                  <View style={{ ...styles.goal, width: contentWidth }}>
                     {goalText}
                   </View>
                 )}
@@ -477,12 +478,13 @@ export const JourneyPostScreen = ({
 const ContinueButton = ({ onPress }: { onPress: () => void }) => {
   const [textStyle, setTextStyle] =
     useStateCompat<StyleProp<TextStyle>>(undefined);
+  const contentWidth = useContentWidth();
 
   return (
     <FilledInvertedButton
       onPress={onPress}
       setTextStyle={setTextStyle}
-      fullWidth
+      width={contentWidth}
       marginTop={36}
     >
       <Text style={textStyle}>Continue</Text>
@@ -499,6 +501,7 @@ const ToggleFavoriteButton = ({
 }) => {
   const [textStyle, setTextStyle] =
     useStateCompat<StyleProp<TextStyle>>(undefined);
+  const contentWidth = useContentWidth();
   const icon =
     favorited === null ? (
       <InlineOsehSpinner
@@ -514,7 +517,7 @@ const ToggleFavoriteButton = ({
     <LinkButton
       onPress={onPress}
       setTextStyle={setTextStyle}
-      fullWidth
+      width={contentWidth}
       marginTop={24}
     >
       <View style={styles.favoriteButtonIcon}>{icon}</View>

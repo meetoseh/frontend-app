@@ -32,6 +32,7 @@ import { StatusBar } from "expo-status-bar";
 import { FilledInvertedButton } from "../../../../shared/components/FilledInvertedButton";
 import { FilledButton } from "../../../../shared/components/FilledButton";
 import { useTimedValueWithCallbacks } from "../../../../shared/hooks/useTimedValue";
+import { useContentWidth } from "../../../../shared/lib/useContentWidth";
 
 export const GoalDaysPerWeek = ({
   state,
@@ -128,13 +129,15 @@ export const GoalDaysPerWeek = ({
   const modals = useWritableValueWithCallbacks<Modals>(() => []);
   useErrorModal(modals, error, "Set Goal");
 
+  const contentWidth = useContentWidth();
+
   return (
     <View style={styles.container}>
       <OsehImageBackgroundFromStateValueWithCallbacks
         state={useMappedValueWithCallbacks(resources, (r) => r.background)}
         style={styles.content}
       >
-        <View style={styles.content}>
+        <View style={{ ...styles.content, width: contentWidth }}>
           {title}
           <View style={styles.days}>
             {boundSetGoals.map((setGoal, i) => (
@@ -163,7 +166,7 @@ export const GoalDaysPerWeek = ({
               component={(disabled) => (
                 <FilledInvertedButton
                   setTextStyle={updateSubmitTextStyle}
-                  fullWidth
+                  width={contentWidth}
                   onPress={onFinish}
                   disabled={disabled}
                 >

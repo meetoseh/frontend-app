@@ -1,6 +1,7 @@
-import { ReactElement } from "react";
+import { ReactElement, useCallback } from "react";
 import { styles } from "./OsehTextInputStyles";
 import { View, Text, TextInput, TextInputProps } from "react-native";
+import { useReactManagedValueAsValueWithCallbacks } from "../hooks/useReactManagedValueAsValueWithCallbacks";
 
 type OsehTextInputProps = {
   /**
@@ -10,9 +11,11 @@ type OsehTextInputProps = {
   label: string;
 
   /**
-   * The current value of the text input
+   * The initial value of the text input. Because managed text inputs
+   * require synchronous updates, and we avoid synchronous updates to
+   * stay compatible with react, we cannot use managed text inputs.
    */
-  value: string;
+  defaultValue?: string;
 
   /**
    * Disables the input and fades it out
@@ -53,7 +56,7 @@ type OsehTextInputProps = {
  */
 export const OsehTextInput = ({
   label,
-  value,
+  defaultValue,
   disabled,
   inputStyle,
   bonusTextInputProps,
@@ -61,13 +64,21 @@ export const OsehTextInput = ({
   type = "text",
   doFocus = null,
 }: OsehTextInputProps): ReactElement => {
+  const onChangeVWC = useReactManagedValueAsValueWithCallbacks(onChange);
+  const handleChange = useCallback(
+    (text: string) => {
+      onChangeVWC.get()(text);
+    },
+    [onChangeVWC]
+  );
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
         style={styles.input}
-        value={value}
-        onChangeText={onChange}
+        defaultValue={defaultValue}
+        onChangeText={handleChange}
         editable={!disabled}
         {...bonusTextInputProps}
       />

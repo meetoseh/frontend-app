@@ -9,7 +9,6 @@ import { StatusBar } from "expo-status-bar";
 import { CloseButton } from "../../../shared/components/CloseButton";
 import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks";
 import { useTopBarHeight } from "../../../shared/hooks/useTopBarHeight";
-import { useWindowSize } from "../../../shared/hooks/useWindowSize";
 import { useIsEffectivelyTinyScreen } from "../../../shared/hooks/useIsEffectivelyTinyScreen";
 
 /**

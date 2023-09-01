@@ -56,7 +56,7 @@ export const FilledButton = ({
   setForegroundColor,
   styles,
   spinnerVariant,
-  fullWidth,
+  width,
   marginTop,
   children,
 }: PropsWithChildren<
@@ -92,32 +92,22 @@ export const FilledButton = ({
   }, []);
 
   const containerStyles = useMemo(() => {
-    let fullWidthMargin = 24;
-    if (screenSize.width - fullWidthMargin * 2 > 400) {
-      fullWidthMargin = Math.floor((screenSize.width - 400) / 2);
-    }
     return Object.assign(
       {},
       styles.container,
-      ...(fullWidth
-        ? [
+      ...(width === undefined
+        ? []
+        : [
             {
-              width: screenSize.width - fullWidthMargin * 2,
-              marginLeft: fullWidthMargin,
-              marginRight: fullWidthMargin,
-              paddingHorizontal: undefined,
-              paddingLeft: undefined,
-              paddingRight: undefined,
-              padding: undefined,
+              width,
             },
-          ]
-        : []),
+          ]),
       ...(marginTop ? [{ marginTop }] : []),
       ...(pressed ? [styles.pressed] : []),
       ...(disabled ? [styles.disabled] : []),
       ...(spinner ? [styles.containerWithSpinner] : [])
     );
-  }, [pressed, disabled, styles, screenSize.width, fullWidth, marginTop]);
+  }, [pressed, disabled, styles, screenSize.width, width, marginTop]);
 
   const childrenContainerStyles = useMemo(() => {
     const cp = Object.assign({}, containerStyles);
