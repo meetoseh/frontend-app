@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useRef } from "react";
+import { ReactElement, useCallback } from "react";
 import { useStateCompat as useState } from "../../../shared/hooks/useStateCompat";
 import { View, Text, TextStyle, StyleProp } from "react-native";
 import { StatusBar } from "expo-status-bar";
@@ -24,8 +24,6 @@ export const JourneyStartScreen = ({
   journey,
   shared,
   setScreen,
-  isOnboarding,
-  onJourneyFinished,
   selectedEmotionAntonym,
   duration = "1-minute",
 }: JourneyScreenProps & {

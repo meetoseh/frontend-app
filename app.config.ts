@@ -2,7 +2,7 @@ module.exports = {
   expo: {
     name: "Oseh",
     slug: "frontend-app",
-    version: "1.0.7",
+    version: "1.0.8",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
@@ -33,7 +33,7 @@ module.exports = {
     android: {
       package: "com.oseh.frontendapp",
       googleServicesFile: "./google-services.json",
-      versionCode: 4 /* 1.0.7 */,
+      versionCode: 5 /* 1.0.8 */,
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#000000",
@@ -58,6 +58,13 @@ module.exports = {
         },
       ],
       "expo-localization",
+      [
+        "expo-tracking-transparency",
+        {
+          userTrackingPermission:
+            "It will help us to provide you with a more personalized experience, relevant content, and promotions.",
+        },
+      ],
     ],
   },
 };

@@ -45,6 +45,7 @@ import { RenderGuardedComponent } from "../../../../shared/components/RenderGuar
 import { OutlineWhiteButton } from "../../../../shared/components/OutlineWhiteButton";
 import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks";
 import { useContentWidth } from "../../../../shared/lib/useContentWidth";
+import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
 
 const DEV_ACCOUNT_USER_IDENTITY_ID = "guest9847";
 
@@ -142,7 +143,7 @@ export const Login = ({
         );
       } else {
         // ensures no missing cases
-        ((t: "success") => {})(result.type);
+        ((() => {}) as (t: "success") => void)(result.type);
 
         const { idToken, refreshToken, onboard } = result;
         loginContext.setAuthTokens.call(undefined, {
@@ -152,7 +153,7 @@ export const Login = ({
         state.get().setOnboard.call(undefined, onboard);
       }
     },
-    [loginContext.setAuthTokens, state]
+    [loginContext.setAuthTokens, state, errorVWC]
   );
 
   useEffect(() => {
@@ -161,7 +162,7 @@ export const Login = ({
     }
 
     let active = true;
-    let cancelers = new Callbacks<undefined>();
+    const cancelers = new Callbacks<undefined>();
     checkPipe();
     return () => {
       active = false;
@@ -189,7 +190,7 @@ export const Login = ({
       try {
         const readCancelablePromise = reader.read();
         cancelers.add(() => readCancelablePromise.cancel());
-        let timeoutPromise = new Promise<void>((resolve) =>
+        const timeoutPromise = new Promise<void>((resolve) =>
           setTimeout(resolve, 3000)
         );
         try {
@@ -288,7 +289,7 @@ export const Login = ({
         setVWC(errorVWC, await describeError(e));
       }
     },
-    [loginContext.setAuthTokens, state, onMessageFromPipe, mountedVWC]
+    [onMessageFromPipe, mountedVWC, errorVWC]
   );
 
   const onContinueWithGoogle = useCallback(async () => {
@@ -338,7 +339,7 @@ export const Login = ({
     } catch (e) {
       setVWC(errorVWC, await describeError(e));
     }
-  }, [loginContext, state]);
+  }, [loginContext, state, errorVWC]);
 
   const numDirectAccClicks = useWritableValueWithCallbacks<number[]>(() => []);
   const handlingDirectAccClick = useRef(false);
@@ -366,7 +367,7 @@ export const Login = ({
     } finally {
       handlingDirectAccClick.current = false;
     }
-  }, [numDirectAccClicks]);
+  }, [numDirectAccClicks, errorVWC, onContinueWithProvider]);
 
   const backgroundVWC = useMappedValueWithCallbacks(
     resources,
@@ -377,6 +378,13 @@ export const Login = ({
   );
 
   const contentWidth = useContentWidth();
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await requestTrackingPermissionsAsync();
+      console.log("tracking permissions status: ", status);
+    })();
+  }, []);
 
   if (!checkedMessagePipe) {
     return <SplashScreen />;
