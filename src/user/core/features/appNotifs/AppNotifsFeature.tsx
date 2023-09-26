@@ -85,6 +85,17 @@ export const AppNotifsFeature: Feature<AppNotifsState, AppNotifsResources> = {
           if (!active) {
             return;
           }
+          await setNotificationChannelAsync("daily_reminder", {
+            name: "Daily Reminders",
+            importance: AndroidImportance.HIGH,
+            vibrationPattern: [0, 250, 250, 250],
+            enableVibrate: true,
+            enableLights: true,
+            lightColor: "#1A383C7C",
+          });
+          if (!active) {
+            return;
+          }
           await dismissAllNotificationsIfInForeground();
           if (active) {
             setVWC(initializedSuccessfullyVWC, true);
