@@ -8,5 +8,5 @@ import { useWindowDimensions } from "react-native";
  */
 export const useIsEffectivelyTinyScreen = (): boolean => {
   const windowDimensions = useWindowDimensions();
-  return windowDimensions.fontScale > 1;
+  return windowDimensions.fontScale >= 1; /* TODO */
 };

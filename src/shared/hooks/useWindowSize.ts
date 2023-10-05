@@ -1,7 +1,10 @@
-import { useEffect } from 'react';
-import { Dimensions, ScaledSize } from 'react-native';
-import { ValueWithCallbacks, useWritableValueWithCallbacks } from '../lib/Callbacks';
-import { useUnwrappedValueWithCallbacks } from './useUnwrappedValueWithCallbacks';
+import { useEffect } from "react";
+import { Dimensions, ScaledSize } from "react-native";
+import {
+  ValueWithCallbacks,
+  useWritableValueWithCallbacks,
+} from "../lib/Callbacks";
+import { useUnwrappedValueWithCallbacks } from "./useUnwrappedValueWithCallbacks";
 
 /**
  * Gets the logical screen size of the device. Note that this differs
@@ -12,9 +15,7 @@ import { useUnwrappedValueWithCallbacks } from './useUnwrappedValueWithCallbacks
  * Dimensions.get("window") is, and hence we use the same name for it.
  */
 export const useWindowSize = (): ScaledSize => {
-  return useUnwrappedValueWithCallbacks(
-    useWindowSizeValueWithCallbacks()
-  );
+  return useUnwrappedValueWithCallbacks(useWindowSizeValueWithCallbacks());
 };
 
 /**
@@ -22,20 +23,31 @@ export const useWindowSize = (): ScaledSize => {
  * used when it's really important that we don't trigger even a single extra
  * react rerender on a component.
  */
-export const useWindowSizeValueWithCallbacks = (): ValueWithCallbacks<ScaledSize> => {
-  const screenSize = useWritableValueWithCallbacks<ScaledSize>(() => Dimensions.get('screen'));
+export const useWindowSizeValueWithCallbacks =
+  (): ValueWithCallbacks<ScaledSize> => {
+    const screenSize = useWritableValueWithCallbacks<ScaledSize>(() =>
+      Dimensions.get("screen")
+    );
 
-  useEffect(() => {
-    const onScreenSizeChange = ({ screen }: { window: ScaledSize; screen: ScaledSize }) => {
-      screenSize.set(screen);
-    };
+    useEffect(() => {
+      const onScreenSizeChange = ({
+        screen,
+      }: {
+        window: ScaledSize;
+        screen: ScaledSize;
+      }) => {
+        screenSize.set(screen);
+      };
 
-    const subscription = Dimensions.addEventListener('change', onScreenSizeChange);
+      const subscription = Dimensions.addEventListener(
+        "change",
+        onScreenSizeChange
+      );
 
-    return () => {
-      subscription.remove();
-    };
-  }, []);
+      return () => {
+        subscription.remove();
+      };
+    }, [screenSize]);
 
-  return screenSize;
-};
+    return screenSize;
+  };

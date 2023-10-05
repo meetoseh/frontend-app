@@ -112,12 +112,16 @@ export const styles = StyleSheet.create({
     padding: 0,
   },
   profilePicturesContainer: {
-    maxWidth: 280,
     alignSelf: "center",
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     alignItems: "center",
     marginTop: 24,
     marginBottom: 40,
+  },
+  takeMeToClassContainer: {
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
