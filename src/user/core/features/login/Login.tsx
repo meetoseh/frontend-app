@@ -169,6 +169,8 @@ export const Login = ({
     [loginContext.setAuthTokens, state, errorVWC]
   );
 
+  const mounted = useIsMounted();
+
   const effectRunning = useRef<boolean>(false);
   useValuesWithCallbacksEffect(
     [appleTextStyleVWC, googleTextStyleVWC, emailTextStyleVWC],
@@ -181,57 +183,75 @@ export const Login = ({
           return;
         }
 
-        effectRunning.current = true;
         const googleEle = googleText.current;
         const appleEle = appleText.current;
         const emailEle = emailText.current;
+
+        if (googleEle === null || appleEle === null || emailEle === null) {
+          return undefined;
+        }
+
+        let apple = appleTextStyleVWC.get();
+        let google = googleTextStyleVWC.get();
+        let email = emailTextStyleVWC.get();
+
+        if (
+          typeof apple !== "object" ||
+          typeof google !== "object" ||
+          typeof email !== "object"
+        ) {
+          return undefined;
+        }
+
+        apple = apple as TextStyle;
+        google = google as TextStyle;
+        email = email as TextStyle;
+
+        effectRunning.current = true;
         try {
-          if (googleEle === null || appleEle === null || emailEle === null) {
-            return undefined;
-          }
-
-          let apple = appleTextStyleVWC.get();
-          let google = googleTextStyleVWC.get();
-          let email = emailTextStyleVWC.get();
-
-          if (
-            typeof apple !== "object" ||
-            typeof google !== "object" ||
-            typeof email !== "object"
-          ) {
-            return undefined;
-          }
-
-          apple = apple as TextStyle;
-          google = google as TextStyle;
-          email = email as TextStyle;
-
-          const appleWidthSet = apple.width !== undefined;
-          const googleWidthSet = google.width !== undefined;
-          const emailWidthSet = email.width !== undefined;
+          const appleWidthSet = apple.paddingRight !== undefined;
+          const googleWidthSet = google.paddingRight !== undefined;
+          const emailWidthSet = email.paddingRight !== undefined;
 
           if (
             appleWidthSet !== googleWidthSet ||
             appleWidthSet !== emailWidthSet
           ) {
-            setVWC(appleTextStyleVWC, { ...apple, width: undefined });
-            setVWC(googleTextStyleVWC, { ...google, width: undefined });
-            setVWC(emailTextStyleVWC, { ...email, width: undefined });
+            setVWC(appleTextStyleVWC, { ...apple, paddingRight: undefined });
+            setVWC(googleTextStyleVWC, { ...google, paddingRight: undefined });
+            setVWC(emailTextStyleVWC, { ...email, paddingRight: undefined });
             return undefined;
           }
 
-          const [appleMeasure, googleMeasure, emailMeasure] = await Promise.all(
-            [appleEle, googleEle, emailEle].map(
-              (ele) =>
-                new Promise<number>((resolve) => {
-                  ele.measure((x, y, width) => {
-                    resolve(width);
-                  });
-                })
-            )
-          );
+          let maxWidth = 0;
+          let appleMeasure = 0;
+          let googleMeasure = 0;
+          let emailMeasure = 0;
+          while (maxWidth === 0) {
+            if (!mounted.get()) {
+              return;
+            }
+            [appleMeasure, googleMeasure, emailMeasure] = await Promise.all(
+              [appleEle, googleEle, emailEle].map(
+                (ele) =>
+                  new Promise<number>((resolve) => {
+                    ele.measure((x, y, width) => {
+                      resolve(width);
+                    });
+                  })
+              )
+            );
+            maxWidth = Math.max(appleMeasure, googleMeasure, emailMeasure);
 
-          const maxWidth = Math.max(appleMeasure, googleMeasure, emailMeasure);
+            if (maxWidth <= 0 && mounted.get()) {
+              await new Promise((resolve) => setTimeout(resolve, 100));
+            }
+          }
+
+          if (!mounted.get()) {
+            return;
+          }
+
           setVWC(appleTextStyleVWC, {
             ...apple,
             paddingRight: maxWidth - appleMeasure,
@@ -255,6 +275,7 @@ export const Login = ({
       appleTextStyleVWC,
       googleTextStyleVWC,
       emailTextStyleVWC,
+      mounted,
     ])
   );
 

@@ -18,7 +18,7 @@ export const useIsMounted = (): ValueWithCallbacks<boolean> => {
     return () => {
       setVWC(result, false);
     };
-  });
+  }, [result]);
 
   return result;
 };
