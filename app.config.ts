@@ -2,7 +2,7 @@ module.exports = {
   expo: {
     name: "Oseh",
     slug: "frontend-app",
-    version: "1.0.11",
+    version: "1.0.12",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
@@ -33,7 +33,7 @@ module.exports = {
     android: {
       package: "com.oseh.frontendapp",
       googleServicesFile: "./google-services.json",
-      versionCode: 8 /* 1.0.11 */,
+      versionCode: 9 /* 1.0.12 */,
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#000000",

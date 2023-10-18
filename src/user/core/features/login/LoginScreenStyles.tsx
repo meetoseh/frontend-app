@@ -2,11 +2,6 @@ import { StyleSheet } from "react-native";
 import * as Colors from "../../../../styling/colors";
 
 export const styles = StyleSheet.create({
-  apple: {
-    height: 18,
-    marginRight: 12,
-    width: 18,
-  },
   container: {
     alignItems: "center",
     backgroundColor: Colors.WHITE,
@@ -17,15 +12,26 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-end",
   },
-  google: {
-    height: 16,
+  apple: {
+    width: 18,
+    height: 19,
     marginRight: 12,
-    width: 16,
+    paddingLeft: 1,
+    paddingRight: 1,
+  },
+  google: {
+    width: 18,
+    height: 19,
+    marginRight: 12,
+    paddingLeft: 1,
+    paddingRight: 1,
   },
   email: {
-    height: 16,
+    width: 20,
+    height: 18,
     marginRight: 12,
-    width: 16,
+    paddingTop: 0.5,
+    paddingBottom: 0.5,
   },
   header: {
     color: Colors.WHITE,

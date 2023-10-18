@@ -1,4 +1,10 @@
-import { ReactElement, useCallback, useContext, useEffect } from "react";
+import {
+  ReactElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+} from "react";
 import { Platform, StyleProp, Text, TextStyle, View } from "react-native";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
@@ -40,6 +46,7 @@ import { useContentWidth } from "../../../../shared/lib/useContentWidth";
 import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
 import { FilledInvertedButton } from "../../../../shared/components/FilledInvertedButton";
 import Email from "./icons/Email";
+import { useValuesWithCallbacksEffect } from "../../../../shared/hooks/useValuesWithCallbacksEffect";
 
 const DEV_ACCOUNT_USER_IDENTITY_ID = "guest9847";
 
@@ -94,6 +101,7 @@ export const Login = ({
     },
     [googleTextStyleVWC]
   );
+  const googleText = useRef<Text>(null);
   const appleTextStyleVWC = useWritableValueWithCallbacks<StyleProp<TextStyle>>(
     () => undefined
   );
@@ -103,6 +111,7 @@ export const Login = ({
     },
     [appleTextStyleVWC]
   );
+  const appleText = useRef<Text>(null);
   const emailTextStyleVWC = useWritableValueWithCallbacks<StyleProp<TextStyle>>(
     () => undefined
   );
@@ -112,6 +121,7 @@ export const Login = ({
     },
     [emailTextStyleVWC]
   );
+  const emailText = useRef<Text>(null);
 
   const onMessageFromPipe = useCallback(
     (result: LoginMessage) => {
@@ -157,6 +167,95 @@ export const Login = ({
       }
     },
     [loginContext.setAuthTokens, state, errorVWC]
+  );
+
+  const effectRunning = useRef<boolean>(false);
+  useValuesWithCallbacksEffect(
+    [appleTextStyleVWC, googleTextStyleVWC, emailTextStyleVWC],
+    useCallback(() => {
+      equalizeWidths();
+      return undefined;
+
+      async function equalizeWidths() {
+        if (effectRunning.current) {
+          return;
+        }
+
+        effectRunning.current = true;
+        const googleEle = googleText.current;
+        const appleEle = appleText.current;
+        const emailEle = emailText.current;
+        try {
+          if (googleEle === null || appleEle === null || emailEle === null) {
+            return undefined;
+          }
+
+          let apple = appleTextStyleVWC.get();
+          let google = googleTextStyleVWC.get();
+          let email = emailTextStyleVWC.get();
+
+          if (
+            typeof apple !== "object" ||
+            typeof google !== "object" ||
+            typeof email !== "object"
+          ) {
+            return undefined;
+          }
+
+          apple = apple as TextStyle;
+          google = google as TextStyle;
+          email = email as TextStyle;
+
+          const appleWidthSet = apple.width !== undefined;
+          const googleWidthSet = google.width !== undefined;
+          const emailWidthSet = email.width !== undefined;
+
+          if (
+            appleWidthSet !== googleWidthSet ||
+            appleWidthSet !== emailWidthSet
+          ) {
+            setVWC(appleTextStyleVWC, { ...apple, width: undefined });
+            setVWC(googleTextStyleVWC, { ...google, width: undefined });
+            setVWC(emailTextStyleVWC, { ...email, width: undefined });
+            return undefined;
+          }
+
+          const [appleMeasure, googleMeasure, emailMeasure] = await Promise.all(
+            [appleEle, googleEle, emailEle].map(
+              (ele) =>
+                new Promise<number>((resolve) => {
+                  ele.measure((x, y, width) => {
+                    resolve(width);
+                  });
+                })
+            )
+          );
+
+          const maxWidth = Math.max(appleMeasure, googleMeasure, emailMeasure);
+          setVWC(appleTextStyleVWC, {
+            ...apple,
+            paddingRight: maxWidth - appleMeasure,
+          });
+          setVWC(googleTextStyleVWC, {
+            ...google,
+            paddingRight: maxWidth - googleMeasure,
+          });
+          setVWC(emailTextStyleVWC, {
+            ...email,
+            paddingRight: maxWidth - emailMeasure,
+          });
+        } finally {
+          effectRunning.current = false;
+        }
+      }
+    }, [
+      googleText,
+      appleText,
+      emailText,
+      appleTextStyleVWC,
+      googleTextStyleVWC,
+      emailTextStyleVWC,
+    ])
   );
 
   useEffect(() => {
@@ -392,7 +491,9 @@ export const Login = ({
           <RenderGuardedComponent
             props={googleTextStyleVWC}
             component={(textStyle) => (
-              <Text style={textStyle}>Sign in with Google</Text>
+              <Text style={textStyle} ref={googleText}>
+                Sign in with Google
+              </Text>
             )}
           />
         </FilledInvertedButton>
@@ -406,7 +507,9 @@ export const Login = ({
           <RenderGuardedComponent
             props={appleTextStyleVWC}
             component={(textStyle) => (
-              <Text style={textStyle}>Sign in with Apple</Text>
+              <Text style={textStyle} ref={appleText}>
+                Sign in with Apple
+              </Text>
             )}
           />
         </FilledInvertedButton>
@@ -420,7 +523,9 @@ export const Login = ({
           <RenderGuardedComponent
             props={emailTextStyleVWC}
             component={(textStyle) => (
-              <Text style={textStyle}>Sign in with Email</Text>
+              <Text style={textStyle} ref={emailText}>
+                Sign in with Email
+              </Text>
             )}
           />
         </FilledInvertedButton>
