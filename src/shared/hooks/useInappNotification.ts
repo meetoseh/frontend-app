@@ -124,7 +124,7 @@ export const useInappNotificationValueWithCallbacks = (
     propsVariableStrategy
   );
 
-  let cleanedUp = useRef<boolean>(false);
+  const cleanedUp = useRef<boolean>(false);
   useEffect(() => {
     if (cleanedUp.current || loginContext.state === "loading") {
       return;
@@ -389,7 +389,7 @@ type StoredInappNotification = {
 };
 
 let __lock = false;
-let __lockQueue: (() => Promise<void>)[] = [];
+const __lockQueue: (() => Promise<void>)[] = [];
 
 /**
  * Acquires an in-memory process-wide lock, and runs the given function. If

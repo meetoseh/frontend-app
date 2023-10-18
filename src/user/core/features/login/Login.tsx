@@ -1,10 +1,4 @@
-import {
-  ReactElement,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-} from "react";
+import { ReactElement, useCallback, useContext, useEffect } from "react";
 import { Platform, StyleProp, Text, TextStyle, View } from "react-native";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
@@ -40,12 +34,12 @@ import {
 } from "../../../../shared/lib/Callbacks";
 import { setVWC } from "../../../../shared/lib/setVWC";
 import { useIsMounted } from "../../../../shared/hooks/useIsMounted";
-import { FilledPrimaryButton } from "../../../../shared/components/FilledPrimaryButton";
 import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
-import { OutlineWhiteButton } from "../../../../shared/components/OutlineWhiteButton";
 import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks";
 import { useContentWidth } from "../../../../shared/lib/useContentWidth";
 import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
+import { FilledInvertedButton } from "../../../../shared/components/FilledInvertedButton";
+import Email from "./icons/Email";
 
 const DEV_ACCOUNT_USER_IDENTITY_ID = "guest9847";
 
@@ -108,6 +102,15 @@ export const Login = ({
       setVWC(appleTextStyleVWC, v);
     },
     [appleTextStyleVWC]
+  );
+  const emailTextStyleVWC = useWritableValueWithCallbacks<StyleProp<TextStyle>>(
+    () => undefined
+  );
+  const updateEmailTextStyle = useCallback(
+    (v: StyleProp<TextStyle>) => {
+      setVWC(emailTextStyleVWC, v);
+    },
+    [emailTextStyleVWC]
   );
 
   const onMessageFromPipe = useCallback(
@@ -300,6 +303,10 @@ export const Login = ({
     onContinueWithProvider("SignInWithApple");
   }, [onContinueWithProvider]);
 
+  const onContinueWithEmail = useCallback(async () => {
+    onContinueWithProvider("Direct");
+  }, [onContinueWithProvider]);
+
   const onLongPressMessage = useCallback(async () => {
     if (Constants.expoConfig?.extra?.environment !== "dev") {
       return;
@@ -341,34 +348,6 @@ export const Login = ({
     }
   }, [loginContext, state, errorVWC]);
 
-  const numDirectAccClicks = useWritableValueWithCallbacks<number[]>(() => []);
-  const handlingDirectAccClick = useRef(false);
-  const onPressMessage = useCallback(async () => {
-    if (handlingDirectAccClick.current) {
-      return;
-    }
-
-    handlingDirectAccClick.current = true;
-    try {
-      const clickAt = Date.now();
-      const oldArr = numDirectAccClicks.get();
-      const newArr = [...oldArr, clickAt];
-      while (newArr[0] < clickAt - 5000) {
-        newArr.shift();
-      }
-      setVWC(numDirectAccClicks, newArr);
-
-      if (newArr.length < 3) {
-        return;
-      }
-      onContinueWithProvider("Direct");
-    } catch (e) {
-      setVWC(errorVWC, await describeError(e));
-    } finally {
-      handlingDirectAccClick.current = false;
-    }
-  }, [numDirectAccClicks, errorVWC, onContinueWithProvider]);
-
   const backgroundVWC = useMappedValueWithCallbacks(
     resources,
     (r) => r.background
@@ -401,14 +380,10 @@ export const Login = ({
         style={{ ...styles.content, width: contentWidth }}
       >
         <OsehWordmarkWhite width={163} height={40} style={styles.logo} />
-        <Text
-          style={styles.message}
-          onLongPress={onLongPressMessage}
-          onPress={onPressMessage}
-        >
+        <Text style={styles.message} onLongPress={onLongPressMessage}>
           Make mindfulness a daily part of your life in 60 seconds.
         </Text>
-        <FilledPrimaryButton
+        <FilledInvertedButton
           onPress={onContinueWithGoogle}
           setTextStyle={updateGoogleTextStyle}
           width={contentWidth}
@@ -420,9 +395,9 @@ export const Login = ({
               <Text style={textStyle}>Sign in with Google</Text>
             )}
           />
-        </FilledPrimaryButton>
-        <View style={{ height: 32 }} />
-        <OutlineWhiteButton
+        </FilledInvertedButton>
+        <View style={{ height: 20 }} />
+        <FilledInvertedButton
           onPress={onContinueWithApple}
           setTextStyle={updateAppleTextStyle}
           width={contentWidth}
@@ -434,7 +409,22 @@ export const Login = ({
               <Text style={textStyle}>Sign in with Apple</Text>
             )}
           />
-        </OutlineWhiteButton>
+        </FilledInvertedButton>
+        <View style={{ height: 20 }} />
+        <FilledInvertedButton
+          onPress={onContinueWithEmail}
+          setTextStyle={updateEmailTextStyle}
+          width={contentWidth}
+        >
+          <Email style={styles.email} />
+          <RenderGuardedComponent
+            props={emailTextStyleVWC}
+            component={(textStyle) => (
+              <Text style={textStyle}>Sign in with Email</Text>
+            )}
+          />
+        </FilledInvertedButton>
+        <View style={{ height: 56 }} />
       </OsehImageBackgroundFromStateValueWithCallbacks>
       <StatusBar style="light" />
     </View>
