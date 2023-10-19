@@ -10,11 +10,7 @@ import { setVWC } from "../../../shared/lib/setVWC";
 import { useToggleFavorited } from "../hooks/useToggleFavorited";
 import { InlineOsehSpinner } from "../../../shared/components/InlineOsehSpinner";
 import { useErrorModal } from "../../../shared/hooks/useErrorModal";
-import {
-  ModalContext,
-  Modals,
-  ModalsOutlet,
-} from "../../../shared/contexts/ModalContext";
+import { Modals, ModalsOutlet } from "../../../shared/contexts/ModalContext";
 import { useWindowSize } from "../../../shared/hooks/useWindowSize";
 import { useTopBarHeight } from "../../../shared/hooks/useTopBarHeight";
 import { apiFetch } from "../../../shared/lib/apiFetch";
@@ -68,7 +64,6 @@ type StreakInfo = {
 export const JourneyPostScreen = ({
   journey,
   shared,
-  setScreen,
   onJourneyFinished,
   isOnboarding,
   classesTakenToday,
@@ -167,11 +162,6 @@ export const JourneyPostScreen = ({
     journey: { type: "react-rerender", props: journey },
     shared,
   });
-
-  const blurredImage = useMappedValueWithCallbacks(
-    shared,
-    (s) => s.blurredImage
-  );
 
   const userIdentifier = (() => {
     if (
