@@ -1,6 +1,5 @@
 import { useContext } from "react";
 import { styles } from "./CourseJourneyItemStyles";
-import { LoginContext } from "../../../shared/contexts/LoginContext";
 import { textOverflowEllipses } from "../../../shared/lib/calculateKerningLength";
 import { OsehImageStateRequestHandler } from "../../../shared/images/useOsehImageStateRequestHandler";
 import { MinimalCourseJourney } from "../lib/MinimalCourseJourney";
@@ -20,6 +19,7 @@ import CourseJourneyItemCheck from "../icons/CourseJourneyItemCheck";
 import { InlineOsehSpinner } from "../../../shared/components/InlineOsehSpinner";
 import FullHeartIcon from "../../journey/icons/FullHeartIcon";
 import EmptyHeartIcon from "../../journey/icons/EmptyHeartIcon";
+import { useIsTablet } from "../../../shared/lib/useIsTablet";
 
 type HistoryItemProps = {
   /**
@@ -71,12 +71,10 @@ type HistoryItemProps = {
 export const CourseJourneyItem = ({
   item: itemVWC,
   setItem,
-  mapItems,
   separator: separatorVWC,
   onClick,
   instructorImages,
 }: HistoryItemProps) => {
-  const loginContext = useContext(LoginContext);
   const modalContext = useContext(ModalContext);
   const instructorImageVWC = useOsehImageStateValueWithCallbacks(
     adaptValueWithCallbacksAsVariableStrategyProps(
@@ -123,8 +121,9 @@ export const CourseJourneyItem = ({
     working: likingVWC,
   });
 
+  const isTablet = useIsTablet();
   const ellipsedTitle = useMappedValueWithCallbacks(itemVWC, (item) =>
-    textOverflowEllipses(item.journey.title, 15)
+    isTablet ? item.journey.title : textOverflowEllipses(item.journey.title, 15)
   );
   const takenVWC = useMappedValueWithCallbacks(
     itemVWC,

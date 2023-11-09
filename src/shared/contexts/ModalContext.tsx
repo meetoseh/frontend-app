@@ -30,13 +30,19 @@ export type ModalContextValue = {
 export const ModalContext = createContext<ModalContextValue>({
   modals: {
     get: () => {
-      throw new Error("uninitialized");
+      throw new Error(
+        "Attempt to use ModalContext modals without a ModalsProvider"
+      );
     },
     set: () => {
-      throw new Error("uninitialized");
+      throw new Error(
+        "Attempt to use ModalContext modals without a ModalsProvider"
+      );
     },
     get callbacks(): Callbacks<undefined> {
-      throw new Error("uninitialized");
+      throw new Error(
+        "Attempt to use ModalContext modals without a ModalsProvider"
+      );
     },
   },
 });

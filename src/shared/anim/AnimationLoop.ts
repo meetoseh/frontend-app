@@ -1,9 +1,18 @@
-import { MutableRefObject, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Bezier } from '../lib/Bezier';
-import { BezierAnimation, animIsComplete, calculateAnimValue } from '../lib/BezierAnimation';
-import { Callbacks } from '../lib/Callbacks';
-import { VariableStrategyProps } from './VariableStrategyProps';
-import { InteractionManager } from 'react-native';
+import {
+  MutableRefObject,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
+import { Bezier } from "../lib/Bezier";
+import {
+  BezierAnimation,
+  animIsComplete,
+  calculateAnimValue,
+} from "../lib/BezierAnimation";
+import { Callbacks } from "../lib/Callbacks";
+import { VariableStrategyProps } from "./VariableStrategyProps";
 
 export interface Animator<P extends object> {
   /**
@@ -35,7 +44,7 @@ export interface Animator<P extends object> {
    *   to continue the awake period, which will cause `apply` to be
    *   called again on the next frame.
    */
-  apply(toRender: P, target: P, now: DOMHighResTimeStamp): 'done' | 'continue';
+  apply(toRender: P, target: P, now: DOMHighResTimeStamp): "done" | "continue";
 
   /**
    * Should reset the animator, called when we are forced to cancel an
@@ -45,6 +54,105 @@ export interface Animator<P extends object> {
   reset(): void;
 }
 
+type DependentAnimatorPredicate<P extends object> = (p: P) => boolean;
+
+/**
+ * A dependent animator is generally constructed to partition an object,
+ * where the current target dictates which animator should be used. For
+ * example, if a component is draggable and snaps to position, it might
+ * use a linear animator when the user is dragging it, and an ease animator
+ * when it is snapping to position.
+ *
+ * Typically, the key which is being used to determine which animator to
+ * use will have a trivial animator applied earlier in the list of animators
+ * to avoid confusion.
+ *
+ * Delegators are attempted in order, and the first one which returns true
+ * for the predicate is used. This means if you just have two delegates and
+ * one is always meant to be active, a generic () => true predicate will work
+ * for the second delegate, avoiding having to invert the condition of the first
+ * manually.
+ */
+export class DependentAnimator<P extends object> implements Animator<P> {
+  private readonly delegates: [DependentAnimatorPredicate<P>, Animator<P>][];
+  private awakeIndex: number | null;
+
+  constructor(delegates: [DependentAnimatorPredicate<P>, Animator<P>][]) {
+    this.delegates = delegates;
+    this.awakeIndex = null;
+  }
+
+  maybeAwaken(rendered: P, target: P): boolean {
+    if (this.awakeIndex !== null) {
+      throw new Error("maybeAwaken called while already awake");
+    }
+
+    for (let i = 0; i < this.delegates.length; i++) {
+      const [p, a] = this.delegates[i];
+      if (p(target) && a.maybeAwaken(rendered, target)) {
+        this.awakeIndex = i;
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  apply(toRender: P, target: P, now: DOMHighResTimeStamp): "done" | "continue" {
+    if (this.awakeIndex === null) {
+      throw new Error("apply called while not awake");
+    }
+
+    const [p, a] = this.delegates[this.awakeIndex];
+    if (!p(target)) {
+      a.reset();
+      this.awakeIndex = null;
+      if (!this.maybeAwaken(toRender, target)) {
+        return "done";
+      }
+      return this.apply(toRender, target, now);
+    }
+
+    const result = a.apply(toRender, target, now);
+    if (result === "done") {
+      this.awakeIndex = null;
+    }
+    return result;
+  }
+
+  reset(): void {
+    if (this.awakeIndex !== null) {
+      this.delegates[this.awakeIndex][1].reset();
+      this.awakeIndex = null;
+    }
+  }
+}
+
+type TrivialAnimatorOptions<
+  K extends string,
+  T,
+  P extends { [key in K]: T }
+> = {
+  /**
+   * When copying from the received value to the target value,
+   * we will apply the clone function (defaults to the identity function).
+   * This is useful if you are updating a mutable value and don't want
+   * it to mutate the target when you do so.
+   * @param t The props to clone.
+   * @returns A clone of the props.
+   */
+  cloneFn?: (t: P[K]) => P[K];
+  /**
+   * The equality function to apply when deciding if the two values are
+   * equal. Defaults to ===.
+   *
+   * @param a The first value.
+   * @param b The second value.
+   * @returns True if the values are equal, false otherwise.
+   */
+  equalityFn?: (a: P[K], b: P[K]) => boolean;
+};
+
 /**
  * The trivial animator for a single field in the props. This animator
  * will always animate the field to the target value in a single frame.
@@ -53,18 +161,22 @@ export class TrivialAnimator<K extends string, T, P extends { [key in K]: T }>
   implements Animator<P>
 {
   private readonly key: K;
+  private readonly cloneFn: (p: P[K]) => P[K];
+  private readonly equalityFn: (a: P[K], b: P[K]) => boolean;
 
-  constructor(key: K) {
+  constructor(key: K, opts?: TrivialAnimatorOptions<K, T, P>) {
     this.key = key;
+    this.cloneFn = opts?.cloneFn ?? ((p) => p);
+    this.equalityFn = opts?.equalityFn ?? ((a, b) => a === b);
   }
 
   maybeAwaken(rendered: P, target: P): boolean {
-    return rendered[this.key] !== target[this.key];
+    return !this.equalityFn(rendered[this.key], target[this.key]);
   }
 
-  apply(toRender: P, target: P, now: DOMHighResTimeStamp): 'done' | 'continue' {
-    toRender[this.key] = target[this.key];
-    return 'done';
+  apply(toRender: P, target: P): "done" | "continue" {
+    toRender[this.key] = this.cloneFn(target[this.key]);
+    return "done";
   }
 
   reset(): void {}
@@ -81,13 +193,13 @@ type StdAnimatorOpts = {
    * often and smoothly, replace is appropriate. Otherwise, extend is
    * appropriate.
    *
-   * @default true
+   * @default 'extend'
    */
-  onTargetChange?: 'extend' | 'replace';
+  onTargetChange?: "extend" | "replace";
 };
 
 const defaultAnimatorOpts: Required<StdAnimatorOpts> = {
-  onTargetChange: 'extend',
+  onTargetChange: "extend",
 };
 
 /**
@@ -130,22 +242,34 @@ export class BezierGenericAnimator<P extends object, T> implements Animator<P> {
     return !this.equal(this.getter(rendered), this.getter(target));
   }
 
-  apply(toRender: P, target: P, now: DOMHighResTimeStamp): 'done' | 'continue' {
-    if (this.animation === null && this.equal(this.getter(toRender), this.getter(target))) {
-      return 'done';
+  apply(toRender: P, target: P, now: DOMHighResTimeStamp): "done" | "continue" {
+    if (
+      this.animation === null &&
+      this.equal(this.getter(toRender), this.getter(target))
+    ) {
+      return "done";
     }
 
-    if (this.animation !== null && !this.equal(this.animation.toT, this.getter(target))) {
+    if (
+      this.animation !== null &&
+      !this.equal(this.animation.toT, this.getter(target))
+    ) {
       this.animation = {
-        startedAt: this.opts.onTargetChange === 'extend' ? now : this.animation.startedAt,
+        startedAt:
+          this.opts.onTargetChange === "extend"
+            ? now
+            : this.animation.startedAt,
         from:
-          this.opts.onTargetChange === 'extend'
+          this.opts.onTargetChange === "extend"
             ? calculateAnimValue(this.animation, now)
             : this.animation.from,
         to: 1,
         ease: this.ease,
         duration: this.duration,
-        fromT: this.opts.onTargetChange === 'extend' ? this.getter(toRender) : this.animation.fromT,
+        fromT:
+          this.opts.onTargetChange === "extend"
+            ? this.getter(toRender)
+            : this.animation.fromT,
         toT: this.getter(target),
       };
 
@@ -169,7 +293,7 @@ export class BezierGenericAnimator<P extends object, T> implements Animator<P> {
     if (animIsComplete(this.animation, now)) {
       this.setter(toRender, this.getter(target));
       this.animation = null;
-      return 'done';
+      return "done";
     }
 
     this.setter(
@@ -180,7 +304,7 @@ export class BezierGenericAnimator<P extends object, T> implements Animator<P> {
         calculateAnimValue(this.animation, now)
       )
     );
-    return 'continue';
+    return "continue";
   }
 
   reset(): void {
@@ -223,7 +347,7 @@ export class BezierAnimator<P extends object> implements Animator<P> {
     return this.delegate.maybeAwaken(rendered, target);
   }
 
-  apply(toRender: P, target: P, now: DOMHighResTimeStamp): 'done' | 'continue' {
+  apply(toRender: P, target: P, now: DOMHighResTimeStamp): "done" | "continue" {
     return this.delegate.apply(toRender, target, now);
   }
 
@@ -280,7 +404,7 @@ export class BezierColorAnimator<P extends object> implements Animator<P> {
     return this.delegate.maybeAwaken(rendered, target);
   }
 
-  apply(toRender: P, target: P, now: DOMHighResTimeStamp): 'done' | 'continue' {
+  apply(toRender: P, target: P, now: DOMHighResTimeStamp): "done" | "continue" {
     return this.delegate.apply(toRender, target, now);
   }
 
@@ -344,7 +468,7 @@ export class BezierArrayAnimator<P extends object> implements Animator<P> {
     return this.delegate.maybeAwaken(rendered, target);
   }
 
-  apply(toRender: P, target: P, now: DOMHighResTimeStamp): 'done' | 'continue' {
+  apply(toRender: P, target: P, now: DOMHighResTimeStamp): "done" | "continue" {
     return this.delegate.apply(toRender, target, now);
   }
 
@@ -354,7 +478,9 @@ export class BezierArrayAnimator<P extends object> implements Animator<P> {
 }
 
 type ConcreteBezierAnimatable = number | number[];
-type BezierAnimatable = ConcreteBezierAnimatable | Record<string, ConcreteBezierAnimatable>;
+type BezierAnimatable =
+  | ConcreteBezierAnimatable
+  | Record<string, ConcreteBezierAnimatable>;
 
 /**
  * Inspects the given object to produce animators for all the fields which are
@@ -420,7 +546,7 @@ export const inferAnimators = <
   for (let i = 0; i < keys.length; i++) {
     ((key: keyof ExampleT) => {
       const value = example[key];
-      if (typeof value === 'number') {
+      if (typeof value === "number") {
         result.push(
           new BezierAnimator<P>(
             ease,
@@ -452,10 +578,12 @@ export const inferAnimators = <
             opts
           )
         );
-      } else if (typeof value === 'object') {
+      } else if (typeof value === "object") {
         result.push(
           ...inferAnimators(value, ease, duration, opts, (parent) => {
-            const t = getter ? getter(parent as any) : (parent as any as ExampleT);
+            const t = getter
+              ? getter(parent as any)
+              : (parent as any as ExampleT);
             return t[key] as any;
           })
         );
@@ -482,13 +610,15 @@ export const useAnimationLoop = <P extends object>(
 ): [() => P, Callbacks<undefined>] => {
   const target = useRef<P>() as MutableRefObject<P>;
   const rendered = useRef<P>() as MutableRefObject<P>;
-  const onTargetChanged = useRef<Callbacks<undefined>>() as MutableRefObject<Callbacks<undefined>>;
+  const onTargetChanged = useRef<Callbacks<undefined>>() as MutableRefObject<
+    Callbacks<undefined>
+  >;
   const onRenderedChanged = useRef<Callbacks<undefined>>() as MutableRefObject<
     Callbacks<undefined>
   >;
 
   if (rendered.current === undefined) {
-    if (props.type === 'react-rerender') {
+    if (props.type === "react-rerender") {
       rendered.current = Object.assign({}, props.props);
     } else {
       rendered.current = Object.assign({}, props.props());
@@ -503,23 +633,19 @@ export const useAnimationLoop = <P extends object>(
     onRenderedChanged.current = new Callbacks();
   }
 
-  if (props.type === 'react-rerender') {
+  if (props.type === "react-rerender" && target.current !== props.props) {
     target.current = props.props;
     onTargetChanged.current.call(undefined);
   }
 
-  const propCallbacks = props.type === 'callbacks' ? props.callbacks : undefined;
+  const propCallbacks =
+    props.type === "callbacks" ? props.callbacks : undefined;
   useEffect(() => {
-    if (props.type !== 'callbacks' || propCallbacks === undefined) {
+    if (props.type !== "callbacks" || propCallbacks === undefined) {
       return;
     }
 
-    let active = true;
-
     const handlePropsChanged = () => {
-      if (!active) {
-        return;
-      }
       target.current = props.props.call(undefined);
       onTargetChanged.current.call(undefined);
     };
@@ -528,34 +654,32 @@ export const useAnimationLoop = <P extends object>(
     handlePropsChanged();
 
     return () => {
-      if (active) {
-        active = false;
-        propCallbacks.remove(handlePropsChanged);
-      }
+      propCallbacks.remove(handlePropsChanged);
     };
   }, [props.type, propCallbacks, props.props]);
 
   useEffect(() => {
-    const statuses = animators.map((a) => a.maybeAwaken(rendered.current, target.current));
+    const statuses = animators.map((a) =>
+      a.maybeAwaken(rendered.current, target.current)
+    );
     let animating = statuses.some((s) => s);
-    let interactionHandle: number | null = null;
     let active = true;
 
     const loop = (now: DOMHighResTimeStamp) => {
       if (!active) {
         animating = false;
-        if (interactionHandle !== null) {
-          InteractionManager.clearInteractionHandle(interactionHandle);
-          interactionHandle = null;
-        }
         return;
       }
 
       let stillAnimating = false;
       for (let i = 0; i < animators.length; i++) {
         if (statuses[i]) {
-          const newStatus = animators[i].apply(rendered.current, target.current, now);
-          if (newStatus !== 'continue') {
+          const newStatus = animators[i].apply(
+            rendered.current,
+            target.current,
+            now
+          );
+          if (newStatus !== "continue") {
             statuses[i] = false;
           } else {
             stillAnimating = true;
@@ -567,11 +691,6 @@ export const useAnimationLoop = <P extends object>(
       animating = stillAnimating;
       if (animating) {
         requestAnimationFrame(loop);
-      } else {
-        if (interactionHandle !== null) {
-          InteractionManager.clearInteractionHandle(interactionHandle);
-          interactionHandle = null;
-        }
       }
     };
 
@@ -582,7 +701,10 @@ export const useAnimationLoop = <P extends object>(
 
       let maybeStartAnimating = false;
       for (let i = 0; i < animators.length; i++) {
-        if (!statuses[i] && animators[i].maybeAwaken(rendered.current, target.current)) {
+        if (
+          !statuses[i] &&
+          animators[i].maybeAwaken(rendered.current, target.current)
+        ) {
           statuses[i] = true;
           maybeStartAnimating = true;
         }
@@ -590,13 +712,11 @@ export const useAnimationLoop = <P extends object>(
 
       if (maybeStartAnimating && !animating) {
         animating = true;
-        interactionHandle = InteractionManager.createInteractionHandle();
         requestAnimationFrame(loop);
       }
     };
 
     if (animating) {
-      interactionHandle = InteractionManager.createInteractionHandle();
       requestAnimationFrame(loop);
     }
     onTargetChanged.current.add(handleTargetChanged);
@@ -606,10 +726,6 @@ export const useAnimationLoop = <P extends object>(
         return;
       }
       active = false;
-      if (interactionHandle !== null) {
-        InteractionManager.clearInteractionHandle(interactionHandle);
-        interactionHandle = null;
-      }
       onTargetChanged.current.remove(handleTargetChanged);
 
       for (let i = 0; i < animators.length; i++) {

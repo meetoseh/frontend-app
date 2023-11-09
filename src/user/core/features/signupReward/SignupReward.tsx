@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-raw-text */
 import { FeatureComponentProps } from "../../models/Feature";
 import { SignupRewardResources } from "./SignupRewardResources";
 import { styles } from "./SignupRewardStyles";
@@ -13,13 +14,10 @@ import {
 import { View, Text, StyleProp, TextStyle } from "react-native";
 import { SignupRewardState } from "./SignupRewardState";
 import { useStartSession } from "../../../../shared/hooks/useInappNotificationSession";
-import { useWindowSize } from "../../../../shared/hooks/useWindowSize";
 import {
   InterestsContext,
   InterestsContextValue,
 } from "../../../../shared/contexts/InterestsContext";
-import { LinearGradientBackground } from "../../../../shared/anim/LinearGradientBackground";
-import { STANDARD_BLACK_GRAY_GRADIENT } from "../../../../styling/colors";
 import { StatusBar } from "expo-status-bar";
 import { FullscreenView } from "../../../../shared/components/FullscreenView";
 import Svg, { Line } from "react-native-svg";
@@ -31,10 +29,9 @@ import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks"
 import { setVWC } from "../../../../shared/lib/setVWC";
 import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
 import { FilledInvertedButton } from "../../../../shared/components/FilledInvertedButton";
-import {
-  useTimedValue,
-  useTimedValueWithCallbacks,
-} from "../../../../shared/hooks/useTimedValue";
+import { useTimedValueWithCallbacks } from "../../../../shared/hooks/useTimedValue";
+import { SvgLinearGradientBackground } from "../../../../shared/anim/SvgLinearGradientBackground";
+import { useContentWidth } from "../../../../shared/lib/useContentWidth";
 
 /**
  * Rewards the user for completing signup.
@@ -74,7 +71,7 @@ export const SignupReward = ({
     resources.get().session?.storeAction?.call(undefined, "next", null);
     resources.get().session?.reset?.call(undefined);
     state.get().ian?.onShown?.call(undefined);
-  }, [state, resources]);
+  }, [state, resources, clickBleedthroughProtection]);
 
   const checklistItems = useMemo(
     (): ReactElement[] => getChecklistItems(interests),
@@ -92,24 +89,28 @@ export const SignupReward = ({
     [submitTextStyleWVWC]
   );
 
-  const windowSize = useWindowSize();
+  const contentWidth = useContentWidth();
 
   return (
     <View style={styles.container}>
-      <LinearGradientBackground
+      <SvgLinearGradientBackground
         state={{
           type: "react-rerender",
-          props: STANDARD_BLACK_GRAY_GRADIENT,
+          props: Colors.STANDARD_BLACK_GRAY_GRADIENT_SVG,
         }}
       >
         <FullscreenView style={styles.background}>
-          <View style={{ ...styles.content, width: windowSize.width }}>
+          <View style={{ ...styles.content, width: contentWidth }}>
             {title}
-            <Svg width={windowSize.width - 64} height={1}>
+            <Svg
+              width={contentWidth}
+              height={1}
+              viewBox={`0 0 ${contentWidth} 1`}
+            >
               <Line
                 x1={0.5}
                 y1={0.5}
-                x2={windowSize.width - 64.5}
+                x2={contentWidth - 0.5}
                 y2={0.5}
                 stroke={Colors.WHITE}
                 strokeWidth={1}
@@ -132,7 +133,7 @@ export const SignupReward = ({
             <View
               style={{
                 ...styles.submitContainer,
-                width: windowSize.width - 64,
+                width: contentWidth,
               }}
             >
               <FilledInvertedButton
@@ -149,7 +150,7 @@ export const SignupReward = ({
             </View>
           </View>
         </FullscreenView>
-      </LinearGradientBackground>
+      </SvgLinearGradientBackground>
       <StatusBar style="light" />
     </View>
   );
@@ -197,9 +198,9 @@ const getChecklistItems = (
   interests: InterestsContextValue
 ): ReactElement[] => {
   const result = [
-    <ChecklistItem>Classes for every mood</ChecklistItem>,
-    <ChecklistItem>Daily check-ins</ChecklistItem>,
-    <ChecklistItem>Bite-sized to fit your schedule</ChecklistItem>,
+    <ChecklistItem key="1">Classes for every mood</ChecklistItem>,
+    <ChecklistItem key="2">Daily check-ins</ChecklistItem>,
+    <ChecklistItem key="3">Bite-sized to fit your schedule</ChecklistItem>,
   ];
 
   if (interests.state !== "loaded") {
@@ -207,15 +208,21 @@ const getChecklistItems = (
   }
 
   if (interests.primaryInterest === "anxiety") {
-    result[0] = <ChecklistItem>Variety of unique themes</ChecklistItem>;
+    result[0] = <ChecklistItem key="1">Variety of unique themes</ChecklistItem>;
   } else if (interests.primaryInterest === "sleep") {
-    result[0] = <ChecklistItem>Classes to induce any dream</ChecklistItem>;
-  } else if (interests.primaryInterest === "isaiah-course") {
-    result[0] = <ChecklistItem>Access to Isaiah&rsquo;s Course</ChecklistItem>;
-    result[1] = (
-      <ChecklistItem>100s of other classes for any mood</ChecklistItem>
+    result[0] = (
+      <ChecklistItem key="1">Classes to induce any dream</ChecklistItem>
     );
-    result[2] = <ChecklistItem>Reminders to keep you motivated</ChecklistItem>;
+  } else if (interests.primaryInterest === "isaiah-course") {
+    result[0] = (
+      <ChecklistItem key="1">Access to Isaiah&rsquo;s Course</ChecklistItem>
+    );
+    result[1] = (
+      <ChecklistItem key="2">100s of other classes for any mood</ChecklistItem>
+    );
+    result[2] = (
+      <ChecklistItem key="3">Reminders to keep you motivated</ChecklistItem>
+    );
   }
   return result;
 };

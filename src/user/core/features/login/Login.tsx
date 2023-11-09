@@ -47,8 +47,10 @@ import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
 import { FilledInvertedButton } from "../../../../shared/components/FilledInvertedButton";
 import Email from "./icons/Email";
 import { useValuesWithCallbacksEffect } from "../../../../shared/hooks/useValuesWithCallbacksEffect";
+import { useIsTablet } from "../../../../shared/lib/useIsTablet";
 
-const DEV_ACCOUNT_USER_IDENTITY_ID = "guest9847";
+/* guest -> random guest */
+const DEV_ACCOUNT_USER_IDENTITY_ID = "guest";
 
 const prepareLink = async (
   provider: "Google" | "SignInWithApple" | "Direct"
@@ -442,7 +444,7 @@ export const Login = ({
             "Content-Type": "application/json; charset=utf-8",
           },
           body: JSON.stringify({
-            sub: DEV_ACCOUNT_USER_IDENTITY_ID,
+            sub: selectDevAccountSub(),
             refresh_token_desired: true,
           }),
         },
@@ -485,6 +487,8 @@ export const Login = ({
     })();
   }, []);
 
+  const isTablet = useIsTablet();
+
   if (!checkedMessagePipe) {
     return <SplashScreen />;
   }
@@ -497,7 +501,11 @@ export const Login = ({
       />
       <OsehImageBackgroundFromStateValueWithCallbacks
         state={backgroundVWC}
-        style={{ ...styles.content, width: contentWidth }}
+        style={{
+          ...styles.content,
+          ...(isTablet ? styles.contentTablet : {}),
+          width: contentWidth,
+        }}
       >
         <OsehWordmarkWhite width={163} height={40} style={styles.logo} />
         <Text style={styles.message} onLongPress={onLongPressMessage}>
@@ -556,3 +564,11 @@ export const Login = ({
     </View>
   );
 };
+
+function selectDevAccountSub() {
+  if (DEV_ACCOUNT_USER_IDENTITY_ID === "guest") {
+    return `guest-${Math.random().toString(36).substring(2)}`;
+  }
+
+  return DEV_ACCOUNT_USER_IDENTITY_ID;
+}

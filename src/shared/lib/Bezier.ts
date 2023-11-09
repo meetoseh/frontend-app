@@ -35,6 +35,9 @@ SOFTWARE.
 // Modified 04/04/2023 Timothy Moore:
 // - added easeInBack, easeOutBack, easeInOutBack
 
+// Modified 11/6/2023 Timothy Moore:
+// - added linear
+
 // General Bézier Curve, any number of dimensions or control points
 //
 // All math from http://en.wikipedia.org/wiki/B%C3%A9zier_curve#Generalization
@@ -114,7 +117,13 @@ export class Bezier {
     let g = new_vec(this.cardinality);
 
     for (let i = 0; i <= n - 1; ++i) {
-      g = vec_add(g, sca_mul(b_i_n_t(i, n - 1, t), vec_sub(this.points[i + 1], this.points[i])));
+      g = vec_add(
+        g,
+        sca_mul(
+          b_i_n_t(i, n - 1, t),
+          vec_sub(this.points[i + 1], this.points[i])
+        )
+      );
     }
 
     return sca_mul(n, g);
@@ -251,6 +260,16 @@ export const easeOut = new Bezier([
   [0, 0],
   [0.0, 0.0],
   [0.58, 1.0],
+  [1, 1],
+]);
+
+/**
+ * The linear bezier function
+ */
+export const linear = new Bezier([
+  [0, 0],
+  [0.0, 0.0],
+  [1.0, 1.0],
   [1, 1],
 ]);
 

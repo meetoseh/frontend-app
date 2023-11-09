@@ -153,7 +153,10 @@ export const FavoritesList = ({
       setItem: (newItem: MinimalJourney) => void
     ) => ReactElement
   >(() => {
-    return (item, setItem) => (
+    const MyBoundComponent = (
+      item: ValueWithCallbacks<MinimalJourney>,
+      setItem: (newItem: MinimalJourney) => void
+    ) => (
       <HistoryItemComponent
         gotoJourneyByUid={gotoJourneyByUID}
         item={item}
@@ -161,6 +164,7 @@ export const FavoritesList = ({
         instructorImages={imageHandler}
       />
     );
+    return MyBoundComponent;
   }, [gotoJourneyByUID, imageHandler]);
 
   return (
@@ -176,7 +180,9 @@ export const FavoritesList = ({
           gap={10}
           initialComponentHeight={75}
           emptyElement={
-            <View style={styles.emptyContainer}>
+            <View
+              style={{ ...styles.emptyContainer, width: windowSize.width - 64 }}
+            >
               <Text style={styles.emptyText}>
                 You don&rsquo;t have any favorite classes yet
               </Text>

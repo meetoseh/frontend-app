@@ -18,8 +18,7 @@ export const styles = StyleSheet.create({
     flexWrap: "nowrap",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingLeft: 16,
     backgroundColor: Colors.TRANSPARENT_WHITE,
     borderRadius: 10,
   },
@@ -33,7 +32,7 @@ export const styles = StyleSheet.create({
     fontSize: 20,
     lineHeight: 27,
     color: Colors.WHITISH_BLUE,
-    marginBottom: 10,
+    marginBottom: 4,
   },
   instructor: {
     flexDirection: "row",
@@ -53,7 +52,14 @@ export const styles = StyleSheet.create({
     letterSpacing: 0.25,
     color: Colors.WHITISH_BLUE,
   },
-  favoritedContainer: {
-    padding: 8,
+  favoritedContainer: {},
+  favoritedPressable: {
+    paddingTop: 22,
+    paddingBottom: 22,
+    paddingRight: 24,
+    paddingLeft: 8,
+  },
+  favoritedPressableTablet: {
+    paddingLeft: 32,
   },
 });

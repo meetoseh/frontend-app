@@ -4,7 +4,6 @@ import { FeatureComponentProps } from "../../models/Feature";
 import { SettingsResources } from "./SettingsResources";
 import { SettingsState } from "./SettingsState";
 import { styles } from "./SettingsStyles";
-import { useWindowSize } from "../../../../shared/hooks/useWindowSize";
 import {
   ValueWithCallbacks,
   WritableValueWithCallbacks,
@@ -36,11 +35,12 @@ import {
   ErrorBanner,
   ErrorBannerText,
 } from "../../../../shared/components/ErrorBanner";
-import { LinearGradientBackground } from "../../../../shared/anim/LinearGradientBackground";
 import * as Linking from "expo-linking";
 import { CloseButton } from "../../../../shared/components/CloseButton";
-import { STANDARD_BLACK_GRAY_GRADIENT } from "../../../../styling/colors";
+import { STANDARD_BLACK_GRAY_GRADIENT_SVG } from "../../../../styling/colors";
 import { FullscreenView } from "../../../../shared/components/FullscreenView";
+import { SvgLinearGradientBackground } from "../../../../shared/anim/SvgLinearGradientBackground";
+import { useContentWidth } from "../../../../shared/lib/useContentWidth";
 
 /**
  * Shows a basic settings screen for the user. Requires a login context and a modal
@@ -75,13 +75,17 @@ export const Settings = ({
       // logout finishes as contexts are slower than setShow
       setTimeout(() => state.get().setShow(false, true), 1000);
     }
-  }, [loginContext]);
+  }, [loginContext, state]);
 
   useErrorModal(modalContext.modals, errorVWC, "settings");
 
   const onClickX = useCallback(() => {
     state.get().setShow(false, true);
   }, [state]);
+
+  const updateNotificationTimes = useCallback(() => {
+    resources.get().gotoEditReminderTimes();
+  }, [resources]);
 
   const onContactSupport = useCallback(() => {
     Linking.openURL("mailto:hi@oseh.com");
@@ -95,7 +99,7 @@ export const Settings = ({
     Linking.openURL("https://www.oseh.com/terms");
   }, []);
 
-  const windowSize = useWindowSize();
+  const contentWidth = useContentWidth();
 
   return (
     <RenderGuardedComponent
@@ -103,34 +107,36 @@ export const Settings = ({
       component={(loadError) => {
         if (loadError !== null) {
           return (
-            <View
+            <FullscreenView
               style={{
                 ...styles.container,
                 backgroundColor: "black",
-                width: windowSize.width,
-                height: windowSize.height,
               }}
             >
               <View style={styles.content}>{loadError}</View>
               <StatusBar style="light" />
-            </View>
+            </FullscreenView>
           );
         }
 
         return (
           <View style={styles.container}>
-            <LinearGradientBackground
+            <SvgLinearGradientBackground
               state={{
                 type: "react-rerender",
-                props: STANDARD_BLACK_GRAY_GRADIENT,
+                props: STANDARD_BLACK_GRAY_GRADIENT_SVG,
               }}
             >
               <FullscreenView style={styles.background}>
                 <CloseButton onPress={onClickX} />
-                <View
-                  style={{ ...styles.content, width: windowSize.width - 64 }}
-                >
+                <View style={{ ...styles.content, width: contentWidth }}>
                   <View style={styles.bigLinks}>
+                    <Pressable
+                      style={styles.bigLinkContainer}
+                      onPress={updateNotificationTimes}
+                    >
+                      <Text style={styles.bigLinkText}>Edit Reminders</Text>
+                    </Pressable>
                     <Pressable
                       style={styles.bigLinkContainer}
                       onPress={onContactSupport}
@@ -182,7 +188,7 @@ export const Settings = ({
                   </View>
                 </View>
               </FullscreenView>
-            </LinearGradientBackground>
+            </SvgLinearGradientBackground>
             <ModalsOutlet modals={modals} />
             <StatusBar style="light" />
           </View>
@@ -274,7 +280,6 @@ const useHandleDeleteAccount = (
         }
 
         await loginContext.setAuthTokens(null);
-        window.location.href = "/";
       } catch (e) {
         console.error(e);
         const err = await describeError(e);
@@ -751,7 +756,7 @@ const SettingsForceDelete = ({
   const cancellingVWC = useWritableValueWithCallbacks(() => false);
   const confirmPressingInVWC = useWritableValueWithCallbacks(() => false);
   const cancelPressingInVWC = useWritableValueWithCallbacks(() => false);
-  const windowSize = useWindowSize();
+  const contentWidth = useContentWidth();
 
   const doConfirm = useCallback(async () => {
     if (confirmingVWC.get() || onConfirm === null) {
@@ -881,7 +886,7 @@ const SettingsForceDelete = ({
     <View
       style={{
         ...styles.deleteConfirm,
-        width: Math.min(windowSize.width, 279),
+        width: Math.min(contentWidth, 279),
       }}
     >
       <Text style={styles.deleteConfirmTitle}>{title}</Text>

@@ -4,10 +4,7 @@ import { FeatureComponentProps } from "../../models/Feature";
 import { FavoritesResources } from "./FavoritesResources";
 import { FavoritesState } from "./FavoritesState";
 import { useOsehImageStateRequestHandler } from "../../../../shared/images/useOsehImageStateRequestHandler";
-import {
-  useWindowSize,
-  useWindowSizeValueWithCallbacks,
-} from "../../../../shared/hooks/useWindowSize";
+import { useWindowSizeValueWithCallbacks } from "../../../../shared/hooks/useWindowSize";
 import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
 import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks";
 import { JourneyRef } from "../../../journey/models/JourneyRef";
@@ -23,13 +20,12 @@ import { HistoryList } from "../../../favorites/components/HistoryList";
 import { useUnwrappedValueWithCallbacks } from "../../../../shared/hooks/useUnwrappedValueWithCallbacks";
 import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMappedValuesWithCallbacks";
 import { StatusBar } from "expo-status-bar";
-import {
-  ModalProvider,
-  Modals,
-} from "../../../../shared/contexts/ModalContext";
+import { ModalProvider } from "../../../../shared/contexts/ModalContext";
 import { JourneyRouter } from "../../../journey/JourneyRouter";
 import { FavoritesList } from "../../../favorites/components/FavoritesList";
 import { CourseJourneysList } from "../../../favorites/components/CourseJourneysList";
+import { useContentWidth } from "../../../../shared/lib/useContentWidth";
+import { useIsTablet } from "../../../../shared/lib/useIsTablet";
 
 /**
  * The top-level component which shows the favorites/history/courses tabbed pane.
@@ -87,7 +83,8 @@ export const Favorites = ({
   const onCloseClick = useCallback(() => {
     stateVWC.get().setShow(false, true);
   }, [stateVWC]);
-  const innerWidth = Math.min(screenSize.width, styles.content.maxWidth) - 64;
+  const isTablet = useIsTablet();
+  const innerWidth = useContentWidth();
 
   return (
     <RenderGuardedComponent
@@ -119,7 +116,12 @@ export const Favorites = ({
                     width: screenSize.width,
                   }}
                 >
-                  <View style={{ ...styles.profile, width: innerWidth }}>
+                  <View
+                    style={{
+                      ...styles.profile,
+                      width: isTablet ? screenSize.width - 64 : innerWidth,
+                    }}
+                  >
                     <MyProfilePicture
                       imageHandler={imageHandler}
                       style={styles.profilePicture}

@@ -47,9 +47,6 @@ const numToGLSLFloat = (num: number): string => {
   return result;
 };
 
-const vecToGLSLVec = (vec: number[]): string =>
-  `vec${vec.length}(${vec.map(numToGLSLFloat).join(", ")})`;
-
 const colorToGLSLPrecomputedColor = (
   color: [number, number, number, number]
 ): string => {
@@ -429,6 +426,9 @@ const LinearGradientRenderer: SinglePassWebGLComponentRenderer<
  * then using the transform property on a standard view to stretch it to fit the
  * container. However, this doesn't work on Android, since skew isn't implemented
  * correctly there: https://github.com/facebook/react-native/issues/27649
+ *
+ * See also: SvgLinearGradientBackground, an alternative implementation of the same
+ * idea
  */
 export const LinearGradientBackground = ({
   state: stateRaw,

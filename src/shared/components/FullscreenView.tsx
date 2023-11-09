@@ -11,6 +11,7 @@ import { useIsEffectivelyTinyScreen } from "../hooks/useIsEffectivelyTinyScreen"
 export const FullscreenView = ({
   style,
   alwaysScroll,
+  heightScale,
   children,
 }: PropsWithChildren<{
   style?: StyleProp<ViewStyle>;
@@ -23,6 +24,11 @@ export const FullscreenView = ({
    * if the screen is tight.
    */
   alwaysScroll?: boolean;
+  /**
+   * If specified, if we do not switch to a scroll view then the applied height
+   * of the view is scaled by this factor. Useful for modals.
+   */
+  heightScale?: number;
 }>) => {
   const isTinyScreen = useIsEffectivelyTinyScreen();
   const windowSize = useWindowSize();
@@ -32,7 +38,7 @@ export const FullscreenView = ({
       <View
         style={Object.assign({}, style, {
           width: windowSize.width,
-          height: windowSize.height,
+          height: windowSize.height * (heightScale ?? 1),
         })}
       >
         {children}

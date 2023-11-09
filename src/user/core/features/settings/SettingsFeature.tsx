@@ -8,6 +8,7 @@ import { SettingsResources } from "./SettingsResources";
 import { LoginContext } from "../../../../shared/contexts/LoginContext";
 import { useValueWithCallbacksEffect } from "../../../../shared/hooks/useValueWithCallbacksEffect";
 import { Settings } from "./Settings";
+import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
 import { apiFetch } from "../../../../shared/lib/apiFetch";
 import { describeError } from "../../../../shared/lib/describeError";
 
@@ -19,7 +20,7 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
   useWorldState: () => {
     const showVWC = useWritableValueWithCallbacks<boolean>(() => false);
     const setShow = useCallback(
-      (wants: boolean, updateWindowHistory: boolean) => {
+      (wants: boolean) => {
         setVWC(showVWC, wants);
       },
       [showVWC]
@@ -33,13 +34,29 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
       })
     );
   },
-  useResources: (stateVWC, requiredVWC) => {
+  useResources: (stateVWC, requiredVWC, allStatesVWC) => {
     const loginContext = useContext(LoginContext);
     const haveProVWC = useWritableValueWithCallbacks<boolean | undefined>(
       () => undefined
     );
     const loadErrorVWC = useWritableValueWithCallbacks<ReactElement | null>(
       () => null
+    );
+    const gotoEditTimesVWC = useMappedValueWithCallbacks(
+      allStatesVWC,
+      (allStates) => {
+        return () => {
+          allStates.requestNotificationTime.setClientRequested(true);
+        };
+      },
+      {
+        inputEqualityFn: (a, b) => {
+          return (
+            a.requestNotificationTime.setClientRequested ===
+            b.requestNotificationTime.setClientRequested
+          );
+        },
+      }
     );
 
     useValueWithCallbacksEffect(
@@ -112,13 +129,14 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
     );
 
     return useMappedValuesWithCallbacks(
-      [haveProVWC, loadErrorVWC],
+      [haveProVWC, loadErrorVWC, gotoEditTimesVWC],
       (): SettingsResources => {
         if (loadErrorVWC.get() !== null) {
           return {
             loading: false,
             havePro: undefined,
             loadError: loadErrorVWC.get(),
+            gotoEditReminderTimes: () => {},
           };
         }
 
@@ -126,6 +144,7 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
           loading: haveProVWC.get() === undefined,
           havePro: haveProVWC.get(),
           loadError: null,
+          gotoEditReminderTimes: gotoEditTimesVWC.get(),
         };
       }
     );

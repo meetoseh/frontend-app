@@ -1,7 +1,10 @@
-import { MutableRefObject, useEffect, useMemo, useRef } from 'react';
-import { WritableValueWithCallbacks, useWritableValueWithCallbacks } from '../lib/Callbacks';
-import { Animator, useAnimationLoop } from './AnimationLoop';
-import { VariableStrategyProps } from './VariableStrategyProps';
+import { MutableRefObject, useEffect, useMemo, useRef } from "react";
+import {
+  WritableValueWithCallbacks,
+  useWritableValueWithCallbacks,
+} from "../lib/Callbacks";
+import { Animator, useAnimationLoop } from "./AnimationLoop";
+import { VariableStrategyProps } from "./VariableStrategyProps";
 
 /**
  * Creates a new writable value with callbacks and uses it to push
@@ -16,14 +19,19 @@ import { VariableStrategyProps } from './VariableStrategyProps';
  *   called once per frame when awake (see `useAnimationLoop`)
  */
 export const useAnimatedValueWithCallbacks = <T extends object>(
-  initialValue: T,
+  initialValue: T | (() => T),
   animators: Animator<T>[] | (() => Animator<T>[]),
   render: (value: T) => void
 ): WritableValueWithCallbacks<T> => {
-  const target = useWritableValueWithCallbacks(() => initialValue);
+  const target = useWritableValueWithCallbacks(() => {
+    if (typeof initialValue === "function") {
+      return initialValue();
+    }
+    return initialValue;
+  });
   const targetAsVariableStrategyProps = useMemo<VariableStrategyProps<T>>(
     () => ({
-      type: 'callbacks',
+      type: "callbacks",
       props: () => target.get(),
       callbacks: target.callbacks,
     }),
@@ -31,7 +39,7 @@ export const useAnimatedValueWithCallbacks = <T extends object>(
   );
 
   const animatorsRef = useRef<Animator<T>[]>();
-  if (typeof animators === 'function') {
+  if (typeof animators === "function") {
     if (animatorsRef.current === undefined) {
       animatorsRef.current = animators();
     }
@@ -44,7 +52,9 @@ export const useAnimatedValueWithCallbacks = <T extends object>(
     animatorsRef.current
   );
 
-  const renderRef = useRef<(value: T) => void>() as MutableRefObject<(value: T) => void>;
+  const renderRef = useRef<(value: T) => void>() as MutableRefObject<
+    (value: T) => void
+  >;
   renderRef.current = render;
 
   useEffect(() => {

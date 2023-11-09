@@ -123,7 +123,7 @@ export const GoalDaysPerWeek = ({
       const err = await describeError(e);
       setVWC(error, err);
     }
-  }, [state, resources, error, goal, loginContext]);
+  }, [state, resources, error, goal, loginContext, preventClickBleedthrough]);
 
   const title = useMemo(() => getTitle(interests), [interests]);
   const modals = useWritableValueWithCallbacks<Modals>(() => []);
@@ -192,6 +192,7 @@ const Title = ({ children }: { children: string }): ReactElement => {
 
 const getTitle = (interests: InterestsContextValue): ReactElement => {
   const defaultCopy = (
+    // eslint-disable-next-line react-native/no-raw-text
     <Title>
       Let&rsquo;s set a goal, how many days a week do you want to check-in?
     </Title>
@@ -201,6 +202,7 @@ const getTitle = (interests: InterestsContextValue): ReactElement => {
     return defaultCopy;
   } else if (interests.primaryInterest === "sleep") {
     return (
+      // eslint-disable-next-line react-native/no-raw-text
       <Title>
         Regular sleep starts with a regular schedule: how many days a week do
         you want to check-in?

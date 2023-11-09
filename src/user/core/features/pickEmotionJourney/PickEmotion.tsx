@@ -35,10 +35,6 @@ import {
 import { ease } from "../../../../shared/lib/Bezier";
 import { useAnimatedValueWithCallbacks } from "../../../../shared/anim/useAnimatedValueWithCallbacks";
 import { useWindowSizeValueWithCallbacks } from "../../../../shared/hooks/useWindowSize";
-import {
-  LinearGradientBackground,
-  LinearGradientState,
-} from "../../../../shared/anim/LinearGradientBackground";
 import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
 import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMappedValuesWithCallbacks";
 import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
@@ -55,6 +51,10 @@ import { StatusBar } from "expo-status-bar";
 import { useIsEffectivelyTinyScreen } from "../../../../shared/hooks/useIsEffectivelyTinyScreen";
 import { setVWC } from "../../../../shared/lib/setVWC";
 import { useContentWidth } from "../../../../shared/lib/useContentWidth";
+import {
+  SvgLinearGradientBackground,
+  SvgLinearGradientBackgroundState,
+} from "../../../../shared/anim/SvgLinearGradientBackground";
 
 /**
  * The settings for the profile pictures
@@ -792,21 +792,21 @@ const Word = ({
     onWordClick(word, idx);
   }, [word, idx, onWordClick]);
 
-  const gradientState = useWritableValueWithCallbacks<LinearGradientState>(
-    () => ({
-      stops: [
-        {
-          color: [255, 255, 255, 0.2],
-          offset: 0,
-        },
-        {
-          color: [255, 255, 255, 0.2],
-          offset: 1,
-        },
-      ],
-      angleDegreesClockwiseFromTop: 95.08,
-    })
-  );
+  const gradientState =
+    useWritableValueWithCallbacks<SvgLinearGradientBackgroundState>(() => ({
+      stop1: {
+        color: [255, 255, 255, 0.2],
+        offset: 0,
+      },
+      stop2: {
+        color: [255, 255, 255, 0.2],
+        offset: 1,
+      },
+      x1: 0.4577,
+      y1: 0.31122,
+      x2: 0.75376,
+      y2: 0.95651,
+    }));
   const unscaledSizeRef = useRef<Size | undefined>();
   const pressableRef = useRef<View>(null);
   const target = useAnimatedValueWithCallbacks<WordSetting>(
@@ -887,17 +887,18 @@ const Word = ({
         shouldRasterizeIOS: val.progress !== 0 && val.progress !== 1,
       });
       gradientState.set({
-        stops: [
-          {
-            color: [...val.backgroundGradient.color1],
-            offset: 0.0249,
-          },
-          {
-            color: [...val.backgroundGradient.color2],
-            offset: 0.9719,
-          },
-        ],
-        angleDegreesClockwiseFromTop: 95.08,
+        stop1: {
+          color: [...val.backgroundGradient.color1],
+          offset: 0,
+        },
+        stop2: {
+          color: [...val.backgroundGradient.color2],
+          offset: 1,
+        },
+        x1: 0.4577,
+        y1: 0.31122,
+        x2: 0.75376,
+        y2: 0.95651,
       });
       gradientState.callbacks.call(undefined);
 
@@ -1008,7 +1009,7 @@ const Word = ({
   }, [posVWC, variantVWC, target, pressedVWC, idx, sizeVWC]);
 
   const gradientStateVariableStrategyProps = useMemo<
-    VariableStrategyProps<LinearGradientState>
+    VariableStrategyProps<SvgLinearGradientBackgroundState>
   >(
     () => ({
       type: "callbacks",
@@ -1029,7 +1030,7 @@ const Word = ({
       }}
       ref={outerRef}
     >
-      <LinearGradientBackground state={gradientStateVariableStrategyProps}>
+      <SvgLinearGradientBackground state={gradientStateVariableStrategyProps}>
         <Pressable
           ref={pressableRef}
           style={styles.wordPressable}
@@ -1037,7 +1038,7 @@ const Word = ({
         >
           <Text style={styles.wordText}>{word}</Text>
         </Pressable>
-      </LinearGradientBackground>
+      </SvgLinearGradientBackground>
     </View>
   );
 };

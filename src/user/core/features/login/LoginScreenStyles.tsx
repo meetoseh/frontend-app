@@ -12,6 +12,9 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-end",
   },
+  contentTablet: {
+    justifyContent: "center",
+  },
   apple: {
     width: 18,
     height: 19,

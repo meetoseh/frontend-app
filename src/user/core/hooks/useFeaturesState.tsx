@@ -1,4 +1,4 @@
-import { ReactElement } from "react";
+import { ReactElement, useCallback, useRef } from "react";
 import { FeatureAllStates } from "../models/FeatureAllStates";
 import { RequestNameFeature } from "../features/requestName/RequestNameFeature";
 import { LoginFeature } from "../features/login/LoginFeature";
@@ -12,6 +12,7 @@ import { AppNotifsFeature } from "../features/appNotifs/AppNotifsFeature";
 import { SignupRewardFeature } from "../features/signupReward/SignupRewardFeature";
 import { GoalDaysPerWeekFeature } from "../features/goalDaysPerWeek/GoalDaysPerWeekFeature";
 import { RequestPhoneFeature } from "../features/requestPhone/RequestPhoneFeature";
+import { RequestNotificationTimeFeature } from "../features/requestNotificationTime/RequestNotificationTimeFeature";
 
 const features = [
   LoginFeature,
@@ -19,6 +20,7 @@ const features = [
   SignupRewardFeature,
   AppNotifsFeature,
   RequestPhoneFeature,
+  RequestNotificationTimeFeature,
   GoalDaysPerWeekFeature,
   SettingsFeature,
   FavoritesFeature,
@@ -102,20 +104,71 @@ export const useFeaturesState = (
     )
   );
 
+  const warnLoadingTimeout = useRef<{
+    idx: number;
+    timeout: NodeJS.Timeout;
+  } | null>(null);
+
+  const onWarnLoadingTimeout = useCallback(() => {
+    const info = warnLoadingTimeout.current;
+    warnLoadingTimeout.current = null;
+
+    if (info === null) {
+      return;
+    }
+
+    const { idx } = info;
+    console.warn(
+      `Loading of feature ${features[idx].identifier} is taking a really long time, dumping state`
+    );
+    console.warn(states[idx].get());
+    console.warn(resources[idx].get());
+  }, [states, resources]);
+
+  const initWarnLoading = useCallback(
+    (idx: number) => {
+      if (warnLoadingTimeout.current?.idx === idx) {
+        return;
+      }
+
+      if (warnLoadingTimeout.current !== null) {
+        clearTimeout(warnLoadingTimeout.current.timeout);
+      }
+
+      warnLoadingTimeout.current = {
+        idx,
+        timeout: setTimeout(onWarnLoadingTimeout, 5000),
+      };
+    },
+    [onWarnLoadingTimeout]
+  );
+
+  const clearWarnLoading = useCallback(() => {
+    if (warnLoadingTimeout.current === null) {
+      return;
+    }
+
+    clearTimeout(warnLoadingTimeout.current.timeout);
+    warnLoadingTimeout.current = null;
+  }, []);
+
   return useMappedValuesWithCallbacks(
     [...required, ...loadingResources],
     () => {
       const req = required.map((r) => r.get());
       for (let i = 0; i < req.length; i++) {
         if (req[i] === undefined) {
+          initWarnLoading(i);
           return undefined;
         }
 
         if (req[i]) {
           if (loadingResources[i].get()) {
+            initWarnLoading(i);
             return undefined;
           }
 
+          clearWarnLoading();
           return features[i].component(states[i] as any, resources[i] as any);
         }
       }

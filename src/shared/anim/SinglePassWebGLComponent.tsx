@@ -233,7 +233,7 @@ export function SinglePassWebGLComponent<
         setRemounting(true);
       }
     },
-    [size, renderedSize, remounting]
+    [renderedSize, remounting]
   );
 
   useEffect(() => {
@@ -297,7 +297,7 @@ export function SinglePassWebGLComponent<
         }
       }
     };
-  }, [renderer, props, propsChanged]);
+  }, [renderer, props, propsChanged, glContext]);
 
   useEffect(() => {
     sizeChanged.add(handleSizeChanged);

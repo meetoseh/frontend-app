@@ -8,7 +8,6 @@ import {
 import { useStateCompat as useState } from "../hooks/useStateCompat";
 import { Pressable, TextStyle, View, ViewStyle } from "react-native";
 import { CustomButtonProps } from "../models/CustomButtonProps";
-import { useWindowSize } from "../hooks/useWindowSize";
 import { InlineOsehSpinner } from "./InlineOsehSpinner";
 import {
   LinearGradientBackground,
@@ -74,7 +73,6 @@ export const FilledButton = ({
     spinnerVariant: "white" | "black" | "primary";
   }
 >): ReactElement => {
-  const screenSize = useWindowSize();
   const handlePress = useCallback(() => {
     if (!disabled) {
       onPress?.();
@@ -107,7 +105,7 @@ export const FilledButton = ({
       ...(disabled ? [styles.disabled] : []),
       ...(spinner ? [styles.containerWithSpinner] : [])
     );
-  }, [pressed, disabled, styles, screenSize.width, width, marginTop]);
+  }, [pressed, disabled, styles, width, marginTop, spinner]);
 
   const childrenContainerStyles = useMemo(() => {
     const cp = Object.assign({}, containerStyles);

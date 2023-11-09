@@ -22,7 +22,6 @@ import { styles } from "./RequestPhoneStyles";
 import { Modals, ModalsOutlet } from "../../../../shared/contexts/ModalContext";
 import * as Linking from "expo-linking";
 import * as Colors from "../../../../styling/colors";
-import { LinearGradientBackground } from "../../../../shared/anim/LinearGradientBackground";
 import { FullscreenView } from "../../../../shared/components/FullscreenView";
 import { StatusBar } from "expo-status-bar";
 import Messages from "./icons/Messages";
@@ -39,6 +38,7 @@ import {
 } from "../../../../shared/components/ErrorBanner";
 import { LinkButton } from "../../../../shared/components/LinkButton";
 import { useContentWidth } from "../../../../shared/lib/useContentWidth";
+import { SvgLinearGradientBackground } from "../../../../shared/anim/SvgLinearGradientBackground";
 
 /**
  * Prompts the user for their phone number, then verifies it.
@@ -277,6 +277,9 @@ export const RequestPhone = ({
       resources
         .get()
         .session?.storeAction?.call(undefined, "verify_success", null);
+      state.get().onAddedPhoneNumber({
+        enabled: !resources.get().appNotifsEnabled,
+      });
       setVWC(step, "done");
     } catch (e) {
       resources
@@ -444,10 +447,10 @@ export const RequestPhone = ({
 
   return (
     <View style={styles.container}>
-      <LinearGradientBackground
+      <SvgLinearGradientBackground
         state={{
           type: "react-rerender",
-          props: Colors.STANDARD_BLACK_GRAY_GRADIENT,
+          props: Colors.STANDARD_BLACK_GRAY_GRADIENT_SVG,
         }}
       >
         <FullscreenView
@@ -504,7 +507,7 @@ export const RequestPhone = ({
                             ...(errorPhone
                               ? styles.errorPhoneInput
                               : undefined),
-                            width: windowSize.width - 64,
+                            width: contentWidth,
                           }}
                           defaultValue={phone}
                           editable={!saving}
@@ -593,7 +596,7 @@ export const RequestPhone = ({
                           autoComplete="sms-otp"
                           style={{
                             ...styles.phoneInput,
-                            width: windowSize.width - 64,
+                            width: contentWidth,
                           }}
                           defaultValue={d.code}
                           editable={!d.saving}
@@ -643,7 +646,7 @@ export const RequestPhone = ({
             />
           </View>
         </FullscreenView>
-      </LinearGradientBackground>
+      </SvgLinearGradientBackground>
       <ModalsOutlet modals={modals} />
       <StatusBar style="light" />
     </View>

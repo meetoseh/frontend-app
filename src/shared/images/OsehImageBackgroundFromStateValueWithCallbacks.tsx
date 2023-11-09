@@ -112,7 +112,7 @@ export const OsehImageBackgroundFromStateValueWithCallbacks = ({
         });
       }
     }
-  }, [state]);
+  }, [state, isTinyScreen]);
 
   useEffect(() => {
     if (childContainerRef.current === null || styleVWC === undefined) {
@@ -157,7 +157,7 @@ export const OsehImageBackgroundFromStateValueWithCallbacks = ({
         });
       }
     }
-  }, [style, styleVWC, isTinyScreen]);
+  }, [style, styleVWC, isTinyScreen, state]);
 
   return (
     <View

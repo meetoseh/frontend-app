@@ -1,4 +1,5 @@
 import { LinearGradientState } from "../shared/anim/LinearGradientBackground";
+import { SvgLinearGradientBackgroundState } from "../shared/anim/SvgLinearGradientBackground";
 
 export const WHITE = "#FFFFFF";
 /**
@@ -18,6 +19,7 @@ export const TRANSPARENT = "rgba(0, 0, 0, 0)";
 export const HALF_TRANSPARENT_WHITE = "rgba(255, 255, 255, 0.5)";
 export const SLIGHTLY_TRANSPARENT_WHITE = "rgba(255, 255, 255, 0.9)";
 export const BLACK_OVERLAY = "rgba(0, 0, 0, 0.5)";
+export const BLACK_SHADOW = "rgba(0, 0, 0, 0.25)";
 export const PROMPT_BACKGROUND = "rgba(239, 240, 256, 0.95)";
 export const PROFILE_PICTURE_BACKGROUND = "#c9d6d6";
 
@@ -37,7 +39,10 @@ export const GRAYSCALE_OFF_BLACK = "#160808";
 export const GRAYSCALE_BODY = "#666060";
 export const GRAYSCALE_LINE = "#DBD7D7";
 export const GRAYSCALE_BLACK = "#191c1d";
-export const GRAYSCALE_WHITE = "#F2F2F3";
+export const GRAYSCALE_WHITE = "#F9F9F9";
+
+export const NEW_GRAYSCALE_DARK_GRAY = "#232323";
+export const NEW_GRAYSCALE_BORDER = "#383838";
 
 export const WHITISH_BLUE = "#EAF0FF";
 export const HALF_TRANSPARENT_WHITISH_BLUE = "rgba(234, 240, 255, 0.5)";
@@ -46,7 +51,7 @@ export const TRANSPARENT_PRIMARY_DEFAULT = "rgba(68, 98, 102, 0.4)";
 export const SLIGHTLY_TRANSPARENT_PRIMARY_DEFAULT =
   "background: rgba(68, 98, 102, 0.9)";
 
-export const STANDARD_BLACK_GRAY_GRADIENT: LinearGradientState = {
+export const STANDARD_BLACK_GRAY_GRADIENT_WEBGL: LinearGradientState = {
   stops: [
     {
       color: [0, 0, 0, 1],
@@ -58,4 +63,35 @@ export const STANDARD_BLACK_GRAY_GRADIENT: LinearGradientState = {
     },
   ],
   angleDegreesClockwiseFromTop: 180,
+};
+
+export const STANDARD_BLACK_GRAY_GRADIENT_SVG: SvgLinearGradientBackgroundState =
+  {
+    stop1: {
+      color: [0, 0, 0, 1],
+      offset: 0,
+    },
+    stop2: {
+      color: [25, 28, 29, 1],
+      offset: 0.37,
+    },
+    x1: 0.5,
+    y1: 1,
+    x2: 0.5,
+    y2: 0,
+  };
+
+export const STANDARD_ACTIVE_GRADIENT_SVG: SvgLinearGradientBackgroundState = {
+  stop1: {
+    color: [87, 184, 162, 1],
+    offset: 0,
+  },
+  stop2: {
+    color: [18, 127, 125, 1],
+    offset: 1,
+  },
+  x1: 0.4577,
+  y1: 0.31122,
+  x2: 0.75376,
+  y2: 0.95651,
 };

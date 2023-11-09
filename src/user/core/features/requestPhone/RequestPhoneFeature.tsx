@@ -1,8 +1,8 @@
-import { useContext, useRef } from "react";
+import { useContext } from "react";
 import { Feature } from "../../models/Feature";
 import { LoginContext } from "../../../../shared/contexts/LoginContext";
 import { RequestPhoneResources } from "./RequestPhoneResources";
-import { RequestPhoneState } from "./RequestPhoneState";
+import { NewPhoneInfo, RequestPhoneState } from "./RequestPhoneState";
 import { RequestPhone } from "./RequestPhone";
 import { useInappNotificationValueWithCallbacks } from "../../../../shared/hooks/useInappNotification";
 import { useInappNotificationSessionValueWithCallbacks } from "../../../../shared/hooks/useInappNotificationSession";
@@ -11,6 +11,8 @@ import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks"
 import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMappedValuesWithCallbacks";
 import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
 import { useReactManagedValueAsValueWithCallbacks } from "../../../../shared/hooks/useReactManagedValueAsValueWithCallbacks";
+import { setVWC } from "../../../../shared/lib/setVWC";
+import { useLogoutHandler } from "../../../../shared/hooks/useLogoutHandler";
 
 export const RequestPhoneFeature: Feature<
   RequestPhoneState,
@@ -28,55 +30,27 @@ export const RequestPhoneFeature: Feature<
       },
     });
     const hasPhoneNumber = useWritableValueWithCallbacks<boolean>(() => false);
-
-    const realHasPhoneNumber =
-      loginContext.userAttributes?.phoneNumber !== null;
-    if (realHasPhoneNumber !== hasPhoneNumber.get()) {
-      hasPhoneNumber.set(realHasPhoneNumber);
-      hasPhoneNumber.callbacks.call(undefined);
-    }
-
-    const realUserSub = loginContext.userAttributes?.sub;
-    const userSub = useWritableValueWithCallbacks<string | undefined>(
-      () => realUserSub
+    setVWC(
+      hasPhoneNumber,
+      typeof loginContext.userAttributes?.phoneNumber === "string"
     );
-    if (realUserSub !== userSub.get()) {
-      userSub.set(realUserSub);
-      userSub.callbacks.call(undefined);
-    }
 
-    const hadPhoneNumber = useRef({
-      sub: realUserSub,
-      hadPn: realHasPhoneNumber,
+    const justAddedPhoneNumber =
+      useWritableValueWithCallbacks<NewPhoneInfo | null>(() => null);
+
+    useLogoutHandler(() => {
+      setVWC(justAddedPhoneNumber, null);
     });
-    if (hadPhoneNumber.current.sub !== realUserSub) {
-      hadPhoneNumber.current = {
-        sub: realUserSub,
-        hadPn: realHasPhoneNumber,
-      };
-    }
-
-    const justAddedPhoneNumber = useMappedValuesWithCallbacks(
-      [hasPhoneNumber, userSub],
-      (): string | null => {
-        if (hadPhoneNumber.current.hadPn) {
-          return null;
-        }
-
-        if (hasPhoneNumber.get() && realUserSub !== undefined) {
-          return realUserSub;
-        }
-
-        return null;
-      }
-    );
 
     return useMappedValuesWithCallbacks(
-      [onboardingPhoneNumberIAN, justAddedPhoneNumber, hasPhoneNumber, userSub],
+      [onboardingPhoneNumberIAN, justAddedPhoneNumber, hasPhoneNumber],
       (): RequestPhoneState => ({
         onboardingPhoneNumberIAN: onboardingPhoneNumberIAN.get(),
         hasPhoneNumber: hasPhoneNumber.get(),
-        justAddedPhoneNumber: justAddedPhoneNumber.get() === userSub.get(),
+        justAddedPhoneNumber: justAddedPhoneNumber.get(),
+        onAddedPhoneNumber: (info) => {
+          setVWC(justAddedPhoneNumber, info, () => false);
+        },
       })
     );
   },

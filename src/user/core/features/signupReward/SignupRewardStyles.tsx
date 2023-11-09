@@ -8,11 +8,6 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: Colors.GRAYSCALE_BLACK,
   },
-  innerContainer: {
-    flexDirection: "column",
-    justifyContent: "flex-start",
-    alignItems: "center",
-  },
   background: {
     flexDirection: "column",
     alignItems: "center",

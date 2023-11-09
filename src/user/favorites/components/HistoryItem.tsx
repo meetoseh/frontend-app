@@ -21,6 +21,7 @@ import { ModalContext } from "../../../shared/contexts/ModalContext";
 import FullHeartIcon from "../../journey/icons/FullHeartIcon";
 import EmptyHeartIcon from "../../journey/icons/EmptyHeartIcon";
 import { useWindowSize } from "../../../shared/hooks/useWindowSize";
+import { useIsTablet } from "../../../shared/lib/useIsTablet";
 
 type HistoryItemProps = {
   /**
@@ -121,8 +122,9 @@ export const HistoryItem = ({
     modalContext.modals
   );
 
+  const isTablet = useIsTablet();
   const ellipsedTitle = useMappedValueWithCallbacks(itemVWC, (item) =>
-    textOverflowEllipses(item.title, 15)
+    isTablet ? item.title : textOverflowEllipses(item.title, 15)
   );
   const instructorName = useMappedValueWithCallbacks(
     itemVWC,
@@ -185,15 +187,30 @@ export const HistoryItem = ({
             props={likingVWC}
             component={(liking) =>
               liking ? (
-                <InlineOsehSpinner
-                  size={{ type: "react-rerender", props: { height: 24 } }}
-                  variant="white"
-                />
+                <View
+                  style={Object.assign(
+                    {},
+                    styles.favoritedPressable,
+                    isTablet ? styles.favoritedPressableTablet : undefined
+                  )}
+                >
+                  <InlineOsehSpinner
+                    size={{ type: "react-rerender", props: { height: 24 } }}
+                    variant="white"
+                  />
+                </View>
               ) : (
                 <RenderGuardedComponent
                   props={favorited}
                   component={(favorited) => (
-                    <Pressable onPress={onToggleFavorited}>
+                    <Pressable
+                      onPress={onToggleFavorited}
+                      style={Object.assign(
+                        {},
+                        styles.favoritedPressable,
+                        isTablet ? styles.favoritedPressableTablet : undefined
+                      )}
+                    >
                       {favorited ? <FullHeartIcon /> : <EmptyHeartIcon />}
                     </Pressable>
                   )}

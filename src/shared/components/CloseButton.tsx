@@ -4,6 +4,7 @@ import { Platform, Pressable, View, ViewStyle } from "react-native";
 import { useTopBarHeight } from "../hooks/useTopBarHeight";
 import { styles } from "./CloseButtonStyles";
 import Close from "../icons/Close";
+import * as Colors from "../../styling/colors";
 
 type CloseButtonProps = {
   /**
@@ -21,6 +22,12 @@ type CloseButtonProps = {
    * Additional styles to apply to the button container, e.g., opacity
    */
   bonusStyle?: ViewStyle;
+
+  /**
+   * The icon variant to use.
+   * @default 'light'
+   */
+  variant?: "light" | "dark";
 };
 
 /**
@@ -28,6 +35,7 @@ type CloseButtonProps = {
  */
 export const CloseButton = ({
   disabled,
+  variant,
   onPress,
   bonusStyle,
 }: CloseButtonProps): ReactElement => {
@@ -69,7 +77,13 @@ export const CloseButton = ({
         onPressOut={handlePressOut}
       >
         <View style={styles.paddingStyle}>
-          <Close width={14} height={14} />
+          <Close
+            width={14}
+            height={14}
+            fill={
+              variant === "dark" ? Colors.GRAYSCALE_DARK_GRAY : Colors.WHITE
+            }
+          />
         </View>
       </Pressable>
     </View>

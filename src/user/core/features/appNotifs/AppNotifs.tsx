@@ -1,4 +1,4 @@
-import { ReactElement, useCallback } from "react";
+import { ReactElement, useCallback, useContext } from "react";
 import { FeatureComponentProps } from "../../models/Feature";
 import { AppNotifsResources } from "./AppNotifsResources";
 import { AppNotifsState } from "./AppNotifsState";
@@ -10,17 +10,28 @@ import { Platform, View, Text, StyleProp, TextStyle } from "react-native";
 import { setVWC } from "../../../../shared/lib/setVWC";
 import { useValueWithCallbacksEffect } from "../../../../shared/hooks/useValueWithCallbacksEffect";
 import { styles } from "./AppNotifsStyles";
-import { LinearGradientBackground } from "../../../../shared/anim/LinearGradientBackground";
-import { STANDARD_BLACK_GRAY_GRADIENT } from "../../../../styling/colors";
-import { useWindowSize } from "../../../../shared/hooks/useWindowSize";
+import { STANDARD_BLACK_GRAY_GRADIENT_SVG } from "../../../../styling/colors";
 import { StatusBar } from "expo-status-bar";
-import OsehBrandmarkWhite from "./icons/OsehBrandmarkWhite";
-import Svg, { Circle } from "react-native-svg";
+import * as SVG from "react-native-svg";
 import { FilledInvertedButton } from "../../../../shared/components/FilledInvertedButton";
 import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
 import { LinkButton } from "../../../../shared/components/LinkButton";
 import { FullscreenView } from "../../../../shared/components/FullscreenView";
 import { useContentWidth } from "../../../../shared/lib/useContentWidth";
+import { SvgLinearGradientBackground } from "../../../../shared/anim/SvgLinearGradientBackground";
+import { PartialPushIcon } from "../requestNotificationTime/partialIcons/PartialPushIcon";
+import { useReactManagedValueAsValueWithCallbacks } from "../../../../shared/hooks/useReactManagedValueAsValueWithCallbacks";
+import { TimeRange } from "../requestNotificationTime/EditTimeRange";
+import {
+  DEFAULT_DAYS,
+  DEFAULT_TIME_RANGE,
+} from "../requestNotificationTime/constants";
+import { DayOfWeek } from "../requestNotificationTime/RequestNotificationTimeResources";
+import { EditReminderTime } from "../requestNotificationTime/EditReminderTime";
+import { ModalProvider } from "../../../../shared/contexts/ModalContext";
+import { apiFetch } from "../../../../shared/lib/apiFetch";
+import { LoginContext } from "../../../../shared/contexts/LoginContext";
+import { useTimezone } from "../../../../shared/hooks/useTimezone";
 
 /**
  * Displays our screen asking the user if they want to receive notifications. We
@@ -31,6 +42,9 @@ export const AppNotifs = ({
   state,
   resources,
 }: FeatureComponentProps<AppNotifsState, AppNotifsResources>): ReactElement => {
+  const loginContext = useContext(LoginContext);
+  const timezone = useTimezone();
+
   useStartSession(
     adaptValueWithCallbacksAsVariableStrategyProps(
       useMappedValueWithCallbacks(resources, (r) => r.session)
@@ -54,6 +68,14 @@ export const AppNotifs = ({
 
   const nativePromptIsOpen = useWritableValueWithCallbacks(() => false);
   const isSkipping = useWritableValueWithCallbacks(() => false);
+
+  const timeRange = useWritableValueWithCallbacks<TimeRange>(() => ({
+    ...DEFAULT_TIME_RANGE,
+  }));
+  const days = useWritableValueWithCallbacks<Set<DayOfWeek>>(
+    () => new Set(DEFAULT_DAYS)
+  );
+
   const doOpenNative = useCallback(async () => {
     if (nativePromptIsOpen.get() || isSkipping.get()) {
       return;
@@ -62,12 +84,37 @@ export const AppNotifs = ({
     const session = resources.get().session;
     setVWC(nativePromptIsOpen, true);
     try {
-      session?.storeAction("open_native", null);
+      session?.storeAction("open_native", {
+        time_range: timeRange.get(),
+        days: Array.from(days.get()),
+      });
       const newStatus = await state.get().requestUsingNativeDialog();
       session?.storeAction("close_native", {
         granted: newStatus.granted,
         error: null,
       });
+
+      if (newStatus.granted) {
+        try {
+          await apiFetch(
+            "/api/1/users/me/attributes/notification_time",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json; charset=utf-8" },
+              body: JSON.stringify({
+                days_of_week: Array.from(days.get()),
+                time_range: timeRange.get(),
+                channel: "push",
+                timezone: timezone.timeZone,
+                timezone_technique: timezone.guessed ? "app-guessed" : "app",
+              }),
+            },
+            loginContext
+          );
+        } catch (e) {
+          console.log("Failed to set notification time", e);
+        }
+      }
     } catch (e) {
       session?.storeAction("close_native", {
         granted: false,
@@ -80,7 +127,16 @@ export const AppNotifs = ({
         setVWC(nativePromptIsOpen, false);
       }
     }
-  }, [isSkipping, nativePromptIsOpen, state, resources]);
+  }, [
+    isSkipping,
+    nativePromptIsOpen,
+    state,
+    resources,
+    days,
+    timeRange,
+    timezone,
+    loginContext,
+  ]);
 
   const doSkip = useCallback(async () => {
     if (nativePromptIsOpen.get() || isSkipping.get()) {
@@ -111,63 +167,75 @@ export const AppNotifs = ({
 
   return (
     <View style={styles.container}>
-      <LinearGradientBackground
+      <SvgLinearGradientBackground
         state={{
           type: "react-rerender",
-          props: STANDARD_BLACK_GRAY_GRADIENT,
+          props: STANDARD_BLACK_GRAY_GRADIENT_SVG,
         }}
       >
         <FullscreenView style={styles.background}>
-          <View style={{ ...styles.content, width: contentWidth }}>
-            <View style={styles.appWithBadge}>
-              <View style={styles.appIcon}>
-                <OsehBrandmarkWhite />
-              </View>
-              <View style={styles.appBadge}>
-                <Svg width={38} height={38} viewBox="0 0 38 38">
-                  <Circle cx={19} cy={19} r={19} fill="#FF0000" />
-                </Svg>
-              </View>
-            </View>
-            <Text style={styles.title}>
-              Oseh is much better with&nbsp;notifications
-            </Text>
-            <Text style={styles.subtitle}>
-              Grow your habit with daily reminders
-            </Text>
-            <FilledInvertedButton
-              onPress={doOpenNative}
-              setTextStyle={useCallback(
-                (s: StyleProp<TextStyle>) => setVWC(textStyleVWC, s),
-                [textStyleVWC]
-              )}
-              width={contentWidth}
-              marginTop={40}
-            >
-              <RenderGuardedComponent
-                props={textStyleVWC}
-                component={(textStyle) => (
-                  <Text style={textStyle}>Allow Notifications</Text>
+          <ModalProvider>
+            <View style={{ ...styles.content, width: contentWidth }}>
+              <SVG.Svg width="126" height="111" viewBox="-15 0 126 111">
+                <SVG.Rect
+                  x="0"
+                  y="15"
+                  width="96"
+                  height="96"
+                  fill="#446266"
+                  rx="14.58"
+                />
+                <SVG.G transform="translate(-2, 13)">
+                  <PartialPushIcon
+                    color={useReactManagedValueAsValueWithCallbacks([
+                      1, 1, 1, 1,
+                    ])}
+                  />
+                </SVG.G>
+                <SVG.Circle cx="93" y="18" r="18" fill="red" />
+              </SVG.Svg>
+              <Text style={styles.title}>
+                Habits stick better with&nbsp;reminders
+              </Text>
+              <Text style={styles.subtitle}>
+                78% of Oseh users stick with their habits when using
+                notifications
+              </Text>
+              <EditReminderTime timeRange={timeRange} days={days} />
+              <FilledInvertedButton
+                onPress={doOpenNative}
+                setTextStyle={useCallback(
+                  (s: StyleProp<TextStyle>) => setVWC(textStyleVWC, s),
+                  [textStyleVWC]
                 )}
-              />
-            </FilledInvertedButton>
-            <LinkButton
-              onPress={doSkip}
-              width={contentWidth}
-              marginTop={24}
-              setTextStyle={useCallback(
-                (s: StyleProp<TextStyle>) => setVWC(linkTextStyleVWC, s),
-                [linkTextStyleVWC]
-              )}
-            >
-              <RenderGuardedComponent
-                props={linkTextStyleVWC}
-                component={(textStyle) => <Text style={textStyle}>Skip</Text>}
-              />
-            </LinkButton>
-          </View>
+                width={contentWidth}
+                marginTop={40}
+              >
+                <RenderGuardedComponent
+                  props={textStyleVWC}
+                  component={(textStyle) => (
+                    <Text style={textStyle}>Allow Notifications</Text>
+                  )}
+                />
+              </FilledInvertedButton>
+              <LinkButton
+                onPress={doSkip}
+                width={contentWidth}
+                marginTop={24}
+                setTextStyle={useCallback(
+                  (s: StyleProp<TextStyle>) => setVWC(linkTextStyleVWC, s),
+                  [linkTextStyleVWC]
+                )}
+              >
+                <RenderGuardedComponent
+                  props={linkTextStyleVWC}
+                  component={(textStyle) => <Text style={textStyle}>Skip</Text>}
+                />
+              </LinkButton>
+            </View>
+          </ModalProvider>
         </FullscreenView>
-      </LinearGradientBackground>
+      </SvgLinearGradientBackground>
       <StatusBar style="light" />
     </View>
   );
