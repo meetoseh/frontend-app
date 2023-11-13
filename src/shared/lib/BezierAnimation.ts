@@ -4,7 +4,7 @@
  * in which case there are some common patterns that are abstracted here.
  */
 
-import { Bezier } from './Bezier';
+import { Bezier } from "./Bezier";
 
 /**
  * Describes a 1D animation, which is an interpolation between two values and a
@@ -43,14 +43,19 @@ export type BezierAnimation = {
  * Computes the current value of the given bezier animation, given the current time.
  * If the animation is not yet started, it will be started at the given time.
  */
-export const calculateAnimValue = (anim: BezierAnimation, now: number): number => {
+export const calculateAnimValue = (
+  anim: BezierAnimation,
+  now: number
+): number => {
   if (anim.startedAt === null) {
     anim.startedAt = now;
     return anim.from;
   }
 
   const progress = (now - anim.startedAt) / anim.duration;
-  return anim.ease.b_t(Math.min(1.0, progress))[1] * (anim.to - anim.from) + anim.from;
+  return (
+    anim.ease.y_x(Math.min(1.0, progress)) * (anim.to - anim.from) + anim.from
+  );
 };
 
 type UpdateAnimArgs = {
@@ -79,7 +84,11 @@ export const updateAnim = ({
   }
 
   if (oldAnim !== null && oldAnim.to === target) {
-    if (now !== null && oldAnim.startedAt !== null && oldAnim.startedAt + oldAnim.duration <= now) {
+    if (
+      now !== null &&
+      oldAnim.startedAt !== null &&
+      oldAnim.startedAt + oldAnim.duration <= now
+    ) {
       return null;
     }
 
@@ -103,7 +112,7 @@ export const updateAnim = ({
  */
 export const getColor3fFromHex = (color: string): number[] => {
   if (color.length !== 7) {
-    throw new Error('Invalid color hex string: ' + color);
+    throw new Error("Invalid color hex string: " + color);
   }
   const r = parseInt(color.substring(1, 3), 16) / 255.0;
   const g = parseInt(color.substring(3, 5), 16) / 255.0;
@@ -119,7 +128,11 @@ export const getColor3fFromHex = (color: string): number[] => {
  * @param t The progress, from 0.0 to 1.0.
  * @returns The interpolated number
  */
-export const interpolateNumber = (from: number, to: number, t: number): number => {
+export const interpolateNumber = (
+  from: number,
+  to: number,
+  t: number
+): number => {
   return from + (to - from) * t;
 };
 

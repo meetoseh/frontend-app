@@ -1,7 +1,7 @@
-import { MutableRefObject, useEffect, useRef } from 'react';
+import { MutableRefObject, useEffect, useRef } from "react";
 import { useStateCompat as useState } from "../hooks/useStateCompat";
-import { ValueWithCallbacks } from '../lib/Callbacks';
-import { defaultEqualityFn } from './useMappedValueWithCallbacks';
+import { ValueWithCallbacks } from "../lib/Callbacks";
+import { defaultEqualityFn } from "./useMappedValueWithCallbacks";
 
 const notSet = Symbol();
 
@@ -29,11 +29,10 @@ export const useUnwrappedValueWithCallbacks = <T>(
   equalityFnRef.current = equalityFn ?? defaultEqualityFn;
 
   const [value, setValue] = useState<T>(original.get());
-  let currentValue = useRef<T>(notSet as any) as MutableRefObject<T>;
+  const currentValue = useRef<T>(notSet as any) as MutableRefObject<T>;
   if (currentValue.current === notSet) {
     currentValue.current = value;
   }
-  
 
   useEffect(() => {
     let active = true;
@@ -64,7 +63,10 @@ export const useUnwrappedValueWithCallbacks = <T>(
         requestAnimationFrame(() => {
           const setTo = settingValueTo;
           settingValueTo = notSet;
-          if (setTo !== notSet && !equalityFnRef.current(setTo, currentValue.current)) {
+          if (
+            setTo !== notSet &&
+            !equalityFnRef.current(setTo, currentValue.current)
+          ) {
             currentValue.current = setTo;
             setValue(setTo);
           }

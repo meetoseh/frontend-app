@@ -24,8 +24,8 @@ import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks"
 import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMappedValuesWithCallbacks";
 import { setVWC } from "../../../../shared/lib/setVWC";
 import { useValueWithCallbacksEffect } from "../../../../shared/hooks/useValueWithCallbacksEffect";
-import { apiFetch } from "../../../../shared/lib/apiFetch";
 import { useValuesWithCallbacksEffect } from "../../../../shared/hooks/useValuesWithCallbacksEffect";
+import { apiFetch } from "../../../../shared/lib/apiFetch";
 
 export const RequestNotificationTimeFeature: Feature<
   RequestNotificationTimeState,
@@ -204,14 +204,19 @@ export const RequestNotificationTimeFeature: Feature<
 
         const data: Record<
           Channel,
-          Omit<ChannelSettings, "days"> & { days: DayOfWeek[] }
+          Omit<ChannelSettings, "days" | "isReal"> & {
+            days: DayOfWeek[];
+            is_real: boolean;
+          }
         > = await response.json();
 
         const currentSettings = {} as { [k: string]: ChannelSettings };
         for (const [k, v] of Object.entries(data)) {
           currentSettings[k] = {
-            ...v,
+            start: v.start,
+            end: v.end,
             days: new Set<DayOfWeek>(v.days),
+            isReal: v.is_real ?? false,
           };
         }
 
@@ -254,6 +259,7 @@ export const RequestNotificationTimeFeature: Feature<
           ]),
           start: 8 * 3600,
           end: 10 * 3600,
+          isReal: false,
         };
       }
     });
@@ -380,7 +386,7 @@ export const RequestNotificationTimeFeature: Feature<
     return (
       worldState.ian.showNow &&
       (worldState.serverWantsNotificationTime !== null ||
-        allStates.requestPhone.justAddedPhoneNumber?.enabled)
+        !!allStates.requestPhone.justAddedPhoneNumber?.enabled)
     );
   },
 

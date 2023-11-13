@@ -50,7 +50,7 @@ import { useValuesWithCallbacksEffect } from "../../../../shared/hooks/useValues
 import { useIsTablet } from "../../../../shared/lib/useIsTablet";
 
 /* guest -> random guest */
-const DEV_ACCOUNT_USER_IDENTITY_ID = "guest";
+const DEV_ACCOUNT_USER_IDENTITY_ID: string = "guest";
 
 const prepareLink = async (
   provider: "Google" | "SignInWithApple" | "Direct"

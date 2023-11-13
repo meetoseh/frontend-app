@@ -1,17 +1,17 @@
-import { InappNotificationSession } from '../../../../shared/hooks/useInappNotificationSession';
-import { Channel } from './RequestNotificationTimeState';
+import { InappNotificationSession } from "../../../../shared/hooks/useInappNotificationSession";
+import { Channel } from "./RequestNotificationTimeState";
 
 export type DayOfWeek =
-  | 'Monday'
-  | 'Tuesday'
-  | 'Wednesday'
-  | 'Thursday'
-  | 'Friday'
-  | 'Saturday'
-  | 'Sunday';
+  | "Monday"
+  | "Tuesday"
+  | "Wednesday"
+  | "Thursday"
+  | "Friday"
+  | "Saturday"
+  | "Sunday";
 
 export type ChannelSettings = {
-  /** The days of the  */
+  /** The days of the week to receive reminders */
   days: Set<DayOfWeek>;
 
   /**
@@ -23,6 +23,11 @@ export type ChannelSettings = {
    * Latest that notifications are received on the given days, in seconds since midnight
    */
   end: number;
+
+  /**
+   * True if these are exactly the server-side saved settings, false otherwise
+   */
+  isReal: boolean;
 };
 
 /**

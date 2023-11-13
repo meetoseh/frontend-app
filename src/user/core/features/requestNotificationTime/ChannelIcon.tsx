@@ -8,6 +8,7 @@ import { useAnimatedValueWithCallbacks } from "../../../../shared/anim/useAnimat
 import {
   BezierAnimator,
   BezierColorAnimator,
+  DependentAnimator,
   TrivialAnimator,
 } from "../../../../shared/anim/AnimationLoop";
 import { ease, easeOut, easeOutBack } from "../../../../shared/lib/Bezier";
@@ -136,12 +137,26 @@ export const ChannelIcon = ({
         (p) => p.iconColor,
         (p, v) => (p.iconColor = v)
       ),
-      new BezierAnimator(
-        easeOutBack,
-        500,
-        (p) => p.dotScale,
-        (p, v) => (p.dotScale = v)
-      ),
+      new DependentAnimator([
+        [
+          (v) => v.direction === 1,
+          new BezierAnimator(
+            easeOutBack,
+            800,
+            (p) => p.dotScale,
+            (p, v) => (p.dotScale = v)
+          ),
+        ],
+        [
+          () => true,
+          new BezierAnimator(
+            ease,
+            500,
+            (p) => p.dotScale,
+            (p, v) => (p.dotScale = v)
+          ),
+        ],
+      ]),
       new BezierAnimator(
         ease,
         500,

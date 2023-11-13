@@ -9,7 +9,10 @@ import {
 import { View } from "react-native";
 import { styles } from "./SplashScreenStyles";
 import AnimatedLottieView from "lottie-react-native";
-import { useWindowSize } from "../../shared/hooks/useWindowSize";
+import {
+  useWindowSize,
+  useWindowSizeValueWithCallbacks,
+} from "../../shared/hooks/useWindowSize";
 import {
   Callbacks,
   useWritableValueWithCallbacks,
@@ -17,12 +20,14 @@ import {
 import { useForwardBackwardEffect } from "../../shared/hooks/useForwardBackwardEffect";
 import { adaptValueWithCallbacksAsVariableStrategyProps } from "../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps";
 import { RenderGuardedComponent } from "../../shared/components/RenderGuardedComponent";
+import { useMappedValueWithCallbacks } from "../../shared/hooks/useMappedValueWithCallbacks";
+import { InlineOsehSpinner } from "../../shared/components/InlineOsehSpinner";
 
 const BRANDMARK_HOLD_TIME_MS = { forward: 750, backward: 500 };
 const BRANDMARK_WIDTH = (windowSize: {
   width: number;
   height: number;
-}): number => Math.min(0.75 * windowSize.width, 0.75 * windowSize.height, 250);
+}): number => Math.min(0.5 * windowSize.width, 0.5 * windowSize.height, 135);
 const BRANDMARK_NATURAL_ASPECT_RATIO = 1341 / 1080;
 /** The initial frame of the brandmark animation, aka the in point, aka "ip" */
 const BRANDMARK_INPOINT = 0;
@@ -49,6 +54,40 @@ type SplashScreenProps = {
  * loading.
  */
 export const SplashScreen = ({ type }: SplashScreenProps): ReactElement => {
+  const realStyle = type ?? "brandmark";
+
+  if (realStyle === "brandmark") {
+    return <FastInlineOsehSpinnerSplashScreen />;
+  }
+
+  return <LottieSplashScreen type={realStyle} />;
+};
+
+const FastInlineOsehSpinnerSplashScreen = (): ReactElement => {
+  const windowSizeVWC = useWindowSizeValueWithCallbacks();
+  const renderedSize = useMappedValueWithCallbacks(
+    windowSizeVWC,
+    (windowSize) => ({
+      width: BRANDMARK_WIDTH(windowSize),
+    })
+  );
+
+  return (
+    <View style={styles.fastContainer}>
+      <InlineOsehSpinner
+        size={{
+          type: "callbacks",
+          props: renderedSize.get,
+          callbacks: renderedSize.callbacks,
+        }}
+        variant="white-thin"
+      />
+      <StatusBar style="light" />
+    </View>
+  );
+};
+
+const LottieSplashScreen = ({ type }: SplashScreenProps): ReactElement => {
   const realType = type ?? "brandmark";
 
   const playerVWC = useWritableValueWithCallbacks<

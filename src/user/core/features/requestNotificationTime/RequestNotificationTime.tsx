@@ -11,11 +11,16 @@ import {
   RequestNotificationTimeResources,
 } from "./RequestNotificationTimeResources";
 import { useStartSession } from "../../../../shared/hooks/useInappNotificationSession";
-import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks";
+import {
+  Callbacks,
+  createWritableValueWithCallbacks,
+  useWritableValueWithCallbacks,
+} from "../../../../shared/lib/Callbacks";
 import {
   ModalContext,
   Modals,
   ModalsOutlet,
+  addModalWithCallbackToRemove,
 } from "../../../../shared/contexts/ModalContext";
 import { useErrorModal } from "../../../../shared/hooks/useErrorModal";
 import { setVWC } from "../../../../shared/lib/setVWC";
@@ -39,6 +44,8 @@ import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedV
 import { nameForChannel } from "./formatUtils";
 import { EditReminderTime } from "./EditReminderTime";
 import { useValueWithCallbacksEffect } from "../../../../shared/hooks/useValueWithCallbacksEffect";
+import { useSavingModal } from "../../../../shared/hooks/useSavingModal";
+import { YesNoModal } from "../../../../shared/components/YesNoModal";
 
 /**
  * Asks the user what times they want to receive notifications on various
@@ -84,6 +91,10 @@ export const RequestNotificationTime = ({
   );
   const error = useWritableValueWithCallbacks<ReactElement | null>(() => null);
   const saving = useWritableValueWithCallbacks<boolean>(() => false);
+  const overlaySaving = useWritableValueWithCallbacks<boolean>(() => false);
+  const promptingSaveChangesBeforeClose = useWritableValueWithCallbacks(
+    () => false
+  );
 
   const getExistingTimeRange = useCallback((): TimeRange => {
     const existingSettings =
@@ -123,21 +134,10 @@ export const RequestNotificationTime = ({
 
   const modals = useWritableValueWithCallbacks<Modals>(() => []);
   useErrorModal(modals, error, "Set Reminders");
+  useSavingModal(modals, overlaySaving, { message: "Saving Reminders" });
 
-  const onContinueChannel = useCallback(() => {
-    if (inClickCooldown.get()) {
-      return;
-    }
-
-    setVWC(inClickCooldown, true);
-    saveSettings();
-
-    async function saveSettingsInner(
-      channel: string,
-      days: DayOfWeek[],
-      start: number,
-      end: number
-    ) {
+  const trySaveSettingsWithoutTracking = useCallback(
+    async (channel: string, days: DayOfWeek[], start: number, end: number) => {
       const response = await apiFetch(
         "/api/1/users/me/attributes/notification_time",
         {
@@ -157,13 +157,45 @@ export const RequestNotificationTime = ({
       if (!response.ok) {
         throw response;
       }
-    }
+    },
+    [loginContext, timezone]
+  );
 
-    async function saveSettings() {
-      if (saving.get()) {
-        return;
+  const checkIfSavePromptRequired = useCallback((): boolean => {
+    const savingChannel = currentChannel.get();
+    const savingDays = Array.from(days.get());
+    const savingStart = timeRange.get().start;
+    const savingEnd = timeRange.get().end;
+
+    const savingExistingSettings =
+      resources.get().currentSettings?.[savingChannel];
+    const lastWasChanged =
+      savingExistingSettings === null ||
+      savingExistingSettings === undefined ||
+      savingExistingSettings.start !== savingStart ||
+      savingExistingSettings.end !== savingEnd ||
+      savingExistingSettings.days.size !== savingDays.length ||
+      savingDays.some((d) => !savingExistingSettings.days.has(d));
+
+    return lastWasChanged;
+  }, [currentChannel, days, timeRange, resources]);
+
+  const saveSettingsAndTrack = useCallback(
+    async (
+      reason: "continue" | "tap_channel" | "x_and_confirm",
+      nextChannel: Channel | null,
+      opts?: {
+        doNotFinish?: boolean;
+        noOverlay?: boolean;
       }
-
+    ): Promise<{
+      channel: Channel;
+      days: DayOfWeek[];
+      start: number;
+      end: number;
+      changed: boolean;
+      error: boolean;
+    }> => {
       const savingChannel = currentChannel.get();
       const savingDays = Array.from(days.get());
       const savingStart = timeRange.get().start;
@@ -179,88 +211,126 @@ export const RequestNotificationTime = ({
         savingExistingSettings.days.size !== savingDays.length ||
         savingDays.some((d) => !savingExistingSettings.days.has(d));
 
-      setVWC(error, null);
+      const saveRequired = lastWasChanged || !savingExistingSettings?.isReal;
+
+      let saveError = false;
+      let overlaySavingTimeout: NodeJS.Timeout | null = null;
       setVWC(saving, true);
+      setVWC(error, null);
+      if (nextChannel !== null) {
+        // play the animation immediately to make the ui seem more
+        // responsive. we can't have nothing happen for more than 100ms
+        // without confusing the user, and this buys us an extra 350ms
+        setVWC(currentChannel, nextChannel);
+        overlaySavingTimeout = setTimeout(() => {
+          overlaySavingTimeout = null;
+          setVWC(overlaySaving, !opts?.noOverlay);
+        }, 450);
+      } else {
+        overlaySavingTimeout = setTimeout(() => {
+          overlaySavingTimeout = null;
+          setVWC(overlaySaving, !opts?.noOverlay);
+        }, 100);
+      }
       try {
-        await saveSettingsInner(
-          savingChannel,
-          savingDays,
-          savingStart,
-          savingEnd
-        );
-        resources.get().setCurrentSettings(
-          (() => {
-            const old = resources.get().currentSettings;
-            const newSettings = { ...old };
-            newSettings[savingChannel] = {
-              days: new Set(savingDays),
-              start: savingStart,
-              end: savingEnd,
-            };
-            return newSettings as Record<Channel, ChannelSettings>;
-          })()
-        );
-        gotoNextChannelOrFinish(lastWasChanged, {
+        if (saveRequired) {
+          try {
+            await trySaveSettingsWithoutTracking(
+              savingChannel,
+              savingDays,
+              savingStart,
+              savingEnd
+            );
+          } catch (e) {
+            console.error("failed to save settings due to error");
+            setVWC(currentChannel, savingChannel);
+            setVWC(error, await describeError(e));
+            saveError = true;
+          }
+        }
+        const session = resources.get().session;
+        if (session) {
+          session.storeAction("set_reminders", {
+            channel: savingChannel,
+            time: { start: savingStart, end: savingEnd },
+            days: savingDays,
+            next_channel: saveError ? savingChannel : nextChannel,
+            reason,
+            error: saveError,
+            save_required: saveRequired,
+          });
+        }
+        if (!saveError) {
+          resources.get().setCurrentSettings(
+            (() => {
+              const old = resources.get().currentSettings;
+              const newSettings = { ...old };
+              newSettings[savingChannel] = {
+                days: new Set(savingDays),
+                start: savingStart,
+                end: savingEnd,
+                isReal: true,
+              };
+              return newSettings as Record<Channel, ChannelSettings>;
+            })()
+          );
+          finishedChannels.get().add(savingChannel);
+          if (nextChannel !== null) {
+            setVWC(currentChannel, nextChannel);
+          } else if (!opts?.doNotFinish) {
+            session?.reset();
+            state.get().ian?.onShown();
+            state.get().setClientRequested(false);
+          }
+        }
+
+        return {
           channel: savingChannel,
-          time: { start: savingStart, end: savingEnd },
           days: savingDays,
-          error: false,
-        });
-      } catch (e) {
-        resources.get().session?.storeAction("set_reminders", {
-          channel: savingChannel,
-          time: { start: savingStart, end: savingEnd },
-          days: savingDays,
-          next_channel: null,
-          error: true,
-        });
-        const err = await describeError(e);
-        setVWC(error, err);
+          start: savingStart,
+          end: savingEnd,
+          changed: lastWasChanged,
+          error: saveError,
+        };
       } finally {
+        if (overlaySavingTimeout !== null) {
+          clearTimeout(overlaySavingTimeout);
+        }
+        setVWC(overlaySaving, false);
         setVWC(saving, false);
       }
+    },
+    [
+      trySaveSettingsWithoutTracking,
+      currentChannel,
+      days,
+      resources,
+      error,
+      timeRange,
+      finishedChannels,
+      state,
+      saving,
+      overlaySaving,
+    ]
+  );
+
+  const onContinueChannel = useCallback(() => {
+    if (saving.get()) {
+      return;
     }
 
-    function gotoNextChannelOrFinish(
-      lastWasChanged: boolean,
-      ianDebug: {
-        channel: Channel;
-        time: { start: number; end: number };
-        days: DayOfWeek[];
-        error: false;
-      }
-    ) {
-      const oldCurrentChannel = currentChannel.get();
-      const oldFinishedChannels = finishedChannels.get();
-      const availableChannels = resources.get().channels;
+    const finished = finishedChannels.get();
+    const current = currentChannel.get();
+    const shown = resources.get().channels;
 
-      const newFinishedChannels = new Set(oldFinishedChannels);
-      newFinishedChannels.add(oldCurrentChannel);
-
-      const newCurrentChannel = availableChannels.find(
-        (c) => !newFinishedChannels.has(c)
-      );
-      const session = resources.get().session;
-      if (newCurrentChannel === undefined) {
-        session
-          ?.storeAction("set_reminders", { ...ianDebug, next_channel: null })
-          ?.finally(() => {
-            session?.reset();
-          });
-        state.get().ian?.onShown();
-        state.get().setClientRequested(false);
-        return;
-      } else {
-        session?.storeAction("set_reminders", {
-          ...ianDebug,
-          next_channel: newCurrentChannel,
-        });
-        setVWC(currentChannel, newCurrentChannel);
-        setVWC(finishedChannels, newFinishedChannels);
-        updateDays(lastWasChanged);
-        updateTimeRange(lastWasChanged);
+    const nextChannel =
+      shown.find((c) => !finished.has(c) && c !== current) ?? null;
+    saveSettingsAndTrack("continue", nextChannel).then((res) => {
+      if (!res.error) {
+        updateTimeRange(res.changed);
+        updateDays(res.changed);
       }
-    }
+    });
 
     function updateTimeRange(lastWasChanged: boolean) {
       if (lastWasChanged) {
@@ -292,17 +362,103 @@ export const RequestNotificationTime = ({
     currentChannel,
     finishedChannels,
     resources,
-    state,
-    saving,
     days,
-    error,
-    loginContext,
     timeRange,
-    timezone,
     getExistingTimeRange,
     getExistingDays,
-    inClickCooldown,
+    saveSettingsAndTrack,
+    saving,
   ]);
+
+  const onTapChannel = useCallback(
+    (channel: Channel) => {
+      if (channel === currentChannel.get()) {
+        return;
+      }
+      if (saving.get()) {
+        return;
+      }
+
+      const session = resources.get().session;
+      session?.storeAction("tap_channel", {
+        channel: channel,
+        already_seen: finishedChannels.get().has(channel),
+      });
+
+      saveSettingsAndTrack("tap_channel", channel).then((res) => {
+        if (!res.error) {
+          setVWC(days, getExistingDays());
+          setVWC(timeRange, getExistingTimeRange());
+        }
+      });
+    },
+    [
+      currentChannel,
+      finishedChannels,
+      resources,
+      days,
+      timeRange,
+      getExistingDays,
+      getExistingTimeRange,
+      saveSettingsAndTrack,
+      saving,
+    ]
+  );
+
+  const handleFinish = useCallback(() => {
+    resources.get().session?.reset();
+    state.get().ian?.onShown();
+    state.get().setClientRequested(false);
+  }, [resources, state]);
+
+  useValueWithCallbacksEffect(promptingSaveChangesBeforeClose, (visible) => {
+    if (!visible) {
+      return undefined;
+    }
+
+    const channel = currentChannel.get();
+    const dismissed = new Callbacks<undefined>();
+    dismissed.add(() => {
+      setVWC(promptingSaveChangesBeforeClose, false);
+    });
+    const requestDismiss = createWritableValueWithCallbacks<() => void>(
+      () => () => {
+        dismissed.call(undefined);
+      }
+    );
+
+    return addModalWithCallbackToRemove(
+      modals,
+      <YesNoModal
+        title="Save Changes?"
+        body={`Do you want to save your changes to ${nameForChannel(
+          channel
+        )} reminders?`}
+        cta1="Yes"
+        cta2="No"
+        emphasize={1}
+        onClickOne={async () => {
+          const result = await saveSettingsAndTrack("x_and_confirm", null, {
+            doNotFinish: true,
+            noOverlay: true,
+          });
+          if (!result.error) {
+            dismissed.add(handleFinish);
+            requestDismiss.get()();
+          }
+        }}
+        onClickTwo={async () => {
+          resources.get().session?.storeAction("discard_changes", null);
+          dismissed.add(handleFinish);
+          requestDismiss.get()();
+        }}
+        onDismiss={() => {
+          dismissed.call(undefined);
+        }}
+        requestDismiss={requestDismiss}
+      />
+    );
+  });
 
   const contentWidth = useContentWidth();
   const continueTextStyle = useWritableValueWithCallbacks<StyleProp<TextStyle>>(
@@ -321,40 +477,20 @@ export const RequestNotificationTime = ({
           <FullscreenView style={styles.background}>
             <CloseButton
               onPress={() => {
-                const session = resources.get().session;
-                session?.storeAction("x", null)?.finally(() => {
-                  session?.reset();
-                });
-                state.get().ian?.onShown();
-                state.get().setClientRequested(false);
+                if (!checkIfSavePromptRequired()) {
+                  const session = resources.get().session;
+                  session?.storeAction("x", { save_prompt: false });
+                  handleFinish();
+                } else {
+                  setVWC(promptingSaveChangesBeforeClose, true);
+                }
               }}
             />
             <View style={styles.content}>
               <ChannelSelector
                 current={currentChannel}
                 all={useMappedValueWithCallbacks(resources, (r) => r.channels)}
-                onTap={(channel) => {
-                  if (channel === currentChannel.get()) {
-                    return;
-                  }
-
-                  const session = resources.get().session;
-                  session?.storeAction("tap_channel", {
-                    channel: channel,
-                    already_seen: finishedChannels.get().has(channel),
-                  });
-
-                  setVWC(currentChannel, channel);
-
-                  const setting = resources.get().currentSettings?.[channel];
-                  if (setting !== null && setting !== undefined) {
-                    setVWC(timeRange, {
-                      start: setting.start,
-                      end: setting.end,
-                    });
-                    setVWC(days, new Set(setting.days));
-                  }
-                }}
+                onTap={onTapChannel}
               />
               <RenderGuardedComponent
                 props={currentChannel}
