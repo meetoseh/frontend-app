@@ -1,7 +1,9 @@
 import { AppNotifsState } from "../features/appNotifs/AppNotifsState";
+import { ConfirmMergeAccountState } from "../features/confirmMergeAccount/ConfirmMergeAccountState";
 import { FavoritesState } from "../features/favorites/FavoritesState";
 import { GoalDaysPerWeekState } from "../features/goalDaysPerWeek/GoalDaysPerWeekState";
 import { LoginState } from "../features/login/LoginState";
+import { MergeAccountState } from "../features/mergeAccount/MergeAccountState";
 import { PickEmotionJourneyState } from "../features/pickEmotionJourney/PickEmotionJourneyState";
 import { RequestNameState } from "../features/requestName/RequestNameState";
 import { RequestNotificationTimeState } from "../features/requestNotificationTime/RequestNotificationTimeState";
@@ -20,4 +22,6 @@ export type FeatureAllStates = {
   goalDaysPerWeek: GoalDaysPerWeekState;
   requestPhone: RequestPhoneState;
   requestNotificationTime: RequestNotificationTimeState;
+  mergeAccount: MergeAccountState;
+  confirmMergeAccount: ConfirmMergeAccountState;
 };

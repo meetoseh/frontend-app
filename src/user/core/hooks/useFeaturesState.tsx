@@ -13,10 +13,14 @@ import { SignupRewardFeature } from "../features/signupReward/SignupRewardFeatur
 import { GoalDaysPerWeekFeature } from "../features/goalDaysPerWeek/GoalDaysPerWeekFeature";
 import { RequestPhoneFeature } from "../features/requestPhone/RequestPhoneFeature";
 import { RequestNotificationTimeFeature } from "../features/requestNotificationTime/RequestNotificationTimeFeature";
+import { ConfirmMergeAccountFeature } from "../features/confirmMergeAccount/ConfirmMergeAccountFeature";
+import { MergeAccountFeature } from "../features/mergeAccount/MergeAccountFeature";
 
 const features = [
   LoginFeature,
   RequestNameFeature,
+  ConfirmMergeAccountFeature,
+  MergeAccountFeature,
   SignupRewardFeature,
   AppNotifsFeature,
   RequestPhoneFeature,

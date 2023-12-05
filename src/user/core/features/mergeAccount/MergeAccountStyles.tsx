@@ -12,8 +12,6 @@ export const styles = StyleSheet.create({
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    paddingTop: 64,
-    paddingBottom: 24,
   },
   content: {
     flexDirection: "column",
@@ -21,20 +19,26 @@ export const styles = StyleSheet.create({
     alignItems: "stretch",
     paddingTop: 0,
   },
-  sections: {},
-  sectionSeparator: {
-    height: 24,
+  header: {
+    marginBottom: 12,
   },
-  footer: {
-    marginTop: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  version: {
+  headerLine: {
     fontFamily: "OpenSans-Regular",
-    fontSize: 14,
-    lineHeight: 19,
-    color: Colors.GRAYSCALE_MID_GRAY,
-    marginTop: 16,
+    fontSize: 22,
+    lineHeight: 32,
+    textAlign: "center",
+    color: Colors.GRAYSCALE_WHITE,
+  },
+  body: {
+    fontFamily: "OpenSans-Regular",
+    fontSize: 16,
+    lineHeight: 28,
+    letterSpacing: 0.25,
+    textAlign: "center",
+    color: Colors.GRAYSCALE_WHITE,
+    marginBottom: 60,
+  },
+  providers: {
+    gap: 16,
   },
 });
