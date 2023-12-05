@@ -10,7 +10,7 @@ export const TRANSPARENT_WHITE = "rgba(255, 255, 255, 0.2)";
 export const TRANSPARENT_BLACK = "rgba(0, 0, 0, 0.2)";
 export const PRIMARY_DEFAULT = "#446266";
 export const PRIMARY_DEFAULT_BACKGROUND = "#8A9A9D";
-export const PRIMARY_LIGHT = "#33494c";
+export const PRIMARY_LIGHT = "#eaeaeb";
 export const PRIMARY_DARK = "#1a383c";
 export const BLACK = "#000000";
 export const ERROR_DEFAULT = "#BA1A1A";
@@ -22,10 +22,6 @@ export const BLACK_OVERLAY = "rgba(0, 0, 0, 0.5)";
 export const BLACK_SHADOW = "rgba(0, 0, 0, 0.25)";
 export const PROMPT_BACKGROUND = "rgba(239, 240, 256, 0.95)";
 export const PROFILE_PICTURE_BACKGROUND = "#c9d6d6";
-export const SYSTEM_WHITE = "#c4c4c4";
-export const SYSTEM_BORDER = "#949496";
-export const SYSTEM_BLUE = "#007aff";
-export const SYSTEM_DISABLED = "#b3b3b3";
 
 /**
  * Used as the pressed variant for inverted buttons

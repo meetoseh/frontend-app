@@ -9,7 +9,6 @@ import { RSQUO } from "../../../../shared/lib/HtmlEntities";
 import { OsehTextInput } from "../../../../shared/forms/OsehTextInput";
 import { apiFetch } from "../../../../shared/lib/apiFetch";
 import { describeError } from "../../../../shared/lib/describeError";
-import { FilledPrimaryButton } from "../../../../shared/components/FilledPrimaryButton";
 import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
 import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks";
 import { setVWC } from "../../../../shared/lib/setVWC";
@@ -19,6 +18,7 @@ import { RenderGuardedComponent } from "../../../../shared/components/RenderGuar
 import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks";
 import { useKeyboardVisibleValueWithCallbacks } from "../../../../shared/lib/useKeyboardVisibleValueWithCallbacks";
 import { useContentWidth } from "../../../../shared/lib/useContentWidth";
+import { FilledInvertedButton } from "../../../../shared/components/FilledInvertedButton";
 
 /**
  * Prompts the user their name.
@@ -139,7 +139,7 @@ export const RequestName = ({
       <RenderGuardedComponent
         props={savingVWC}
         component={(saving) => (
-          <FilledPrimaryButton
+          <FilledInvertedButton
             onPress={onSubmit}
             disabled={saving}
             setTextStyle={updateSaveTextStyleVWC}
@@ -151,7 +151,7 @@ export const RequestName = ({
                 <Text style={saveTextStyle}>Save</Text>
               )}
             />
-          </FilledPrimaryButton>
+          </FilledInvertedButton>
         )}
       />
       <ModalsOutlet modals={modals} />

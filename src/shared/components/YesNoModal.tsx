@@ -302,15 +302,25 @@ const Inner = ({
                 {},
                 styles.buttonText,
                 emphasize === 1 ? styles.emphasizedButtonText : undefined,
-                two ? styles.disabledButtonText : undefined
+                two ? styles.disabledButtonText : undefined,
+                emphasize === 1 && two
+                  ? styles.disabledEmphasizedButtonText
+                  : {}
               );
               return (
                 <Pressable
                   style={Object.assign(
                     {},
                     styles.button,
+                    emphasize === 1 ? styles.emphasizedButton : undefined,
                     pressing ? styles.pressedButton : undefined,
-                    two ? styles.disabledButton : undefined
+                    emphasize === 1 && pressing
+                      ? styles.emphasizedPressedButton
+                      : undefined,
+                    two ? styles.disabledButton : undefined,
+                    emphasize === 1 && two
+                      ? styles.disabledEmphasizedButton
+                      : undefined
                   )}
                   onPress={handleClickOne}
                   onPressIn={() => {
@@ -324,7 +334,7 @@ const Inner = ({
                     <View style={styles.spinnerContainer}>
                       <InlineOsehSpinner
                         size={{ type: "react-rerender", props: { height: 16 } }}
-                        variant="black"
+                        variant={emphasize === 1 ? "white" : "black"}
                       />
                     </View>
                   )}
@@ -342,16 +352,25 @@ const Inner = ({
                   {},
                   styles.buttonText,
                   emphasize === 2 ? styles.emphasizedButtonText : undefined,
-                  one ? styles.disabledButtonText : undefined
+                  one ? styles.disabledButtonText : undefined,
+                  one && emphasize === 2
+                    ? styles.disabledEmphasizedButtonText
+                    : {}
                 );
                 return (
                   <Pressable
                     style={Object.assign(
                       {},
                       styles.button,
-                      styles.secondButton,
+                      emphasize === 2 ? styles.emphasizedButton : undefined,
                       pressing ? styles.pressedButton : undefined,
-                      one ? styles.disabledButton : undefined
+                      emphasize === 2 && pressing
+                        ? styles.emphasizedPressedButton
+                        : undefined,
+                      one ? styles.disabledButton : undefined,
+                      one && emphasize === 2
+                        ? styles.disabledEmphasizedButton
+                        : undefined
                     )}
                     onPress={handleClickTwo}
                     onPressIn={() => {
@@ -368,7 +387,7 @@ const Inner = ({
                             type: "react-rerender",
                             props: { height: 16 },
                           }}
-                          variant="black"
+                          variant={emphasize === 2 ? "white" : "black"}
                         />
                       </View>
                     )}

@@ -441,8 +441,8 @@ const Spinner = ({
             width: computed.size.width - computed.viewboxPaddingX * 2,
             height: computed.size.height - computed.viewboxPaddingX * 2,
             position: "relative",
-            left: -computed.viewboxPaddingX,
-            top: -computed.viewboxPaddingY,
+            // left: -computed.viewboxPaddingX, not necessary on the app for some
+            // top: -computed.viewboxPaddingY,  reason
             overflow: "visible",
           }}
         >
