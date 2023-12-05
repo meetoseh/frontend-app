@@ -22,7 +22,10 @@ export const BLACK_OVERLAY = "rgba(0, 0, 0, 0.5)";
 export const BLACK_SHADOW = "rgba(0, 0, 0, 0.25)";
 export const PROMPT_BACKGROUND = "rgba(239, 240, 256, 0.95)";
 export const PROFILE_PICTURE_BACKGROUND = "#c9d6d6";
-export const SYSTEM_WHITE = "#eff0f6";
+export const SYSTEM_WHITE = "#c4c4c4";
+export const SYSTEM_BORDER = "#949496";
+export const SYSTEM_BLUE = "#007aff";
+export const SYSTEM_DISABLED = "#b3b3b3";
 
 /**
  * Used as the pressed variant for inverted buttons

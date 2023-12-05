@@ -171,8 +171,6 @@ export const Login = ({
     [loginContext.setAuthTokens, state, errorVWC]
   );
 
-  const mounted = useIsMounted();
-
   const effectRunning = useRef<boolean>(false);
   useValuesWithCallbacksEffect(
     [appleTextStyleVWC, googleTextStyleVWC, emailTextStyleVWC],
@@ -230,7 +228,7 @@ export const Login = ({
           let googleMeasure = 0;
           let emailMeasure = 0;
           while (maxWidth === 0) {
-            if (!mounted.get()) {
+            if (!mountedVWC.get()) {
               return;
             }
             [appleMeasure, googleMeasure, emailMeasure] = await Promise.all(
@@ -245,12 +243,12 @@ export const Login = ({
             );
             maxWidth = Math.max(appleMeasure, googleMeasure, emailMeasure);
 
-            if (maxWidth <= 0 && mounted.get()) {
+            if (maxWidth <= 0 && mountedVWC.get()) {
               await new Promise((resolve) => setTimeout(resolve, 100));
             }
           }
 
-          if (!mounted.get()) {
+          if (!mountedVWC.get()) {
             return;
           }
 
@@ -277,7 +275,7 @@ export const Login = ({
       appleTextStyleVWC,
       googleTextStyleVWC,
       emailTextStyleVWC,
-      mounted,
+      mountedVWC,
     ])
   );
 
@@ -482,8 +480,7 @@ export const Login = ({
 
   useEffect(() => {
     (async () => {
-      const { status } = await requestTrackingPermissionsAsync();
-      console.log("tracking permissions status: ", status);
+      await requestTrackingPermissionsAsync();
     })();
   }, []);
 

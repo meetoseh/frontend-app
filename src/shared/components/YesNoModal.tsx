@@ -15,6 +15,7 @@ import { ease } from "../lib/Bezier";
 import { Pressable, View, Text, GestureResponderEvent } from "react-native";
 import { useWindowSize } from "../hooks/useWindowSize";
 import { useMappedValuesWithCallbacks } from "../hooks/useMappedValuesWithCallbacks";
+import { useTimedValueWithCallbacks } from "../hooks/useTimedValue";
 
 export type YesNoModalProps = {
   title: string;
@@ -51,6 +52,7 @@ export const YesNoModal = ({
   const executingTwo = useWritableValueWithCallbacks(() => false);
   const visible = useWritableValueWithCallbacks(() => true);
   const fadingOut = useWritableValueWithCallbacks(() => false);
+  const clickthroughPrevention = useTimedValueWithCallbacks(true, false, 500);
 
   const startDismiss = useCallback(() => {
     setVWC(visible, false);
@@ -87,7 +89,11 @@ export const YesNoModal = ({
   );
 
   const handleClickOne = useCallback(() => {
-    if (executingOne.get() || executingTwo.get()) {
+    if (
+      executingOne.get() ||
+      executingTwo.get() ||
+      clickthroughPrevention.get()
+    ) {
       return;
     }
 
@@ -95,18 +101,23 @@ export const YesNoModal = ({
     onClickOne().finally(() => {
       setVWC(executingOne, false);
     });
-  }, [executingOne, executingTwo, onClickOne]);
+  }, [executingOne, executingTwo, clickthroughPrevention, onClickOne]);
 
   const handleClickTwo = useCallback(() => {
-    if (executingOne.get() || executingTwo.get() || onClickTwo === undefined) {
+    if (
+      executingOne.get() ||
+      executingTwo.get() ||
+      clickthroughPrevention.get() ||
+      onClickTwo === undefined
+    ) {
       return;
     }
 
-    setVWC(executingOne, true);
+    setVWC(executingTwo, true);
     onClickTwo().finally(() => {
-      setVWC(executingOne, false);
+      setVWC(executingTwo, false);
     });
-  }, [executingOne, executingTwo, onClickTwo]);
+  }, [executingOne, executingTwo, clickthroughPrevention, onClickTwo]);
 
   return (
     <Inner
@@ -274,7 +285,7 @@ const Inner = ({
           ...styles.content,
           opacity: rendered.get().foregroundOpacity,
           top: rendered.get().contentOffsetY,
-          width: Math.min(279, windowSize.width - 24),
+          width: Math.min(309, windowSize.width - 24),
         }}
         onPress={(e) => {
           e.stopPropagation();
@@ -338,6 +349,7 @@ const Inner = ({
                     style={Object.assign(
                       {},
                       styles.button,
+                      styles.secondButton,
                       pressing ? styles.pressedButton : undefined,
                       one ? styles.disabledButton : undefined
                     )}

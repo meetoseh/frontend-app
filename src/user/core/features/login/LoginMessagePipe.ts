@@ -208,7 +208,7 @@ export const createWritePipe = async (): Promise<WritableLoginMessagePipe> => {
     }
   }
 
-  let writerId = Crypto.randomUUID();
+  const writerId = Crypto.randomUUID();
 
   if (
     !compareAndSwapPipe(null, {

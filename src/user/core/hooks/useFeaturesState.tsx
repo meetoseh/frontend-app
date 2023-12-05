@@ -22,8 +22,8 @@ const features = [
   RequestPhoneFeature,
   RequestNotificationTimeFeature,
   GoalDaysPerWeekFeature,
-  SettingsFeature,
   FavoritesFeature,
+  SettingsFeature,
   PickEmotionJourneyFeature,
 ];
 
