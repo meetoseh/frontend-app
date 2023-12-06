@@ -16,6 +16,7 @@ import { Pressable, View, Text, GestureResponderEvent } from "react-native";
 import { useWindowSize } from "../hooks/useWindowSize";
 import { useMappedValuesWithCallbacks } from "../hooks/useMappedValuesWithCallbacks";
 import { useTimedValueWithCallbacks } from "../hooks/useTimedValue";
+import * as Linking from "expo-linking";
 
 export type YesNoModalProps = {
   title: string;
@@ -23,8 +24,16 @@ export type YesNoModalProps = {
   cta1: string;
   cta2?: string;
   emphasize: 1 | 2 | null;
-  onClickOne: () => Promise<void>;
-  onClickTwo?: () => Promise<void>;
+  /**
+   * Strings are treated as URLs to navigate to, functions are
+   * treated as async callbacks to execute
+   */
+  onClickOne: string | (() => Promise<void>);
+  /**
+   * Strings are treated as URLs to navigate to, functions are
+   * treated as async callbacks to execute
+   */
+  onClickTwo?: string | (() => Promise<void>);
   /**
    * Called after the modal has been dismissed and all animations
    * have been played, so the modal can be removed from the DOM
@@ -98,7 +107,11 @@ export const YesNoModal = ({
     }
 
     setVWC(executingOne, true);
-    onClickOne().finally(() => {
+    const promise =
+      typeof onClickOne === "string"
+        ? Linking.openURL(onClickOne)
+        : onClickOne();
+    promise.finally(() => {
       setVWC(executingOne, false);
     });
   }, [executingOne, executingTwo, clickthroughPrevention, onClickOne]);
@@ -114,7 +127,11 @@ export const YesNoModal = ({
     }
 
     setVWC(executingTwo, true);
-    onClickTwo().finally(() => {
+    const promise =
+      typeof onClickTwo === "string"
+        ? Linking.openURL(onClickTwo)
+        : onClickTwo();
+    promise.finally(() => {
       setVWC(executingTwo, false);
     });
   }, [executingOne, executingTwo, clickthroughPrevention, onClickTwo]);

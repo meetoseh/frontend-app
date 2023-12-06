@@ -30,6 +30,12 @@ export type SettingLink = {
   text: string;
 
   /**
+   * If specified, displayed below the text in a smaller font, with
+   * a newline between each entry
+   */
+  details?: string[];
+
+  /**
    * The key for the link for rerendering purposes.
    *
    * TODO: Currently ignored for simplicity of implementation with the
@@ -43,6 +49,14 @@ export type SettingLink = {
    * text
    */
   style?: "normal";
+
+  /**
+   * Which icon to display on the right side of the link, if any,
+   * when the spinner is not displayed.
+   *
+   * Defaults to 'arrow'
+   */
+  action?: "arrow" | "none";
 
   /**
    * If clicking the link should redirect the user to a new page,
@@ -220,14 +234,51 @@ const SettingLinkComponent = ({
     { outputEqualityFn: Object.is }
   );
 
+  const detailsVWC = useMappedValueWithCallbacks(
+    linkVWC,
+    (link) => link?.details,
+    {
+      outputEqualityFn: (a, b) =>
+        (a === undefined && b === undefined) ||
+        (a !== undefined &&
+          b !== undefined &&
+          a.length === b.length &&
+          a.every((value, index) => value === b[index])),
+    }
+  );
+
+  const linkAvailableVWC = useMappedValueWithCallbacks(
+    linkVWC,
+    (link) => link !== null,
+    { outputEqualityFn: Object.is }
+  );
+
+  const actionVWC = useMappedValueWithCallbacks(
+    linkVWC,
+    (link): "arrow" | "none" => link?.action || "arrow",
+    { outputEqualityFn: Object.is }
+  );
+
   const renderProps = useMappedValuesWithCallbacks(
-    [buttonStyle, textStyle, disabledVWC, spinnerVWC, textVWC],
+    [
+      buttonStyle,
+      textStyle,
+      disabledVWC,
+      spinnerVWC,
+      textVWC,
+      detailsVWC,
+      linkAvailableVWC,
+      actionVWC,
+    ],
     () => ({
       buttonStyle: buttonStyle.get(),
       textStyle: textStyle.get(),
       disabled: disabledVWC.get(),
       spinner: spinnerVWC.get(),
       text: textVWC.get(),
+      details: detailsVWC.get(),
+      linkAvailable: linkAvailableVWC.get(),
+      action: actionVWC.get(),
     })
   );
 
@@ -235,6 +286,9 @@ const SettingLinkComponent = ({
     <RenderGuardedComponent
       props={renderProps}
       component={(args) => {
+        if (!args.linkAvailable) {
+          return <></>;
+        }
         return (
           <Pressable
             style={args.buttonStyle}
@@ -266,7 +320,18 @@ const SettingLinkComponent = ({
               setVWC(pressingVWC, false);
             }}
           >
-            <Text style={args.textStyle}>{args.text}</Text>
+            <View style={styles.content}>
+              <Text style={args.textStyle}>{args.text}</Text>
+              {args.details !== undefined && (
+                <View style={styles.details}>
+                  {args.details.map((detail, index) => (
+                    <Text key={index} style={styles.detail}>
+                      {detail}
+                    </Text>
+                  ))}
+                </View>
+              )}
+            </View>
             <View style={styles.actionContainer}>
               {args.spinner ? (
                 <InlineOsehSpinner
@@ -278,7 +343,7 @@ const SettingLinkComponent = ({
                   }}
                 />
               ) : (
-                <RightCaret />
+                args.action === "arrow" && <RightCaret />
               )}
             </View>
           </Pressable>

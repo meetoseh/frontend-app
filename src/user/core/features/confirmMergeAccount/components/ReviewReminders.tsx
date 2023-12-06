@@ -1,17 +1,22 @@
-import { ReactElement } from 'react';
-import { FeatureComponentProps } from '../../../models/Feature';
-import { ConfirmMergeAccountResources } from '../ConfirmMergeAccountResources';
-import { ConfirmMergeAccountState } from '../ConfirmMergeAccountState';
-import { useWritableValueWithCallbacks } from '../../../../../shared/lib/Callbacks';
-import { ConfirmMergeAccountWrapper } from './ConfirmMergeAccountWrapper';
-import styles from './styles.module.css';
-import { RenderGuardedComponent } from '../../../../../shared/components/RenderGuardedComponent';
-import { Button } from '../../../../../shared/forms/Button';
+import { ReactElement } from "react";
+import { FeatureComponentProps } from "../../../models/Feature";
+import { ConfirmMergeAccountResources } from "../ConfirmMergeAccountResources";
+import { ConfirmMergeAccountState } from "../ConfirmMergeAccountState";
+import { useWritableValueWithCallbacks } from "../../../../../shared/lib/Callbacks";
+import { ConfirmMergeAccountWrapper } from "./ConfirmMergeAccountWrapper";
+import { styles } from "./styles";
+import { RenderGuardedComponent } from "../../../../../shared/components/RenderGuardedComponent";
+import { Text, View } from "react-native";
+import { FilledInvertedButton } from "../../../../../shared/components/FilledInvertedButton";
+import { LinkButton } from "../../../../../shared/components/LinkButton";
 
 export const ReviewReminders = ({
   resources,
   state,
-}: FeatureComponentProps<ConfirmMergeAccountState, ConfirmMergeAccountResources>): ReactElement => {
+}: FeatureComponentProps<
+  ConfirmMergeAccountState,
+  ConfirmMergeAccountResources
+>): ReactElement => {
   const closeDisabled = useWritableValueWithCallbacks(() => false);
   const onDismiss = useWritableValueWithCallbacks(() => () => {});
 
@@ -20,54 +25,51 @@ export const ReviewReminders = ({
       state={state}
       resources={resources}
       closeDisabled={closeDisabled}
-      onDismiss={onDismiss}>
-      <div className={styles.title}>Would you like to review your reminder settings?</div>
-      <div className={styles.description}>
+      onDismiss={onDismiss}
+    >
+      <Text style={styles.title}>
+        Would you like to review your reminder settings?
+      </Text>
+      <Text style={styles.description}>
         Take a moment to review how and when you receive reminders
-      </div>
-      <div className={styles.buttonContainer}>
+      </Text>
+      <View style={styles.buttonContainer}>
         <RenderGuardedComponent
           props={closeDisabled}
           component={(disabled) => (
-            <Button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
+            <FilledInvertedButton
+              onPress={() => {
                 if (closeDisabled.get()) {
                   return;
                 }
 
-                resources.get().session?.storeAction('goto_review_notifications', null);
+                resources
+                  .get()
+                  .session?.storeAction("goto_review_notifications", null);
                 resources.get().session?.reset();
                 resources.get().requestNotificationTimes();
                 state.get().onReviewReminderSettingsPrompted();
               }}
               disabled={disabled}
               spinner={disabled}
-              variant="filled-white"
-              fullWidth>
+            >
               Review Reminder Settings
-            </Button>
+            </FilledInvertedButton>
           )}
         />
-        <RenderGuardedComponent
-          props={closeDisabled}
-          component={(disabled) => (
-            <Button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                onDismiss.get()();
-                state.get().onReviewReminderSettingsPrompted();
-              }}
-              disabled={disabled}
-              variant="link-white"
-              fullWidth>
-              Skip
-            </Button>
-          )}
-        />
-      </div>
+        <LinkButton
+          onPress={() => {
+            if (closeDisabled.get()) {
+              return;
+            }
+
+            onDismiss.get()();
+            state.get().onReviewReminderSettingsPrompted();
+          }}
+        >
+          Skip
+        </LinkButton>
+      </View>
     </ConfirmMergeAccountWrapper>
   );
 };

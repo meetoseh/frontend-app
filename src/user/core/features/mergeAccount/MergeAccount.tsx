@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useEffect, useRef } from "react";
+import { ReactElement, useCallback, useMemo } from "react";
 import { FeatureComponentProps } from "../../models/Feature";
 import { MergeAccountState, MergeProvider } from "./MergeAccountState";
 import { MergeAccountResources } from "./MergeAccountResources";
@@ -12,6 +12,23 @@ import { FullscreenView } from "../../../../shared/components/FullscreenView";
 import { CloseButton } from "../../../../shared/components/CloseButton";
 import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
 import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
+import { ProviderItem, ProvidersList } from "../login/components/ProvidersList";
+import { styles as loginStyles } from "../login/LoginScreenStyles";
+import Google from "../login/icons/Google";
+import Apple from "../login/icons/Apple";
+import Email from "../login/icons/Email";
+import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks";
+import { Modals, ModalsOutlet } from "../../../../shared/contexts/ModalContext";
+import { StatusBar } from "expo-status-bar";
+import { usePromptMergeUsingModal } from "./hooks/usePromptMergeUsingModal";
+import { useErrorModal } from "../../../../shared/hooks/useErrorModal";
+import { setVWC } from "../../../../shared/lib/setVWC";
+import {
+  ErrorBanner,
+  ErrorBannerText,
+} from "../../../../shared/components/ErrorBanner";
+import { PromptMergeResult } from "./lib/MergeMessagePipe";
+import { describeError } from "../../../../shared/lib/describeError";
 
 export const MergeAccount = ({
   resources,
@@ -20,6 +37,8 @@ export const MergeAccount = ({
   MergeAccountState,
   MergeAccountResources
 >): ReactElement => {
+  const modals = useWritableValueWithCallbacks<Modals>(() => []);
+
   useStartSession(
     {
       type: "callbacks",
@@ -45,17 +64,91 @@ export const MergeAccount = ({
     s.onSuggestionsDismissed();
   }, [resources, state]);
 
+  const promptError = useWritableValueWithCallbacks<ReactElement | null>(
+    () => null
+  );
+  const onPromptMergeResult = useCallback(
+    (result: PromptMergeResult) => {
+      if (result.type === "success") {
+        resources.get().onSecureLoginCompleted(result.mergeToken);
+        const s = state.get();
+        s.ian?.onShown();
+        s.onSuggestionsDismissed();
+      } else {
+        resources.get().onSecureLoginCompleted(null);
+
+        if (result.type === "cancel") {
+          setVWC(
+            promptError,
+            <ErrorBanner>
+              <ErrorBannerText>Merge canceled by user.</ErrorBannerText>
+            </ErrorBanner>
+          );
+        } else if (result.type === "dismiss") {
+          setVWC(
+            promptError,
+            <ErrorBanner>
+              <ErrorBannerText>Merge dismissed by user.</ErrorBannerText>
+            </ErrorBanner>
+          );
+        } else if (result.type === "error") {
+          setVWC(
+            promptError,
+            <ErrorBanner>
+              <ErrorBannerText>ERR: {result.error}</ErrorBannerText>
+            </ErrorBanner>
+          );
+        } else {
+          setVWC(
+            promptError,
+            <ErrorBanner>
+              <ErrorBannerText>
+                Unknown result: {result.rawType}
+              </ErrorBannerText>
+            </ErrorBanner>
+          );
+        }
+      }
+    },
+    [promptError, resources, state]
+  );
+  const promptMergeUsingModal = usePromptMergeUsingModal(
+    modals,
+    onPromptMergeResult
+  );
+
+  useErrorModal(modals, promptError, "prompting merge");
+
   const onLeavingWith = useCallback(
-    (provider: MergeProvider) => {
+    async (provider: MergeProvider) => {
       resources
         .get()
         .session?.storeAction("continue_with_provider", { provider });
 
-      const s = state.get();
-      s.ian?.onShown();
-      s.onSuggestionsDismissed();
+      const url = resources.get().providerUrls?.[provider];
+      if (url === null || url === undefined) {
+        setVWC(
+          promptError,
+          <ErrorBanner>
+            <ErrorBannerText>
+              ERR INVARIANT: We could not connect you with the provider (url
+              unavailable).
+            </ErrorBannerText>
+          </ErrorBanner>
+        );
+        return;
+      }
+
+      setVWC(promptError, null);
+      resources.get().onShowingSecureLogin();
+      try {
+        await promptMergeUsingModal(provider, url);
+      } catch (e) {
+        setVWC(promptError, await describeError(e));
+        resources.get().onSecureLoginCompleted(null);
+      }
     },
-    [resources, state]
+    [resources, promptError, promptMergeUsingModal]
   );
 
   const bodyText = useMappedValueWithCallbacks(resources, (r) => {
@@ -145,96 +238,48 @@ export const MergeAccount = ({
           </View>
         </FullscreenView>
       </SvgLinearGradientBackground>
+      <ModalsOutlet modals={modals} />
+      <StatusBar style="light" />
     </View>
   );
 };
 
 const ProviderUrls = (
-  onLeavingWith: (provider: MergeProvider) => void,
+  onLeavingWith: (provider: MergeProvider) => Promise<void>,
   urls: MergeAccountResources["providerUrls"]
 ): ReactElement => {
-  const googleRef = useRef<HTMLDivElement>(null);
-  const appleRef = useRef<HTMLDivElement>(null);
-  const emailRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const google = googleRef.current;
-    const apple = appleRef.current;
-    const email = emailRef.current;
-
-    if (google === null || apple === null || email === null) {
-      return;
+  const items = useMemo(() => {
+    const result: ProviderItem<MergeProvider>[] = [];
+    if (urls?.Google) {
+      result.push({
+        key: "Google",
+        name: "Sign in with Google",
+        icon: <Google style={loginStyles.google} />,
+      });
     }
+    if (urls?.SignInWithApple) {
+      result.push({
+        key: "SignInWithApple",
+        name: "Sign in with Apple",
+        icon: <Apple style={loginStyles.apple} />,
+      });
+    }
+    if (urls?.Direct) {
+      result.push({
+        key: "Direct",
+        name: "Sign in with Email",
+        icon: <Email style={loginStyles.email} />,
+      });
+    }
+    if (urls?.Dev) {
+      result.push({
+        key: "Dev",
+        name: "Sign in with Dev",
+        icon: <Email style={loginStyles.email} />,
+      });
+    }
+    return result;
+  }, [urls]);
 
-    google.removeAttribute("style");
-    apple.removeAttribute("style");
-    email.removeAttribute("style");
-
-    const googleWidth = google.offsetWidth;
-    const appleWidth = apple.offsetWidth;
-    const emailWidth = email.offsetWidth;
-
-    const maxWidth = Math.max(googleWidth, appleWidth, emailWidth);
-
-    google.style.paddingRight = `${maxWidth - googleWidth}px`;
-    apple.style.paddingRight = `${maxWidth - appleWidth}px`;
-    email.style.paddingRight = `${maxWidth - emailWidth}px`;
-  }, []);
-
-  return (
-    <>
-      {urls && urls.Google && (
-        <Button
-          type="button"
-          variant="filled-white"
-          onClick={urls.Google}
-          onLinkClick={() => onLeavingWith("Google")}
-        >
-          <div className={loginStyles.iconAndText}>
-            <div className={loginStyles.signInWithGoogleIcon}></div>
-            <div ref={googleRef}>Sign in with Google</div>
-          </div>
-        </Button>
-      )}
-      {urls && urls.SignInWithApple && (
-        <Button
-          type="button"
-          variant="filled-white"
-          onClick={urls.SignInWithApple}
-          onLinkClick={() => onLeavingWith("SignInWithApple")}
-        >
-          <div className={loginStyles.iconAndText}>
-            <div className={loginStyles.signInWithAppleIcon}></div>
-            <div ref={appleRef}>Sign in with Apple</div>
-          </div>
-        </Button>
-      )}
-      {urls && urls.Direct && (
-        <Button
-          type="button"
-          variant="filled-white"
-          onClick={urls.Direct}
-          onLinkClick={() => onLeavingWith("Direct")}
-        >
-          <div className={loginStyles.iconAndText}>
-            <div className={loginStyles.signInWithEmailIcon}></div>
-            <div ref={emailRef}>Sign in with Email</div>
-          </div>
-        </Button>
-      )}
-      {urls && urls.Dev && (
-        <Button
-          type="button"
-          variant="filled-white"
-          onClick={urls.Dev}
-          onLinkClick={() => onLeavingWith("Dev")}
-        >
-          <div className={loginStyles.iconAndText}>
-            <div className={loginStyles.signInWithEmailIcon}></div>
-            <div ref={emailRef}>Sign in with Dev</div>
-          </div>
-        </Button>
-      )}
-    </>
-  );
+  return <ProvidersList onItemPressed={onLeavingWith} items={items} />;
 };

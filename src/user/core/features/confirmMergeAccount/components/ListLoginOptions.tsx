@@ -1,10 +1,14 @@
-import { ReactElement } from 'react';
-import { ConfirmMergeAccountResources } from '../ConfirmMergeAccountResources';
-import { ConfirmMergeAccountState, OauthMergeLoginOption } from '../ConfirmMergeAccountState';
-import { RenderGuardedComponent } from '../../../../../shared/components/RenderGuardedComponent';
-import { useMappedValueWithCallbacks } from '../../../../../shared/hooks/useMappedValueWithCallbacks';
-import { MergeProvider } from '../../mergeAccount/MergeAccountState';
-import { ValueWithCallbacks } from '../../../../../shared/lib/Callbacks';
+/* eslint-disable react-native/no-raw-text */
+import { Fragment, ReactElement } from "react";
+import { ConfirmMergeAccountResources } from "../ConfirmMergeAccountResources";
+import {
+  ConfirmMergeAccountState,
+  OauthMergeLoginOption,
+} from "../ConfirmMergeAccountState";
+import { RenderGuardedComponent } from "../../../../../shared/components/RenderGuardedComponent";
+import { useMappedValueWithCallbacks } from "../../../../../shared/hooks/useMappedValueWithCallbacks";
+import { MergeProvider } from "../../mergeAccount/MergeAccountState";
+import { ValueWithCallbacks } from "../../../../../shared/lib/Callbacks";
 
 type _LoginOptions = {
   options: OauthMergeLoginOption[];
@@ -12,7 +16,6 @@ type _LoginOptions = {
 };
 
 export const ListLoginOptions = ({
-  resources,
   state,
   onlyMerging,
   nullText,
@@ -22,65 +25,68 @@ export const ListLoginOptions = ({
   onlyMerging?: boolean;
   nullText?: string;
 }): ReactElement => {
-  const loginOptions = useMappedValueWithCallbacks(state, (s): _LoginOptions | null => {
-    if (s.result === null || s.result === undefined || s.result === false) {
-      return null;
-    }
+  const loginOptions = useMappedValueWithCallbacks(
+    state,
+    (s): _LoginOptions | null => {
+      if (s.result === null || s.result === undefined || s.result === false) {
+        return null;
+      }
 
-    const seenProviders = new Set<MergeProvider>();
-    const options: OauthMergeLoginOption[] = [];
-    let showEmails = false;
+      const seenProviders = new Set<MergeProvider>();
+      const options: OauthMergeLoginOption[] = [];
+      let showEmails = false;
 
-    if (!onlyMerging) {
-      for (const opt of s.result.originalLoginOptions) {
+      if (!onlyMerging) {
+        for (const opt of s.result.originalLoginOptions) {
+          if (seenProviders.has(opt.provider)) {
+            showEmails = true;
+          }
+          seenProviders.add(opt.provider);
+          options.push(opt);
+        }
+      }
+
+      for (const opt of s.result.mergingLoginOptions) {
         if (seenProviders.has(opt.provider)) {
           showEmails = true;
         }
         seenProviders.add(opt.provider);
         options.push(opt);
       }
-    }
 
-    for (const opt of s.result.mergingLoginOptions) {
-      if (seenProviders.has(opt.provider)) {
-        showEmails = true;
-      }
-      seenProviders.add(opt.provider);
-      options.push(opt);
+      return { options, showEmails };
     }
-
-    return { options, showEmails };
-  });
+  );
 
   return (
     <RenderGuardedComponent
       props={loginOptions}
       component={(p) => {
         if (p === null) {
-          return <>{nullText ?? 'any of the associated identities'}</>;
+          return <>{nullText ?? "any of the associated identities"}</>;
         }
         return (
           <>
             {p.options.map((opt, i) => (
-              <>
+              <Fragment key={i}>
                 {i > 0 && (i > 1 || i < p.options.length - 1) && <>, </>}
                 {i === 1 && p.options.length === 2 && <> or </>}
                 {i > 1 && i === p.options.length - 1 && <>or </>}
-                {opt.provider === 'Google' && <>Sign in with Google</>}
-                {opt.provider === 'SignInWithApple' && <>Sign in with Apple</>}
-                {opt.provider === 'Direct' && <>Sign in with Oseh</>}
-                {opt.provider === 'Dev' && <>Sign in with Dev</>}
-                {opt.provider !== 'Google' &&
-                  opt.provider !== 'SignInWithApple' &&
-                  opt.provider !== 'Direct' &&
-                  opt.provider !== 'Dev' && <>Sign in with {opt.provider}</>}
+                {opt.provider === "Google" && <>Sign in with Google</>}
+                {opt.provider === "SignInWithApple" && <>Sign in with Apple</>}
+                {opt.provider === "Direct" && <>Sign in with Oseh</>}
+                {opt.provider === "Dev" && <>Sign in with Dev</>}
+                {opt.provider !== "Google" &&
+                  opt.provider !== "SignInWithApple" &&
+                  opt.provider !== "Direct" &&
+                  opt.provider !== "Dev" && <>Sign in with {opt.provider}</>}
                 {p.showEmails && opt.email && (
                   <>
-                    {' '}
+                    {" "}
                     (<>{opt.email}</>)
                   </>
                 )}
-              </>
+              </Fragment>
             ))}
           </>
         );

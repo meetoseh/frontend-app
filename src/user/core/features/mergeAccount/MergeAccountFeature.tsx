@@ -106,6 +106,14 @@ export const MergeAccountFeature: Feature<
           return;
         }
 
+        if (stored !== null) {
+          stored.mergeSuggestions = [
+            { provider: "Dev" },
+            { provider: "Direct" },
+            { provider: "Google" },
+          ];
+        }
+
         if (
           stored !== null &&
           stored.checkedAt.getTime() >
@@ -189,7 +197,8 @@ export const MergeAccountFeature: Feature<
       return undefined;
     }
 
-    return state.ian.showNow;
+    // return state.ian.showNow;
+    return true;
   },
   useResources: (stateVWC, requiredVWC, allStatesVWC) => {
     const sessionPropsVWC = useMappedValuesWithCallbacks(

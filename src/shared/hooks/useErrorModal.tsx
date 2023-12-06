@@ -17,6 +17,10 @@ export const useErrorModal = (
   errorVWC: WritableValueWithCallbacks<ReactElement | null>,
   location: string
 ) => {
+  if (typeof location !== "string") {
+    throw new Error("location must be a string");
+  }
+
   useValueWithCallbacksEffect(
     errorVWC,
     useCallback(
@@ -27,7 +31,7 @@ export const useErrorModal = (
 
         return addModalWithCallbackToRemove(modals, error);
       },
-      [modals, location, errorVWC]
+      [modals]
     )
   );
 };

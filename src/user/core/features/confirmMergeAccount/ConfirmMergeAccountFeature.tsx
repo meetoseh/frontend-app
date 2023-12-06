@@ -24,7 +24,7 @@ export const ConfirmMergeAccountFeature: Feature<
     const loginContext = useContext(LoginContext);
     const mergeTokenVWC = useWritableValueWithCallbacks<
       string | null | undefined
-    >(() => undefined);
+    >(() => null);
     const resultVWC = useWritableValueWithCallbacks<
       OauthMergeResult | false | null | undefined
     >(() => null);
@@ -102,13 +102,17 @@ export const ConfirmMergeAccountFeature: Feature<
         (result.result === "trivialMerge" ||
           (result.result === "confirmationRequired" && confirmResult === true));
 
-      setVWC(mergeTokenVWC, null);
       setVWC(promptingReviewReminderSettingsVWC, justMerged);
+      setVWC(resultVWC, null);
+      setVWC(confirmResultVWC, null);
+      setVWC(errorVWC, null);
+      setVWC(mergeTokenVWC, null);
     }, [
       mergeTokenVWC,
       promptingReviewReminderSettingsVWC,
       confirmResultVWC,
       resultVWC,
+      errorVWC,
     ]);
 
     const onReviewReminderSettingsPrompted = useCallback(() => {
@@ -167,7 +171,10 @@ export const ConfirmMergeAccountFeature: Feature<
     }
 
     if (state.mergeToken === undefined) {
-      return undefined;
+      // For the app, if the merge token is undefined, that means we
+      // are in another screen which is opening a secure browser and
+      // we don't want to rip the user out of that.
+      return false;
     }
 
     return state.mergeToken !== null;

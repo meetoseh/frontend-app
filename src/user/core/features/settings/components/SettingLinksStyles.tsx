@@ -34,6 +34,22 @@ export const styles = StyleSheet.create({
     backgroundColor: Colors.NEW_GRAYSCALE_BORDER,
   },
   item_normal: {},
+  content: {
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+  },
+  details: {
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+  },
+  detail: {
+    marginTop: 3,
+    fontFamily: "OpenSans-Regular",
+    fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: 0.25,
+    color: Colors.GRAYSCALE_MID_GRAY,
+  },
   text: {
     fontFamily: "OpenSans-Regular",
     fontSize: 14,

@@ -1,11 +1,5 @@
-import {
-  ReactElement,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-} from "react";
-import { Platform, StyleProp, Text, TextStyle, View } from "react-native";
+import { ReactElement, useCallback, useContext, useEffect } from "react";
+import { Platform, Text, View } from "react-native";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { styles } from "./LoginScreenStyles";
@@ -44,10 +38,9 @@ import { RenderGuardedComponent } from "../../../../shared/components/RenderGuar
 import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks";
 import { useContentWidth } from "../../../../shared/lib/useContentWidth";
 import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
-import { FilledInvertedButton } from "../../../../shared/components/FilledInvertedButton";
 import Email from "./icons/Email";
-import { useValuesWithCallbacksEffect } from "../../../../shared/hooks/useValuesWithCallbacksEffect";
 import { useIsTablet } from "../../../../shared/lib/useIsTablet";
+import { ProvidersList } from "./components/ProvidersList";
 
 /* guest -> random guest */
 const DEV_ACCOUNT_USER_IDENTITY_ID: string = "guest";
@@ -94,36 +87,6 @@ export const Login = ({
     () => null
   );
   const mountedVWC = useIsMounted();
-  const googleTextStyleVWC = useWritableValueWithCallbacks<
-    StyleProp<TextStyle>
-  >(() => undefined);
-  const updateGoogleTextStyle = useCallback(
-    (v: StyleProp<TextStyle>) => {
-      setVWC(googleTextStyleVWC, v);
-    },
-    [googleTextStyleVWC]
-  );
-  const googleText = useRef<Text>(null);
-  const appleTextStyleVWC = useWritableValueWithCallbacks<StyleProp<TextStyle>>(
-    () => undefined
-  );
-  const updateAppleTextStyle = useCallback(
-    (v: StyleProp<TextStyle>) => {
-      setVWC(appleTextStyleVWC, v);
-    },
-    [appleTextStyleVWC]
-  );
-  const appleText = useRef<Text>(null);
-  const emailTextStyleVWC = useWritableValueWithCallbacks<StyleProp<TextStyle>>(
-    () => undefined
-  );
-  const updateEmailTextStyle = useCallback(
-    (v: StyleProp<TextStyle>) => {
-      setVWC(emailTextStyleVWC, v);
-    },
-    [emailTextStyleVWC]
-  );
-  const emailText = useRef<Text>(null);
 
   const onMessageFromPipe = useCallback(
     (result: LoginMessage) => {
@@ -169,114 +132,6 @@ export const Login = ({
       }
     },
     [loginContext.setAuthTokens, state, errorVWC]
-  );
-
-  const effectRunning = useRef<boolean>(false);
-  useValuesWithCallbacksEffect(
-    [appleTextStyleVWC, googleTextStyleVWC, emailTextStyleVWC],
-    useCallback(() => {
-      equalizeWidths();
-      return undefined;
-
-      async function equalizeWidths() {
-        if (effectRunning.current) {
-          return;
-        }
-
-        const googleEle = googleText.current;
-        const appleEle = appleText.current;
-        const emailEle = emailText.current;
-
-        if (googleEle === null || appleEle === null || emailEle === null) {
-          return undefined;
-        }
-
-        let apple = appleTextStyleVWC.get();
-        let google = googleTextStyleVWC.get();
-        let email = emailTextStyleVWC.get();
-
-        if (
-          typeof apple !== "object" ||
-          typeof google !== "object" ||
-          typeof email !== "object"
-        ) {
-          return undefined;
-        }
-
-        apple = apple as TextStyle;
-        google = google as TextStyle;
-        email = email as TextStyle;
-
-        effectRunning.current = true;
-        try {
-          const appleWidthSet = apple.paddingRight !== undefined;
-          const googleWidthSet = google.paddingRight !== undefined;
-          const emailWidthSet = email.paddingRight !== undefined;
-
-          if (
-            appleWidthSet !== googleWidthSet ||
-            appleWidthSet !== emailWidthSet
-          ) {
-            setVWC(appleTextStyleVWC, { ...apple, paddingRight: undefined });
-            setVWC(googleTextStyleVWC, { ...google, paddingRight: undefined });
-            setVWC(emailTextStyleVWC, { ...email, paddingRight: undefined });
-            return undefined;
-          }
-
-          let maxWidth = 0;
-          let appleMeasure = 0;
-          let googleMeasure = 0;
-          let emailMeasure = 0;
-          while (maxWidth === 0) {
-            if (!mountedVWC.get()) {
-              return;
-            }
-            [appleMeasure, googleMeasure, emailMeasure] = await Promise.all(
-              [appleEle, googleEle, emailEle].map(
-                (ele) =>
-                  new Promise<number>((resolve) => {
-                    ele.measure((x, y, width) => {
-                      resolve(width);
-                    });
-                  })
-              )
-            );
-            maxWidth = Math.max(appleMeasure, googleMeasure, emailMeasure);
-
-            if (maxWidth <= 0 && mountedVWC.get()) {
-              await new Promise((resolve) => setTimeout(resolve, 100));
-            }
-          }
-
-          if (!mountedVWC.get()) {
-            return;
-          }
-
-          setVWC(appleTextStyleVWC, {
-            ...apple,
-            paddingRight: maxWidth - appleMeasure,
-          });
-          setVWC(googleTextStyleVWC, {
-            ...google,
-            paddingRight: maxWidth - googleMeasure,
-          });
-          setVWC(emailTextStyleVWC, {
-            ...email,
-            paddingRight: maxWidth - emailMeasure,
-          });
-        } finally {
-          effectRunning.current = false;
-        }
-      }
-    }, [
-      googleText,
-      appleText,
-      emailText,
-      appleTextStyleVWC,
-      googleTextStyleVWC,
-      emailTextStyleVWC,
-      mountedVWC,
-    ])
   );
 
   useEffect(() => {
@@ -415,18 +270,6 @@ export const Login = ({
     [onMessageFromPipe, mountedVWC, errorVWC]
   );
 
-  const onContinueWithGoogle = useCallback(async () => {
-    onContinueWithProvider("Google");
-  }, [onContinueWithProvider]);
-
-  const onContinueWithApple = useCallback(async () => {
-    onContinueWithProvider("SignInWithApple");
-  }, [onContinueWithProvider]);
-
-  const onContinueWithEmail = useCallback(async () => {
-    onContinueWithProvider("Direct");
-  }, [onContinueWithProvider]);
-
   const onLongPressMessage = useCallback(async () => {
     if (Constants.expoConfig?.extra?.environment !== "dev") {
       return;
@@ -508,53 +351,26 @@ export const Login = ({
         <Text style={styles.message} onLongPress={onLongPressMessage}>
           Make mindfulness a daily part of your life in 60 seconds.
         </Text>
-        <FilledInvertedButton
-          onPress={onContinueWithGoogle}
-          setTextStyle={updateGoogleTextStyle}
-          width={contentWidth}
-        >
-          <Google style={styles.google} />
-          <RenderGuardedComponent
-            props={googleTextStyleVWC}
-            component={(textStyle) => (
-              <Text style={textStyle} ref={googleText}>
-                Sign in with Google
-              </Text>
-            )}
-          />
-        </FilledInvertedButton>
-        <View style={{ height: 20 }} />
-        <FilledInvertedButton
-          onPress={onContinueWithApple}
-          setTextStyle={updateAppleTextStyle}
-          width={contentWidth}
-        >
-          <Apple style={styles.apple} />
-          <RenderGuardedComponent
-            props={appleTextStyleVWC}
-            component={(textStyle) => (
-              <Text style={textStyle} ref={appleText}>
-                Sign in with Apple
-              </Text>
-            )}
-          />
-        </FilledInvertedButton>
-        <View style={{ height: 20 }} />
-        <FilledInvertedButton
-          onPress={onContinueWithEmail}
-          setTextStyle={updateEmailTextStyle}
-          width={contentWidth}
-        >
-          <Email style={styles.email} />
-          <RenderGuardedComponent
-            props={emailTextStyleVWC}
-            component={(textStyle) => (
-              <Text style={textStyle} ref={emailText}>
-                Sign in with Email
-              </Text>
-            )}
-          />
-        </FilledInvertedButton>
+        <ProvidersList
+          items={[
+            {
+              key: "Google",
+              icon: <Google style={styles.google} />,
+              name: "Sign in with Google",
+            },
+            {
+              key: "SignInWithApple",
+              icon: <Apple style={styles.apple} />,
+              name: "Sign in with Apple",
+            },
+            {
+              key: "Direct",
+              icon: <Email style={styles.email} />,
+              name: "Sign in with Email",
+            },
+          ]}
+          onItemPressed={(key) => onContinueWithProvider(key)}
+        />
         <View style={{ height: 56 }} />
       </OsehImageBackgroundFromStateValueWithCallbacks>
       <StatusBar style="light" />

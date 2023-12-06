@@ -6,13 +6,23 @@ import {
   useMemo,
 } from "react";
 import { useStateCompat as useState } from "../hooks/useStateCompat";
-import { Pressable, TextStyle, View, ViewStyle } from "react-native";
+import {
+  Pressable,
+  StyleProp,
+  TextStyle,
+  Text,
+  View,
+  ViewStyle,
+} from "react-native";
 import { CustomButtonProps } from "../models/CustomButtonProps";
 import { InlineOsehSpinner } from "./InlineOsehSpinner";
 import {
   LinearGradientBackground,
   LinearGradientState,
 } from "../anim/LinearGradientBackground";
+import { RenderGuardedComponent } from "./RenderGuardedComponent";
+import { useWritableValueWithCallbacks } from "../lib/Callbacks";
+import { setVWC } from "../lib/setVWC";
 
 type GradientStyleProps = {
   gradient?: LinearGradientState;
@@ -134,20 +144,22 @@ export const FilledButton = ({
     return result;
   }, [containerStyles]);
 
-  useEffect(() => {
-    if (!setTextStyle) {
-      return;
-    }
+  const myTextStyle = useWritableValueWithCallbacks<StyleProp<TextStyle>>(
+    () => undefined
+  );
 
-    setTextStyle(
-      Object.assign(
-        {},
-        styles.text,
-        ...(pressed ? [styles.pressedText] : []),
-        ...(disabled ? [styles.disabledText] : [])
-      )
+  useEffect(() => {
+    const newStyle = Object.assign(
+      {},
+      styles.text,
+      ...(pressed ? [styles.pressedText] : []),
+      ...(disabled ? [styles.disabledText] : [])
     );
-  }, [pressed, disabled, setTextStyle, styles]);
+    setVWC(myTextStyle, newStyle);
+    if (setTextStyle) {
+      setTextStyle(newStyle);
+    }
+  }, [pressed, disabled, setTextStyle, styles, myTextStyle]);
 
   useEffect(() => {
     if (!setForegroundColor) {
@@ -192,7 +204,14 @@ export const FilledButton = ({
               />
             </View>
           )}
-          {children}
+          {typeof children === "string" ? (
+            <RenderGuardedComponent
+              props={myTextStyle}
+              component={(s) => <Text style={s}>{children}</Text>}
+            />
+          ) : (
+            children
+          )}
         </View>
       </LinearGradientBackground>
     </Pressable>

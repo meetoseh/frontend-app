@@ -9,6 +9,7 @@ import { LoginContext } from "../../../../shared/contexts/LoginContext";
 import { useValueWithCallbacksEffect } from "../../../../shared/hooks/useValueWithCallbacksEffect";
 import { Settings } from "./Settings";
 import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
+import { useIdentities } from "./hooks/useIdentities";
 import { apiFetch } from "../../../../shared/lib/apiFetch";
 import { describeError } from "../../../../shared/lib/describeError";
 
@@ -74,6 +75,20 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
           );
         },
       }
+    );
+
+    const isMerging = useMappedValueWithCallbacks(
+      allStatesVWC,
+      (s) =>
+        s.confirmMergeAccount.mergeToken !== null &&
+        s.confirmMergeAccount.mergeToken !== undefined
+    );
+
+    const identitiesVWC = useIdentities(
+      useMappedValuesWithCallbacks(
+        [requiredVWC, isMerging],
+        () => !requiredVWC.get() || isMerging.get()
+      )
     );
 
     useValueWithCallbacksEffect(
@@ -145,25 +160,67 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
       )
     );
 
+    const confirmMergePassthroughsVWC = useMappedValueWithCallbacks(
+      allStatesVWC,
+      (allStates) => {
+        const onShowingSecureLogin =
+          allStates.confirmMergeAccount.onShowingSecureLogin;
+        const onSecureLoginCompleted =
+          allStates.confirmMergeAccount.onSecureLoginCompleted;
+
+        return {
+          onShowingSecureLogin,
+          onSecureLoginCompleted,
+        };
+      },
+      {
+        inputEqualityFn: (a, b) => {
+          return (
+            Object.is(
+              a.confirmMergeAccount.onShowingSecureLogin,
+              b.confirmMergeAccount.onShowingSecureLogin
+            ) &&
+            Object.is(
+              a.confirmMergeAccount.onSecureLoginCompleted,
+              b.confirmMergeAccount.onSecureLoginCompleted
+            )
+          );
+        },
+      }
+    );
+
     return useMappedValuesWithCallbacks(
-      [haveProVWC, loadErrorVWC, gotoEditTimesVWC],
+      [
+        haveProVWC,
+        loadErrorVWC,
+        gotoEditTimesVWC,
+        identitiesVWC,
+        gotoMyLibraryVWC,
+        confirmMergePassthroughsVWC,
+      ],
       (): SettingsResources => {
         if (loadErrorVWC.get() !== null) {
           return {
             loading: false,
             havePro: undefined,
+            identities: { type: "loading" },
             loadError: loadErrorVWC.get(),
             gotoEditReminderTimes: () => {},
             gotoMyLibrary: () => {},
+            ...confirmMergePassthroughsVWC.get(),
           };
         }
 
         return {
-          loading: haveProVWC.get() === undefined,
+          loading:
+            haveProVWC.get() === undefined ||
+            identitiesVWC.get().type === "loading",
           havePro: haveProVWC.get(),
           loadError: null,
+          identities: identitiesVWC.get(),
           gotoEditReminderTimes: gotoEditTimesVWC.get(),
           gotoMyLibrary: gotoMyLibraryVWC.get(),
+          ...confirmMergePassthroughsVWC.get(),
         };
       }
     );

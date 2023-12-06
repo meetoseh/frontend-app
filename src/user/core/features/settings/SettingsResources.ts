@@ -1,4 +1,5 @@
 import { ReactElement } from "react";
+import { IdentitiesState } from "./hooks/useIdentities";
 
 /**
  * The resources required to display the settings screen
@@ -26,6 +27,12 @@ export type SettingsResources = {
   havePro: boolean | undefined;
 
   /**
+   * The users identities. May be in an errored state, but won't be loading
+   * unless loading is true.
+   */
+  identities: IdentitiesState;
+
+  /**
    * A function which can be called to change to the edit notification
    * times screen.
    */
@@ -35,4 +42,16 @@ export type SettingsResources = {
    * A function which can be called to change to the history screen
    */
   gotoMyLibrary: () => void;
+
+  /**
+   * May be called when mergeToken is null to set it to undefined in the confirm
+   * merge feature.
+   */
+  onShowingSecureLogin: () => void;
+
+  /**
+   * May be called when mergeToken is undefined to set it to the given value in
+   * the confirm merge feature.
+   */
+  onSecureLoginCompleted: (mergeToken: string | null) => void;
 };

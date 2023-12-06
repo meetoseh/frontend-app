@@ -1,37 +1,54 @@
-import { PropsWithChildren, ReactElement, useCallback, useEffect, useRef } from 'react';
+import {
+  PropsWithChildren,
+  ReactElement,
+  useCallback,
+  useContext,
+  useEffect,
+} from "react";
 import {
   ValueWithCallbacks,
   WritableValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from '../../../../../shared/lib/Callbacks';
-import { ConfirmMergeAccountState } from '../ConfirmMergeAccountState';
-import { useWindowSizeValueWithCallbacks } from '../../../../../shared/hooks/useWindowSize';
-import { useFullHeight } from '../../../../../shared/hooks/useFullHeight';
-import styles from './styles.module.css';
-import { ConfirmMergeAccountResources } from '../ConfirmMergeAccountResources';
-import { useValueWithCallbacksEffect } from '../../../../../shared/hooks/useValueWithCallbacksEffect';
-import { setVWC } from '../../../../../shared/lib/setVWC';
-import { IconButton } from '../../../../../shared/forms/IconButton';
-import { useTimedValueWithCallbacks } from '../../../../../shared/hooks/useTimedValue';
-import { useMappedValuesWithCallbacks } from '../../../../../shared/hooks/useMappedValuesWithCallbacks';
+} from "../../../../../shared/lib/Callbacks";
+import { ConfirmMergeAccountState } from "../ConfirmMergeAccountState";
+import { ConfirmMergeAccountResources } from "../ConfirmMergeAccountResources";
+import { useValueWithCallbacksEffect } from "../../../../../shared/hooks/useValueWithCallbacksEffect";
+import { setVWC } from "../../../../../shared/lib/setVWC";
+import { useTimedValueWithCallbacks } from "../../../../../shared/hooks/useTimedValue";
+import { useMappedValuesWithCallbacks } from "../../../../../shared/hooks/useMappedValuesWithCallbacks";
+import { View } from "react-native";
+import { SvgLinearGradientBackground } from "../../../../../shared/anim/SvgLinearGradientBackground";
+import { STANDARD_BLACK_GRAY_GRADIENT_SVG } from "../../../../../styling/colors";
+import { FullscreenView } from "../../../../../shared/components/FullscreenView";
+import { CloseButton } from "../../../../../shared/components/CloseButton";
+import { useContentWidth } from "../../../../../shared/lib/useContentWidth";
+import { styles } from "./styles";
+import { StatusBar } from "expo-status-bar";
+import {
+  ModalContext,
+  ModalsOutlet,
+} from "../../../../../shared/contexts/ModalContext";
 
 export const ConfirmMergeAccountWrapper = ({
   state,
   resources,
   closeDisabled,
   onDismiss,
+  keepSessionOpen,
   children,
 }: PropsWithChildren<{
   state: ValueWithCallbacks<ConfirmMergeAccountState>;
   resources: ValueWithCallbacks<ConfirmMergeAccountResources>;
   closeDisabled?: WritableValueWithCallbacks<boolean>;
+  keepSessionOpen?: boolean;
   onDismiss?: WritableValueWithCallbacks<() => void>;
 }>): ReactElement => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const windowSize = useWindowSizeValueWithCallbacks();
-  useFullHeight({ element: containerRef, attribute: 'minHeight', windowSizeVWC: windowSize });
-
-  const accidentalClickThroughPrevention = useTimedValueWithCallbacks(true, false, 2000);
+  const modalContext = useContext(ModalContext);
+  const accidentalClickThroughPrevention = useTimedValueWithCallbacks(
+    true,
+    false,
+    2000
+  );
 
   const rawCloseDisabled = useMappedValuesWithCallbacks(
     [state, accidentalClickThroughPrevention],
@@ -85,23 +102,35 @@ export const ConfirmMergeAccountWrapper = ({
       return;
     }
 
-    resources.get().session?.storeAction('dismiss', null);
-    resources.get().session?.reset();
+    resources.get().session?.storeAction("dismiss", null);
+    if (!keepSessionOpen) {
+      resources.get().session?.reset();
+    }
     state.get().onDismissed();
-  }, [resources, state, realCloseDisabled]);
+  }, [resources, state, realCloseDisabled, keepSessionOpen]);
   if (onDismiss !== undefined) {
     setVWC(onDismiss, onCloseClick);
   }
 
+  const contentWidth = useContentWidth();
+
   return (
-    <div className={styles.container} ref={containerRef}>
-      <div className={styles.background} />
-      <div className={styles.contentContainer}>
-        <div className={styles.closeButtonContainer}>
-          <IconButton icon={styles.closeIcon} srOnlyName="Close" onClick={onCloseClick} />
-        </div>
-        <div className={styles.content}>{children}</div>
-      </div>
-    </div>
+    <View style={styles.container}>
+      <SvgLinearGradientBackground
+        state={{
+          type: "react-rerender",
+          props: STANDARD_BLACK_GRAY_GRADIENT_SVG,
+        }}
+      >
+        <FullscreenView style={styles.background} alwaysScroll>
+          <CloseButton onPress={onCloseClick} />
+          <View style={{ ...styles.content, width: contentWidth }}>
+            {children}
+          </View>
+        </FullscreenView>
+      </SvgLinearGradientBackground>
+      <ModalsOutlet modals={modalContext.modals} />
+      <StatusBar style="light" />
+    </View>
   );
 };
