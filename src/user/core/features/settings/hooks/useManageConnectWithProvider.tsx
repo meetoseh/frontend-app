@@ -4,7 +4,6 @@ import {
   ValueWithCallbacks,
   WritableValueWithCallbacks,
   createWritableValueWithCallbacks,
-  useWritableValueWithCallbacks,
 } from "../../../../../shared/lib/Callbacks";
 import { setVWC } from "../../../../../shared/lib/setVWC";
 import { MergeProvider } from "../../mergeAccount/MergeAccountState";
@@ -35,9 +34,6 @@ export const useManageConnectWithProvider = ({
 }): ((provider: MergeProvider, name: string) => Promise<void>) => {
   const loginContext = useContext(LoginContext);
 
-  const promptError = useWritableValueWithCallbacks<ReactElement | null>(
-    () => null
-  );
   const onPromptMergeResult = useCallback(
     (result: PromptMergeResult) => {
       if (result.type === "success") {
@@ -47,28 +43,28 @@ export const useManageConnectWithProvider = ({
 
         if (result.type === "cancel") {
           setVWC(
-            promptError,
+            mergeError,
             <ErrorBanner>
               <ErrorBannerText>Merge canceled by user.</ErrorBannerText>
             </ErrorBanner>
           );
         } else if (result.type === "dismiss") {
           setVWC(
-            promptError,
+            mergeError,
             <ErrorBanner>
               <ErrorBannerText>Merge dismissed by user.</ErrorBannerText>
             </ErrorBanner>
           );
         } else if (result.type === "error") {
           setVWC(
-            promptError,
+            mergeError,
             <ErrorBanner>
               <ErrorBannerText>ERR: {result.error}</ErrorBannerText>
             </ErrorBanner>
           );
         } else {
           setVWC(
-            promptError,
+            mergeError,
             <ErrorBanner>
               <ErrorBannerText>
                 Unknown result: {result.rawType}
@@ -78,7 +74,7 @@ export const useManageConnectWithProvider = ({
         }
       }
     },
-    [promptError, resources]
+    [mergeError, resources]
   );
 
   const promptMergeUsingModal = usePromptMergeUsingModal(

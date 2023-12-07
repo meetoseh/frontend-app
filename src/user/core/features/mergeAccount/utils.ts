@@ -39,7 +39,7 @@ export const getMergeProviderUrl = async (
       headers: { "Content-Type": "application/json; charset=utf-8" },
       body: JSON.stringify({
         provider: provider,
-        redirectUrl: mergeRedirectUrl,
+        redirect_uri: mergeRedirectUrl,
       }),
     },
     loginContext
