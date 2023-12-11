@@ -32,6 +32,7 @@ import FullHeartIcon from "../icons/FullHeartIcon";
 import EmptyHeartIcon from "../icons/EmptyHeartIcon";
 import { StatusBar } from "expo-status-bar";
 import { useToggleFavorited } from "../hooks/useToggleFavorited";
+import { onJourneyTaken } from "../lib/JourneyFeedbackRequestReviewStore";
 
 const HIDE_TIME = 10000;
 
@@ -249,6 +250,15 @@ export const Journey = ({
     shared,
   });
 
+  const storedSeen = useRef(false);
+  useEffect(() => {
+    if (storedSeen.current) {
+      return;
+    }
+    storedSeen.current = true;
+    onJourneyTaken();
+  }, []);
+
   return (
     <View style={styles.container}>
       <OsehImageBackgroundFromStateValueWithCallbacks
@@ -386,7 +396,7 @@ const Control = ({
     animators,
     (val) => {
       setVWC(shouldRenderVWC, val.opacity > 0);
-      let animating = val.opacity !== 0 && val.opacity !== 1;
+      const animating = val.opacity !== 0 && val.opacity !== 1;
       currentlyRenderedPropsRef.current = {
         style: Object.assign({}, style, {
           opacity: val.opacity,

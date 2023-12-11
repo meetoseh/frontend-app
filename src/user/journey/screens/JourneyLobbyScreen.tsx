@@ -20,7 +20,6 @@ export const JourneyLobbyScreen = ({
   journey,
   shared,
   setScreen,
-  onJourneyFinished,
 }: JourneyScreenProps): ReactElement => {
   const loginContext = useContext(LoginContext);
   const leavingCallback = useRef<(() => void) | null>(null);

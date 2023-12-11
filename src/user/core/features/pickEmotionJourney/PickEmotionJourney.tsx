@@ -23,6 +23,10 @@ import { apiFetch } from "../../../../shared/lib/apiFetch";
 import { Journey } from "../../../journey/screens/Journey";
 import { JourneyFeedbackScreen } from "../../../journey/screens/JourneyFeedbackScreen";
 import { JourneyPostScreen } from "../../../journey/screens/JourneyPostScreen";
+import { useValueWithCallbacksEffect } from "../../../../shared/hooks/useValueWithCallbacksEffect";
+import { onReviewRequested } from "../../../journey/lib/JourneyFeedbackRequestReviewStore";
+import * as StoreReview from "expo-store-review";
+import { Platform } from "react-native";
 
 /**
  * The core screen where the user selects an emotion and the backend
@@ -111,7 +115,7 @@ export const PickEmotionJourney = ({
       }
       handleSelected(resources.get().selected);
     }
-  }, [resources]);
+  }, [resources, step.journeyUid, step.step]);
 
   const gotoJourney = useCallback(() => {
     const selected = resources.get().selected;
@@ -144,12 +148,6 @@ export const PickEmotionJourney = ({
 
       const selected = resources.get().selected;
       if (selected === null) {
-        return;
-      }
-
-      if (screen === "share") {
-        // screen has been temporarily removed
-        onFinishJourney();
         return;
       }
 
@@ -199,6 +197,40 @@ export const PickEmotionJourney = ({
         { width: 0, height: 0 },
         { width: 0, height: 0 }
       )
+  );
+
+  const requestedReview = useRef(false);
+  useValueWithCallbacksEffect(
+    useMappedValueWithCallbacks(sharedVWC, (s): boolean => s.wantStoreReview),
+    useCallback(
+      (wantStoreReview) => {
+        if (!wantStoreReview || requestedReview.current) {
+          return;
+        }
+        requestedReview.current = true;
+
+        StoreReview.requestReview();
+        onReviewRequested();
+        apiFetch(
+          "/api/1/notifications/inapp/start",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json; charset=utf-8" },
+            body: JSON.stringify({
+              inapp_notification_uid: "oseh_ian_P1LDF0FIWtqnU4D0FsOZgg",
+              platform: Platform.OS,
+            }),
+          },
+          loginContext
+        );
+        setTimeout(() => {
+          sharedVWC.get().setWantStoreReview(false);
+        }, 1);
+
+        return undefined;
+      },
+      [loginContext, sharedVWC]
+    )
   );
 
   if (forceSplash) {

@@ -32,8 +32,7 @@ export type JourneyRouterScreenId =
   | "start"
   | "journey"
   | "feedback"
-  | "post"
-  | "share";
+  | "post";
 
 export const JourneyRouter = ({
   journey,
@@ -50,12 +49,6 @@ export const JourneyRouter = ({
       journey,
       shared: sharedState,
       setScreen: (screen) => {
-        if (screen === "share") {
-          // screen has been temporarily removed
-          onFinished();
-          return;
-        }
-
         screen = screen as JourneyRouterScreenId;
 
         if (screen === "journey") {
@@ -122,11 +115,7 @@ export const JourneyRouter = ({
     return <JourneyPostScreen {...screenProps} />;
   }
 
-  // if (screen === "share") {
-  //   return <JourneyShareScreen {...screenProps} />;
-  // }
-  // return handleUnknownScreen(screen);
-  throw new Error("JourneyRouter: screen not implemented");
+  return handleUnknownScreen(screen);
 };
 
 // used to tell the type system that this should never happen;

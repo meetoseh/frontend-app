@@ -30,9 +30,16 @@ export type JourneyShared = {
    * our local state.
    */
   favorited: boolean | null;
-
   /**
    * A setter for favorited which can only be used if favorited is not null
    */
   setFavorited: (favorited: boolean) => void;
+  /**
+   * True if we want to request a store review, false otherwise
+   */
+  wantStoreReview: boolean;
+  /**
+   * Sets whether we want to request a store review
+   */
+  setWantStoreReview: (wantStoreReview: boolean) => void;
 };

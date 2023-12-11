@@ -107,6 +107,7 @@ export const useJourneyShared = (
         handleContentTarget(),
         handleAudio(),
         handleFavorited(),
+        handleWantsStoreReview(),
       ];
       return () => {
         if (!active) {
@@ -365,6 +366,23 @@ export const useJourneyShared = (
           }
         }
       }
+
+      function handleWantsStoreReview(): () => void {
+        result.set({
+          ...result.get(),
+          setWantStoreReview: (wantStoreReview: boolean) => {
+            if (result.get().wantStoreReview !== wantStoreReview) {
+              result.set({
+                ...result.get(),
+                wantStoreReview,
+              });
+              result.callbacks.call(undefined);
+            }
+          },
+        });
+        result.callbacks.call(undefined);
+        return () => {};
+      }
     }
 
     function handlePerpetualLoading(): () => void {
@@ -447,5 +465,9 @@ export const createLoadingJourneyShared = (
   favorited: null,
   setFavorited: () => {
     throw new Error("cannot setFavorited while favorited is null");
+  },
+  wantStoreReview: false,
+  setWantStoreReview: () => {
+    throw new Error("cannot set wantStoreReview while loading");
   },
 });

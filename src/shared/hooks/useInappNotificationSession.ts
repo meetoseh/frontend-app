@@ -12,6 +12,7 @@ import { useMappedValuesWithCallbacks } from "./useMappedValuesWithCallbacks";
 import { useUnwrappedValueWithCallbacks } from "./useUnwrappedValueWithCallbacks";
 import { apiFetch } from "../lib/apiFetch";
 import { setVWC } from "../lib/setVWC";
+import { Platform } from "react-native";
 
 /**
  * Describes a session for an in-app notification. A session is a reusable
@@ -140,7 +141,7 @@ export const useInappNotificationSessionValueWithCallbacks = (
                   },
                   body: JSON.stringify({
                     inapp_notification_uid: props.uid,
-                    platform: "web",
+                    platform: Platform.OS,
                   }),
                 },
                 loginContext

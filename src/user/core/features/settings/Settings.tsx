@@ -30,6 +30,7 @@ import Wordmark from "../../../../shared/icons/Wordmark";
 import Constants from "expo-constants";
 import { useManageConnectWithProvider } from "./hooks/useManageConnectWithProvider";
 import { MergeProvider } from "../mergeAccount/MergeAccountState";
+import { deleteJourneyFeedbackRequestReviewStoredState } from "../../../journey/lib/JourneyFeedbackRequestReviewStore";
 
 /**
  * Shows a basic settings screen for the user. Requires a login context and a modal
@@ -79,6 +80,7 @@ export const Settings = ({
       key: "logout",
       onClick: () => {
         if (loginContext.state === "logged-in") {
+          deleteJourneyFeedbackRequestReviewStoredState();
           loginContext.setAuthTokens(null);
           // a delay is an easy way to avoid flashing the homescreen while
           // logout finishes as contexts are slower than setShow

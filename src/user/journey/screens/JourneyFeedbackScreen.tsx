@@ -52,11 +52,11 @@ import { adaptValueWithCallbacksAsVariableStrategyProps } from "../../../shared/
 import { GrayscaledView } from "../../../shared/components/GrayscaledView";
 import { RenderGuardedComponent } from "../../../shared/components/RenderGuardedComponent";
 import { CustomButtonProps } from "../../../shared/models/CustomButtonProps";
-import { useStateCompat } from "../../../shared/hooks/useStateCompat";
 import { FilledInvertedButton } from "../../../shared/components/FilledInvertedButton";
 import { LinkButton } from "../../../shared/components/LinkButton";
 import { useIsEffectivelyTinyScreen } from "../../../shared/hooks/useIsEffectivelyTinyScreen";
 import { useContentWidth } from "../../../shared/lib/useContentWidth";
+import { onJourneyRated } from "../lib/JourneyFeedbackRequestReviewStore";
 
 /**
  * Asks the user for feedback about the journey so that we can curate the
@@ -68,7 +68,9 @@ export const JourneyFeedbackScreen = ({
   setScreen,
 }: JourneyScreenProps): ReactElement => {
   const loginContext = useContext(LoginContext);
-  const responseVWC = useWritableValueWithCallbacks<number | null>(() => null);
+  const responseVWC = useWritableValueWithCallbacks<1 | 2 | 3 | 4 | null>(
+    () => null
+  );
   const emojiStatesVWCs = useMemo(
     () =>
       [0, 1, 2, 3].map(() =>
@@ -84,7 +86,7 @@ export const JourneyFeedbackScreen = ({
   // Manages the emoji rotation & scale when a response is selected
   useEffect(() => {
     let active = true;
-    let canceled = new Callbacks<undefined>();
+    const canceled = new Callbacks<undefined>();
     let animations: {
       rotation: BezierAnimation[];
       scale: BezierAnimation[];
@@ -160,7 +162,7 @@ export const JourneyFeedbackScreen = ({
     }
 
     function clearStyles() {
-      emojiStatesVWCs.forEach((s, idx) => {
+      emojiStatesVWCs.forEach((s) => {
         setVWC(
           s,
           {
@@ -259,13 +261,19 @@ export const JourneyFeedbackScreen = ({
   const onX = useCallback(() => {
     storeResponse();
     setScreen("post", true);
-  }, [setScreen, storeResponse]);
+    const response = responseVWC.get();
+    if (response !== null) {
+      onJourneyRated(journey.uid, response).then((wantStoreReview) => {
+        shared.get().setWantStoreReview(wantStoreReview);
+      });
+    }
+  }, [setScreen, storeResponse, shared, responseVWC, journey.uid]);
 
   const onContinue = onX;
 
   const clickResponse = useMemo<(() => void)[]>(
     () =>
-      [1, 2, 3, 4].map((i) => () => {
+      ([1, 2, 3, 4] as (1 | 2 | 3 | 4)[]).map((i) => () => {
         setVWC(responseVWC, i);
       }),
     [responseVWC]
@@ -337,31 +345,13 @@ export const JourneyFeedbackScreen = ({
           </View>
           <RenderGuardedComponent
             props={useMappedValueWithCallbacks(responseVWC, (r) => r !== null)}
-            component={(haveResponse) => {
-              const [textStyle, setTextStyle] = useStateCompat<
-                StyleProp<TextStyle>
-              >(() => ({}));
-              const props: CustomButtonProps = {
-                setTextStyle,
-                width: contentWidth,
-                marginTop: 60,
-                onPress: onContinue,
-              };
-
-              if (haveResponse) {
-                return (
-                  <FilledInvertedButton {...props}>
-                    <Text style={textStyle}>Continue</Text>
-                  </FilledInvertedButton>
-                );
-              } else {
-                return (
-                  <LinkButton {...props}>
-                    <Text style={textStyle}>Skip</Text>
-                  </LinkButton>
-                );
-              }
-            }}
+            component={(haveResponse) => (
+              <ContinueButton
+                haveResponse={haveResponse}
+                width={contentWidth}
+                onPress={onContinue}
+              />
+            )}
           />
           <Text style={{ ...styles.infoText, width: contentWidth }}>
             Your ratings will be used to personalize your experience
@@ -371,6 +361,46 @@ export const JourneyFeedbackScreen = ({
       <StatusBar style="light" />
     </View>
   );
+};
+
+const ContinueButton = ({
+  haveResponse,
+  width,
+  onPress,
+}: {
+  haveResponse: boolean;
+  width: number;
+  onPress: () => void;
+}) => {
+  const textStyleVWC = useWritableValueWithCallbacks<StyleProp<TextStyle>>(
+    () => undefined
+  );
+  const props: CustomButtonProps = {
+    setTextStyle: (s) => setVWC(textStyleVWC, s),
+    width,
+    marginTop: 60,
+    onPress,
+  };
+
+  if (haveResponse) {
+    return (
+      <FilledInvertedButton {...props}>
+        <RenderGuardedComponent
+          props={textStyleVWC}
+          component={(textStyle) => <Text style={textStyle}>Continue</Text>}
+        />
+      </FilledInvertedButton>
+    );
+  } else {
+    return (
+      <LinkButton {...props}>
+        <RenderGuardedComponent
+          props={textStyleVWC}
+          component={(textStyle) => <Text style={textStyle}>Skip</Text>}
+        />
+      </LinkButton>
+    );
+  }
 };
 
 type FeedbackButtonState = {

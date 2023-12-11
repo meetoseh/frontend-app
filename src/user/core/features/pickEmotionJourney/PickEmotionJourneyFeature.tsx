@@ -410,7 +410,7 @@ export const PickEmotionJourneyFeature: Feature<
             placeholderColor: "#cccccc",
           })
         );
-        for (let r of requests) {
+        for (const r of requests) {
           r.stateChanged.add(handleStateChanged);
         }
         handleStateChanged();
@@ -422,7 +422,7 @@ export const PickEmotionJourneyFeature: Feature<
           innerActive = false;
           profilePicturesVWC.set([]);
           profilePicturesVWC.callbacks.call(undefined);
-          for (let r of requests) {
+          for (const r of requests) {
             r.stateChanged.remove(handleStateChanged);
             r.release();
           }
@@ -458,7 +458,7 @@ export const PickEmotionJourneyFeature: Feature<
       }
 
       reloadEmotions.current.call(undefined);
-    }, [isOnboardingVWC]);
+    }, [isOnboardingVWC, allStatesVWC]);
 
     const takeAnotherClass = useCallback(async () => {
       const selected = selectedVWC.get();

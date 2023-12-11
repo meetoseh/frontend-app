@@ -18,6 +18,7 @@ import {
 } from "../../../../../shared/components/ErrorBanner";
 import { apiFetch } from "../../../../../shared/lib/apiFetch";
 import { describeError } from "../../../../../shared/lib/describeError";
+import { deleteJourneyFeedbackRequestReviewStoredState } from "../../../../journey/lib/JourneyFeedbackRequestReviewStore";
 
 export const useHandleDeleteAccount = (
   loginContext: LoginContextValue,
@@ -101,6 +102,7 @@ export const useHandleDeleteAccount = (
           throw response;
         }
 
+        deleteJourneyFeedbackRequestReviewStoredState();
         await loginContext.setAuthTokens(null);
         setTimeout(() => requestNoShowSettings(), 1000);
       } catch (e) {
