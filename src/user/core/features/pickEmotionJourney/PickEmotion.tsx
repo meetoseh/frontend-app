@@ -5,8 +5,8 @@ import {
   useEffect,
   useMemo,
   useRef,
-} from "react";
-import { useStateCompat as useState } from "../../../../shared/hooks/useStateCompat";
+} from 'react';
+import { useStateCompat as useState } from '../../../../shared/hooks/useStateCompat';
 import {
   Pressable,
   ScaledSize,
@@ -14,52 +14,52 @@ import {
   Text,
   TextStyle,
   View,
-} from "react-native";
-import { FeatureComponentProps } from "../../models/Feature";
-import { PickEmotionJourneyResources } from "./PickEmotionJourneyResources";
-import { PickEmotionJourneyState } from "./PickEmotionJourneyState";
-import { styles } from "./PickEmotionStyles";
-import { OsehImageFromState } from "../../../../shared/images/OsehImageFromState";
-import { LoginContext } from "../../../../shared/contexts/LoginContext";
-import EmptyHeart from "./icons/EmptyHeart";
+} from 'react-native';
+import { FeatureComponentProps } from '../../models/Feature';
+import { PickEmotionJourneyResources } from './PickEmotionJourneyResources';
+import { PickEmotionJourneyState } from './PickEmotionJourneyState';
+import { styles } from './PickEmotionStyles';
+import { OsehImageFromState } from '../../../../shared/images/OsehImageFromState';
+import { LoginContext } from '../../../../shared/contexts/LoginContext';
+import EmptyHeart from './icons/EmptyHeart';
 import {
   ValueWithCallbacks,
   WritableValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../../../../shared/lib/Callbacks";
+} from '../../../../shared/lib/Callbacks';
 import {
   BezierAnimator,
   TrivialAnimator,
   inferAnimators,
-} from "../../../../shared/anim/AnimationLoop";
-import { ease } from "../../../../shared/lib/Bezier";
-import { useAnimatedValueWithCallbacks } from "../../../../shared/anim/useAnimatedValueWithCallbacks";
-import { useWindowSizeValueWithCallbacks } from "../../../../shared/hooks/useWindowSize";
-import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
-import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMappedValuesWithCallbacks";
-import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
-import { VariableStrategyProps } from "../../../../shared/anim/VariableStrategyProps";
-import { ProfilePicturesState } from "../../../interactive_prompt/hooks/useProfilePictures";
+} from '../../../../shared/anim/AnimationLoop';
+import { ease } from '../../../../shared/lib/Bezier';
+import { useAnimatedValueWithCallbacks } from '../../../../shared/anim/useAnimatedValueWithCallbacks';
+import { useWindowSizeValueWithCallbacks } from '../../../../shared/hooks/useWindowSize';
+import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
+import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
+import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
+import { VariableStrategyProps } from '../../../../shared/anim/VariableStrategyProps';
+import { ProfilePicturesState } from '../../../interactive_prompt/hooks/useProfilePictures';
 import {
   HereSettings,
   ProfilePictures,
-} from "../../../interactive_prompt/components/ProfilePictures";
-import { FilledInvertedButton } from "../../../../shared/components/FilledInvertedButton";
-import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks";
-import { useTopBarHeight } from "../../../../shared/hooks/useTopBarHeight";
-import { StatusBar } from "expo-status-bar";
-import { useIsEffectivelyTinyScreen } from "../../../../shared/hooks/useIsEffectivelyTinyScreen";
-import { setVWC } from "../../../../shared/lib/setVWC";
-import { useContentWidth } from "../../../../shared/lib/useContentWidth";
+} from '../../../interactive_prompt/components/ProfilePictures';
+import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
+import { OsehImageBackgroundFromStateValueWithCallbacks } from '../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks';
+import { useTopBarHeight } from '../../../../shared/hooks/useTopBarHeight';
+import { StatusBar } from 'expo-status-bar';
+import { useIsEffectivelyTinyScreen } from '../../../../shared/hooks/useIsEffectivelyTinyScreen';
+import { setVWC } from '../../../../shared/lib/setVWC';
+import { useContentWidth } from '../../../../shared/lib/useContentWidth';
 import {
   SvgLinearGradientBackground,
   SvgLinearGradientBackgroundState,
-} from "../../../../shared/anim/SvgLinearGradientBackground";
+} from '../../../../shared/anim/SvgLinearGradientBackground';
 
 /**
  * The settings for the profile pictures
  */
-const hereSettings: HereSettings = { type: "floating", action: "voted" };
+const hereSettings: HereSettings = { type: 'floating', action: 'voted' };
 
 /**
  * Allows the user to pick an emotion and then go to that class
@@ -73,7 +73,7 @@ export const PickEmotion = ({
 > & {
   gotoJourney: () => void;
 }): ReactElement => {
-  const loginContext = useContext(LoginContext);
+  const loginContextRaw = useContext(LoginContext);
   const selectedInfoVWC = useMappedValueWithCallbacks(
     resources,
     (r) => {
@@ -204,8 +204,8 @@ export const PickEmotion = ({
 
   const layoutVWC = useMappedValueWithCallbacks(
     tentativelyPressedVWC,
-    (tp): "horizontal" | "vertical" => {
-      return tp === null ? "horizontal" : "vertical";
+    (tp): 'horizontal' | 'vertical' => {
+      return tp === null ? 'horizontal' : 'vertical';
     }
   );
 
@@ -233,7 +233,7 @@ export const PickEmotion = ({
               props={profilePicture}
               component={(pic) => (
                 <>
-                  {pic.state === "available" && (
+                  {pic.state === 'available' && (
                     <OsehImageFromState
                       state={pic.image}
                       style={styles.profilePic}
@@ -243,9 +243,16 @@ export const PickEmotion = ({
               )}
             />
             <View style={styles.settingsMessages}>
-              <Text style={styles.greeting}>
-                Hi {loginContext.userAttributes?.givenName ?? "there"} 👋
-              </Text>
+              <RenderGuardedComponent
+                props={loginContextRaw.value}
+                component={(loginRaw) => {
+                  const givenName =
+                    (loginRaw.state === 'logged-in'
+                      ? loginRaw.userAttributes.givenName
+                      : null) ?? 'there';
+                  return <Text style={styles.greeting}>Hi {givenName} 👋</Text>;
+                }}
+              />
               <Text style={styles.greetingAction}>Daily Check-in</Text>
             </View>
           </Pressable>
@@ -279,7 +286,7 @@ export const PickEmotion = ({
         <RenderGuardedComponent
           props={layoutVWC}
           component={(layout) =>
-            layout === "horizontal" ? (
+            layout === 'horizontal' ? (
               <></>
             ) : (
               <Bottom
@@ -423,7 +430,7 @@ const Words = ({
     index: number;
     votes: number | null;
   } | null>;
-  layoutVWC: ValueWithCallbacks<"horizontal" | "vertical">;
+  layoutVWC: ValueWithCallbacks<'horizontal' | 'vertical'>;
 }): ReactElement => {
   const containerRef = useRef<View>(null);
   const containerSizeTarget = useAnimatedValueWithCallbacks<Size>(
@@ -553,7 +560,7 @@ const Words = ({
       const windowSize = windowSizeVWC.get();
       const pressed = pressedVWC.get();
       const target =
-        layout === "horizontal"
+        layout === 'horizontal'
           ? computeHorizontalPositions(windowSize, sizes)
           : computeVerticalPositions(windowSize, sizes, pressed);
 
@@ -660,7 +667,7 @@ const WordAdapter = ({
     index: number;
     votes: number | null;
   } | null>;
-  variantVWC: ValueWithCallbacks<"horizontal" | "vertical">;
+  variantVWC: ValueWithCallbacks<'horizontal' | 'vertical'>;
   wordSizesVWC: WritableValueWithCallbacks<Size[]>;
   wordPositionsVWC: ValueWithCallbacks<Pos[]>;
 }): ReactElement => {
@@ -782,7 +789,7 @@ const Word = ({
     index: number;
     votes: number | null;
   } | null>;
-  variantVWC: ValueWithCallbacks<"horizontal" | "vertical">;
+  variantVWC: ValueWithCallbacks<'horizontal' | 'vertical'>;
   sizeVWC: WritableValueWithCallbacks<Size>;
   posVWC: ValueWithCallbacks<Pos>;
 }) => {
@@ -824,7 +831,7 @@ const Word = ({
         { top: 0, left: 0 },
         ease,
         700,
-        { onTargetChange: "replace" }
+        { onTargetChange: 'replace' }
       ),
       ...inferAnimators<
         {
@@ -1012,7 +1019,7 @@ const Word = ({
     VariableStrategyProps<SvgLinearGradientBackgroundState>
   >(
     () => ({
-      type: "callbacks",
+      type: 'callbacks',
       props: () => gradientState.get(),
       callbacks: gradientState.callbacks,
     }),
@@ -1022,11 +1029,11 @@ const Word = ({
   return (
     <View
       style={{
-        position: "absolute",
+        position: 'absolute',
         left: 0,
         top: 0,
         borderRadius: 24,
-        overflow: "hidden",
+        overflow: 'hidden',
       }}
       ref={outerRef}
     >
@@ -1064,19 +1071,19 @@ const Votes = ({
   wordSizesVWC: ValueWithCallbacks<Size[]>;
 }): ReactElement => {
   const containerRef = useRef<View>(null);
-  const textContent = useWritableValueWithCallbacks<string>(() => "+0 votes");
+  const textContent = useWritableValueWithCallbacks<string>(() => '+0 votes');
   const target = useAnimatedValueWithCallbacks<VotesSetting>(
-    { progress: 0, left: 0, top: 0, opacity: 0, textContent: "+0 votes" },
+    { progress: 0, left: 0, top: 0, opacity: 0, textContent: '+0 votes' },
     () => [
-      new TrivialAnimator("left"),
-      new TrivialAnimator("top"),
+      new TrivialAnimator('left'),
+      new TrivialAnimator('top'),
       new BezierAnimator(
         ease,
         700,
         (s) => s.opacity,
         (s, v) => (s.opacity = v)
       ),
-      new TrivialAnimator("textContent"),
+      new TrivialAnimator('textContent'),
     ],
     (val) => {
       if (containerRef.current === null) {
@@ -1130,7 +1137,7 @@ const Votes = ({
           left: 0,
           top: 0,
           opacity: 0,
-          textContent: "+0 votes",
+          textContent: '+0 votes',
           progress: 0,
         });
         target.callbacks.call(undefined);
@@ -1147,7 +1154,7 @@ const Votes = ({
         textContent:
           pressed.votes !== null
             ? `+${pressed.votes.toLocaleString()} votes`
-            : "+0 votes",
+            : '+0 votes',
         progress: 1,
       });
       target.callbacks.call(undefined);

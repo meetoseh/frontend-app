@@ -1,18 +1,19 @@
-import { useContext, useEffect, useRef } from "react";
-import { LoginContext } from "../contexts/LoginContext";
+import { useCallback, useContext, useEffect, useRef } from 'react';
+import { LoginContext } from '../contexts/LoginContext';
 import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
-} from "../anim/VariableStrategyProps";
+} from '../anim/VariableStrategyProps';
 import {
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../lib/Callbacks";
-import { useMappedValuesWithCallbacks } from "./useMappedValuesWithCallbacks";
-import { useUnwrappedValueWithCallbacks } from "./useUnwrappedValueWithCallbacks";
-import { apiFetch } from "../lib/apiFetch";
-import { setVWC } from "../lib/setVWC";
-import { Platform } from "react-native";
+} from '../lib/Callbacks';
+import { useMappedValuesWithCallbacks } from './useMappedValuesWithCallbacks';
+import { useUnwrappedValueWithCallbacks } from './useUnwrappedValueWithCallbacks';
+import { apiFetch } from '../lib/apiFetch';
+import { setVWC } from '../lib/setVWC';
+import { Platform } from 'react-native';
+import { useValueWithCallbacksEffect } from './useValueWithCallbacksEffect';
 
 /**
  * Describes a session for an in-app notification. A session is a reusable
@@ -81,7 +82,7 @@ export const useInappNotificationSession = (
 ): InappNotificationSession | null => {
   return useUnwrappedValueWithCallbacks(
     useInappNotificationSessionValueWithCallbacks({
-      type: "react-rerender",
+      type: 'react-rerender',
       props: { uid },
     })
   );
@@ -96,13 +97,9 @@ export const useInappNotificationSessionValueWithCallbacks = (
   );
   const sessionVWC = useWritableValueWithCallbacks<Session | null>(() => null);
   const sessionPromiseRef = useRef<Promise<Session> | null>(null);
-  const loginContextVWC = useVariableStrategyPropsAsValueWithCallbacks({
-    type: "react-rerender",
-    props: loginContextRaw,
-  });
 
   return useMappedValuesWithCallbacks(
-    [propsVWC, sessionVWC, loginContextVWC],
+    [propsVWC, sessionVWC, loginContextRaw.value],
     (): InappNotificationSession | null => {
       const props = propsVWC.get();
       if (props.uid === null) {
@@ -112,39 +109,37 @@ export const useInappNotificationSessionValueWithCallbacks = (
       }
 
       const session = sessionVWC.get();
-      const loginContext = loginContextVWC.get();
+      const loginRaw = loginContextRaw.value.get();
 
       return {
         inappNotificationUid: props.uid,
         inappNotificationUserUid: session?.inappNotificationUid ?? null,
         start: async () => {
-          if (
-            loginContext.state !== "logged-in" ||
-            loginContext.userAttributes === null
-          ) {
-            throw new Error("Not logged in");
+          if (loginRaw.state !== 'logged-in') {
+            throw new Error('Not logged in');
           }
-          const userSub = loginContext.userAttributes.sub;
+          const login = loginRaw;
+          const userSub = login.userAttributes.sub;
 
           if (session !== null) {
-            throw new Error("Session already started");
+            throw new Error('Session already started');
           }
 
           if (sessionPromiseRef.current === null) {
             sessionPromiseRef.current = (async () => {
               const response = await apiFetch(
-                "/api/1/notifications/inapp/start",
+                '/api/1/notifications/inapp/start',
                 {
-                  method: "POST",
+                  method: 'POST',
                   headers: {
-                    "Content-Type": "application/json; charset=utf-8",
+                    'Content-Type': 'application/json; charset=utf-8',
                   },
                   body: JSON.stringify({
                     inapp_notification_uid: props.uid,
                     platform: Platform.OS,
                   }),
                 },
-                loginContext
+                login
               );
               if (!response.ok) {
                 throw response;
@@ -165,10 +160,10 @@ export const useInappNotificationSessionValueWithCallbacks = (
 
           return sessionPromiseRef.current.then((s) => {
             if (s.userSub !== userSub) {
-              throw new Error("Session started for different user");
+              throw new Error('Session started for different user');
             }
             if (s.inappNotificationUid !== props.uid) {
-              throw new Error("Session started for different notification");
+              throw new Error('Session started for different notification');
             }
             return s.sessionUid;
           });
@@ -176,36 +171,34 @@ export const useInappNotificationSessionValueWithCallbacks = (
         storeAction: async (slug, extra) => {
           const mySession = await (sessionPromiseRef.current ?? session);
           if (mySession === null) {
-            throw new Error("Session not started");
+            throw new Error('Session not started');
           }
 
           if (props.uid !== mySession.inappNotificationUid) {
-            throw new Error("Session started for different notification");
+            throw new Error('Session started for different notification');
           }
 
-          if (
-            loginContext.state !== "logged-in" ||
-            loginContext.userAttributes === null
-          ) {
-            throw new Error("Not logged in");
+          if (loginRaw.state !== 'logged-in') {
+            throw new Error('Not logged in');
           }
+          const login = loginRaw;
 
-          if (loginContext.userAttributes.sub !== mySession.userSub) {
-            throw new Error("Session started for different user");
+          if (login.userAttributes.sub !== mySession.userSub) {
+            throw new Error('Session started for different user');
           }
 
           const response = await apiFetch(
-            "/api/1/notifications/inapp/store_action",
+            '/api/1/notifications/inapp/store_action',
             {
-              method: "POST",
-              headers: { "Content-Type": "application/json; charset=utf-8" },
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json; charset=utf-8' },
               body: JSON.stringify({
                 inapp_notification_user_uid: mySession.sessionUid,
                 action_slug: slug,
                 extra,
               }),
             },
-            loginContext
+            login
           );
 
           if (!response.ok) {
@@ -236,7 +229,7 @@ export const useStartSession = (
     onStart?: () => void;
   }
 ): void => {
-  const loginContext = useContext(LoginContext);
+  const loginContextRaw = useContext(LoginContext);
   const started = useRef(false);
   const sessionVWC = useVariableStrategyPropsAsValueWithCallbacks(
     sessionVariableStrategy
@@ -244,35 +237,41 @@ export const useStartSession = (
   const onStartRef = useRef(opts?.onStart);
   onStartRef.current = opts?.onStart;
 
-  useEffect(() => {
-    if (loginContext.state !== "logged-in" || started.current) {
-      return;
-    }
+  useValueWithCallbacksEffect(
+    loginContextRaw.value,
+    useCallback(
+      (loginRaw) => {
+        if (loginRaw.state !== 'logged-in' || started.current) {
+          return;
+        }
 
-    let active = true;
-    sessionVWC.callbacks.add(handleSessionChanged);
-    handleSessionChanged();
-    return () => {
-      active = false;
-      sessionVWC.callbacks.remove(handleSessionChanged);
-    };
+        let active = true;
+        sessionVWC.callbacks.add(handleSessionChanged);
+        handleSessionChanged();
+        return () => {
+          active = false;
+          sessionVWC.callbacks.remove(handleSessionChanged);
+        };
 
-    function handleSessionChanged() {
-      if (!active) {
-        return;
-      }
+        function handleSessionChanged() {
+          if (!active) {
+            return;
+          }
 
-      const session = sessionVWC.get();
-      if (started.current || session === null) {
-        return;
-      }
+          const session = sessionVWC.get();
+          if (started.current || session === null) {
+            return;
+          }
 
-      started.current = true;
-      session.start();
-      sessionVWC.callbacks.remove(handleSessionChanged);
-      if (onStartRef.current) {
-        onStartRef.current();
-      }
-    }
-  }, [loginContext, sessionVWC]);
+          started.current = true;
+          session.start();
+          sessionVWC.callbacks.remove(handleSessionChanged);
+          if (onStartRef.current) {
+            onStartRef.current();
+          }
+        }
+      },
+      [sessionVWC]
+    )
+  );
 };

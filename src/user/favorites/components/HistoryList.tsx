@@ -1,20 +1,20 @@
-import { ReactElement, useCallback, useContext, useMemo, useRef } from "react";
-import { JourneyRef, journeyRefKeyMap } from "../../journey/models/JourneyRef";
-import { useWindowSize } from "../../../shared/hooks/useWindowSize";
-import { LoginContext } from "../../../shared/contexts/LoginContext";
-import { OsehImageStateRequestHandler } from "../../../shared/images/useOsehImageStateRequestHandler";
-import { MinimalJourney } from "../lib/MinimalJourney";
-import { HistoryItem } from "./HistoryItem";
-import { styles } from "./FavoritesSharedStyles";
-import { InfiniteList } from "../../../shared/components/InfiniteList";
-import { RenderGuardedComponent } from "../../../shared/components/RenderGuardedComponent";
-import { ValueWithCallbacks } from "../../../shared/lib/Callbacks";
-import { apiFetch } from "../../../shared/lib/apiFetch";
-import { convertUsingKeymap } from "../../../shared/lib/CrudFetcher";
-import { View, Text } from "react-native";
-import { adaptValueWithCallbacksAsVariableStrategyProps } from "../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps";
-import { useMappedValuesWithCallbacks } from "../../../shared/hooks/useMappedValuesWithCallbacks";
-import { useHistoryList } from "../hooks/useHistoryList";
+import { ReactElement, useCallback, useContext, useMemo, useRef } from 'react';
+import { JourneyRef, journeyRefKeyMap } from '../../journey/models/JourneyRef';
+import { useWindowSize } from '../../../shared/hooks/useWindowSize';
+import { LoginContext } from '../../../shared/contexts/LoginContext';
+import { OsehImageStateRequestHandler } from '../../../shared/images/useOsehImageStateRequestHandler';
+import { MinimalJourney } from '../lib/MinimalJourney';
+import { HistoryItem } from './HistoryItem';
+import { styles } from './FavoritesSharedStyles';
+import { InfiniteList } from '../../../shared/components/InfiniteList';
+import { RenderGuardedComponent } from '../../../shared/components/RenderGuardedComponent';
+import { ValueWithCallbacks } from '../../../shared/lib/Callbacks';
+import { apiFetch } from '../../../shared/lib/apiFetch';
+import { convertUsingKeymap } from '../../../shared/lib/CrudFetcher';
+import { View, Text } from 'react-native';
+import { adaptValueWithCallbacksAsVariableStrategyProps } from '../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps';
+import { useMappedValuesWithCallbacks } from '../../../shared/hooks/useMappedValuesWithCallbacks';
+import { useHistoryList } from '../hooks/useHistoryList';
 
 export type HistoryListProps = {
   /**
@@ -45,13 +45,11 @@ export const HistoryList = ({
   listHeight,
   imageHandler,
 }: HistoryListProps): ReactElement => {
-  const loginContext = useContext(LoginContext);
-  const loginContextRef = useRef(loginContext);
-  loginContextRef.current = loginContext;
+  const loginContextRaw = useContext(LoginContext);
   const windowSize = useWindowSize();
 
   const infiniteListing = useHistoryList(
-    { type: "react-rerender", props: loginContext },
+    loginContextRaw,
     adaptValueWithCallbacksAsVariableStrategyProps(listHeight)
   );
 
@@ -61,18 +59,20 @@ export const HistoryList = ({
       if (loading.current) {
         return;
       }
-      if (loginContext.state !== "logged-in") {
+      const loginContextUnch = loginContextRaw.value.get();
+      if (loginContextUnch.state !== 'logged-in') {
         return;
       }
+      const loginContext = loginContextUnch;
 
       loading.current = true;
       try {
         const response = await apiFetch(
-          "/api/1/users/me/start_journey_from_history",
+          '/api/1/users/me/start_journey_from_history',
           {
-            method: "POST",
+            method: 'POST',
             headers: {
-              "Content-Type": "application/json; charset=utf-8",
+              'Content-Type': 'application/json; charset=utf-8',
             },
             body: JSON.stringify({
               journey_uid: uid,
@@ -82,7 +82,7 @@ export const HistoryList = ({
         );
         if (!response.ok) {
           console.log(
-            "failed to start journey from history:",
+            'failed to start journey from history:',
             response.status,
             await response.text()
           );
@@ -95,7 +95,7 @@ export const HistoryList = ({
         loading.current = false;
       }
     },
-    [loginContext, showJourney]
+    [loginContextRaw, showJourney]
   );
 
   const boundComponent = useMemo<

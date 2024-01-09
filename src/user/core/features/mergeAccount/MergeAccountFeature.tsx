@@ -1,31 +1,32 @@
-import { useCallback, useContext, useEffect } from "react";
-import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks";
-import { Feature } from "../../models/Feature";
-import { MergeAccount } from "./MergeAccount";
-import { MergeAccountResources } from "./MergeAccountResources";
-import { MergeAccountState, MergeProvider } from "./MergeAccountState";
+import { useCallback, useContext, useEffect } from 'react';
+import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
+import { Feature } from '../../models/Feature';
+import { MergeAccount } from './MergeAccount';
+import { MergeAccountResources } from './MergeAccountResources';
+import { MergeAccountState, MergeProvider } from './MergeAccountState';
 import {
   MergeAccountStoredState,
   getMergeAccountStoredState,
   setMergeAccountStoredState,
-} from "./MergeAccountStore";
-import { useInappNotificationValueWithCallbacks } from "../../../../shared/hooks/useInappNotification";
-import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMappedValuesWithCallbacks";
-import { setVWC } from "../../../../shared/lib/setVWC";
-import { LoginContext } from "../../../../shared/contexts/LoginContext";
-import { useInappNotificationSessionValueWithCallbacks } from "../../../../shared/hooks/useInappNotificationSession";
-import { getMergeProviderUrl } from "./utils";
-import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
-import { apiFetch } from "../../../../shared/lib/apiFetch";
+} from './MergeAccountStore';
+import { useInappNotificationValueWithCallbacks } from '../../../../shared/hooks/useInappNotification';
+import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
+import { setVWC } from '../../../../shared/lib/setVWC';
+import { LoginContext } from '../../../../shared/contexts/LoginContext';
+import { useInappNotificationSessionValueWithCallbacks } from '../../../../shared/hooks/useInappNotificationSession';
+import { getMergeProviderUrl } from './utils';
+import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
+import { apiFetch } from '../../../../shared/lib/apiFetch';
+import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
 
 const recheckMergeSuggestionsIntervalSeconds = 60 * 60 * 12;
-const ianUid = "oseh_ian_ez6eLf92Lbz1Odr6OKIw6A";
+const ianUid = 'oseh_ian_ez6eLf92Lbz1Odr6OKIw6A';
 
 export const MergeAccountFeature: Feature<
   MergeAccountState,
   MergeAccountResources
 > = {
-  identifier: "mergeAccount",
+  identifier: 'mergeAccount',
   useWorldState: () => {
     const mergeAccountStoredStateVWC =
       useWritableValueWithCallbacks<MergeAccountStoredState | null>(() => null);
@@ -47,17 +48,18 @@ export const MergeAccountFeature: Feature<
       }, [mergeAccountStoredStateVWC, erroredVWC])
     );
     const ianVWC = useInappNotificationValueWithCallbacks({
-      type: "callbacks",
+      type: 'callbacks',
       props: ianPropsVWC.get,
       callbacks: ianPropsVWC.callbacks,
     });
-    const loginContext = useContext(LoginContext);
+    const loginContextRaw = useContext(LoginContext);
 
-    useEffect(() => {
-      if (loginContext.state !== "logged-in") {
+    useValueWithCallbacksEffect(loginContextRaw.value, (loginRaw) => {
+      if (loginRaw.state !== 'logged-in') {
         setVWC(mergeAccountStoredStateVWC, null);
         return;
       }
+      const login = loginRaw;
 
       if (erroredVWC.get()) {
         return;
@@ -70,14 +72,10 @@ export const MergeAccountFeature: Feature<
       };
 
       async function readStateFromServer(): Promise<MergeAccountStoredState> {
-        if (loginContext.userAttributes === null) {
-          throw new Error("User attributes not loaded");
-        }
-
         const response = await apiFetch(
-          "/api/1/users/me/merge_account_suggestions",
-          { method: "GET" },
-          loginContext
+          '/api/1/users/me/merge_account_suggestions',
+          { method: 'GET' },
+          login
         );
 
         if (!response.ok) {
@@ -88,7 +86,7 @@ export const MergeAccountFeature: Feature<
           return {
             mergeSuggestions: null,
             checkedAt: new Date(),
-            userSub: loginContext.userAttributes.sub,
+            userSub: login.userAttributes.sub,
           };
         }
 
@@ -96,7 +94,7 @@ export const MergeAccountFeature: Feature<
         return {
           mergeSuggestions: body.channels.map((provider) => ({ provider })),
           checkedAt: new Date(),
-          userSub: loginContext.userAttributes.sub,
+          userSub: login.userAttributes.sub,
         };
       }
 
@@ -110,7 +108,7 @@ export const MergeAccountFeature: Feature<
           stored !== null &&
           stored.checkedAt.getTime() >
             Date.now() - recheckMergeSuggestionsIntervalSeconds * 1000 &&
-          stored.userSub === loginContext.userAttributes?.sub
+          stored.userSub === login.userAttributes.sub
         ) {
           setVWC(mergeAccountStoredStateVWC, stored);
           return;
@@ -136,18 +134,20 @@ export const MergeAccountFeature: Feature<
         setVWC(mergeAccountStoredStateVWC, fromServer);
         setVWC(erroredVWC, false);
       }
-    }, [mergeAccountStoredStateVWC, erroredVWC, loginContext]);
+    });
 
     return useMappedValuesWithCallbacks(
-      [mergeAccountStoredStateVWC, erroredVWC, ianVWC],
+      [mergeAccountStoredStateVWC, erroredVWC, ianVWC, loginContextRaw.value],
       useCallback((): MergeAccountState => {
-        if (loginContext.state !== "logged-in") {
+        const loginRaw = loginContextRaw.value.get();
+        if (loginRaw.state !== 'logged-in') {
           return {
             mergeSuggestions: null,
             ian: null,
             onSuggestionsDismissed: () => Promise.resolve(),
           };
         }
+        const login = loginRaw;
         const stored = mergeAccountStoredStateVWC.get();
         const errored = erroredVWC.get();
         const ian = ianVWC.get();
@@ -155,8 +155,9 @@ export const MergeAccountFeature: Feature<
           mergeSuggestions: errored ? null : stored?.mergeSuggestions,
           ian,
           onSuggestionsDismissed: async () => {
+            const loginContext = loginContextRaw.value.get();
             if (
-              loginContext.state !== "logged-in" ||
+              loginContext.state !== 'logged-in' ||
               loginContext.userAttributes === null
             ) {
               await setMergeAccountStoredState(null);
@@ -173,7 +174,12 @@ export const MergeAccountFeature: Feature<
             setVWC(mergeAccountStoredStateVWC, newStored);
           },
         };
-      }, [mergeAccountStoredStateVWC, erroredVWC, ianVWC, loginContext])
+      }, [
+        mergeAccountStoredStateVWC,
+        erroredVWC,
+        ianVWC,
+        loginContextRaw.value,
+      ])
     );
   },
   isRequired: (state) => {
@@ -204,14 +210,12 @@ export const MergeAccountFeature: Feature<
       }, [stateVWC, requiredVWC])
     );
     const sessionVWC = useInappNotificationSessionValueWithCallbacks({
-      type: "callbacks",
+      type: 'callbacks',
       props: sessionPropsVWC.get,
       callbacks: sessionPropsVWC.callbacks,
     });
 
-    const loginContext = useContext(LoginContext);
-    const givenName = loginContext.userAttributes?.givenName ?? null;
-
+    const loginContextRaw = useContext(LoginContext);
     const providerUrlsVWC = useWritableValueWithCallbacks<{
       Google: string | null;
       SignInWithApple: string | null;
@@ -220,8 +224,15 @@ export const MergeAccountFeature: Feature<
     } | null>(() => null);
 
     useMappedValuesWithCallbacks(
-      [stateVWC, requiredVWC],
+      [stateVWC, requiredVWC, loginContextRaw.value],
       useCallback(() => {
+        const loginRaw = loginContextRaw.value.get();
+        if (loginRaw.state !== 'logged-in') {
+          setVWC(providerUrlsVWC, null);
+          return;
+        }
+
+        const login = loginRaw;
         let running = true;
         inner();
         return () => {
@@ -244,7 +255,7 @@ export const MergeAccountFeature: Feature<
             return;
           }
 
-          const urls: MergeAccountResources["providerUrls"] = {
+          const urls: MergeAccountResources['providerUrls'] = {
             Google: null,
             SignInWithApple: null,
             Direct: null,
@@ -252,10 +263,7 @@ export const MergeAccountFeature: Feature<
           };
           let gotAtLeastOne = false;
           const promises = state.mergeSuggestions.map(async (suggestion) => {
-            const url = await getMergeProviderUrl(
-              loginContext,
-              suggestion.provider
-            );
+            const url = await getMergeProviderUrl(login, suggestion.provider);
             urls[suggestion.provider] = url;
             gotAtLeastOne = true;
           });
@@ -271,7 +279,7 @@ export const MergeAccountFeature: Feature<
 
           setVWC(providerUrlsVWC, urls);
         }
-      }, [stateVWC, requiredVWC, loginContext, providerUrlsVWC])
+      }, [stateVWC, requiredVWC, loginContextRaw, providerUrlsVWC])
     );
 
     const confirmMergePassthroughsVWC = useMappedValueWithCallbacks(
@@ -304,7 +312,13 @@ export const MergeAccountFeature: Feature<
     );
 
     return useMappedValuesWithCallbacks(
-      [sessionVWC, providerUrlsVWC, confirmMergePassthroughsVWC, requiredVWC],
+      [
+        sessionVWC,
+        providerUrlsVWC,
+        confirmMergePassthroughsVWC,
+        requiredVWC,
+        loginContextRaw.value,
+      ],
       useCallback((): MergeAccountResources => {
         const confirmMergePassthroughs = confirmMergePassthroughsVWC.get();
 
@@ -320,10 +334,12 @@ export const MergeAccountFeature: Feature<
 
         const session = sessionVWC.get();
         const providerUrls = providerUrlsVWC.get();
+        const login = loginContextRaw.value.get();
 
         return {
           session,
-          givenName,
+          givenName:
+            login.state === 'logged-in' ? login.userAttributes.givenName : null,
           providerUrls,
           loading: session === null || providerUrls === null,
           ...confirmMergePassthroughs,
@@ -333,7 +349,7 @@ export const MergeAccountFeature: Feature<
         sessionVWC,
         providerUrlsVWC,
         confirmMergePassthroughsVWC,
-        givenName,
+        loginContextRaw,
       ])
     );
   },

@@ -1,14 +1,17 @@
-import { ReactElement, useCallback, useContext } from "react";
-import { LoginContext } from "../../../../../shared/contexts/LoginContext";
+import { ReactElement, useCallback, useContext } from 'react';
+import {
+  LoginContext,
+  LoginContextValueLoggedIn,
+} from '../../../../../shared/contexts/LoginContext';
 import {
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../../../../../shared/lib/Callbacks";
-import { MergeProvider } from "../../mergeAccount/MergeAccountState";
-import { setVWC } from "../../../../../shared/lib/setVWC";
-import { useValueWithCallbacksEffect } from "../../../../../shared/hooks/useValueWithCallbacksEffect";
-import { apiFetch } from "../../../../../shared/lib/apiFetch";
-import { describeError } from "../../../../../shared/lib/describeError";
+} from '../../../../../shared/lib/Callbacks';
+import { MergeProvider } from '../../mergeAccount/MergeAccountState';
+import { setVWC } from '../../../../../shared/lib/setVWC';
+import { useValueWithCallbacksEffect } from '../../../../../shared/hooks/useValueWithCallbacksEffect';
+import { apiFetch } from '../../../../../shared/lib/apiFetch';
+import { describeError } from '../../../../../shared/lib/describeError';
 
 export type Identity = {
   /**
@@ -29,21 +32,21 @@ export type Identity = {
 };
 
 export type IdentitiesSuccess = {
-  type: "success";
+  type: 'success';
   identities: Identity[];
 };
 
 export type IdentitiesLoading = {
-  type: "loading";
+  type: 'loading';
 };
 
 export type IdentitiesUnavailable = {
-  type: "unavailable";
-  reason: "not-logged-in";
+  type: 'unavailable';
+  reason: 'not-logged-in';
 };
 
 export type IdentitiesError = {
-  type: "error";
+  type: 'error';
   error: ReactElement;
 };
 
@@ -61,13 +64,13 @@ const areIdentityStatesEqual = (
     return false;
   }
   switch (a.type) {
-    case "error":
+    case 'error':
       return Object.is(a.error, (b as IdentitiesError).error);
-    case "loading":
+    case 'loading':
       return true;
-    case "success":
+    case 'success':
       return Object.is(a.identities, (b as IdentitiesSuccess).identities);
-    case "unavailable":
+    case 'unavailable':
       return a.reason === (b as IdentitiesUnavailable).reason;
   }
   return false;
@@ -81,9 +84,9 @@ const areIdentityStatesEqual = (
 export const useIdentities = (
   suppressedVWC: ValueWithCallbacks<boolean>
 ): ValueWithCallbacks<IdentitiesState> => {
-  const loginContext = useContext(LoginContext);
+  const loginContextRaw = useContext(LoginContext);
   const result = useWritableValueWithCallbacks<IdentitiesState>(() => ({
-    type: "loading",
+    type: 'loading',
   }));
 
   useValueWithCallbacksEffect(
@@ -91,7 +94,7 @@ export const useIdentities = (
     useCallback(
       (suppressed) => {
         if (suppressed) {
-          setVWC(result, { type: "loading" }, areIdentityStatesEqual);
+          setVWC(result, { type: 'loading' }, areIdentityStatesEqual);
           return;
         }
 
@@ -101,19 +104,19 @@ export const useIdentities = (
           running = false;
         };
 
-        async function loadIdentitiesInner() {
+        async function loadIdentitiesInner(login: LoginContextValueLoggedIn) {
           const response = await apiFetch(
-            "/api/1/users/me/search_identities",
+            '/api/1/users/me/search_identities',
             {
-              method: "POST",
+              method: 'POST',
               headers: {
-                "Content-Type": "application/json; charset=utf-8",
+                'Content-Type': 'application/json; charset=utf-8',
               },
               body: JSON.stringify({
                 limit: 1000,
               }),
             },
-            loginContext
+            login
           );
 
           if (!response.ok) {
@@ -125,7 +128,7 @@ export const useIdentities = (
             setVWC(
               result,
               {
-                type: "success",
+                type: 'success',
                 identities: raw.items,
               },
               () => false
@@ -134,31 +137,32 @@ export const useIdentities = (
         }
 
         async function loadIdentities() {
-          if (loginContext.state === "loading") {
-            setVWC(result, { type: "loading" }, areIdentityStatesEqual);
+          const loginRaw = loginContextRaw.value.get();
+          if (loginRaw.state === 'loading') {
+            setVWC(result, { type: 'loading' }, areIdentityStatesEqual);
             return;
           }
 
-          if (loginContext.state === "logged-out") {
+          if (loginRaw.state === 'logged-out') {
             setVWC(
               result,
-              { type: "unavailable", reason: "not-logged-in" },
+              { type: 'unavailable', reason: 'not-logged-in' },
               areIdentityStatesEqual
             );
             return;
           }
 
           try {
-            await loadIdentitiesInner();
+            await loadIdentitiesInner(loginRaw);
           } catch (e) {
             const err = await describeError(e);
             if (running) {
-              setVWC(result, { type: "error", error: err }, () => false);
+              setVWC(result, { type: 'error', error: err }, () => false);
             }
           }
         }
       },
-      [loginContext, result]
+      [loginContextRaw, result]
     )
   );
 

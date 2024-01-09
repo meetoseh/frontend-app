@@ -1,16 +1,17 @@
-import { useContext, useEffect, useRef } from "react";
-import { LoginContext } from "../contexts/LoginContext";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useCallback, useContext, useEffect, useRef } from 'react';
+import { LoginContext } from '../contexts/LoginContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../lib/Callbacks";
+} from '../lib/Callbacks';
 import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
-} from "../anim/VariableStrategyProps";
-import { useUnwrappedValueWithCallbacks } from "./useUnwrappedValueWithCallbacks";
-import { apiFetch } from "../lib/apiFetch";
+} from '../anim/VariableStrategyProps';
+import { useUnwrappedValueWithCallbacks } from './useUnwrappedValueWithCallbacks';
+import { apiFetch } from '../lib/apiFetch';
+import { useValueWithCallbacksEffect } from './useValueWithCallbacksEffect';
 
 const MAX_EXPIRATION_TIME_SECONDS = 60 * 60 * 24 * 7;
 
@@ -80,7 +81,7 @@ export const useInappNotification = (
   suppress: boolean
 ): InappNotification | null => {
   const vwc = useInappNotificationValueWithCallbacks({
-    type: "react-rerender",
+    type: 'react-rerender',
     props: {
       uid,
       suppress,
@@ -117,7 +118,7 @@ export const useInappNotificationValueWithCallbacks = (
     suppress: boolean;
   }>
 ): ValueWithCallbacks<InappNotification | null> => {
-  const loginContext = useContext(LoginContext);
+  const loginContextRaw = useContext(LoginContext);
   const notificationVWC =
     useWritableValueWithCallbacks<InappNotification | null>(() => null);
   const propsVWC = useVariableStrategyPropsAsValueWithCallbacks(
@@ -125,20 +126,27 @@ export const useInappNotificationValueWithCallbacks = (
   );
 
   const cleanedUp = useRef<boolean>(false);
-  useEffect(() => {
-    if (cleanedUp.current || loginContext.state === "loading") {
-      return;
-    }
-    cleanedUp.current = true;
+  useValueWithCallbacksEffect(
+    loginContextRaw.value,
+    useCallback((loginRaw) => {
+      if (cleanedUp.current || loginRaw.state === 'loading') {
+        return undefined;
+      }
+      cleanedUp.current = true;
 
-    withStorageLock(async () => {
-      await pruneExpiredStateUnsafe(loginContext?.userAttributes?.sub ?? null);
-    });
-  }, [loginContext]);
+      withStorageLock(async () => {
+        await pruneExpiredStateUnsafe(
+          loginRaw.state === 'logged-in' ? loginRaw.userAttributes.sub : null
+        );
+      });
+      return undefined;
+    }, [])
+  );
 
   useEffect(() => {
     let unmountCurrent: (() => void) | null = null;
     propsVWC.callbacks.add(handlePropsChanged);
+    loginContextRaw.value.callbacks.add(handlePropsChanged);
     handlePropsChanged();
     return () => {
       if (unmountCurrent !== null) {
@@ -146,6 +154,7 @@ export const useInappNotificationValueWithCallbacks = (
         unmountCurrent = null;
       }
       propsVWC.callbacks.remove(handlePropsChanged);
+      loginContextRaw.value.callbacks.remove(handlePropsChanged);
     };
 
     function handlePropsChanged() {
@@ -167,21 +176,20 @@ export const useInappNotificationValueWithCallbacks = (
         return;
       }
 
-      if (loginContext.state === "logged-out") {
+      const loginRaw = loginContextRaw.value.get();
+      if (loginRaw.state === 'logged-out') {
         withStorageLock(async () => {
           await removeAllStateUnsafe();
         });
         return;
       }
 
-      if (
-        loginContext.state !== "logged-in" ||
-        loginContext.userAttributes === null
-      ) {
+      if (loginRaw.state !== 'logged-in') {
         setNotification(null);
         return;
       }
-      const userSub = loginContext.userAttributes.sub;
+      const login = loginRaw;
+      const userSub = login.userAttributes.sub;
 
       let active = true;
       fetchFromStoreFallbackToNetwork();
@@ -191,15 +199,15 @@ export const useInappNotificationValueWithCallbacks = (
 
       async function fetchFromNetworkUnsafeInner() {
         const response = await apiFetch(
-          "/api/1/notifications/inapp/should_show",
+          '/api/1/notifications/inapp/should_show',
           {
-            method: "POST",
-            headers: { "Content-Type": "application/json; charset=utf-8" },
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json; charset=utf-8' },
             body: JSON.stringify({
               inapp_notification_uid: uid,
             }),
           },
-          loginContext
+          login
         );
 
         if (!response.ok) {
@@ -273,7 +281,7 @@ export const useInappNotificationValueWithCallbacks = (
         } catch (e) {
           if (active) {
             console.error(
-              "Error while fetching in-app notification from network: ",
+              'Error while fetching in-app notification from network: ',
               e
             );
             const res = {
@@ -314,7 +322,7 @@ export const useInappNotificationValueWithCallbacks = (
         } catch (e) {
           if (active) {
             console.error(
-              "Error while fetching in-app notification from store: ",
+              'Error while fetching in-app notification from store: ',
               e
             );
           }
@@ -347,7 +355,7 @@ export const useInappNotificationValueWithCallbacks = (
         | null
         | ((oldNotif: InappNotification | null) => InappNotification | null)
     ) {
-      if (typeof notification === "function") {
+      if (typeof notification === 'function') {
         notification = notification(notificationVWC.get());
       }
 
@@ -358,7 +366,7 @@ export const useInappNotificationValueWithCallbacks = (
       notificationVWC.set(notification);
       notificationVWC.callbacks.call(undefined);
     }
-  }, [propsVWC, notificationVWC, loginContext]);
+  }, [propsVWC, notificationVWC, loginContextRaw]);
 
   return notificationVWC;
 };
@@ -422,7 +430,7 @@ const withStorageLock = async <T>(fn: () => Promise<T>): Promise<T> => {
       try {
         await next();
       } catch (e) {
-        console.error("Error while running withStorageLock callback: ", e);
+        console.error('Error while running withStorageLock callback: ', e);
       }
     }
     __lock = false;
@@ -436,7 +444,7 @@ const withStorageLock = async <T>(fn: () => Promise<T>): Promise<T> => {
  * without acquiring the storage lock.
  */
 const fetchStoredUidsUnsafe = async (): Promise<string[]> => {
-  const raw = await AsyncStorage.getItem("inapp-notifications");
+  const raw = await AsyncStorage.getItem('inapp-notifications');
   if (raw === null) {
     return [];
   }
@@ -453,7 +461,7 @@ const fetchStoredUidsUnsafe = async (): Promise<string[]> => {
  * without acquiring the storage lock.
  */
 const storeUidsUnsafe = async (uids: string[]): Promise<void> => {
-  await AsyncStorage.setItem("inapp-notifications", JSON.stringify(uids));
+  await AsyncStorage.setItem('inapp-notifications', JSON.stringify(uids));
 };
 
 /**

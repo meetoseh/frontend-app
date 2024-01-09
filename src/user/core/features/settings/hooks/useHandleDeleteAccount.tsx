@@ -1,27 +1,27 @@
-import { ReactElement, useCallback } from "react";
-import { LoginContextValue } from "../../../../../shared/contexts/LoginContext";
+import { ReactElement, useCallback } from 'react';
+import { LoginContextValue } from '../../../../../shared/contexts/LoginContext';
 import {
   ModalContextValue,
   addModalWithCallbackToRemove,
-} from "../../../../../shared/contexts/ModalContext";
+} from '../../../../../shared/contexts/ModalContext';
 import {
   WritableValueWithCallbacks,
   createWritableValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../../../../../shared/lib/Callbacks";
-import { setVWC } from "../../../../../shared/lib/setVWC";
-import { useValueWithCallbacksEffect } from "../../../../../shared/hooks/useValueWithCallbacksEffect";
-import { YesNoModal } from "../../../../../shared/components/YesNoModal";
+} from '../../../../../shared/lib/Callbacks';
+import { setVWC } from '../../../../../shared/lib/setVWC';
+import { useValueWithCallbacksEffect } from '../../../../../shared/hooks/useValueWithCallbacksEffect';
+import { YesNoModal } from '../../../../../shared/components/YesNoModal';
 import {
   ErrorBanner,
   ErrorBannerText,
-} from "../../../../../shared/components/ErrorBanner";
-import { apiFetch } from "../../../../../shared/lib/apiFetch";
-import { describeError } from "../../../../../shared/lib/describeError";
-import { deleteJourneyFeedbackRequestReviewStoredState } from "../../../../journey/lib/JourneyFeedbackRequestReviewStore";
+} from '../../../../../shared/components/ErrorBanner';
+import { apiFetch } from '../../../../../shared/lib/apiFetch';
+import { describeError } from '../../../../../shared/lib/describeError';
+import { deleteJourneyFeedbackRequestReviewStoredState } from '../../../../journey/lib/JourneyFeedbackRequestReviewStore';
 
 export const useHandleDeleteAccount = (
-  loginContext: LoginContextValue,
+  loginContextRaw: LoginContextValue,
   modalContext: ModalContextValue,
   errorVWC: WritableValueWithCallbacks<ReactElement | null>,
   requestNoShowSettings: () => void
@@ -44,7 +44,8 @@ export const useHandleDeleteAccount = (
 
   const deleteAccount = useCallback(
     async (force: boolean): Promise<void> => {
-      if (loginContext.state !== "logged-in") {
+      const loginRaw = loginContextRaw.value.get();
+      if (loginRaw.state !== 'logged-in') {
         setVWC(
           errorVWC,
           <ErrorBanner>
@@ -53,41 +54,42 @@ export const useHandleDeleteAccount = (
         );
         return;
       }
+      const login = loginRaw;
 
       try {
         const response = await apiFetch(
           `/api/1/users/me/account?${new URLSearchParams({
-            force: force ? "1" : "0",
+            force: force ? '1' : '0',
           })}`,
           {
-            method: "DELETE",
+            method: 'DELETE',
           },
-          loginContext
+          login
         );
 
         if (!response.ok) {
           if (!force && response.status === 409) {
             const body: {
               type:
-                | "has_active_stripe_subscription"
-                | "has_active_ios_subscription"
-                | "has_active_google_subscription"
-                | "has_active_promotional_subscription";
+                | 'has_active_stripe_subscription'
+                | 'has_active_ios_subscription'
+                | 'has_active_google_subscription'
+                | 'has_active_promotional_subscription';
             } = await response.json();
-            if (body.type === "has_active_stripe_subscription") {
+            if (body.type === 'has_active_stripe_subscription') {
               setVWC(showDeleteConfirmStripePromptVWC, true);
               return;
-            } else if (body.type === "has_active_ios_subscription") {
+            } else if (body.type === 'has_active_ios_subscription') {
               setVWC(showDeleteConfirmApplePromptVWC, true);
               return;
-            } else if (body.type === "has_active_google_subscription") {
+            } else if (body.type === 'has_active_google_subscription') {
               setVWC(showDeleteConfirmGooglePromptVWC, true);
               return;
-            } else if (body.type === "has_active_promotional_subscription") {
+            } else if (body.type === 'has_active_promotional_subscription') {
               setVWC(showDeleteConfirmPromoPromptVWC, true);
               return;
             } else {
-              console.log("Unknown conflict type", body.type);
+              console.log('Unknown conflict type', body.type);
               setVWC(
                 errorVWC,
                 <ErrorBanner>
@@ -103,7 +105,7 @@ export const useHandleDeleteAccount = (
         }
 
         deleteJourneyFeedbackRequestReviewStoredState();
-        await loginContext.setAuthTokens(null);
+        await loginContextRaw.setAuthTokens(null);
         setTimeout(() => requestNoShowSettings(), 1000);
       } catch (e) {
         console.error(e);
@@ -112,7 +114,7 @@ export const useHandleDeleteAccount = (
       }
     },
     [
-      loginContext,
+      loginContextRaw,
       errorVWC,
       showDeleteConfirmApplePromptVWC,
       showDeleteConfirmGooglePromptVWC,
@@ -125,7 +127,8 @@ export const useHandleDeleteAccount = (
   useValueWithCallbacksEffect(
     showDeleteConfirmInitialPromptVWC,
     (showDeleteConfirmInitialPrompt) => {
-      if (loginContext.state !== "logged-in") {
+      const loginRaw = loginContextRaw.value.get();
+      if (loginRaw.state !== 'logged-in') {
         return;
       }
 
@@ -152,9 +155,9 @@ export const useHandleDeleteAccount = (
         <YesNoModal
           title="Are you sure you want to delete your account?"
           body={
-            "By deleting your account, all your progress and history will be permanently lost. If " +
-            "you have a subscription, we recommend you manually unsubscribe prior to deleting " +
-            "your account."
+            'By deleting your account, all your progress and history will be permanently lost. If ' +
+            'you have a subscription, we recommend you manually unsubscribe prior to deleting ' +
+            'your account.'
           }
           cta1="Not Now"
           cta2="Delete"
@@ -230,9 +233,9 @@ export const useHandleDeleteAccount = (
         <YesNoModal
           title="To unsubscribe from Oseh+"
           body={
-            "Open the Google Play app, at the top right, tap the profile icon, tap Payments & " +
-            "subscriptions > Subscriptions, select the subcription you want to cancel, tap " +
-            "Cancel subscription, and follow the instructions."
+            'Open the Google Play app, at the top right, tap the profile icon, tap Payments & ' +
+            'subscriptions > Subscriptions, select the subcription you want to cancel, tap ' +
+            'Cancel subscription, and follow the instructions.'
           }
           cta1="Cancel"
           cta2="Delete my account"

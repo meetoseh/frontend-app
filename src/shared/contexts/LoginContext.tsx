@@ -3,16 +3,26 @@ import {
   PropsWithChildren,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
-} from "react";
-import { useStateCompat as useState } from "../hooks/useStateCompat";
-import { deleteSecurePaginated } from "../lib/deleteSecurePaginated";
-import { storeSecurePaginated } from "../lib/storeSecurePaginated";
-import { retrieveSecurePaginated } from "../lib/retrieveSecurePaginated";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { apiFetch } from "../lib/apiFetch";
-import { AppState, NativeEventSubscription } from "react-native";
-import { Buffer } from "@craftzdog/react-native-buffer";
+} from 'react';
+import { useStateCompat as useState } from '../hooks/useStateCompat';
+import { deleteSecurePaginated } from '../lib/deleteSecurePaginated';
+import { storeSecurePaginated } from '../lib/storeSecurePaginated';
+import { retrieveSecurePaginated } from '../lib/retrieveSecurePaginated';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiFetch } from '../lib/apiFetch';
+import { AppState, NativeEventSubscription } from 'react-native';
+import { Buffer } from '@craftzdog/react-native-buffer';
+import {
+  Callbacks,
+  useWritableValueWithCallbacks,
+  ValueWithCallbacks,
+} from '../lib/Callbacks';
+import { getCurrentServerTimeMS } from '../lib/getCurrentServerTimeMS';
+import { useValueWithCallbacksEffect } from '../hooks/useValueWithCallbacksEffect';
+import { setVWC } from '../lib/setVWC';
+import { getJwtExpiration } from '../lib/getJwtExpiration';
 
 /**
  * The user attributes that are available when a user is logged in. When
@@ -78,35 +88,49 @@ export type TokenResponseConfig = {
 };
 
 /**
+ * The login context's provided value when logged in.
+ */
+export type LoginContextValueLoggedIn = {
+  /**
+   * The disjoint union tag for the state.
+   */
+  state: 'logged-in';
+  /**
+   * The auth tokens that can be used in requests
+   */
+  authTokens: TokenResponseConfig;
+  /**
+   * The user attributes for the logged in user, which are based on the
+   * claims in the id token, but can be updated independently.
+   */
+  userAttributes: UserAttributes;
+};
+
+/**
+ * The login context's provided value when we are in the process of
+ * loading from stores.
+ */
+export type LoginContextValueLoading = {
+  state: 'loading';
+};
+
+/**
+ * The login context's provided value when logged out
+ */
+export type LoginContextValueLoggedOut = {
+  state: 'logged-out';
+};
+
+export type LoginContextValueUnion =
+  | LoginContextValueLoggedIn
+  | LoginContextValueLoading
+  | LoginContextValueLoggedOut;
+
+/**
  * The value provided by the login context.
  */
 export type LoginContextValue = {
-  /**
-   * The current state for loading the auth tokens; if we are loading, this means
-   * we're still checking the secure store. If we're logged-in, the authTokens
-   * will be available, and if we're logged-out, the authTokens will be null.
-   *
-   * This is helpful for login buttons to be disabled until we're sure about
-   * the login state.
-   */
-  state: "loading" | "logged-in" | "logged-out";
-
-  /**
-   * The number of times we've logged out. This is sometimes useful as a key
-   * for components, since, e.g., useAuthRequest requires the component be
-   * completely recreated/remounted after logging out. This is incremented
-   * when setAuthTokens is called with null.
-   */
-  logoutCounter: number;
-
-  /**
-   * If we're loading or logged-out, null. Otherwise, the auth tokens.
-   * In particular, the idToken is used to authenticate with the backend.
-   * Do NOT directly fetch claims from the id token which are mutable -
-   * instead, you must prefer "userAttributes", which includes any updates
-   * we've made to the user attributes since the last time we logged in.
-   */
-  authTokens: TokenResponseConfig | null;
+  value: ValueWithCallbacks<LoginContextValueUnion>;
 
   /**
    * The function to call to set the authtokens to a new value. This will
@@ -121,15 +145,6 @@ export type LoginContextValue = {
   setAuthTokens: (authTokens: TokenResponseConfig | null) => Promise<void>;
 
   /**
-   * The users attributes, available when authTokens is available. This
-   * generally has correspondance with the idToken claims, however, when
-   * we update the user attributes on the client we do not necessarily
-   * refresh the token - instead we update and store these attributes until
-   * we get a fresh token.
-   */
-  userAttributes: UserAttributes | null;
-
-  /**
    * The function to call to set the user attributes to a new value.
    * Raises an error if not logged in.
    */
@@ -137,15 +152,27 @@ export type LoginContextValue = {
 };
 
 const defaultProps: LoginContextValue = {
-  state: "loading",
-  logoutCounter: 0,
-  authTokens: null,
-  setAuthTokens: async () => {
-    throw new Error("cannot be called while still loading");
+  value: {
+    get() {
+      throw new Error(
+        'attempt to access LoginContextValue defaultProps value.get'
+      );
+    },
+    get callbacks(): Callbacks<undefined> {
+      throw new Error(
+        'attempt to access LoginContextValue defaultProps value.callbacks'
+      );
+    },
   },
-  userAttributes: null,
+  setAuthTokens: async () => {
+    throw new Error(
+      'attempt to setAuthTokens on LoginContextValue defaultProps'
+    );
+  },
   setUserAttributes: async () => {
-    throw new Error("cannot be called while not logged in");
+    throw new Error(
+      'attempt to setUserAttributes on LoginContextValue defaultProps'
+    );
   },
 };
 
@@ -179,8 +206,8 @@ export const extractUserAttributes = (
   // we don't need to verify the idToken since this only effects the client,
   // and they can lie to themselves if they want
   const idToken = tokenConfig.idToken;
-  const claimsBase64 = idToken.split(".")[1];
-  const claimsJson = Buffer.from(claimsBase64, "base64").toString("utf8");
+  const claimsBase64 = idToken.split('.')[1];
+  const claimsJson = Buffer.from(claimsBase64, 'base64').toString('utf8');
   const claims = JSON.parse(claimsJson);
 
   const nameClaims: {
@@ -197,9 +224,9 @@ export const extractUserAttributes = (
     (nameClaims.given_name !== null || nameClaims.family_name !== null)
   ) {
     nameClaims.name = (
-      (nameClaims.given_name || "") +
-      " " +
-      (nameClaims.family_name || "")
+      (nameClaims.given_name || '') +
+      ' ' +
+      (nameClaims.family_name || '')
     ).trimEnd();
   }
 
@@ -207,13 +234,13 @@ export const extractUserAttributes = (
     nameClaims.name !== null &&
     (nameClaims.given_name === null || nameClaims.family_name === null)
   ) {
-    const spaceIndex = nameClaims.name.indexOf(" ");
+    const spaceIndex = nameClaims.name.indexOf(' ');
     if (spaceIndex !== -1) {
       nameClaims.given_name = nameClaims.name.substring(0, spaceIndex);
       nameClaims.family_name = nameClaims.name.substring(spaceIndex + 1);
     } else {
       nameClaims.given_name = nameClaims.name;
-      nameClaims.family_name = "";
+      nameClaims.family_name = '';
     }
   }
 
@@ -237,17 +264,17 @@ export const storeAuthTokens = async (
 ) => {
   if (authTokens === null) {
     await Promise.all([
-      deleteSecurePaginated("id_token"),
-      deleteSecurePaginated("refresh_token"),
+      deleteSecurePaginated('id_token'),
+      deleteSecurePaginated('refresh_token'),
     ]);
     return;
   }
 
-  const idTokenPromise = storeSecurePaginated("id_token", authTokens.idToken);
+  const idTokenPromise = storeSecurePaginated('id_token', authTokens.idToken);
   const refreshTokenPromise =
     authTokens.refreshToken === null
-      ? deleteSecurePaginated("refresh_token")
-      : storeSecurePaginated("refresh_token", authTokens.refreshToken);
+      ? deleteSecurePaginated('refresh_token')
+      : storeSecurePaginated('refresh_token', authTokens.refreshToken);
 
   await Promise.all([idTokenPromise, refreshTokenPromise]);
 };
@@ -258,12 +285,12 @@ export const storeAuthTokens = async (
  * @returns The auth tokens from the appropriate store
  */
 const retrieveAuthTokens = async (): Promise<TokenResponseConfig | null> => {
-  const idToken = await retrieveSecurePaginated("id_token");
+  const idToken = await retrieveSecurePaginated('id_token');
   if (idToken === null) {
     return null;
   }
 
-  const refreshToken = await retrieveSecurePaginated("refresh_token");
+  const refreshToken = await retrieveSecurePaginated('refresh_token');
 
   return {
     idToken,
@@ -280,10 +307,10 @@ export const storeUserAttributes = async (
   userAttributes: UserAttributes | null
 ) => {
   if (userAttributes === null) {
-    await AsyncStorage.removeItem("user_attributes");
+    await AsyncStorage.removeItem('user_attributes');
   } else {
     await AsyncStorage.setItem(
-      "user_attributes",
+      'user_attributes',
       JSON.stringify(userAttributes)
     );
   }
@@ -294,7 +321,7 @@ export const storeUserAttributes = async (
  * @returns The user attributes from the appropriate store
  */
 const retrieveUserAttributes = async (): Promise<UserAttributes | null> => {
-  const userAttributesJson = await AsyncStorage.getItem("user_attributes");
+  const userAttributesJson = await AsyncStorage.getItem('user_attributes');
   if (userAttributesJson === null) {
     return null;
   }
@@ -307,13 +334,13 @@ const retrieveUserAttributes = async (): Promise<UserAttributes | null> => {
  * expire.
  *
  * @param token The token to check
+ * @param nowMs The current server time in milliseconds since the unix epoch
  */
-const isTokenFresh = (token: TokenResponseConfig): boolean => {
-  const nowMs = Date.now();
+const isTokenFresh = (token: TokenResponseConfig, nowMs: number): boolean => {
   const minExpTime = nowMs + 1000 * 60 * 5;
 
-  const claimsBase64 = token.idToken.split(".")[1];
-  const claimsJson = Buffer.from(claimsBase64, "base64").toString("utf8");
+  const claimsBase64 = token.idToken.split('.')[1];
+  const claimsJson = Buffer.from(claimsBase64, 'base64').toString('utf8');
   const claims = JSON.parse(claimsJson);
   return claims.exp * 1000 > minExpTime;
 };
@@ -322,27 +349,27 @@ const isTokenFresh = (token: TokenResponseConfig): boolean => {
  * Determines if it's possible to refresh the id token in the given response
  *
  * @param token The token to check
+ * @param nowMs The current server time in milliseconds since the unix epoch
  * @returns True if the token is refreshable, false otherwise
  */
-const isRefreshable = (token: TokenResponseConfig): boolean => {
+const isRefreshable = (token: TokenResponseConfig, nowMs: number): boolean => {
   if (token.refreshToken === null) {
     return false;
   }
 
-  const nowMs = Date.now();
   const maxIat = nowMs - 1000 * 60 * 10;
   const minExpTime = nowMs + 1000 * 60 * 5;
   const minOgExpTime = nowMs - 1000 * 60 * 60 * 24 * 60 + 1000 * 60 * 5;
 
-  const refreshClaimsBase64 = token.refreshToken.split(".")[1];
-  const refreshClaimsJson = Buffer.from(refreshClaimsBase64, "base64").toString(
-    "utf8"
+  const refreshClaimsBase64 = token.refreshToken.split('.')[1];
+  const refreshClaimsJson = Buffer.from(refreshClaimsBase64, 'base64').toString(
+    'utf8'
   );
   const refreshClaims = JSON.parse(refreshClaimsJson);
 
   const refreshable =
     refreshClaims.exp * 1000 > minExpTime &&
-    refreshClaims["oseh:og_exp"] * 1000 > minOgExpTime &&
+    refreshClaims['oseh:og_exp'] * 1000 > minOgExpTime &&
     refreshClaims.iat * 1000 < maxIat;
 
   return refreshable;
@@ -359,11 +386,11 @@ const refreshTokens = async (
   oldTokens: TokenResponseConfig
 ): Promise<TokenResponseConfig> => {
   const response = await apiFetch(
-    "/api/1/oauth/refresh",
+    '/api/1/oauth/refresh',
     {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json; charset=utf-8",
+        'Content-Type': 'application/json; charset=utf-8',
       },
       body: JSON.stringify({
         refresh_token: oldTokens.refreshToken,
@@ -401,7 +428,7 @@ const canCheckForegrounded = async () => {
  * @returns True if we're foregrounded, false otherwise
  */
 const isForegrounded = async () => {
-  return AppState.currentState === "active";
+  return AppState.currentState === 'active';
 };
 
 type ForegroundChangedIdentifier = NativeEventSubscription;
@@ -417,7 +444,7 @@ type ForegroundChangedIdentifier = NativeEventSubscription;
 const addForegroundChangedListener = async (
   listener: () => void
 ): Promise<ForegroundChangedIdentifier> => {
-  return AppState.addEventListener("change", listener);
+  return AppState.addEventListener('change', listener);
 };
 
 /**
@@ -441,285 +468,385 @@ const removeForegroundChangedListener = async (
 export const LoginProvider = ({
   children,
 }: PropsWithChildren<LoginProviderProps>): React.ReactElement => {
-  const [state, setState] = useState<"loading" | "logged-in" | "logged-out">(
-    "loading"
+  const valueVWC = useWritableValueWithCallbacks<LoginContextValueUnion>(
+    () => ({
+      state: 'loading',
+    })
   );
-  const [authTokens, setAuthTokens] = useState<TokenResponseConfig | null>(
-    null
-  );
-  const [userAttributes, setUserAttributes] = useState<UserAttributes | null>(
-    null
-  );
-  const [logoutCounter, setLogoutCounter] = useState(0);
 
-  const tokenLock = useRef<Promise<void> | null>(null);
-
-  const wrappedSetAuthTokens = useCallback(
-    async (authTokens: TokenResponseConfig | null) => {
-      if (state === "loading") {
-        throw new Error("cannot be called while still loading");
+  const setAuthTokens = useCallback(
+    async (authTokens: TokenResponseConfig | null): Promise<void> => {
+      const value = valueVWC.get();
+      if (value.state === 'loading') {
+        throw new Error('cannot setAuthTokens while loading');
       }
 
-      const loggedIn = authTokens !== null;
+      if (authTokens === null) {
+        if (value.state === 'logged-out') {
+          return;
+        }
 
-      if (loggedIn) {
-        const extractedUserAttributes = extractUserAttributes(authTokens);
-        await Promise.all([
-          storeAuthTokens(authTokens),
-          storeUserAttributes(extractedUserAttributes),
-        ]);
-        setAuthTokens(authTokens);
-        setUserAttributes(extractedUserAttributes);
-        setState("logged-in");
-      } else {
         await Promise.all([storeAuthTokens(null), storeUserAttributes(null)]);
-        setState("logged-out");
-        setLogoutCounter((counter) => counter + 1);
-        setAuthTokens(null);
-        setUserAttributes(null);
+        setVWC(valueVWC, {
+          state: 'logged-out',
+        });
+        return;
       }
+
+      const userAttributes = extractUserAttributes(authTokens);
+      await Promise.all([
+        storeAuthTokens(authTokens),
+        storeUserAttributes(userAttributes),
+      ]);
+      setVWC(valueVWC, {
+        state: 'logged-in',
+        authTokens,
+        userAttributes,
+      });
     },
-    [state]
+    [valueVWC]
   );
 
-  const wrappedSetUserAttributes = useCallback(
-    async (userAttributes: UserAttributes | null) => {
-      if (state !== "logged-in") {
-        throw new Error("cannot be called while not logged in");
+  const setUserAttributes = useCallback(
+    async (userAttributes: UserAttributes): Promise<void> => {
+      const value = valueVWC.get();
+      if (value.state !== 'logged-in') {
+        throw new Error('cannot setUserAttributes while not logged in');
       }
 
       await storeUserAttributes(userAttributes);
-      setUserAttributes(userAttributes);
+      setVWC(valueVWC, {
+        ...value,
+        userAttributes,
+      });
     },
-    [state]
+    [valueVWC]
   );
 
+  const tryRefresh = useCallback(
+    async (
+      value: LoginContextValueLoggedIn,
+      runningRef: { current: boolean }
+    ): Promise<void> => {
+      try {
+        const newTokens = await refreshTokens(value.authTokens);
+        const newUserAttributes = extractUserAttributes(newTokens);
+        await Promise.all([
+          storeAuthTokens(newTokens),
+          storeUserAttributes(newUserAttributes),
+        ]);
+        if (!runningRef.current) {
+          return;
+        }
+        setVWC(valueVWC, {
+          state: 'logged-in',
+          authTokens: newTokens,
+          userAttributes: newUserAttributes,
+        });
+      } catch (e) {
+        console.trace('failed to refresh, checking if we raced another tab...');
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        if (!runningRef.current) {
+          return;
+        }
+        const [newStoredAuthTokens, newStoredUserAttributes] =
+          await Promise.all([retrieveAuthTokens(), retrieveUserAttributes()]);
+        if (!runningRef.current) {
+          return;
+        }
+        if (newStoredAuthTokens === null || newStoredUserAttributes === null) {
+          console.trace(
+            'we raced another tab, but they deleted the tokens. providing logged-out'
+          );
+          setVWC(valueVWC, {
+            state: 'logged-out',
+          });
+          return;
+        }
+        const nowMs = await getCurrentServerTimeMS();
+        if (!runningRef.current) {
+          return;
+        }
+        if (!isTokenFresh(newStoredAuthTokens, nowMs)) {
+          console.trace(
+            'the other tab refreshed, but the token is already not fresh! clearing and providing logged-out'
+          );
+          await Promise.all([storeAuthTokens(null), storeUserAttributes(null)]);
+          if (!runningRef.current) {
+            return;
+          }
+          setVWC(valueVWC, {
+            state: 'logged-out',
+          });
+          return;
+        }
+        if (newStoredAuthTokens.idToken !== value.authTokens.idToken) {
+          console.trace(
+            'we raced another tab, and they refreshed successfully. double checking...'
+          );
+          const newNow = await getCurrentServerTimeMS();
+          if (!runningRef.current) {
+            return;
+          }
+          if (isTokenFresh(newStoredAuthTokens, newNow)) {
+            console.trace(
+              'the other tab refreshed successfully, providing logged-in'
+            );
+            setVWC(valueVWC, {
+              state: 'logged-in',
+              authTokens: newStoredAuthTokens,
+              userAttributes: newStoredUserAttributes,
+            });
+            return;
+          } else {
+            console.trace(
+              'the other tab refreshed, but the token is already not fresh! clearing and providing logged-out'
+            );
+            await Promise.all([
+              storeAuthTokens(null),
+              storeUserAttributes(null),
+            ]);
+            if (!runningRef.current) {
+              return;
+            }
+            setVWC(valueVWC, {
+              state: 'logged-out',
+            });
+            return;
+          }
+        } else {
+          console.trace(
+            'local store was not changed in time, clearing and providing logged out'
+          );
+          await Promise.all([storeAuthTokens(null), storeUserAttributes(null)]);
+          if (!runningRef.current) {
+            return;
+          }
+          setVWC(valueVWC, {
+            state: 'logged-out',
+          });
+          return;
+        }
+      }
+    },
+    [valueVWC]
+  );
+
+  const runningLock = useRef<Promise<void> | null>(null);
   useEffect(() => {
-    let active = true;
-    acquireLockAndFetchTokens();
+    if (valueVWC.get().state !== 'loading') {
+      return;
+    }
+
+    const runningRef = { current: true };
+    acquireLockAndLoadFromStore();
     return () => {
-      active = false;
+      runningRef.current = false;
     };
 
-    async function fetchTokens() {
-      let tokens, attributes;
-      try {
-        [tokens, attributes] = await Promise.all([
-          retrieveAuthTokens(),
-          retrieveUserAttributes(),
-        ]);
-      } catch (e) {
-        if (!active) {
+    async function loadFromStore() {
+      const [storedAuthTokens, storedUserAttributes] = await Promise.all([
+        retrieveAuthTokens(),
+        retrieveUserAttributes(),
+      ]);
+      if (!runningRef.current) {
+        return;
+      }
+
+      if (storedAuthTokens === null || storedUserAttributes === null) {
+        if (storedAuthTokens !== null) {
+          console.trace(
+            'inconsistent local storage state: have auth tokens but not user attributes; clearing tokens'
+          );
+          await storeAuthTokens(null);
+        }
+        if (storedUserAttributes !== null) {
+          console.trace(
+            'inconsistent local storage state: have user attributes but not auth tokens; clearing attributes'
+          );
+          await storeUserAttributes(null);
+        }
+        if (!runningRef.current) {
           return;
         }
+        setVWC(valueVWC, {
+          state: 'logged-out',
+        });
+        return;
+      }
 
-        // almost certainly this error is Could not encrypt/decrypt data,
-        // which happens when the user uninstalls and reinstalls the app.
+      const nowMs = await getCurrentServerTimeMS();
+      if (!runningRef.current) {
+        return;
+      }
+
+      if (isTokenFresh(storedAuthTokens, nowMs)) {
+        setVWC(valueVWC, {
+          state: 'logged-in',
+          authTokens: storedAuthTokens,
+          userAttributes: storedUserAttributes,
+        });
+        return;
+      }
+
+      if (!isRefreshable(storedAuthTokens, nowMs)) {
+        console.trace(
+          'have stored login state but it is not fresh nor refreshable, clearing'
+        );
         await Promise.all([storeAuthTokens(null), storeUserAttributes(null)]);
-        setState("logged-out");
-        return;
-      }
-
-      if (!active) {
-        return;
-      }
-
-      if (tokens === null || attributes === null) {
-        setAuthTokens(null);
-        setUserAttributes(null);
-        await Promise.all([storeAuthTokens(null), storeUserAttributes(null)]);
-        setState("logged-out");
-        return;
-      }
-
-      if (isTokenFresh(tokens)) {
-        setAuthTokens(tokens);
-        setUserAttributes(attributes);
-        setState("logged-in");
-        return;
-      }
-
-      if (isRefreshable(tokens)) {
-        let newTokens: TokenResponseConfig | null = null;
-        try {
-          newTokens = await refreshTokens(tokens);
-        } catch (e) {
-          if (e instanceof Response && e.status === 403) {
-            const data = await e.text();
-            console.error("refresh tokens additional context:", data);
-          }
-          console.error("failed to refresh tokens", e);
-        }
-
-        if (newTokens !== null) {
-          const userAttributes = extractUserAttributes(newTokens);
-          await Promise.all([
-            storeAuthTokens(newTokens),
-            storeUserAttributes(userAttributes),
-          ]);
-
-          if (active) {
-            setAuthTokens(newTokens);
-            setUserAttributes(userAttributes);
-            setState("logged-in");
-          }
+        if (!runningRef.current) {
           return;
         }
-      }
-
-      await Promise.all([storeAuthTokens(null), storeUserAttributes(null)]);
-      if (!active) {
-        return;
-      }
-      setState("logged-out");
-    }
-
-    async function acquireLockAndFetchTokens() {
-      if (tokenLock.current !== null) {
-        try {
-          await tokenLock.current;
-        } catch (e) {
-          console.log("ignoring error from previous token fetch", e);
-        }
-      }
-
-      if (!active) {
+        setVWC(valueVWC, {
+          state: 'logged-out',
+        });
         return;
       }
 
-      tokenLock.current = fetchTokens();
-      try {
-        await tokenLock.current;
-      } catch (e) {
-        console.log("error fetching tokens", e);
-      } finally {
-        if (active) {
-          tokenLock.current = null;
-        }
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    let timeout: NodeJS.Timeout | null = null;
-    let visibilityHandler: ForegroundChangedIdentifier | null = null;
-    if (authTokens !== null) {
-      const idenClaimsB64 = authTokens.idToken.split(".")[1];
-      const idenClaimsJson = Buffer.from(idenClaimsB64, "base64").toString(
-        "utf8"
+      await tryRefresh(
+        {
+          state: 'logged-in',
+          authTokens: storedAuthTokens,
+          userAttributes: storedUserAttributes,
+        },
+        runningRef
       );
-      const idenClaims = JSON.parse(idenClaimsJson);
-      const expMs = idenClaims.exp * 1000;
-      const nowMs = Date.now();
-
-      timeout = setTimeout(onExpired, expMs - nowMs);
     }
 
-    let active = true;
-    return () => {
-      if (!active) {
+    async function acquireLockAndLoadFromStore() {
+      while (runningLock.current !== null) {
+        if (!runningRef.current) {
+          return;
+        }
+        await runningLock.current;
+      }
+      if (!runningRef.current) {
         return;
       }
+      runningLock.current = new Promise(async (resolve) => {
+        try {
+          await loadFromStore();
+        } finally {
+          runningLock.current = null;
+          resolve();
+        }
+      });
+    }
+  }, [valueVWC, tryRefresh]);
 
-      active = false;
+  useValueWithCallbacksEffect(valueVWC, (valueRaw) => {
+    if (
+      valueRaw.state !== 'logged-in' ||
+      valueRaw.authTokens.refreshToken === null
+    ) {
+      return;
+    }
+    const value = valueRaw;
+
+    let timeout: NodeJS.Timeout | null = null;
+    let foregroundChecker: ForegroundChangedIdentifier | null = null;
+    let runningRef = { current: true };
+
+    queueTimeoutIfForegrounded();
+    return () => {
+      runningRef.current = false;
       if (timeout !== null) {
         clearTimeout(timeout);
+        timeout = null;
       }
-
-      if (visibilityHandler !== null) {
-        removeForegroundChangedListener(visibilityHandler);
+      if (foregroundChecker !== null) {
+        removeForegroundChangedListener(foregroundChecker);
+        foregroundChecker = null;
       }
     };
 
-    async function onExpired() {
-      if (!active) {
+    async function queueTimeout() {
+      if (!runningRef.current) {
         return;
       }
 
-      timeout = null;
-      if (visibilityHandler !== null) {
-        removeForegroundChangedListener(visibilityHandler);
-        visibilityHandler = null;
+      if (timeout !== null) {
+        clearTimeout(timeout);
+        timeout = null;
       }
 
-      if (await canCheckForegrounded()) {
-        if (!(await isForegrounded())) {
-          visibilityHandler = await addForegroundChangedListener(onExpired);
-          return;
-        }
+      const nowMs = await getCurrentServerTimeMS();
+      if (!runningRef.current) {
+        return;
       }
 
-      await acquireLockAndHandleExpired();
+      const expiresMs = getJwtExpiration(value.authTokens.idToken);
+      const refreshAtMs = expiresMs - 1000 * 60 * 5;
+      if (refreshAtMs < nowMs) {
+        await tryRefresh(value, runningRef);
+      } else {
+        const timeUntilRefreshMs = refreshAtMs - nowMs;
+        timeout = setTimeout(queueTimeout, timeUntilRefreshMs);
+      }
     }
 
-    async function handleExpired() {
-      if (!active) {
+    async function queueTimeoutIfForegrounded() {
+      const foregroundInfoAvailable = await canCheckForegrounded();
+      if (!runningRef.current) {
         return;
       }
 
-      const storedTokens = await retrieveAuthTokens();
-      if (storedTokens === null) {
-        wrappedSetAuthTokens(null);
+      if (!foregroundInfoAvailable) {
+        await queueTimeout();
         return;
       }
 
-      if (
-        storedTokens.idToken !== authTokens?.idToken ||
-        storedTokens.refreshToken !== authTokens?.refreshToken
-      ) {
-        wrappedSetAuthTokens(storedTokens);
+      foregroundChecker = await addForegroundChangedListener(
+        onForegroundChanged
+      );
+      if (!runningRef.current) {
+        if (foregroundChecker !== null) {
+          removeForegroundChangedListener(foregroundChecker);
+          foregroundChecker = null;
+        }
         return;
       }
 
-      if (authTokens !== null && isRefreshable(authTokens)) {
-        try {
-          const refreshed = await refreshTokens(authTokens);
-          wrappedSetAuthTokens(refreshed);
-        } catch (e) {
-          console.error("error refreshing tokens: ", e);
-          wrappedSetAuthTokens(null);
+      await onForegroundChanged();
+    }
+
+    async function onForegroundChanged() {
+      if (!runningRef.current) {
+        if (foregroundChecker !== null) {
+          removeForegroundChangedListener(foregroundChecker);
+          foregroundChecker = null;
+        }
+        return;
+      }
+
+      const isForegroundedNow = await isForegrounded();
+      if (!runningRef.current) {
+        return;
+      }
+
+      if (isForegroundedNow) {
+        if (timeout === null) {
+          await queueTimeout();
         }
       } else {
-        wrappedSetAuthTokens(null);
-      }
-    }
-
-    async function acquireLockAndHandleExpired() {
-      if (tokenLock.current !== null) {
-        try {
-          await tokenLock.current;
-        } catch (e) {
-          console.log("ignoring error from previous token fetch", e);
-        }
-      }
-
-      if (!active) {
-        return;
-      }
-
-      tokenLock.current = handleExpired();
-      try {
-        await tokenLock.current;
-      } catch (e) {
-        console.log("error handling expired tokens", e);
-      } finally {
-        if (active) {
-          tokenLock.current = null;
+        if (timeout !== null) {
+          clearTimeout(timeout);
+          timeout = null;
         }
       }
     }
-  }, [authTokens, wrappedSetAuthTokens]);
+  });
 
   return (
     <LoginContext.Provider
-      value={{
-        state,
-        logoutCounter,
-        authTokens,
-        setAuthTokens: wrappedSetAuthTokens,
-        userAttributes,
-        setUserAttributes: wrappedSetUserAttributes,
-      }}
+      value={useMemo(
+        () => ({
+          value: valueVWC,
+          setAuthTokens,
+          setUserAttributes,
+        }),
+        [valueVWC, setAuthTokens, setUserAttributes]
+      )}
     >
       {children}
     </LoginContext.Provider>

@@ -1,6 +1,9 @@
-import { Dispatch, SetStateAction } from "react";
-import { apiFetch } from "./apiFetch";
-import { LoginContextValue } from "../contexts/LoginContext";
+import { Dispatch, SetStateAction } from 'react';
+import { apiFetch } from './apiFetch';
+import {
+  LoginContextValue,
+  LoginContextValueLoggedIn,
+} from '../contexts/LoginContext';
 
 type MappedKey<T> = {
   key: string & keyof T;
@@ -14,7 +17,7 @@ export type CrudFetcherKeyMap<T> = {
 };
 type SortItem = {
   key: string;
-  dir: "asc" | "desc";
+  dir: 'asc' | 'desc';
   before: any;
   after: any;
 };
@@ -44,7 +47,7 @@ export function convertUsingKeymap<T>(
   for (const key in raw) {
     if (key in keyMap) {
       const value = keyMap[key];
-      if (typeof value === "string") {
+      if (typeof value === 'string') {
         result[value] = raw[key];
       } else {
         const mapped = value(key, raw[key]);
@@ -81,7 +84,7 @@ function getNextPageSort(
  * and to provide the onMore handler for a CrudListing component
  *
  * ```ts
- * const loginContext = useContext(LoginContext);
+ * const loginContextRaw = useContext(LoginContext);
  * const [items, setItems] = useState<MyItem[]>([]);
  * const [filters, setFilters] = useState<MyFilters>(defaultFilters)
  * const [sort, setSort] = useState<MySort>(defaultSort)
@@ -92,16 +95,18 @@ function getNextPageSort(
  *   return new CrudFetcher<MyItem>(path, keyMap, setItems, setLoading, setHaveMore);
  * }, [path, keyMap]); // often empty since these are constants
  *
- * useEffect(() => {
- *   if (loginContext.state !== 'logged-in') { return; }
- *   return fetcher.resetAndLoadWithCancelCallback(filters, sort, limit, loginContext, (e) => {
+ * useValueWithCallbacksEffect(loginContextRaw.value, useCallback((loginRaw) => {
+ *   if (loginRaw.state !== 'logged-in') { return; }
+ *   return fetcher.resetAndLoadWithCancelCallback(filters, sort, limit, loginRaw, (e) => {
  *     console.error(e);
  *   });
- * }, [fetcher, filters, sort, limit, loginContext]);
+ * }, [fetcher, filters, sort, limit]));
  *
  * const onMore = useCallback(() => {
- *  fetcher.loadMore(filters, limit, loginContext);
- * }, [fetcher, filters, limit, loginContext]);
+ *  const loginRaw = loginContextRaw.value.get();
+ *  if (loginRaw.state !== 'logged-in') { return; }
+ *  fetcher.loadMore(filters, limit, loginRaw);
+ * }, [fetcher, filters, limit, loginContextRaw]);
  * ```
  */
 export class CrudFetcher<T> {
@@ -214,13 +219,13 @@ export class CrudFetcher<T> {
     filters: CrudFetcherFilter,
     sort: CrudFetcherSort,
     limit: number,
-    loginContext: LoginContextValue,
+    loginContext: LoginContextValueLoggedIn,
     id: number,
     signal: AbortSignal | null
   ): Promise<{ items: T[]; nextOrPrevPageSort: CrudFetcherSort | null }> {
     const handleAborted = () => {
       if (this.counter !== id || (signal && signal.aborted)) {
-        throw new Error("aborted");
+        throw new Error('aborted');
       }
     };
     handleAborted();
@@ -230,9 +235,9 @@ export class CrudFetcher<T> {
       response = await apiFetch(
         this.path,
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json; charset=utf-8",
+            'Content-Type': 'application/json; charset=utf-8',
           },
           body: JSON.stringify({
             filters,
@@ -244,8 +249,8 @@ export class CrudFetcher<T> {
         loginContext
       );
     } catch (e: any) {
-      if (e !== null && e !== undefined && e.name === "AbortError") {
-        throw new Error("aborted");
+      if (e !== null && e !== undefined && e.name === 'AbortError') {
+        throw new Error('aborted');
       }
       throw e;
     }
@@ -259,8 +264,8 @@ export class CrudFetcher<T> {
     try {
       json = await response.json();
     } catch (e: any) {
-      if (e !== null && e !== undefined && e.name === "AbortError") {
-        throw new Error("aborted");
+      if (e !== null && e !== undefined && e.name === 'AbortError') {
+        throw new Error('aborted');
       }
       throw e;
     }
@@ -331,7 +336,7 @@ export class CrudFetcher<T> {
   async loadMore(
     filters: CrudFetcherFilter,
     limit: number,
-    loginContext: LoginContextValue,
+    loginContext: LoginContextValueLoggedIn,
     kwargs: { replace?: boolean } | undefined = undefined
   ): Promise<void> {
     kwargs = Object.assign(
@@ -364,7 +369,7 @@ export class CrudFetcher<T> {
       this.nextPageSort = nextPageSort;
       this.setHaveMore(nextPageSort !== null);
     } catch (e: any) {
-      if (e !== null && e !== undefined && e.message === "aborted") {
+      if (e !== null && e !== undefined && e.message === 'aborted') {
         return;
       }
       throw e;
@@ -396,7 +401,7 @@ export class CrudFetcher<T> {
     filters: CrudFetcherFilter,
     sort: CrudFetcherSort,
     limit: number,
-    loginContext: LoginContextValue,
+    loginContext: LoginContextValueLoggedIn,
     onError: (e: any) => void
   ): () => void {
     const { id, signal } = this.initRequest();
@@ -428,7 +433,7 @@ export class CrudFetcher<T> {
         this.nextPageSort = nextPageSort;
         this.setHaveMore(nextPageSort !== null);
       } catch (e: any) {
-        if (e !== null && e !== undefined && e.message === "aborted") {
+        if (e !== null && e !== undefined && e.message === 'aborted') {
           return;
         }
         onError(e);

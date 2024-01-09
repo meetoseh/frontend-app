@@ -1,44 +1,44 @@
-import { ReactElement, useCallback, useContext } from "react";
-import { LoginContext } from "../../../../shared/contexts/LoginContext";
-import { useTimezone } from "../../../../shared/hooks/useTimezone";
-import { FeatureComponentProps } from "../../models/Feature";
-import { RequestPhoneState } from "./RequestPhoneState";
-import { RequestPhoneResources } from "./RequestPhoneResources";
-import { useStartSession } from "../../../../shared/hooks/useInappNotificationSession";
+import { ReactElement, useCallback, useContext } from 'react';
+import { LoginContext } from '../../../../shared/contexts/LoginContext';
+import { useTimezone } from '../../../../shared/hooks/useTimezone';
+import { FeatureComponentProps } from '../../models/Feature';
+import { RequestPhoneState } from './RequestPhoneState';
+import { RequestPhoneResources } from './RequestPhoneResources';
+import { useStartSession } from '../../../../shared/hooks/useInappNotificationSession';
 import {
   InterestsContext,
   InterestsContextValue,
-} from "../../../../shared/contexts/InterestsContext";
-import { useWindowSize } from "../../../../shared/hooks/useWindowSize";
-import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks";
-import { setVWC } from "../../../../shared/lib/setVWC";
-import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
-import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMappedValuesWithCallbacks";
-import { useErrorModal } from "../../../../shared/hooks/useErrorModal";
-import { describeError } from "../../../../shared/lib/describeError";
-import { apiFetch } from "../../../../shared/lib/apiFetch";
-import { View, Text, TextInput, StyleProp, TextStyle } from "react-native";
-import { styles } from "./RequestPhoneStyles";
-import { Modals, ModalsOutlet } from "../../../../shared/contexts/ModalContext";
-import * as Linking from "expo-linking";
-import * as Colors from "../../../../styling/colors";
-import { FullscreenView } from "../../../../shared/components/FullscreenView";
-import { StatusBar } from "expo-status-bar";
-import Messages from "./icons/Messages";
-import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
-import { useKeyboardVisibleValueWithCallbacks } from "../../../../shared/lib/useKeyboardVisibleValueWithCallbacks";
-import { useValueWithCallbacksEffect } from "../../../../shared/hooks/useValueWithCallbacksEffect";
-import { inferAnimators } from "../../../../shared/anim/AnimationLoop";
-import { useAnimatedValueWithCallbacks } from "../../../../shared/anim/useAnimatedValueWithCallbacks";
-import { easeIn } from "../../../../shared/lib/Bezier";
-import { FilledInvertedButton } from "../../../../shared/components/FilledInvertedButton";
+} from '../../../../shared/contexts/InterestsContext';
+import { useWindowSize } from '../../../../shared/hooks/useWindowSize';
+import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
+import { setVWC } from '../../../../shared/lib/setVWC';
+import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
+import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
+import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
+import { describeError } from '../../../../shared/lib/describeError';
+import { apiFetch } from '../../../../shared/lib/apiFetch';
+import { View, Text, TextInput, StyleProp, TextStyle } from 'react-native';
+import { styles } from './RequestPhoneStyles';
+import { Modals, ModalsOutlet } from '../../../../shared/contexts/ModalContext';
+import * as Linking from 'expo-linking';
+import * as Colors from '../../../../styling/colors';
+import { FullscreenView } from '../../../../shared/components/FullscreenView';
+import { StatusBar } from 'expo-status-bar';
+import Messages from './icons/Messages';
+import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
+import { useKeyboardVisibleValueWithCallbacks } from '../../../../shared/lib/useKeyboardVisibleValueWithCallbacks';
+import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
+import { inferAnimators } from '../../../../shared/anim/AnimationLoop';
+import { useAnimatedValueWithCallbacks } from '../../../../shared/anim/useAnimatedValueWithCallbacks';
+import { easeIn } from '../../../../shared/lib/Bezier';
+import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
 import {
   ErrorBanner,
   ErrorBannerText,
-} from "../../../../shared/components/ErrorBanner";
-import { LinkButton } from "../../../../shared/components/LinkButton";
-import { useContentWidth } from "../../../../shared/lib/useContentWidth";
-import { SvgLinearGradientBackground } from "../../../../shared/anim/SvgLinearGradientBackground";
+} from '../../../../shared/components/ErrorBanner';
+import { LinkButton } from '../../../../shared/components/LinkButton';
+import { useContentWidth } from '../../../../shared/lib/useContentWidth';
+import { SvgLinearGradientBackground } from '../../../../shared/anim/SvgLinearGradientBackground';
 
 /**
  * Prompts the user for their phone number, then verifies it.
@@ -50,27 +50,27 @@ export const RequestPhone = ({
   RequestPhoneState,
   RequestPhoneResources
 >): ReactElement => {
-  const loginContext = useContext(LoginContext);
+  const loginContextRaw = useContext(LoginContext);
   const interests = useContext(InterestsContext);
   const appNotifsAvailable = useMappedValueWithCallbacks(
     resources,
     (r) => r.appNotifsEnabled
   );
 
-  const step = useWritableValueWithCallbacks<"number" | "verify" | "done">(
-    () => "number"
+  const step = useWritableValueWithCallbacks<'number' | 'verify' | 'done'>(
+    () => 'number'
   );
-  const phone = useWritableValueWithCallbacks<string>(() => "");
+  const phone = useWritableValueWithCallbacks<string>(() => '');
   const error = useWritableValueWithCallbacks<ReactElement | null>(() => null);
   const saving = useWritableValueWithCallbacks<boolean>(() => false);
-  const code = useWritableValueWithCallbacks<string>(() => "");
+  const code = useWritableValueWithCallbacks<string>(() => '');
   const errorPhone = useWritableValueWithCallbacks<boolean>(() => false);
   const verificationUid = useWritableValueWithCallbacks<string | null>(
     () => null
   );
   const timezone = useTimezone();
   useStartSession({
-    type: "callbacks",
+    type: 'callbacks',
     props: () => resources.get().session,
     callbacks: resources.callbacks,
   });
@@ -79,44 +79,44 @@ export const RequestPhone = ({
     (newValue: string) => {
       setVWC(errorPhone, false);
 
-      if (newValue === "+") {
-        setVWC(phone, "+");
+      if (newValue === '+') {
+        setVWC(phone, '+');
         return;
       }
 
-      if (newValue[0] === "+" && newValue[1] !== "1") {
+      if (newValue[0] === '+' && newValue[1] !== '1') {
         // international number; we'll just let them type it
         setVWC(phone, newValue);
         return;
       }
 
-      let stripped = newValue.replace(/[^0-9]/g, "");
+      let stripped = newValue.replace(/[^0-9]/g, '');
 
-      if (newValue.endsWith("-")) {
+      if (newValue.endsWith('-')) {
         // they backspaced a space
         stripped = stripped.slice(0, -1);
       }
 
       if (stripped.length === 0) {
-        setVWC(phone, "");
+        setVWC(phone, '');
         return;
       }
 
       let result = stripped;
-      if (result[0] !== "1") {
-        result = "+1" + result;
+      if (result[0] !== '1') {
+        result = '+1' + result;
       } else {
-        result = "+" + result;
+        result = '+' + result;
       }
 
       // +1123
       if (result.length >= 5) {
-        result = result.slice(0, 5) + " - " + result.slice(5);
+        result = result.slice(0, 5) + ' - ' + result.slice(5);
       }
 
       // +1123 - 456
       if (result.length >= 11) {
-        result = result.slice(0, 11) + " - " + result.slice(11);
+        result = result.slice(0, 11) + ' - ' + result.slice(11);
       }
 
       setVWC(phone, result);
@@ -129,7 +129,7 @@ export const RequestPhone = ({
       return false;
     }
 
-    if (phone[0] === "+" && phone[1] !== "1") {
+    if (phone[0] === '+' && phone[1] !== '1') {
       // we don't bother validating international numbers
       return true;
     }
@@ -152,7 +152,8 @@ export const RequestPhone = ({
     const phoneInput = phoneInputRaw;
     phoneInput.blur();
 
-    if (loginContext.state !== "logged-in") {
+    const loginRaw = loginContextRaw.value.get();
+    if (loginRaw.state !== 'logged-in') {
       setVWC(
         error,
         <ErrorBanner>
@@ -163,6 +164,7 @@ export const RequestPhone = ({
       );
       return;
     }
+    const login = loginRaw;
 
     if (!phoneFormatCorrect.get()) {
       setVWC(error, null);
@@ -174,7 +176,7 @@ export const RequestPhone = ({
     const phoneNumber = phone.get();
     const receiveNotifs = !resources.get().appNotifsEnabled;
 
-    resources.get().session?.storeAction?.call(undefined, "continue", {
+    resources.get().session?.storeAction?.call(undefined, 'continue', {
       pn: phoneNumber,
       tz: timezone.timeZone,
     });
@@ -182,18 +184,18 @@ export const RequestPhone = ({
     setVWC(error, null);
     try {
       const response = await apiFetch(
-        "/api/1/phones/verify/start",
+        '/api/1/phones/verify/start',
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json; charset=utf-8" },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
           body: JSON.stringify({
             phone_number: phoneNumber,
             receive_notifications: receiveNotifs,
             timezone: timezone.timeZone,
-            timezone_technique: timezone.guessed ? "app-guessed" : "app",
+            timezone_technique: timezone.guessed ? 'app-guessed' : 'app',
           }),
         },
-        loginContext
+        login
       );
 
       if (!response.ok) {
@@ -202,7 +204,7 @@ export const RequestPhone = ({
 
       const data = await response.json();
       setVWC(verificationUid, data.uid);
-      setVWC(step, "verify");
+      setVWC(step, 'verify');
     } catch (e) {
       console.error(e);
       const err = await describeError(e);
@@ -211,7 +213,7 @@ export const RequestPhone = ({
       setVWC(saving, false);
     }
   }, [
-    loginContext,
+    loginContextRaw,
     phoneFormatCorrect,
     phone,
     timezone,
@@ -224,7 +226,8 @@ export const RequestPhone = ({
   ]);
 
   const onVerifyPhone = useCallback(async () => {
-    if (loginContext.state !== "logged-in") {
+    const loginRaw = loginContextRaw.value.get();
+    if (loginRaw.state !== 'logged-in') {
       setVWC(
         error,
         <ErrorBanner>
@@ -235,24 +238,25 @@ export const RequestPhone = ({
       );
       return;
     }
+    const login = loginRaw;
 
-    const phoneNumber = phone.get().replaceAll(/ - /g, "");
+    const phoneNumber = phone.get().replaceAll(/ - /g, '');
 
-    resources.get().session?.storeAction?.call(undefined, "verify_start", null);
+    resources.get().session?.storeAction?.call(undefined, 'verify_start', null);
     setVWC(saving, true);
     setVWC(error, null);
     try {
       const response = await apiFetch(
-        "/api/1/phones/verify/finish",
+        '/api/1/phones/verify/finish',
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json; charset=utf-8" },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
           body: JSON.stringify({
             uid: verificationUid.get(),
             code: code.get(),
           }),
         },
-        loginContext
+        login
       );
 
       if (!response.ok) {
@@ -270,21 +274,21 @@ export const RequestPhone = ({
         throw response;
       }
 
-      await loginContext.setUserAttributes({
-        ...loginContext.userAttributes!,
+      await loginContextRaw.setUserAttributes({
+        ...login.userAttributes,
         phoneNumber,
       });
       resources
         .get()
-        .session?.storeAction?.call(undefined, "verify_success", null);
+        .session?.storeAction?.call(undefined, 'verify_success', null);
       state.get().onAddedPhoneNumber({
         enabled: !resources.get().appNotifsEnabled,
       });
-      setVWC(step, "done");
+      setVWC(step, 'done');
     } catch (e) {
       resources
         .get()
-        .session?.storeAction?.call(undefined, "verify_fail", null);
+        .session?.storeAction?.call(undefined, 'verify_fail', null);
       console.error(e);
       const err = await describeError(e);
       setVWC(error, err);
@@ -292,7 +296,7 @@ export const RequestPhone = ({
       setVWC(saving, false);
     }
   }, [
-    loginContext,
+    loginContextRaw,
     code,
     phone,
     verificationUid,
@@ -307,17 +311,17 @@ export const RequestPhone = ({
     const st = state.get();
 
     if (res.session !== null) {
-      res.session.storeAction("skip", null);
+      res.session.storeAction('skip', null);
       res.session.reset();
       st.onboardingPhoneNumberIAN?.onShown();
     }
   }, [state, resources]);
 
   const onBackVerify = useCallback(async () => {
-    resources.get().session?.storeAction?.call(undefined, "verify_back", null);
+    resources.get().session?.storeAction?.call(undefined, 'verify_back', null);
     setVWC(error, null);
     setVWC(verificationUid, null);
-    setVWC(step, "number");
+    setVWC(step, 'number');
   }, [resources, error, verificationUid, step]);
 
   const phoneInputData = useMappedValuesWithCallbacks(
@@ -335,7 +339,7 @@ export const RequestPhone = ({
   }));
 
   const modals = useWritableValueWithCallbacks<Modals>(() => []);
-  useErrorModal(modals, error, "request or verify phone");
+  useErrorModal(modals, error, 'request or verify phone');
 
   const windowSize = useWindowSize();
   const contentWidth = useContentWidth();
@@ -388,7 +392,7 @@ export const RequestPhone = ({
     let active = true;
 
     const input =
-      step.get() === "number" ? phoneTextInput.get() : codeTextInput.get();
+      step.get() === 'number' ? phoneTextInput.get() : codeTextInput.get();
     if (input === null) {
       return undefined;
     }
@@ -449,7 +453,7 @@ export const RequestPhone = ({
     <View style={styles.container}>
       <SvgLinearGradientBackground
         state={{
-          type: "react-rerender",
+          type: 'react-rerender',
           props: Colors.STANDARD_BLACK_GRAY_GRADIENT_SVG,
         }}
       >
@@ -467,7 +471,7 @@ export const RequestPhone = ({
             <RenderGuardedComponent
               props={useMappedValueWithCallbacks(
                 step,
-                (step) => step === "number"
+                (step) => step === 'number'
               )}
               component={(isNumberStep) => {
                 if (!isNumberStep) {
@@ -569,7 +573,7 @@ export const RequestPhone = ({
             <RenderGuardedComponent
               props={useMappedValueWithCallbacks(
                 step,
-                (step) => step === "verify"
+                (step) => step === 'verify'
               )}
               component={(isVerifyStep) => {
                 if (!isVerifyStep) {
@@ -669,19 +673,19 @@ const phoneStepTitle = (
     </Text>
   );
 
-  if (interests.state !== "loaded") {
+  if (interests.state !== 'loaded') {
     return defaultCopy;
-  } else if (interests.primaryInterest === "anxiety") {
+  } else if (interests.primaryInterest === 'anxiety') {
     return (
       <Text style={styles.title}>Relax every day with friendly nudges</Text>
     );
-  } else if (interests.primaryInterest === "sleep") {
+  } else if (interests.primaryInterest === 'sleep') {
     return (
       <Text style={styles.title}>
         Sleep easier every day with friendly nudges
       </Text>
     );
-  } else if (interests.primaryInterest === "isaiah-course") {
+  } else if (interests.primaryInterest === 'isaiah-course') {
     return (
       <Text style={styles.title}>Oseh is much better with notifications</Text>
     );
@@ -717,21 +721,21 @@ const phoneStepDisclaimer = (
   if (appNotifsAvailable) {
     return (
       <Text style={styles.disclaimer}>
-        By continuing you agree to our{" "}
+        By continuing you agree to our{' '}
         <Text
           style={{
-            fontFamily: "OpenSans-Bold",
+            fontFamily: 'OpenSans-Bold',
           }}
-          onPress={() => Linking.openURL("https://www.oseh.com/terms")}
+          onPress={() => Linking.openURL('https://www.oseh.com/terms')}
         >
           Terms
-        </Text>{" "}
-        and{" "}
+        </Text>{' '}
+        and{' '}
         <Text
           style={{
-            fontFamily: "OpenSans-Bold",
+            fontFamily: 'OpenSans-Bold',
           }}
-          onPress={() => Linking.openURL("https://www.oseh.com/privacy")}
+          onPress={() => Linking.openURL('https://www.oseh.com/privacy')}
         >
           Privacy Policy
         </Text>
@@ -744,23 +748,23 @@ const phoneStepDisclaimer = (
   } else {
     return (
       <Text style={styles.disclaimer}>
-        By continuing you agree to our{" "}
+        By continuing you agree to our{' '}
         <Text
           style={{
             borderBottomWidth: 1,
             borderBottomColor: Colors.GRAYSCALE_WHITE,
           }}
-          onPress={() => Linking.openURL("https://www.oseh.com/terms")}
+          onPress={() => Linking.openURL('https://www.oseh.com/terms')}
         >
           Terms
-        </Text>{" "}
-        and{" "}
+        </Text>{' '}
+        and{' '}
         <Text
           style={{
             borderBottomWidth: 1,
             borderBottomColor: Colors.GRAYSCALE_WHITE,
           }}
-          onPress={() => Linking.openURL("https://www.oseh.com/privacy")}
+          onPress={() => Linking.openURL('https://www.oseh.com/privacy')}
         >
           Privacy Policy
         </Text>

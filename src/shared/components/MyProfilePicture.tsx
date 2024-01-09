@@ -1,9 +1,14 @@
-import { ReactElement, useContext } from "react";
-import { LoginContext } from "../contexts/LoginContext";
-import { OsehImageStateRequestHandler } from "../images/useOsehImageStateRequestHandler";
-import { useMyProfilePictureState } from "../hooks/useMyProfilePicture";
-import { OsehImageFromState } from "../images/OsehImageFromState";
-import { ImageStyle, StyleProp } from "react-native";
+import { ReactElement, useContext } from 'react';
+import { LoginContext } from '../contexts/LoginContext';
+import { OsehImageStateRequestHandler } from '../images/useOsehImageStateRequestHandler';
+import {
+  useMyProfilePictureState,
+  useMyProfilePictureStateValueWithCallbacks,
+} from '../hooks/useMyProfilePicture';
+import { OsehImageFromState } from '../images/OsehImageFromState';
+import { ImageStyle, StyleProp } from 'react-native';
+import { useMappedValueWithCallbacks } from '../hooks/useMappedValueWithCallbacks';
+import { RenderGuardedComponent } from './RenderGuardedComponent';
 
 type MyProfilePictureProps = {
   /**
@@ -41,19 +46,31 @@ export const MyProfilePicture = ({
   imageHandler,
   style,
 }: MyProfilePictureProps): ReactElement => {
-  const loginContext = useContext(LoginContext);
-  const profileImage = useMyProfilePictureState({
-    loginContext,
-    displayWidth,
-    displayHeight,
-    handler: imageHandler,
+  const loginContextRaw = useContext(LoginContext);
+  const profileImageProps = useMappedValueWithCallbacks(
+    loginContextRaw.value,
+    (loginRaw) => ({
+      loginContext: loginRaw.state === 'logged-in' ? loginRaw : null,
+      displayWidth,
+      displayHeight,
+      handler: imageHandler,
+    })
+  );
+  const profileImageVWC = useMyProfilePictureStateValueWithCallbacks({
+    type: 'callbacks',
+    props: () => profileImageProps.get(),
+    callbacks: profileImageProps.callbacks,
   });
 
   return (
-    <>
-      {profileImage.state === "available" && (
-        <OsehImageFromState state={profileImage.image} style={style} />
-      )}
-    </>
+    <RenderGuardedComponent
+      props={profileImageVWC}
+      component={(profileImage) => {
+        if (profileImage.state !== 'available') {
+          return <></>;
+        }
+        return <OsehImageFromState state={profileImage.image} style={style} />;
+      }}
+    />
   );
 };

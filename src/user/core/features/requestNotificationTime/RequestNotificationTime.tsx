@@ -1,51 +1,51 @@
-import { FeatureComponentProps } from "../../models/Feature";
-import { styles } from "./RequestNotificationTimeStyles";
-import { ReactElement, useCallback, useContext } from "react";
+import { FeatureComponentProps } from '../../models/Feature';
+import { styles } from './RequestNotificationTimeStyles';
+import { ReactElement, useCallback, useContext } from 'react';
 import {
   Channel,
   RequestNotificationTimeState,
-} from "./RequestNotificationTimeState";
+} from './RequestNotificationTimeState';
 import {
   ChannelSettings,
   DayOfWeek,
   RequestNotificationTimeResources,
-} from "./RequestNotificationTimeResources";
-import { useStartSession } from "../../../../shared/hooks/useInappNotificationSession";
+} from './RequestNotificationTimeResources';
+import { useStartSession } from '../../../../shared/hooks/useInappNotificationSession';
 import {
   Callbacks,
   createWritableValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../../../../shared/lib/Callbacks";
+} from '../../../../shared/lib/Callbacks';
 import {
   ModalContext,
   Modals,
   ModalsOutlet,
   addModalWithCallbackToRemove,
-} from "../../../../shared/contexts/ModalContext";
-import { useErrorModal } from "../../../../shared/hooks/useErrorModal";
-import { setVWC } from "../../../../shared/lib/setVWC";
-import { LoginContext } from "../../../../shared/contexts/LoginContext";
-import { useTimezone } from "../../../../shared/hooks/useTimezone";
-import { TimeRange } from "./EditTimeRange";
-import { DEFAULT_DAYS, DEFAULT_TIME_RANGE } from "./constants";
-import { apiFetch } from "../../../../shared/lib/apiFetch";
-import { describeError } from "../../../../shared/lib/describeError";
-import { View, Text, StyleProp, TextStyle } from "react-native";
-import { SvgLinearGradientBackground } from "../../../../shared/anim/SvgLinearGradientBackground";
-import * as Colors from "../../../../styling/colors";
-import { FullscreenView } from "../../../../shared/components/FullscreenView";
-import { StatusBar } from "expo-status-bar";
-import { useContentWidth } from "../../../../shared/lib/useContentWidth";
-import { FilledInvertedButton } from "../../../../shared/components/FilledInvertedButton";
-import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
-import { CloseButton } from "../../../../shared/components/CloseButton";
-import { ChannelSelector } from "./ChannelSelector";
-import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
-import { nameForChannel } from "./formatUtils";
-import { EditReminderTime } from "./EditReminderTime";
-import { useValueWithCallbacksEffect } from "../../../../shared/hooks/useValueWithCallbacksEffect";
-import { useSavingModal } from "../../../../shared/hooks/useSavingModal";
-import { YesNoModal } from "../../../../shared/components/YesNoModal";
+} from '../../../../shared/contexts/ModalContext';
+import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
+import { setVWC } from '../../../../shared/lib/setVWC';
+import { LoginContext } from '../../../../shared/contexts/LoginContext';
+import { useTimezone } from '../../../../shared/hooks/useTimezone';
+import { TimeRange } from './EditTimeRange';
+import { DEFAULT_DAYS, DEFAULT_TIME_RANGE } from './constants';
+import { apiFetch } from '../../../../shared/lib/apiFetch';
+import { describeError } from '../../../../shared/lib/describeError';
+import { View, Text, StyleProp, TextStyle } from 'react-native';
+import { SvgLinearGradientBackground } from '../../../../shared/anim/SvgLinearGradientBackground';
+import * as Colors from '../../../../styling/colors';
+import { FullscreenView } from '../../../../shared/components/FullscreenView';
+import { StatusBar } from 'expo-status-bar';
+import { useContentWidth } from '../../../../shared/lib/useContentWidth';
+import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
+import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
+import { CloseButton } from '../../../../shared/components/CloseButton';
+import { ChannelSelector } from './ChannelSelector';
+import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
+import { nameForChannel } from './formatUtils';
+import { EditReminderTime } from './EditReminderTime';
+import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
+import { useSavingModal } from '../../../../shared/hooks/useSavingModal';
+import { YesNoModal } from '../../../../shared/components/YesNoModal';
 
 /**
  * Asks the user what times they want to receive notifications on various
@@ -58,7 +58,7 @@ export const RequestNotificationTime = ({
   RequestNotificationTimeState,
   RequestNotificationTimeResources
 >) => {
-  const loginContext = useContext(LoginContext);
+  const loginContextRaw = useContext(LoginContext);
   const timezone = useTimezone();
   const inClickCooldown = useWritableValueWithCallbacks(() => true);
 
@@ -120,45 +120,50 @@ export const RequestNotificationTime = ({
 
   useStartSession(
     {
-      type: "callbacks",
+      type: 'callbacks',
       props: () => resources.get().session,
       callbacks: resources.callbacks,
     },
     {
       onStart: () => {
         const session = resources.get().session;
-        session?.storeAction("open", { channels: resources.get().channels });
+        session?.storeAction('open', { channels: resources.get().channels });
       },
     }
   );
 
   const modals = useWritableValueWithCallbacks<Modals>(() => []);
-  useErrorModal(modals, error, "Set Reminders");
-  useSavingModal(modals, overlaySaving, { message: "Saving Reminders" });
+  useErrorModal(modals, error, 'Set Reminders');
+  useSavingModal(modals, overlaySaving, { message: 'Saving Reminders' });
 
   const trySaveSettingsWithoutTracking = useCallback(
     async (channel: string, days: DayOfWeek[], start: number, end: number) => {
+      const loginRaw = loginContextRaw.value.get();
+      if (loginRaw.state !== 'logged-in') {
+        return;
+      }
+      const login = loginRaw;
       const response = await apiFetch(
-        "/api/1/users/me/attributes/notification_time",
+        '/api/1/users/me/attributes/notification_time',
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json; charset=utf-8" },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
           body: JSON.stringify({
             days_of_week: days,
             time_range: { start, end },
             channel,
             timezone: timezone.timeZone,
-            timezone_technique: timezone.guessed ? "app-guessed" : "app",
+            timezone_technique: timezone.guessed ? 'app-guessed' : 'app',
           }),
         },
-        loginContext
+        login
       );
 
       if (!response.ok) {
         throw response;
       }
     },
-    [loginContext, timezone]
+    [loginContextRaw, timezone]
   );
 
   const checkIfSavePromptRequired = useCallback((): boolean => {
@@ -182,7 +187,7 @@ export const RequestNotificationTime = ({
 
   const saveSettingsAndTrack = useCallback(
     async (
-      reason: "continue" | "tap_channel" | "x_and_confirm",
+      reason: 'continue' | 'tap_channel' | 'x_and_confirm',
       nextChannel: Channel | null,
       opts?: {
         doNotFinish?: boolean;
@@ -242,7 +247,7 @@ export const RequestNotificationTime = ({
               savingEnd
             );
           } catch (e) {
-            console.error("failed to save settings due to error");
+            console.error('failed to save settings due to error');
             setVWC(currentChannel, savingChannel);
             setVWC(error, await describeError(e));
             saveError = true;
@@ -250,7 +255,7 @@ export const RequestNotificationTime = ({
         }
         const session = resources.get().session;
         if (session) {
-          session.storeAction("set_reminders", {
+          session.storeAction('set_reminders', {
             channel: savingChannel,
             time: { start: savingStart, end: savingEnd },
             days: savingDays,
@@ -325,7 +330,7 @@ export const RequestNotificationTime = ({
 
     const nextChannel =
       shown.find((c) => !finished.has(c) && c !== current) ?? null;
-    saveSettingsAndTrack("continue", nextChannel).then((res) => {
+    saveSettingsAndTrack('continue', nextChannel).then((res) => {
       if (!res.error) {
         updateTimeRange(res.changed);
         updateDays(res.changed);
@@ -380,12 +385,12 @@ export const RequestNotificationTime = ({
       }
 
       const session = resources.get().session;
-      session?.storeAction("tap_channel", {
+      session?.storeAction('tap_channel', {
         channel: channel,
         already_seen: finishedChannels.get().has(channel),
       });
 
-      saveSettingsAndTrack("tap_channel", channel).then((res) => {
+      saveSettingsAndTrack('tap_channel', channel).then((res) => {
         if (!res.error) {
           setVWC(days, getExistingDays());
           setVWC(timeRange, getExistingTimeRange());
@@ -438,7 +443,7 @@ export const RequestNotificationTime = ({
         cta2="No"
         emphasize={1}
         onClickOne={async () => {
-          const result = await saveSettingsAndTrack("x_and_confirm", null, {
+          const result = await saveSettingsAndTrack('x_and_confirm', null, {
             doNotFinish: true,
             noOverlay: true,
           });
@@ -448,7 +453,7 @@ export const RequestNotificationTime = ({
           }
         }}
         onClickTwo={async () => {
-          resources.get().session?.storeAction("discard_changes", null);
+          resources.get().session?.storeAction('discard_changes', null);
           dismissed.add(handleFinish);
           requestDismiss.get()();
         }}
@@ -469,7 +474,7 @@ export const RequestNotificationTime = ({
     <View style={styles.container}>
       <SvgLinearGradientBackground
         state={{
-          type: "react-rerender",
+          type: 'react-rerender',
           props: Colors.STANDARD_BLACK_GRAY_GRADIENT_SVG,
         }}
       >
@@ -479,7 +484,7 @@ export const RequestNotificationTime = ({
               onPress={() => {
                 if (!checkIfSavePromptRequired()) {
                   const session = resources.get().session;
-                  session?.storeAction("x", { save_prompt: false });
+                  session?.storeAction('x', { save_prompt: false });
                   handleFinish();
                 } else {
                   setVWC(promptingSaveChangesBeforeClose, true);
@@ -511,19 +516,19 @@ export const RequestNotificationTime = ({
                   days={days}
                   channel={currentChannel}
                   onOpenTimeRange={() => {
-                    resources.get().session?.storeAction("open_time", null);
+                    resources.get().session?.storeAction('open_time', null);
                   }}
                   onClosedTimeRange={() => {
-                    resources.get().session?.storeAction("close_time", {
+                    resources.get().session?.storeAction('close_time', {
                       channel: currentChannel.get(),
                       ...timeRange.get(),
                     });
                   }}
                   onOpenDays={() => {
-                    resources.get().session?.storeAction("open_days", null);
+                    resources.get().session?.storeAction('open_days', null);
                   }}
                   onClosedDays={() => {
-                    resources.get().session?.storeAction("close_days", {
+                    resources.get().session?.storeAction('close_days', {
                       channel: currentChannel.get(),
                       days: Array.from(days.get()),
                     });

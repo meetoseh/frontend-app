@@ -1,31 +1,31 @@
-import { ReactElement, useCallback, useContext } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
-import { FeatureComponentProps } from "../../models/Feature";
-import { FavoritesResources } from "./FavoritesResources";
-import { FavoritesState } from "./FavoritesState";
-import { useOsehImageStateRequestHandler } from "../../../../shared/images/useOsehImageStateRequestHandler";
-import { useWindowSizeValueWithCallbacks } from "../../../../shared/hooks/useWindowSize";
-import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
-import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks";
-import { JourneyRef } from "../../../journey/models/JourneyRef";
-import { LoginContext } from "../../../../shared/contexts/LoginContext";
-import { setVWC } from "../../../../shared/lib/setVWC";
-import { styles } from "./FavoritesStyles";
-import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks";
-import { CloseButton } from "../../../../shared/components/CloseButton";
-import { useTopBarHeight } from "../../../../shared/hooks/useTopBarHeight";
-import { MyProfilePicture } from "../../../../shared/components/MyProfilePicture";
-import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
-import { HistoryList } from "../../../favorites/components/HistoryList";
-import { useUnwrappedValueWithCallbacks } from "../../../../shared/hooks/useUnwrappedValueWithCallbacks";
-import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMappedValuesWithCallbacks";
-import { StatusBar } from "expo-status-bar";
-import { ModalProvider } from "../../../../shared/contexts/ModalContext";
-import { JourneyRouter } from "../../../journey/JourneyRouter";
-import { FavoritesList } from "../../../favorites/components/FavoritesList";
-import { CourseJourneysList } from "../../../favorites/components/CourseJourneysList";
-import { useContentWidth } from "../../../../shared/lib/useContentWidth";
-import { useIsTablet } from "../../../../shared/lib/useIsTablet";
+import { ReactElement, useCallback, useContext } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { FeatureComponentProps } from '../../models/Feature';
+import { FavoritesResources } from './FavoritesResources';
+import { FavoritesState } from './FavoritesState';
+import { useOsehImageStateRequestHandler } from '../../../../shared/images/useOsehImageStateRequestHandler';
+import { useWindowSizeValueWithCallbacks } from '../../../../shared/hooks/useWindowSize';
+import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
+import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
+import { JourneyRef } from '../../../journey/models/JourneyRef';
+import { LoginContext } from '../../../../shared/contexts/LoginContext';
+import { setVWC } from '../../../../shared/lib/setVWC';
+import { styles } from './FavoritesStyles';
+import { OsehImageBackgroundFromStateValueWithCallbacks } from '../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks';
+import { CloseButton } from '../../../../shared/components/CloseButton';
+import { useTopBarHeight } from '../../../../shared/hooks/useTopBarHeight';
+import { MyProfilePicture } from '../../../../shared/components/MyProfilePicture';
+import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
+import { HistoryList } from '../../../favorites/components/HistoryList';
+import { useUnwrappedValueWithCallbacks } from '../../../../shared/hooks/useUnwrappedValueWithCallbacks';
+import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
+import { StatusBar } from 'expo-status-bar';
+import { ModalProvider } from '../../../../shared/contexts/ModalContext';
+import { JourneyRouter } from '../../../journey/JourneyRouter';
+import { FavoritesList } from '../../../favorites/components/FavoritesList';
+import { CourseJourneysList } from '../../../favorites/components/CourseJourneysList';
+import { useContentWidth } from '../../../../shared/lib/useContentWidth';
+import { useIsTablet } from '../../../../shared/lib/useIsTablet';
 
 /**
  * The top-level component which shows the favorites/history/courses tabbed pane.
@@ -36,7 +36,7 @@ export const Favorites = ({
   state: stateVWC,
   resources: resourcesVWC,
 }: FeatureComponentProps<FavoritesState, FavoritesResources>): ReactElement => {
-  const loginContext = useContext(LoginContext);
+  const loginContextRaw = useContext(LoginContext);
   const windowSizeVWC = useWindowSizeValueWithCallbacks();
   const screenSize = useUnwrappedValueWithCallbacks(windowSizeVWC);
   const topBarHeight = useTopBarHeight();
@@ -53,15 +53,15 @@ export const Favorites = ({
   );
 
   const gotoFavorites = useCallback(() => {
-    stateVWC.get().setTab("favorites", true);
+    stateVWC.get().setTab('favorites', true);
   }, [stateVWC]);
 
   const gotoHistory = useCallback(() => {
-    stateVWC.get().setTab("history", true);
+    stateVWC.get().setTab('history', true);
   }, [stateVWC]);
 
   const gotoCourses = useCallback(() => {
-    stateVWC.get().setTab("courses", true);
+    stateVWC.get().setTab('courses', true);
   }, [stateVWC]);
 
   const onJourneyFinished = useCallback(() => {
@@ -126,9 +126,19 @@ export const Favorites = ({
                       imageHandler={imageHandler}
                       style={styles.profilePicture}
                     />
-                    <Text style={styles.profileName}>
-                      {loginContext.userAttributes?.name}
-                    </Text>
+                    <RenderGuardedComponent
+                      props={loginContextRaw.value}
+                      component={(loginRaw) => {
+                        if (loginRaw.state !== 'logged-in') {
+                          return <></>;
+                        }
+                        return (
+                          <Text style={styles.profileName}>
+                            {loginRaw.userAttributes.name}
+                          </Text>
+                        );
+                      }}
+                    />
                   </View>
                   <RenderGuardedComponent
                     props={tabVWC}
@@ -148,14 +158,14 @@ export const Favorites = ({
                             style={Object.assign(
                               {},
                               styles.tab,
-                              tab === "favorites" ? styles.activeTab : undefined
+                              tab === 'favorites' ? styles.activeTab : undefined
                             )}
                           >
                             <Text
                               style={Object.assign(
                                 {},
                                 styles.tabText,
-                                tab === "favorites"
+                                tab === 'favorites'
                                   ? styles.activeTabText
                                   : undefined
                               )}
@@ -169,14 +179,14 @@ export const Favorites = ({
                               {},
                               styles.tab,
                               styles.tabNotFirstChild,
-                              tab === "history" ? styles.activeTab : undefined
+                              tab === 'history' ? styles.activeTab : undefined
                             )}
                           >
                             <Text
                               style={Object.assign(
                                 {},
                                 styles.tabText,
-                                tab === "history"
+                                tab === 'history'
                                   ? styles.activeTabText
                                   : undefined
                               )}
@@ -190,14 +200,14 @@ export const Favorites = ({
                               {},
                               styles.tab,
                               styles.tabNotFirstChild,
-                              tab === "courses" ? styles.activeTab : undefined
+                              tab === 'courses' ? styles.activeTab : undefined
                             )}
                           >
                             <Text
                               style={Object.assign(
                                 {},
                                 styles.tabText,
-                                tab === "courses"
+                                tab === 'courses'
                                   ? styles.activeTabText
                                   : undefined
                               )}
@@ -210,7 +220,7 @@ export const Favorites = ({
                           style={Object.assign(
                             {},
                             styles.tabContent,
-                            tab === "courses"
+                            tab === 'courses'
                               ? styles.tabContentCourses
                               : undefined
                           )}
@@ -221,21 +231,21 @@ export const Favorites = ({
                             }
                           }}
                         >
-                          {tab === "favorites" && (
+                          {tab === 'favorites' && (
                             <FavoritesList
                               showJourney={setJourney}
                               listHeight={listHeight}
                               imageHandler={imageHandler}
                             />
                           )}
-                          {tab === "history" && (
+                          {tab === 'history' && (
                             <HistoryList
                               showJourney={setJourney}
                               listHeight={listHeight}
                               imageHandler={imageHandler}
                             />
                           )}
-                          {tab === "courses" && (
+                          {tab === 'courses' && (
                             <CourseJourneysList
                               showJourney={setJourney}
                               listHeight={listHeight}

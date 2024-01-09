@@ -1,12 +1,12 @@
-import { ReactElement } from "react";
+import { ReactElement } from 'react';
 import {
   ValueWithCallbacks,
   WritableValueWithCallbacks,
-} from "../../../shared/lib/Callbacks";
-import { setVWC } from "../../../shared/lib/setVWC";
-import { LoginContextValue } from "../../../shared/contexts/LoginContext";
-import { apiFetch } from "../../../shared/lib/apiFetch";
-import { describeError } from "../../../shared/lib/describeError";
+} from '../../../shared/lib/Callbacks';
+import { setVWC } from '../../../shared/lib/setVWC';
+import { LoginContextValueLoggedIn } from '../../../shared/contexts/LoginContext';
+import { apiFetch } from '../../../shared/lib/apiFetch';
+import { describeError } from '../../../shared/lib/describeError';
 
 /**
  * Toggles the favorited state on the given journey via a server call.
@@ -28,7 +28,7 @@ import { describeError } from "../../../shared/lib/describeError";
  *   set this to false. If we don't know, this should be undefined.
  */
 export const toggleFavorited = async (
-  loginContext: LoginContextValue,
+  loginContext: LoginContextValueLoggedIn,
   journey: { uid: string },
   shared: ValueWithCallbacks<{
     favorited: boolean | null;
@@ -57,15 +57,15 @@ export const toggleFavorited = async (
 
   try {
     const response = await apiFetch(
-      "/api/1/users/me/journeys/likes" +
-        (favorited ? "?uid=" + encodeURIComponent(journey.uid) : ""),
+      '/api/1/users/me/journeys/likes' +
+        (favorited ? '?uid=' + encodeURIComponent(journey.uid) : ''),
       favorited
         ? {
-            method: "DELETE",
+            method: 'DELETE',
           }
         : {
-            method: "POST",
-            headers: { "Content-Type": "application/json; charset=utf-8" },
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json; charset=utf-8' },
             body: JSON.stringify({
               journey_uid: journey.uid,
             }),

@@ -7,14 +7,15 @@ import {
   useMemo,
   useRef,
   useState,
-} from "react";
-import { useSingletonEffect } from "../lib/useSingletonEffect";
-import { LoginContext, LoginContextValue } from "./LoginContext";
-import { Visitor, getUTMFromURL, UTM, useVisitor } from "../hooks/useVisitor";
-import { apiFetch } from "../lib/apiFetch";
-import { Platform } from "react-native";
-import { useLogoutHandler } from "../hooks/useLogoutHandler";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+} from 'react';
+import { useSingletonEffect } from '../lib/useSingletonEffect';
+import { LoginContext, LoginContextValue } from './LoginContext';
+import { Visitor, getUTMFromURL, UTM, useVisitor } from '../hooks/useVisitor';
+import { apiFetch } from '../lib/apiFetch';
+import { Platform } from 'react-native';
+import { useLogoutHandler } from '../hooks/useLogoutHandler';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useValueWithCallbacksEffect } from '../hooks/useValueWithCallbacksEffect';
 
 /**
  * A discriminatory union based on 'type': the reason the interests were set.
@@ -24,7 +25,7 @@ export type SetInterestReason = {
    * The reason the interests were set. For UTM, the users interests can
    * be determined based on where they came from, e.g., the ad they clicked
    */
-  type: "utm";
+  type: 'utm';
   source: string;
   medium: string | null;
   campaign: string | null;
@@ -45,7 +46,7 @@ export type InterestsContextValue =
        * The current state of the interests context. If the state is 'loading',
        * the visitor or user may have interests, but we don't know yet.
        */
-      state: "loading";
+      state: 'loading';
     }
   | {
       /**
@@ -53,7 +54,7 @@ export type InterestsContextValue =
        * the visitor or user has interests, and they are available in the
        * primaryInterest and interests properties.
        */
-      state: "loaded";
+      state: 'loaded';
 
       /**
        * The visitor state, since it's convenient to include this as a context
@@ -99,7 +100,7 @@ export type InterestsContextValue =
        * then either there was a network error fetching interests or the user/visitor has
        * no interests.
        */
-      state: "unavailable";
+      state: 'unavailable';
 
       /**
        * The visitor state, since it's convenient to include this as a context
@@ -126,7 +127,7 @@ export type InterestsContextValue =
     };
 
 const defaultProps: InterestsContextValue = {
-  state: "loading",
+  state: 'loading',
 } as InterestsContextValue;
 
 /**
@@ -162,11 +163,11 @@ type InterestsContextProps = {
 };
 
 const _noSetInterests = () => {
-  throw new Error("cannot set interests while interests context is loading");
+  throw new Error('cannot set interests while interests context is loading');
 };
 
 const _noClearInterests = () => {
-  throw new Error("cannot clear interests while interests context is loading");
+  throw new Error('cannot clear interests while interests context is loading');
 };
 
 /**
@@ -210,7 +211,7 @@ const storeInterestsLocally = async (
   interests: LocallyStoredInterests
 ): Promise<void> => {
   const serialized = JSON.stringify(interests);
-  await AsyncStorage.setItem("interests", serialized);
+  await AsyncStorage.setItem('interests', serialized);
 };
 
 /**
@@ -218,9 +219,9 @@ const storeInterestsLocally = async (
  */
 const deleteLocalInterests = async (): Promise<void> => {
   try {
-    await AsyncStorage.removeItem("interests");
+    await AsyncStorage.removeItem('interests');
   } catch (e) {
-    console.error("failed to delete locally stored interests", e);
+    console.error('failed to delete locally stored interests', e);
   }
 };
 
@@ -231,14 +232,14 @@ const deleteLocalInterests = async (): Promise<void> => {
  */
 const fetchLocalInterests =
   async (): Promise<LocallyStoredInterests | null> => {
-    const serialized = await AsyncStorage.getItem("interests");
+    const serialized = await AsyncStorage.getItem('interests');
     if (serialized === null) {
       return null;
     }
     try {
       return JSON.parse(serialized);
     } catch (e) {
-      console.error("failed to parse locally stored interests", e);
+      console.error('failed to parse locally stored interests', e);
       return null;
     }
   };
@@ -251,27 +252,27 @@ const getInterestFromUTM = (
   utm: UTM
 ): { primaryInterest: string; interests: string[] } | null => {
   if (
-    utm.source === "oseh.com" &&
-    utm.medium === "referral" &&
-    utm.campaign === "headline"
+    utm.source === 'oseh.com' &&
+    utm.medium === 'referral' &&
+    utm.campaign === 'headline'
   ) {
-    if (utm.content === "sleep") {
-      return { primaryInterest: "sleep", interests: ["sleep"] };
-    } else if (utm.content === "anxiety" || utm.content === "therapist") {
-      return { primaryInterest: "anxiety", interests: ["anxiety"] };
-    } else if (utm.content === "mindful") {
-      return { primaryInterest: "mindful", interests: ["mindful"] };
+    if (utm.content === 'sleep') {
+      return { primaryInterest: 'sleep', interests: ['sleep'] };
+    } else if (utm.content === 'anxiety' || utm.content === 'therapist') {
+      return { primaryInterest: 'anxiety', interests: ['anxiety'] };
+    } else if (utm.content === 'mindful') {
+      return { primaryInterest: 'mindful', interests: ['mindful'] };
     }
   } else if (
-    utm.source === "oseh.com" &&
-    utm.medium === "referral" &&
-    utm.campaign === "course"
+    utm.source === 'oseh.com' &&
+    utm.medium === 'referral' &&
+    utm.campaign === 'course'
   ) {
     if (
-      utm.content === "affirmation-course" ||
-      utm.content === "elevate-within"
+      utm.content === 'affirmation-course' ||
+      utm.content === 'elevate-within'
     ) {
-      return { primaryInterest: "isaiah-course", interests: ["isaiah-course"] };
+      return { primaryInterest: 'isaiah-course', interests: ['isaiah-course'] };
     }
   }
   return null;
@@ -293,7 +294,7 @@ export const InterestsProvider = ({
   children,
 }: PropsWithChildren<InterestsContextProps>): ReactElement => {
   const [baseState, setBaseState] = useState<InterestsContextValue>({
-    state: "loading",
+    state: 'loading',
   });
 
   const setInterests = useCallback(
@@ -302,19 +303,20 @@ export const InterestsProvider = ({
       interests: string[],
       reason: SetInterestReason
     ) => {
-      if (loginContext.state === "loading") {
-        throw new Error("cannot set interests while login context is loading");
+      const loginRaw = loginContext.value.get();
+      if (loginRaw.state === 'loading') {
+        throw new Error('cannot set interests while login context is loading');
       }
       if (visitor.loading) {
-        throw new Error("cannot set interests while visitor is loading");
+        throw new Error('cannot set interests while visitor is loading');
       }
 
       const response = await apiFetch(
-        "/api/1/users/me/interests/",
+        '/api/1/users/me/interests/',
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json; charset=utf-8",
+            'Content-Type': 'application/json; charset=utf-8',
             ...(visitor.uid === null
               ? {}
               : {
@@ -328,7 +330,7 @@ export const InterestsProvider = ({
             source: Platform.OS,
           }),
         },
-        loginContext
+        loginRaw.state === 'logged-in' ? loginRaw : null
       );
 
       if (response.ok) {
@@ -348,7 +350,7 @@ export const InterestsProvider = ({
           expiresAt: nowMS + 1000 * 60 * 60 * 24 * 7,
         });
         setBaseState({
-          state: "loaded",
+          state: 'loaded',
           visitor,
           primaryInterest: data.primary_interest,
           interests: data.interests,
@@ -363,7 +365,7 @@ export const InterestsProvider = ({
   const clearInterests = useCallback(async () => {
     await deleteLocalInterests();
     setBaseState({
-      state: "unavailable",
+      state: 'unavailable',
       visitor,
       setInterests: _noSetInterests,
     });
@@ -373,164 +375,164 @@ export const InterestsProvider = ({
 
   const setInterestsRef = useRef(setInterests);
   setInterestsRef.current = setInterests;
-  useSingletonEffect(
-    (onDone) => {
-      if (baseState.state !== "loading") {
-        onDone();
-        return;
-      }
-
-      if (loginContext.state === "loading" || visitor.loading) {
-        onDone();
-        return;
-      }
-
-      const vis = visitor;
-
-      let active = true;
-      fetchState();
-      return () => {
-        active = false;
-      };
-
-      async function fetchFromServer(): Promise<LocallyStoredInterests | null> {
-        const response = await apiFetch(
-          "/api/1/users/me/interests/?source=" + Platform.OS,
-          {
-            method: "GET",
-            headers:
-              vis.uid === null
-                ? {}
-                : {
-                    Visitor: vis.uid,
-                  },
-          },
-          loginContext
-        );
-
-        if (!response.ok) {
-          throw response;
+  useValueWithCallbacksEffect(
+    loginContext.value,
+    useCallback(
+      (loginRaw) => {
+        if (baseState.state !== 'loading') {
+          return undefined;
         }
 
-        const data: {
-          primary_interest: string | null;
-          interests: string[];
-          visitor_uid: string;
-        } = await response.json();
-
-        vis.setVisitor(data.visitor_uid);
-
-        if (data.primary_interest === null) {
-          return null;
+        if (loginRaw.state === 'loading' || visitor.loading) {
+          return undefined;
         }
+        const login = loginRaw;
 
-        const nowMS = Date.now();
-        return {
-          primaryInterest: data.primary_interest,
-          interests: data.interests,
-          authoritative: false,
-          staleAfter: nowMS + 1000 * 60 * 10,
-          expiresAt: nowMS + 1000 * 60 * 60 * 24 * 7,
+        const vis = visitor;
+
+        let active = true;
+        fetchState();
+        return () => {
+          active = false;
         };
-      }
 
-      async function fetchStateInner() {
-        const utm = getUTMFromURL();
-        if (utm !== null) {
-          const utmInt = getInterestFromUTM(utm);
-          if (utmInt !== null) {
-            await setInterestsRef.current(
-              utmInt.primaryInterest,
-              utmInt.interests,
-              {
-                type: "utm",
-                ...utm,
-              }
-            );
-            return;
+        async function fetchFromServer(): Promise<LocallyStoredInterests | null> {
+          const response = await apiFetch(
+            '/api/1/users/me/interests/?source=' + Platform.OS,
+            {
+              method: 'GET',
+              headers:
+                vis.uid === null
+                  ? {}
+                  : {
+                      Visitor: vis.uid,
+                    },
+            },
+            login.state === 'logged-in' ? login : null
+          );
+
+          if (!response.ok) {
+            throw response;
           }
+
+          const data: {
+            primary_interest: string | null;
+            interests: string[];
+            visitor_uid: string;
+          } = await response.json();
+
+          vis.setVisitor(data.visitor_uid);
+
+          if (data.primary_interest === null) {
+            return null;
+          }
+
+          const nowMS = Date.now();
+          return {
+            primaryInterest: data.primary_interest,
+            interests: data.interests,
+            authoritative: false,
+            staleAfter: nowMS + 1000 * 60 * 10,
+            expiresAt: nowMS + 1000 * 60 * 60 * 24 * 7,
+          };
         }
 
-        const nowMS = Date.now();
-        const locallyStored = await fetchLocalInterests();
-
-        if (locallyStored !== null && locallyStored.expiresAt > nowMS) {
-          setBaseState({
-            state: "loaded",
-            visitor,
-            primaryInterest: locallyStored.primaryInterest,
-            interests: locallyStored.interests,
-            setInterests: _noSetInterests,
-            clearLocallyStoredInterests: _noClearInterests,
-          });
-
-          if (
-            locallyStored.staleAfter !== null &&
-            locallyStored.staleAfter < nowMS
-          ) {
-            const serverStored = await fetchFromServer();
-            if (serverStored !== null) {
-              await storeInterestsLocally(serverStored);
+        async function fetchStateInner() {
+          const utm = getUTMFromURL();
+          if (utm !== null) {
+            const utmInt = getInterestFromUTM(utm);
+            if (utmInt !== null) {
+              await setInterestsRef.current(
+                utmInt.primaryInterest,
+                utmInt.interests,
+                {
+                  type: 'utm',
+                  ...utm,
+                }
+              );
+              return;
             }
           }
-          return;
-        }
 
-        const serverStored = await fetchFromServer();
-        if (serverStored !== null) {
-          await storeInterestsLocally(serverStored);
-          setBaseState({
-            state: "loaded",
-            visitor,
-            primaryInterest: serverStored.primaryInterest,
-            interests: serverStored.interests,
-            setInterests: _noSetInterests,
-            clearLocallyStoredInterests: _noClearInterests,
-          });
-          return;
-        }
+          const nowMS = Date.now();
+          const locallyStored = await fetchLocalInterests();
 
-        setBaseState({
-          state: "unavailable",
-          visitor,
-          setInterests: _noSetInterests,
-        });
-      }
-
-      async function fetchState() {
-        try {
-          await fetchStateInner();
-        } catch (e) {
-          if (active) {
+          if (locallyStored !== null && locallyStored.expiresAt > nowMS) {
             setBaseState({
-              state: "unavailable",
+              state: 'loaded',
               visitor,
+              primaryInterest: locallyStored.primaryInterest,
+              interests: locallyStored.interests,
               setInterests: _noSetInterests,
+              clearLocallyStoredInterests: _noClearInterests,
             });
+
+            if (
+              locallyStored.staleAfter !== null &&
+              locallyStored.staleAfter < nowMS
+            ) {
+              const serverStored = await fetchFromServer();
+              if (serverStored !== null) {
+                await storeInterestsLocally(serverStored);
+              }
+            }
+            return;
           }
-        } finally {
-          onDone();
+
+          const serverStored = await fetchFromServer();
+          if (serverStored !== null) {
+            await storeInterestsLocally(serverStored);
+            setBaseState({
+              state: 'loaded',
+              visitor,
+              primaryInterest: serverStored.primaryInterest,
+              interests: serverStored.interests,
+              setInterests: _noSetInterests,
+              clearLocallyStoredInterests: _noClearInterests,
+            });
+            return;
+          }
+
+          setBaseState({
+            state: 'unavailable',
+            visitor,
+            setInterests: _noSetInterests,
+          });
         }
-      }
-    },
-    [baseState, loginContext, visitor]
+
+        async function fetchState() {
+          try {
+            await fetchStateInner();
+          } catch (e) {
+            if (active) {
+              setBaseState({
+                state: 'unavailable',
+                visitor,
+                setInterests: _noSetInterests,
+              });
+            }
+          }
+        }
+      },
+      [baseState, visitor]
+    )
   );
 
   const state = useMemo<InterestsContextValue>(() => {
-    if (baseState.state === "loading") {
-      return { state: "loading" };
+    if (baseState.state === 'loading') {
+      return { state: 'loading' };
     }
 
-    if (baseState.state === "unavailable") {
+    if (baseState.state === 'unavailable') {
       return {
-        state: "unavailable",
+        state: 'unavailable',
         visitor,
         setInterests,
       };
     }
 
     return {
-      state: "loaded",
+      state: 'loaded',
       visitor,
       primaryInterest: baseState.primaryInterest,
       interests: baseState.interests,
@@ -553,11 +555,11 @@ export const InterestsProvider = ({
 export const InterestsAutoProvider = ({
   children,
 }: PropsWithChildren<object>) => {
-  const loginContext = useContext(LoginContext);
+  const loginContextRaw = useContext(LoginContext);
   const visitor = useVisitor();
 
   return (
-    <InterestsProvider loginContext={loginContext} visitor={visitor}>
+    <InterestsProvider loginContext={loginContextRaw} visitor={visitor}>
       {children}
     </InterestsProvider>
   );

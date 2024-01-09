@@ -1,22 +1,23 @@
-import { useContext, useEffect } from "react";
+import { useContext, useEffect } from 'react';
 import {
   Callbacks,
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../../../shared/lib/Callbacks";
+} from '../../../shared/lib/Callbacks';
 import {
   LoginContext,
   LoginContextValue,
-} from "../../../shared/contexts/LoginContext";
-import { InteractivePrompt } from "../models/InteractivePrompt";
-import { PromptTime } from "./usePromptTime";
+  LoginContextValueLoggedIn,
+} from '../../../shared/contexts/LoginContext';
+import { InteractivePrompt } from '../models/InteractivePrompt';
+import { PromptTime } from './usePromptTime';
 import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
-} from "../../../shared/anim/VariableStrategyProps";
-import { useReactManagedValueAsValueWithCallbacks } from "../../../shared/hooks/useReactManagedValueAsValueWithCallbacks";
-import { apiFetch } from "../../../shared/lib/apiFetch";
-import { AppState } from "react-native";
+} from '../../../shared/anim/VariableStrategyProps';
+import { useReactManagedValueAsValueWithCallbacks } from '../../../shared/hooks/useReactManagedValueAsValueWithCallbacks';
+import { apiFetch } from '../../../shared/lib/apiFetch';
+import { AppState } from 'react-native';
 
 /**
  * The information exported from the join/leave hook.
@@ -108,9 +109,7 @@ export const useJoinLeave = ({
     promptTimeVariableStrategy
   );
 
-  const loginContextVWC = useReactManagedValueAsValueWithCallbacks(
-    useContext(LoginContext)
-  );
+  const loginContextRaw = useContext(LoginContext);
   const resultVWC = useWritableValueWithCallbacks<JoinLeave>(() => ({
     joinedAt: null,
     leftAt: null,
@@ -129,7 +128,7 @@ export const useJoinLeave = ({
     let outerActive = true;
     let canceler: (() => void) | null = null;
     promptVWC.callbacks.add(handlePromptOrLoginContextChanged);
-    loginContextVWC.callbacks.add(handlePromptOrLoginContextChanged);
+    loginContextRaw.value.callbacks.add(handlePromptOrLoginContextChanged);
     handlePromptOrLoginContextChanged();
     return () => {
       if (!outerActive) {
@@ -137,14 +136,13 @@ export const useJoinLeave = ({
       }
       outerActive = false;
       promptVWC.callbacks.remove(handlePromptOrLoginContextChanged);
-      loginContextVWC.callbacks.remove(handlePromptOrLoginContextChanged);
+      loginContextRaw.value.callbacks.remove(handlePromptOrLoginContextChanged);
       canceler?.();
       canceler = null;
     };
 
     function handlePromptAndLoginContext(
-      prompt: InteractivePrompt,
-      loginContext: LoginContextValue
+      prompt: InteractivePrompt
     ): () => void {
       let active = true;
       const cancelers = new Callbacks<undefined>();
@@ -193,8 +191,8 @@ export const useJoinLeave = ({
         });
 
         if (AppState.isAvailable) {
-          const listener = AppState.addEventListener("change", (status) => {
-            if (status === "inactive" || status === "background") {
+          const listener = AppState.addEventListener('change', (status) => {
+            if (status === 'inactive' || status === 'background') {
               onBeforeUnload();
             }
           });
@@ -246,7 +244,7 @@ export const useJoinLeave = ({
 
             if (now < joinedAt) {
               resultVWC.get().error = new Error(
-                "Leave event received before join event (time went backwards)"
+                'Leave event received before join event (time went backwards)'
               );
               resultVWC.callbacks.call(undefined);
               deactivate();
@@ -261,7 +259,7 @@ export const useJoinLeave = ({
               return;
             }
 
-            sendEventWrapper("leave").finally(handleSomethingChanged);
+            sendEventWrapper('leave').finally(handleSomethingChanged);
             return;
           }
 
@@ -269,7 +267,7 @@ export const useJoinLeave = ({
             resultVWC.get().joinedAt === null &&
             promptTimeVWC.get().time >= 0
           ) {
-            sendEventWrapper("join").finally(handleSomethingChanged);
+            sendEventWrapper('join').finally(handleSomethingChanged);
             return;
           }
         }
@@ -282,13 +280,15 @@ export const useJoinLeave = ({
         }
       }
 
-      async function sendEventWrapper(event: "join" | "leave") {
+      async function sendEventWrapper(event: 'join' | 'leave') {
         if (resultVWC.get().working) {
-          throw new Error("Already working");
+          throw new Error('Already working');
         }
 
         resultVWC.get().working = true;
         resultVWC.callbacks.call(undefined);
+
+        const loginRaw = loginContextRaw.value.get();
 
         const time = Math.min(
           Math.max(promptTimeVWC.get().time, 0),
@@ -296,10 +296,12 @@ export const useJoinLeave = ({
         );
 
         try {
-          await sendEvent(event, time, prompt, loginContext);
-          if (event === "join") {
+          if (loginRaw.state === 'logged-in') {
+            await sendEvent(event, time, prompt, loginRaw);
+          }
+          if (event === 'join') {
             resultVWC.get().joinedAt = time;
-          } else if (event === "leave") {
+          } else if (event === 'leave') {
             resultVWC.get().leftAt = time;
           } else {
             ((_: never) => {})(event);
@@ -318,27 +320,24 @@ export const useJoinLeave = ({
         return;
       }
       canceler?.();
-      canceler = handlePromptAndLoginContext(
-        promptVWC.get(),
-        loginContextVWC.get()
-      );
+      canceler = handlePromptAndLoginContext(promptVWC.get());
     }
-  }, [promptVWC, promptTimeVWC, loginContextVWC, resultVWC]);
+  }, [promptVWC, promptTimeVWC, loginContextRaw, resultVWC]);
 
   return resultVWC;
 };
 
 async function sendEvent(
-  name: "join" | "leave",
+  name: 'join' | 'leave',
   eventPromptTime: number,
   prompt: InteractivePrompt,
-  loginContext: LoginContextValue
+  loginContext: LoginContextValueLoggedIn
 ) {
   const response = await apiFetch(
     `/api/1/interactive_prompts/events/${name}`,
     {
-      method: "POST",
-      headers: { "Content-Type": "application/json; charset=utf-8" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
       body: JSON.stringify({
         interactive_prompt_uid: prompt.uid,
         interactive_prompt_jwt: prompt.jwt,

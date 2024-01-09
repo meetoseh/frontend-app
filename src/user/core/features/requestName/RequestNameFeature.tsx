@@ -1,19 +1,19 @@
-import { useContext } from "react";
-import { Feature } from "../../models/Feature";
-import { LoginContext } from "../../../../shared/contexts/LoginContext";
-import { RequestNameState } from "./RequestNameState";
-import { RequestNameResources } from "./RequestNameResources";
-import { RequestName } from "./RequestName";
-import { useOsehImageStateRequestHandler } from "../../../../shared/images/useOsehImageStateRequestHandler";
-import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks";
-import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
-import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMappedValuesWithCallbacks";
-import { OsehImageProps } from "../../../../shared/images/OsehImageProps";
-import { useWindowSizeValueWithCallbacks } from "../../../../shared/hooks/useWindowSize";
-import { useOsehImageStateValueWithCallbacks } from "../../../../shared/images/useOsehImageStateValueWithCallbacks";
-import { setVWC } from "../../../../shared/lib/setVWC";
+import { useContext } from 'react';
+import { Feature } from '../../models/Feature';
+import { LoginContext } from '../../../../shared/contexts/LoginContext';
+import { RequestNameState } from './RequestNameState';
+import { RequestNameResources } from './RequestNameResources';
+import { RequestName } from './RequestName';
+import { useOsehImageStateRequestHandler } from '../../../../shared/images/useOsehImageStateRequestHandler';
+import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
+import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
+import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
+import { OsehImageProps } from '../../../../shared/images/OsehImageProps';
+import { useWindowSizeValueWithCallbacks } from '../../../../shared/hooks/useWindowSize';
+import { useOsehImageStateValueWithCallbacks } from '../../../../shared/images/useOsehImageStateValueWithCallbacks';
+import { setVWC } from '../../../../shared/lib/setVWC';
 
-const backgroundImageUid = "oseh_if_hH68hcmVBYHanoivLMgstg";
+const backgroundImageUid = 'oseh_if_hH68hcmVBYHanoivLMgstg';
 
 /**
  * Glue code surrounding requesting a users name if we don't know their name.
@@ -22,25 +22,22 @@ export const RequestNameFeature: Feature<
   RequestNameState,
   RequestNameResources
 > = {
-  identifier: "requestName",
+  identifier: 'requestName',
 
   useWorldState: () => {
-    const loginContext = useContext(LoginContext);
+    const loginContextRaw = useContext(LoginContext);
 
-    let givenName = loginContext.userAttributes?.givenName;
-    if (loginContext.state === "logged-in" && givenName === undefined) {
-      givenName = null;
-    }
+    return useMappedValueWithCallbacks(loginContextRaw.value, (loginRaw) => {
+      if (loginRaw.state !== 'logged-in') {
+        return {
+          givenName: undefined,
+        };
+      }
 
-    const result = useWritableValueWithCallbacks<RequestNameState>(() => ({
-      givenName,
-    }));
-
-    if (result.get().givenName !== givenName) {
-      setVWC(result, { givenName });
-    }
-
-    return result;
+      return {
+        givenName: loginRaw.userAttributes.givenName,
+      };
+    });
   },
 
   useResources: (worldState, required) => {
@@ -53,13 +50,13 @@ export const RequestNameFeature: Feature<
         jwt: null,
         displayWidth: windowSize.get().width,
         displayHeight: windowSize.get().height,
-        alt: "",
+        alt: '',
         isPublic: true,
       })
     );
     const background = useOsehImageStateValueWithCallbacks(
       {
-        type: "callbacks",
+        type: 'callbacks',
         props: () => backgroundProps.get(),
         callbacks: backgroundProps.callbacks,
       },
@@ -81,7 +78,7 @@ export const RequestNameFeature: Feature<
     }
 
     return (
-      worldState.givenName === null || worldState.givenName === "Anonymous"
+      worldState.givenName === null || worldState.givenName === 'Anonymous'
     );
   },
 

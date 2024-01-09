@@ -1,15 +1,16 @@
-import { ReactElement, useContext } from "react";
-import { FeatureComponentProps } from "../../../models/Feature";
-import { ConfirmMergeAccountResources } from "../ConfirmMergeAccountResources";
-import { ConfirmMergeAccountState } from "../ConfirmMergeAccountState";
-import { ConfirmMergeAccountWrapper } from "./ConfirmMergeAccountWrapper";
-import { styles } from "./styles";
-import { LoginContext } from "../../../../../shared/contexts/LoginContext";
-import { RenderGuardedComponent } from "../../../../../shared/components/RenderGuardedComponent";
-import { useWritableValueWithCallbacks } from "../../../../../shared/lib/Callbacks";
-import { ListLoginOptions } from "./ListLoginOptions";
-import { Text, View } from "react-native";
-import { FilledInvertedButton } from "../../../../../shared/components/FilledInvertedButton";
+import { ReactElement, useContext } from 'react';
+import { FeatureComponentProps } from '../../../models/Feature';
+import { ConfirmMergeAccountResources } from '../ConfirmMergeAccountResources';
+import { ConfirmMergeAccountState } from '../ConfirmMergeAccountState';
+import { ConfirmMergeAccountWrapper } from './ConfirmMergeAccountWrapper';
+import { styles } from './styles';
+import { LoginContext } from '../../../../../shared/contexts/LoginContext';
+import { RenderGuardedComponent } from '../../../../../shared/components/RenderGuardedComponent';
+import { useWritableValueWithCallbacks } from '../../../../../shared/lib/Callbacks';
+import { ListLoginOptions } from './ListLoginOptions';
+import { Text, View } from 'react-native';
+import { FilledInvertedButton } from '../../../../../shared/components/FilledInvertedButton';
+import { useMappedValueWithCallbacks } from '../../../../../shared/hooks/useMappedValueWithCallbacks';
 
 export const TrivialMerge = ({
   resources,
@@ -18,8 +19,14 @@ export const TrivialMerge = ({
   ConfirmMergeAccountState,
   ConfirmMergeAccountResources
 >): ReactElement => {
-  const loginContext = useContext(LoginContext);
-  const givenName = loginContext.userAttributes?.givenName;
+  const loginContextRaw = useContext(LoginContext);
+  const givenNameVWC = useMappedValueWithCallbacks(
+    loginContextRaw.value,
+    (loginRaw) =>
+      loginRaw.state === 'logged-in'
+        ? loginRaw.userAttributes.givenName
+        : undefined
+  );
 
   const closeDisabled = useWritableValueWithCallbacks(() => false);
   const onDismiss = useWritableValueWithCallbacks(() => () => {});
@@ -32,9 +39,16 @@ export const TrivialMerge = ({
       onDismiss={onDismiss}
       keepSessionOpen
     >
-      <Text style={styles.title}>All set{givenName && <>, {givenName}</>}</Text>
+      <RenderGuardedComponent
+        props={givenNameVWC}
+        component={(givenName) => (
+          <Text style={styles.title}>
+            All set{givenName && <>, {givenName}</>}
+          </Text>
+        )}
+      />
       <Text style={styles.description}>
-        You have successfully merged your two accounts. You can now login with{" "}
+        You have successfully merged your two accounts. You can now login with{' '}
         <ListLoginOptions state={state} resources={resources} />
       </Text>
       <View style={styles.buttonContainer}>

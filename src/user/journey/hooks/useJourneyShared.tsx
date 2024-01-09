@@ -1,22 +1,22 @@
-import { useContext, useEffect } from "react";
-import { useWindowSizeValueWithCallbacks } from "../../../shared/hooks/useWindowSize";
-import { JourneyRef } from "../models/JourneyRef";
-import { JourneyShared } from "../models/JourneyShared";
-import { LoginContext } from "../../../shared/contexts/LoginContext";
-import { useOsehImageStateRequestHandler } from "../../../shared/images/useOsehImageStateRequestHandler";
-import { useOsehAudioContentState } from "../../../shared/content/useOsehAudioContentState";
+import { useContext, useEffect } from 'react';
+import { useWindowSizeValueWithCallbacks } from '../../../shared/hooks/useWindowSize';
+import { JourneyRef } from '../models/JourneyRef';
+import { JourneyShared } from '../models/JourneyShared';
+import { LoginContext } from '../../../shared/contexts/LoginContext';
+import { useOsehImageStateRequestHandler } from '../../../shared/images/useOsehImageStateRequestHandler';
+import { useOsehAudioContentState } from '../../../shared/content/useOsehAudioContentState';
 import {
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../../../shared/lib/Callbacks";
+} from '../../../shared/lib/Callbacks';
 import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
-} from "../../../shared/anim/VariableStrategyProps";
-import { useMappedValueWithCallbacks } from "../../../shared/hooks/useMappedValueWithCallbacks";
-import { OsehContentTarget } from "../../../shared/content/OsehContentTarget";
-import { getNativeExport } from "../../../shared/content/useOsehContentTarget";
-import { apiFetch } from "../../../shared/lib/apiFetch";
+} from '../../../shared/anim/VariableStrategyProps';
+import { useMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValueWithCallbacks';
+import { OsehContentTarget } from '../../../shared/content/OsehContentTarget';
+import { getNativeExport } from '../../../shared/content/useOsehContentTarget';
+import { apiFetch } from '../../../shared/lib/apiFetch';
 
 /**
  * Creates the initial journey & journey start shared state. Since this is often
@@ -29,7 +29,7 @@ import { apiFetch } from "../../../shared/lib/apiFetch";
 export const useJourneyShared = (
   journeyVariableStrategy: VariableStrategyProps<JourneyRef | null>
 ): ValueWithCallbacks<JourneyShared> => {
-  const loginContext = useContext(LoginContext);
+  const loginContextRaw = useContext(LoginContext);
   const journeyVWC = useVariableStrategyPropsAsValueWithCallbacks(
     journeyVariableStrategy
   );
@@ -50,14 +50,14 @@ export const useJourneyShared = (
   );
 
   const targetVWC = useWritableValueWithCallbacks<OsehContentTarget>(() => ({
-    state: "loading",
+    state: 'loading',
     jwt: null,
     error: null,
     nativeExport: null,
     presigned: null,
   }));
   const audioVWC = useOsehAudioContentState({
-    type: "callbacks",
+    type: 'callbacks',
     props: targetVWC.get,
     callbacks: targetVWC.callbacks,
   });
@@ -68,6 +68,7 @@ export const useJourneyShared = (
     let outerActive = true;
     let unmountJourneyHandler: (() => void) | null = null;
     journeyVWC.callbacks.add(handleJourneyChanged);
+    loginContextRaw.value.callbacks.add(handleJourneyChanged);
     handleJourneyChanged();
     return () => {
       if (!outerActive) {
@@ -75,6 +76,7 @@ export const useJourneyShared = (
       }
       outerActive = false;
       journeyVWC.callbacks.remove(handleJourneyChanged);
+      loginContextRaw.value.callbacks.remove(handleJourneyChanged);
       if (unmountJourneyHandler !== null) {
         unmountJourneyHandler();
         unmountJourneyHandler = null;
@@ -144,7 +146,7 @@ export const useJourneyShared = (
             jwt: journey.backgroundImage.jwt,
             displayWidth: previewSizeVWC.get().width,
             displayHeight: previewSizeVWC.get().height,
-            alt: "",
+            alt: '',
           });
           request.stateChanged.add(handleImageStateChanged);
           removeRequest = () => {
@@ -190,14 +192,14 @@ export const useJourneyShared = (
             jwt: journey.darkenedBackgroundImage.jwt,
             displayWidth: windowSizeVWC.get().width,
             displayHeight: windowSizeVWC.get().height,
-            alt: "",
+            alt: '',
           });
           const blurredRequest = imageHandler.request({
             uid: journey.blurredBackgroundImage.uid,
             jwt: journey.blurredBackgroundImage.jwt,
             displayWidth: windowSizeVWC.get().width,
             displayHeight: windowSizeVWC.get().height,
-            alt: "",
+            alt: '',
           });
 
           darkenedRequest.stateChanged.add(handleImageStateChanged);
@@ -229,9 +231,9 @@ export const useJourneyShared = (
           if (!active) {
             return;
           }
-          if (targetVWC.get().state !== "loading") {
+          if (targetVWC.get().state !== 'loading') {
             targetVWC.set({
-              state: "loading",
+              state: 'loading',
               jwt: null,
               error: null,
               nativeExport: null,
@@ -257,7 +259,7 @@ export const useJourneyShared = (
               return;
             }
             targetVWC.set({
-              state: "loaded",
+              state: 'loaded',
               jwt: journey.audioContent.jwt,
               error: null,
               nativeExport,
@@ -265,7 +267,7 @@ export const useJourneyShared = (
             });
             targetVWC.callbacks.call(undefined);
           } catch (e) {
-            console.error("error fetching content target", e);
+            console.error('error fetching content target', e);
           }
         }
       }
@@ -297,38 +299,40 @@ export const useJourneyShared = (
           if (!active) {
             return;
           }
-          if (loginContext.state === "loading") {
+          const loginRaw = loginContextRaw.value.get();
+          if (loginRaw.state === 'loading') {
             setFavorited(null);
             return;
           }
 
-          if (loginContext.state === "logged-out") {
+          if (loginRaw.state === 'logged-out') {
             setFavorited(false);
             return;
           }
+          const login = loginRaw;
 
           const response = await apiFetch(
-            "/api/1/users/me/search_history",
+            '/api/1/users/me/search_history',
             {
-              method: "POST",
+              method: 'POST',
               headers: {
-                "Content-Type": "application/json; charset=utf-8",
+                'Content-Type': 'application/json; charset=utf-8',
               },
               body: JSON.stringify({
                 filters: {
                   uid: {
-                    operator: "eq",
+                    operator: 'eq',
                     value: journey.uid,
                   },
                   liked_at: {
-                    operator: "neq",
+                    operator: 'neq',
                     value: null,
                   },
                 },
                 limit: 1,
               }),
             },
-            loginContext
+            login
           );
           if (!response.ok) {
             throw response;
@@ -345,7 +349,7 @@ export const useJourneyShared = (
           try {
             await loadFavoritedInner();
           } catch (e) {
-            console.error("error loading favorited, assuming not favorited", e);
+            console.error('error loading favorited, assuming not favorited', e);
             setFavorited(false);
           }
         }
@@ -358,7 +362,7 @@ export const useJourneyShared = (
               setFavorited:
                 v === null
                   ? () => {
-                      throw new Error("cannot set favorited while loading");
+                      throw new Error('cannot set favorited while loading');
                     }
                   : setFavorited,
             });
@@ -412,7 +416,7 @@ export const useJourneyShared = (
     journeyVWC,
     windowSizeVWC,
     previewSizeVWC,
-    loginContext,
+    loginContextRaw,
     audioVWC,
     imageHandler,
     result,
@@ -438,21 +442,21 @@ export const createLoadingJourneyShared = (
     localUrl: null,
     displayWidth: previewSize.width,
     displayHeight: previewSize.height,
-    alt: "",
+    alt: '',
     loading: true,
   },
   darkenedImage: {
     localUrl: null,
     displayWidth: windowSize.width,
     displayHeight: windowSize.height,
-    alt: "",
+    alt: '',
     loading: true,
   },
   blurredImage: {
     localUrl: null,
     displayWidth: windowSize.width,
     displayHeight: windowSize.height,
-    alt: "",
+    alt: '',
     loading: true,
   },
   audio: {
@@ -464,10 +468,10 @@ export const createLoadingJourneyShared = (
   },
   favorited: null,
   setFavorited: () => {
-    throw new Error("cannot setFavorited while favorited is null");
+    throw new Error('cannot setFavorited while favorited is null');
   },
   wantStoreReview: false,
   setWantStoreReview: () => {
-    throw new Error("cannot set wantStoreReview while loading");
+    throw new Error('cannot set wantStoreReview while loading');
   },
 });

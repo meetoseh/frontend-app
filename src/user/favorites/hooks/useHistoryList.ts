@@ -1,14 +1,14 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef } from 'react';
 import {
   InfiniteListing,
   NetworkedInfiniteListing,
-} from "../../../shared/lib/InfiniteListing";
-import { MinimalJourney, minimalJourneyKeyMap } from "../lib/MinimalJourney";
-import { LoginContextValue } from "../../../shared/contexts/LoginContext";
+} from '../../../shared/lib/InfiniteListing';
+import { MinimalJourney, minimalJourneyKeyMap } from '../lib/MinimalJourney';
+import { LoginContextValue } from '../../../shared/contexts/LoginContext';
 import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
-} from "../../../shared/anim/VariableStrategyProps";
+} from '../../../shared/anim/VariableStrategyProps';
 
 /**
  * Returns an infinite list, which is reset upon creation, for history
@@ -20,17 +20,14 @@ import {
  * @returns The infinite list
  */
 export const useHistoryList = (
-  loginContext: VariableStrategyProps<LoginContextValue>,
+  loginContextRaw: LoginContextValue,
   visibleHeight: VariableStrategyProps<number>
 ): InfiniteListing<MinimalJourney> => {
-  const loginContextVWC =
-    useVariableStrategyPropsAsValueWithCallbacks(loginContext);
-
   // We don't want to reload the listing due to height changing as that's pretty annoying.
   // so for now we just use whatever initial value it has
   const numVisibleRef = useRef(
     Math.ceil(
-      (visibleHeight.type === "react-rerender"
+      (visibleHeight.type === 'react-rerender'
         ? visibleHeight.props
         : visibleHeight.props()) / 85
     ) * 25
@@ -38,21 +35,21 @@ export const useHistoryList = (
   return useMemo<InfiniteListing<MinimalJourney>>(() => {
     const numVisible = numVisibleRef.current;
     const result = new NetworkedInfiniteListing<MinimalJourney>(
-      "/api/1/users/me/search_history",
+      '/api/1/users/me/search_history',
       Math.min(numVisible * 2 + 10, 150),
       numVisible,
       10,
       {},
       [
         {
-          key: "last_taken_at",
-          dir: "desc",
+          key: 'last_taken_at',
+          dir: 'desc',
           before: null,
           after: null,
         },
         {
-          key: "uid",
-          dir: "asc",
+          key: 'uid',
+          dir: 'asc',
           before: null,
           after: null,
         },
@@ -60,8 +57,8 @@ export const useHistoryList = (
       (item, dir) => {
         return [
           {
-            key: "last_taken_at",
-            dir: dir === "before" ? "asc" : "desc",
+            key: 'last_taken_at',
+            dir: dir === 'before' ? 'asc' : 'desc',
             before: null,
             after:
               item.lastTakenAt === null
@@ -69,17 +66,17 @@ export const useHistoryList = (
                 : item.lastTakenAt.getTime() / 1000,
           },
           {
-            key: "uid",
-            dir: dir === "before" ? "desc" : "asc",
+            key: 'uid',
+            dir: dir === 'before' ? 'desc' : 'asc',
             before: null,
             after: item.uid,
           },
         ];
       },
       minimalJourneyKeyMap,
-      loginContextVWC.get
+      loginContextRaw
     );
     result.reset();
     return result;
-  }, [loginContextVWC]);
+  }, [loginContextRaw]);
 };

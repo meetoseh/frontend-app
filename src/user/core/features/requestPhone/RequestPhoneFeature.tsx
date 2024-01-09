@@ -1,38 +1,53 @@
-import { useContext } from "react";
-import { Feature } from "../../models/Feature";
-import { LoginContext } from "../../../../shared/contexts/LoginContext";
-import { RequestPhoneResources } from "./RequestPhoneResources";
-import { NewPhoneInfo, RequestPhoneState } from "./RequestPhoneState";
-import { RequestPhone } from "./RequestPhone";
-import { useInappNotificationValueWithCallbacks } from "../../../../shared/hooks/useInappNotification";
-import { useInappNotificationSessionValueWithCallbacks } from "../../../../shared/hooks/useInappNotificationSession";
-import { InterestsContext } from "../../../../shared/contexts/InterestsContext";
-import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks";
-import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMappedValuesWithCallbacks";
-import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
-import { useReactManagedValueAsValueWithCallbacks } from "../../../../shared/hooks/useReactManagedValueAsValueWithCallbacks";
-import { setVWC } from "../../../../shared/lib/setVWC";
-import { useLogoutHandler } from "../../../../shared/hooks/useLogoutHandler";
+import { useContext } from 'react';
+import { Feature } from '../../models/Feature';
+import { LoginContext } from '../../../../shared/contexts/LoginContext';
+import { RequestPhoneResources } from './RequestPhoneResources';
+import { NewPhoneInfo, RequestPhoneState } from './RequestPhoneState';
+import { RequestPhone } from './RequestPhone';
+import { useInappNotificationValueWithCallbacks } from '../../../../shared/hooks/useInappNotification';
+import { useInappNotificationSessionValueWithCallbacks } from '../../../../shared/hooks/useInappNotificationSession';
+import { InterestsContext } from '../../../../shared/contexts/InterestsContext';
+import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
+import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
+import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
+import { useReactManagedValueAsValueWithCallbacks } from '../../../../shared/hooks/useReactManagedValueAsValueWithCallbacks';
+import { setVWC } from '../../../../shared/lib/setVWC';
+import { useLogoutHandler } from '../../../../shared/hooks/useLogoutHandler';
 
 export const RequestPhoneFeature: Feature<
   RequestPhoneState,
   RequestPhoneResources
 > = {
-  identifier: "requestPhone",
+  identifier: 'requestPhone',
 
   useWorldState: () => {
-    const loginContext = useContext(LoginContext);
+    const loginContextRaw = useContext(LoginContext);
+
+    const onboardingPhoneNumberIANProps = useMappedValueWithCallbacks(
+      loginContextRaw.value,
+      (loginRaw) => {
+        return {
+          uid: 'oseh_ian_bljOnb8Xkxt-aU9Fm7Qq9w',
+          suppress:
+            loginRaw.state !== 'logged-in' ||
+            loginRaw.userAttributes.phoneNumber !== null,
+        };
+      }
+    );
+
     const onboardingPhoneNumberIAN = useInappNotificationValueWithCallbacks({
-      type: "react-rerender",
-      props: {
-        uid: "oseh_ian_bljOnb8Xkxt-aU9Fm7Qq9w",
-        suppress: loginContext.userAttributes?.phoneNumber !== null,
-      },
+      type: 'callbacks',
+      props: () => onboardingPhoneNumberIANProps.get(),
+      callbacks: onboardingPhoneNumberIANProps.callbacks,
     });
-    const hasPhoneNumber = useWritableValueWithCallbacks<boolean>(() => false);
-    setVWC(
-      hasPhoneNumber,
-      typeof loginContext.userAttributes?.phoneNumber === "string"
+    const hasPhoneNumber = useMappedValueWithCallbacks(
+      loginContextRaw.value,
+      (loginRaw) => {
+        return (
+          loginRaw.state === 'logged-in' &&
+          loginRaw.userAttributes.phoneNumber !== null
+        );
+      }
     );
 
     const justAddedPhoneNumber =
@@ -71,7 +86,7 @@ export const RequestPhoneFeature: Feature<
         : s.appNotifs.expoToken !== null
     );
     const session = useInappNotificationSessionValueWithCallbacks({
-      type: "callbacks",
+      type: 'callbacks',
       props: () => ({ uid: ianUID.get() }),
       callbacks: ianUID.callbacks,
     });
@@ -85,7 +100,7 @@ export const RequestPhoneFeature: Feature<
         appNotifsEnabled: appNotifsAvailable.get(),
         loading:
           session.get() === null ||
-          interestsVWC.get().state === "loading" ||
+          interestsVWC.get().state === 'loading' ||
           appNotifsAvailable.get() === null,
       })
     );

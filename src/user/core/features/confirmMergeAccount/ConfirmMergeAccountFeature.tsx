@@ -1,27 +1,28 @@
-import { ReactElement, useCallback, useContext, useEffect } from "react";
-import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks";
-import { Feature } from "../../models/Feature";
-import { ConfirmMergeAccount } from "./ConfirmMergeAccount";
-import { ConfirmMergeAccountResources } from "./ConfirmMergeAccountResources";
+import { ReactElement, useCallback, useContext, useEffect } from 'react';
+import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
+import { Feature } from '../../models/Feature';
+import { ConfirmMergeAccount } from './ConfirmMergeAccount';
+import { ConfirmMergeAccountResources } from './ConfirmMergeAccountResources';
 import {
   ConfirmMergeAccountState,
   OauthMergeResult,
-} from "./ConfirmMergeAccountState";
-import { setVWC } from "../../../../shared/lib/setVWC";
-import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMappedValuesWithCallbacks";
-import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
-import { useInappNotificationSessionValueWithCallbacks } from "../../../../shared/hooks/useInappNotificationSession";
-import { LoginContext } from "../../../../shared/contexts/LoginContext";
+} from './ConfirmMergeAccountState';
+import { setVWC } from '../../../../shared/lib/setVWC';
+import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
+import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
+import { useInappNotificationSessionValueWithCallbacks } from '../../../../shared/hooks/useInappNotificationSession';
+import { LoginContext } from '../../../../shared/contexts/LoginContext';
+import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
 
-const ianUid = "oseh_ian_uKEDNejaLGNWKhDcgmHORg";
+const ianUid = 'oseh_ian_uKEDNejaLGNWKhDcgmHORg';
 
 export const ConfirmMergeAccountFeature: Feature<
   ConfirmMergeAccountState,
   ConfirmMergeAccountResources
 > = {
-  identifier: "confirmMergeAccount",
+  identifier: 'confirmMergeAccount',
   useWorldState: () => {
-    const loginContext = useContext(LoginContext);
+    const loginContextRaw = useContext(LoginContext);
     const mergeTokenVWC = useWritableValueWithCallbacks<
       string | null | undefined
     >(() => null);
@@ -39,11 +40,18 @@ export const ConfirmMergeAccountFeature: Feature<
     );
     const mergedThisSessionVWC = useWritableValueWithCallbacks(() => false);
 
-    useEffect(() => {
-      if (loginContext.state === "logged-out") {
-        setVWC(mergeTokenVWC, null);
-      }
-    }, [loginContext.state, mergeTokenVWC]);
+    useValueWithCallbacksEffect(
+      loginContextRaw.value,
+      useCallback(
+        (loginRaw) => {
+          if (loginRaw.state === 'logged-out') {
+            setVWC(mergeTokenVWC, null);
+          }
+          return undefined;
+        },
+        [mergeTokenVWC]
+      )
+    );
 
     const onShowingSecureLogin = useCallback(() => {
       setVWC(mergeTokenVWC, undefined);
@@ -65,7 +73,7 @@ export const ConfirmMergeAccountFeature: Feature<
         setVWC(resultVWC, result);
         setVWC(errorVWC, error);
 
-        if (result !== false && result.result !== "confirmationRequired") {
+        if (result !== false && result.result !== 'confirmationRequired') {
           setVWC(mergedThisSessionVWC, true);
         }
       },
@@ -99,8 +107,8 @@ export const ConfirmMergeAccountFeature: Feature<
         result !== false &&
         result !== null &&
         result !== undefined &&
-        (result.result === "trivialMerge" ||
-          (result.result === "confirmationRequired" && confirmResult === true));
+        (result.result === 'trivialMerge' ||
+          (result.result === 'confirmationRequired' && confirmResult === true));
 
       setVWC(promptingReviewReminderSettingsVWC, justMerged);
       setVWC(resultVWC, null);
@@ -181,7 +189,7 @@ export const ConfirmMergeAccountFeature: Feature<
   },
   useResources: (state, required, allStates) => {
     const ianSession = useInappNotificationSessionValueWithCallbacks({
-      type: "callbacks",
+      type: 'callbacks',
       props: () => ({
         uid: required.get() ? ianUid : null,
       }),

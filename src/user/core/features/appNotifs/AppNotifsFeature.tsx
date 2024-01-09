@@ -5,27 +5,28 @@ import {
   getPermissionsAsync,
   requestPermissionsAsync,
   setNotificationChannelAsync,
-} from "expo-notifications";
-import * as AppNotifsStore from "./AppNotifsStore";
-import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks";
-import { Feature } from "../../models/Feature";
-import { AppNotifsResources } from "./AppNotifsResources";
+} from 'expo-notifications';
+import * as AppNotifsStore from './AppNotifsStore';
+import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
+import { Feature } from '../../models/Feature';
+import { AppNotifsResources } from './AppNotifsResources';
 import {
   AppNotifsState,
   NotificationPermissionsStatusWithoutStatus,
-} from "./AppNotifsState";
-import { useCallback, useContext, useEffect } from "react";
-import { useValueWithCallbacksEffect } from "../../../../shared/hooks/useValueWithCallbacksEffect";
-import { setVWC } from "../../../../shared/lib/setVWC";
-import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMappedValuesWithCallbacks";
-import { AppState, AppStateStatus, Platform } from "react-native";
-import { useInappNotificationSessionValueWithCallbacks } from "../../../../shared/hooks/useInappNotificationSession";
-import { adaptValueWithCallbacksAsVariableStrategyProps } from "../../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps";
-import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
-import { AppNotifs } from "./AppNotifs";
-import Constants from "expo-constants";
-import { LoginContext } from "../../../../shared/contexts/LoginContext";
-import { apiFetch } from "../../../../shared/lib/apiFetch";
+} from './AppNotifsState';
+import { useCallback, useContext, useEffect } from 'react';
+import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
+import { setVWC } from '../../../../shared/lib/setVWC';
+import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
+import { AppState, AppStateStatus, Platform } from 'react-native';
+import { useInappNotificationSessionValueWithCallbacks } from '../../../../shared/hooks/useInappNotificationSession';
+import { adaptValueWithCallbacksAsVariableStrategyProps } from '../../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps';
+import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
+import { AppNotifs } from './AppNotifs';
+import Constants from 'expo-constants';
+import { LoginContext } from '../../../../shared/contexts/LoginContext';
+import { apiFetch } from '../../../../shared/lib/apiFetch';
+import { useValuesWithCallbacksEffect } from '../../../../shared/hooks/useValuesWithCallbacksEffect';
 
 /**
  * Our custom screen that we present to request notifications, which the user is
@@ -33,7 +34,7 @@ import { apiFetch } from "../../../../shared/lib/apiFetch";
  * notifications, since we would like to have more than one chance to ask.
  */
 export const AppNotifsFeature: Feature<AppNotifsState, AppNotifsResources> = {
-  identifier: "appNotifs",
+  identifier: 'appNotifs',
   useWorldState() {
     const initializedSuccessfullyVWC = useWritableValueWithCallbacks(
       () => false
@@ -58,7 +59,7 @@ export const AppNotifsFeature: Feature<AppNotifsState, AppNotifsResources> = {
       }
       let active = true;
 
-      if (Platform.OS === "android") {
+      if (Platform.OS === 'android') {
         initializeNotificationsAndroid();
       } else {
         initializeNotificationsGeneric();
@@ -74,24 +75,24 @@ export const AppNotifsFeature: Feature<AppNotifsState, AppNotifsResources> = {
         }
 
         try {
-          await setNotificationChannelAsync("default", {
-            name: "default",
+          await setNotificationChannelAsync('default', {
+            name: 'default',
             importance: AndroidImportance.LOW,
             vibrationPattern: [0, 250, 250, 250],
             enableVibrate: true,
             enableLights: true,
-            lightColor: "#1A383C7C",
+            lightColor: '#1A383C7C',
           });
           if (!active) {
             return;
           }
-          await setNotificationChannelAsync("daily_reminder", {
-            name: "Daily Reminders",
+          await setNotificationChannelAsync('daily_reminder', {
+            name: 'Daily Reminders',
             importance: AndroidImportance.HIGH,
             vibrationPattern: [0, 250, 250, 250],
             enableVibrate: true,
             enableLights: true,
-            lightColor: "#1A383C7C",
+            lightColor: '#1A383C7C',
           });
           if (!active) {
             return;
@@ -126,7 +127,7 @@ export const AppNotifsFeature: Feature<AppNotifsState, AppNotifsResources> = {
       }
 
       async function dismissAllNotificationsIfInForeground() {
-        if (AppState.currentState === "active") {
+        if (AppState.currentState === 'active') {
           await dismissAllNotificationsAsync();
         }
       }
@@ -139,13 +140,13 @@ export const AppNotifsFeature: Feature<AppNotifsState, AppNotifsResources> = {
           return undefined;
         }
 
-        const subscription = AppState.addEventListener("change", listener);
+        const subscription = AppState.addEventListener('change', listener);
         return () => {
           subscription.remove();
         };
 
         function listener(nextAppState: AppStateStatus) {
-          if (nextAppState === "active") {
+          if (nextAppState === 'active') {
             dismissAllNotificationsAsync();
           }
         }
@@ -189,7 +190,7 @@ export const AppNotifsFeature: Feature<AppNotifsState, AppNotifsResources> = {
               setVWC(permissionsStatusVWC, {
                 granted: false,
                 canAskAgain: false,
-                expires: "never",
+                expires: 'never',
               });
             }
           }
@@ -232,89 +233,82 @@ export const AppNotifsFeature: Feature<AppNotifsState, AppNotifsResources> = {
       )
     );
 
-    const loginContext = useContext(LoginContext);
-    useValueWithCallbacksEffect(
-      expoTokenVWC,
-      useCallback(
-        (expoTokenRaw) => {
+    const loginContextRaw = useContext(LoginContext);
+    useValuesWithCallbacksEffect(
+      [expoTokenVWC, loginContextRaw.value],
+      useCallback(() => {
+        const loginRaw = loginContextRaw.value.get();
+        const expoTokenRaw = expoTokenVWC.get();
+        if (
+          expoTokenRaw === null ||
+          expoTokenRaw === undefined ||
+          loginRaw.state !== 'logged-in'
+        ) {
+          return undefined;
+        }
+        const login = loginRaw;
+        const expoToken = expoTokenRaw;
+
+        let active = true;
+        maybeSendAssociation();
+        return () => {
+          active = false;
+        };
+
+        async function maybeSendAssociationInner() {
+          const storedAssociation =
+            await AppNotifsStore.retrieveStoredTokenUserAssociation();
+          if (!active) {
+            return;
+          }
+
           if (
-            expoTokenRaw === null ||
-            expoTokenRaw === undefined ||
-            loginContext.state !== "logged-in"
+            storedAssociation !== null &&
+            storedAssociation.userSub === login.userAttributes.sub &&
+            storedAssociation.expoPushToken === expoToken &&
+            Date.now() - storedAssociation.lastAssociatedAt.getTime() <
+              86_400_000
           ) {
-            return undefined;
+            return;
           }
-          const expoToken = expoTokenRaw;
 
-          let active = true;
-          maybeSendAssociation();
-          return () => {
-            active = false;
-          };
-
-          async function maybeSendAssociationInner() {
-            if (
-              loginContext.state !== "logged-in" ||
-              loginContext.userAttributes === null
-            ) {
-              return;
-            }
-
-            const storedAssociation =
-              await AppNotifsStore.retrieveStoredTokenUserAssociation();
-            if (!active) {
-              return;
-            }
-
-            if (
-              storedAssociation !== null &&
-              storedAssociation.userSub === loginContext.userAttributes.sub &&
-              storedAssociation.expoPushToken === expoToken &&
-              Date.now() - storedAssociation.lastAssociatedAt.getTime() <
-                86_400_000
-            ) {
-              return;
-            }
-
-            const response = await apiFetch(
-              "/api/1/notifications/push/tokens/",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json; charset=utf-8",
-                },
-                body: JSON.stringify({
-                  push_token: expoToken,
-                  platform: Platform.OS,
-                }),
+          const response = await apiFetch(
+            '/api/1/notifications/push/tokens/',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json; charset=utf-8',
               },
-              loginContext
-            );
-            if (!response.ok) {
-              throw response;
-            }
+              body: JSON.stringify({
+                push_token: expoToken,
+                platform: Platform.OS,
+              }),
+            },
+            login
+          );
+          if (!response.ok) {
+            throw response;
+          }
 
+          if (active) {
+            await AppNotifsStore.storeTokenUserAssociation({
+              userSub: login.userAttributes.sub,
+              expoPushToken: expoToken,
+              lastAssociatedAt: new Date(),
+            });
+          }
+        }
+
+        async function maybeSendAssociation() {
+          try {
+            await maybeSendAssociationInner();
+          } catch (e) {
             if (active) {
-              await AppNotifsStore.storeTokenUserAssociation({
-                userSub: loginContext.userAttributes.sub,
-                expoPushToken: expoToken,
-                lastAssociatedAt: new Date(),
-              });
+              console.log('error sending server push token association:', e);
             }
           }
-
-          async function maybeSendAssociation() {
-            try {
-              await maybeSendAssociationInner();
-            } catch (e) {
-              if (active) {
-                console.log("error sending server push token association:", e);
-              }
-            }
-          }
-        },
-        [loginContext]
-      )
+        }
+      }, [loginContextRaw])
     );
 
     useEffect(() => {
@@ -363,7 +357,7 @@ export const AppNotifsFeature: Feature<AppNotifsState, AppNotifsResources> = {
           result = {
             granted: false,
             canAskAgain: false,
-            expires: "never",
+            expires: 'never',
           };
         }
 
@@ -443,7 +437,7 @@ export const AppNotifsFeature: Feature<AppNotifsState, AppNotifsResources> = {
     const sessionVWC = useInappNotificationSessionValueWithCallbacks(
       adaptValueWithCallbacksAsVariableStrategyProps(
         useMappedValueWithCallbacks(required, (req) => ({
-          uid: req ? "oseh_ian_k1hWlArw-lNX3v9_qxJahg" : null,
+          uid: req ? 'oseh_ian_k1hWlArw-lNX3v9_qxJahg' : null,
         }))
       )
     );

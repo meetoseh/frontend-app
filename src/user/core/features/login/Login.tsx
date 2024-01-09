@@ -1,60 +1,60 @@
-import { ReactElement, useCallback, useContext, useEffect } from "react";
-import { Platform, Text, View } from "react-native";
-import * as Linking from "expo-linking";
-import * as WebBrowser from "expo-web-browser";
-import { styles } from "./LoginScreenStyles";
-import Constants from "expo-constants";
-import { SplashScreen } from "../../../splash/SplashScreen";
-import Google from "./icons/Google";
-import Apple from "./icons/Apple";
-import { StatusBar } from "expo-status-bar";
-import OsehWordmarkWhite from "./icons/OsehWordmarkWhite";
-import { LoginContext } from "../../../../shared/contexts/LoginContext";
-import { apiFetch } from "../../../../shared/lib/apiFetch";
-import { LoginResources } from "./LoginResources";
-import { LoginState } from "./LoginState";
+import { ReactElement, useCallback, useContext, useEffect } from 'react';
+import { Platform, Text, View } from 'react-native';
+import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
+import { styles } from './LoginScreenStyles';
+import Constants from 'expo-constants';
+import { SplashScreen } from '../../../splash/SplashScreen';
+import Google from './icons/Google';
+import Apple from './icons/Apple';
+import { StatusBar } from 'expo-status-bar';
+import OsehWordmarkWhite from './icons/OsehWordmarkWhite';
+import { LoginContext } from '../../../../shared/contexts/LoginContext';
+import { apiFetch } from '../../../../shared/lib/apiFetch';
+import { LoginResources } from './LoginResources';
+import { LoginState } from './LoginState';
 import {
   ErrorBanner,
   ErrorBannerText,
-} from "../../../../shared/components/ErrorBanner";
-import { describeError } from "../../../../shared/lib/describeError";
-import { URLSearchParams } from "react-native-url-polyfill";
-import { FeatureComponentProps } from "../../models/Feature";
-import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
-import { useUnwrappedValueWithCallbacks } from "../../../../shared/hooks/useUnwrappedValueWithCallbacks";
+} from '../../../../shared/components/ErrorBanner';
+import { describeError } from '../../../../shared/lib/describeError';
+import { URLSearchParams } from 'react-native-url-polyfill';
+import { FeatureComponentProps } from '../../models/Feature';
+import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
+import { useUnwrappedValueWithCallbacks } from '../../../../shared/hooks/useUnwrappedValueWithCallbacks';
 import {
   LoginMessage,
   ReadableLoginMessagePipe,
   createReadPipeIfAvailable,
   createWritePipe,
-} from "./LoginMessagePipe";
+} from './LoginMessagePipe';
 import {
   Callbacks,
   useWritableValueWithCallbacks,
-} from "../../../../shared/lib/Callbacks";
-import { setVWC } from "../../../../shared/lib/setVWC";
-import { useIsMounted } from "../../../../shared/hooks/useIsMounted";
-import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
-import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks";
-import { useContentWidth } from "../../../../shared/lib/useContentWidth";
-import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
-import Email from "./icons/Email";
-import { useIsTablet } from "../../../../shared/lib/useIsTablet";
-import { ProvidersList } from "./components/ProvidersList";
+} from '../../../../shared/lib/Callbacks';
+import { setVWC } from '../../../../shared/lib/setVWC';
+import { useIsMounted } from '../../../../shared/hooks/useIsMounted';
+import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
+import { OsehImageBackgroundFromStateValueWithCallbacks } from '../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks';
+import { useContentWidth } from '../../../../shared/lib/useContentWidth';
+import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
+import Email from './icons/Email';
+import { useIsTablet } from '../../../../shared/lib/useIsTablet';
+import { ProvidersList } from './components/ProvidersList';
 
 /* guest -> random guest */
-const DEV_ACCOUNT_USER_IDENTITY_ID: string = "guest";
+const DEV_ACCOUNT_USER_IDENTITY_ID: string = 'guest';
 
 const prepareLink = async (
-  provider: "Google" | "SignInWithApple" | "Direct"
+  provider: 'Google' | 'SignInWithApple' | 'Direct'
 ): Promise<{ url: string; redirectUrl: string }> => {
-  const redirectUrl = Linking.createURL("login_callback");
+  const redirectUrl = Linking.createURL('login_callback');
   const response = await apiFetch(
-    "/api/1/oauth/prepare",
+    '/api/1/oauth/prepare',
     {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json; charset=utf-8",
+        'Content-Type': 'application/json; charset=utf-8',
       },
       body: JSON.stringify({
         provider,
@@ -81,7 +81,7 @@ export const Login = ({
   state,
   resources,
 }: FeatureComponentProps<LoginState, LoginResources>) => {
-  const loginContext = useContext(LoginContext);
+  const loginContextRaw = useContext(LoginContext);
   const checkedMessagePipeVWC = useWritableValueWithCallbacks(() => false);
   const errorVWC = useWritableValueWithCallbacks<ReactElement | null>(
     () => null
@@ -90,7 +90,7 @@ export const Login = ({
 
   const onMessageFromPipe = useCallback(
     (result: LoginMessage) => {
-      if (result.type === "cancel") {
+      if (result.type === 'cancel') {
         setVWC(
           errorVWC,
           <ErrorBanner>
@@ -99,9 +99,9 @@ export const Login = ({
             </ErrorBannerText>
           </ErrorBanner>
         );
-      } else if (result.type === "dismiss") {
-        console.log("dismissed by user; ignoring");
-      } else if (result.type === "unknown") {
+      } else if (result.type === 'dismiss') {
+        console.log('dismissed by user; ignoring');
+      } else if (result.type === 'unknown') {
         setVWC(
           errorVWC,
           <ErrorBanner>
@@ -110,7 +110,7 @@ export const Login = ({
             </ErrorBannerText>
           </ErrorBanner>
         );
-      } else if (result.type === "error") {
+      } else if (result.type === 'error') {
         setVWC(
           errorVWC,
           <ErrorBanner>
@@ -121,17 +121,17 @@ export const Login = ({
         );
       } else {
         // ensures no missing cases
-        ((() => {}) as (t: "success") => void)(result.type);
+        ((() => {}) as (t: 'success') => void)(result.type);
 
         const { idToken, refreshToken, onboard } = result;
-        loginContext.setAuthTokens.call(undefined, {
+        loginContextRaw.setAuthTokens.call(undefined, {
           idToken,
           refreshToken: refreshToken ?? null,
         });
         state.get().setOnboard.call(undefined, onboard);
       }
     },
-    [loginContext.setAuthTokens, state, errorVWC]
+    [loginContextRaw.setAuthTokens, state, errorVWC]
   );
 
   useEffect(() => {
@@ -156,7 +156,7 @@ export const Login = ({
       try {
         reader = await createReadPipeIfAvailable();
       } catch (e) {
-        console.log("login failed to create read pipe: ", e);
+        console.log('login failed to create read pipe: ', e);
         setVWC(checkedMessagePipeVWC, true);
         return;
       }
@@ -192,9 +192,9 @@ export const Login = ({
   }, [onMessageFromPipe, checkedMessagePipeVWC]);
 
   const onContinueWithProvider = useCallback(
-    async (provider: "Google" | "SignInWithApple" | "Direct") => {
+    async (provider: 'Google' | 'SignInWithApple' | 'Direct') => {
       const options: WebBrowser.AuthSessionOpenOptions = {};
-      if (Platform.OS === "ios" && provider === "Google") {
+      if (Platform.OS === 'ios' && provider === 'Google') {
         options.preferEphemeralSession = true;
       }
 
@@ -217,45 +217,45 @@ export const Login = ({
             redirectUrl,
             options
           );
-          if (result.type === "cancel") {
-            sendPipeMessageOrApplyImmediately({ type: "cancel" });
+          if (result.type === 'cancel') {
+            sendPipeMessageOrApplyImmediately({ type: 'cancel' });
             return;
-          } else if (result.type === "dismiss") {
-            sendPipeMessageOrApplyImmediately({ type: "dismiss" });
+          } else if (result.type === 'dismiss') {
+            sendPipeMessageOrApplyImmediately({ type: 'dismiss' });
             return;
-          } else if (result.type !== "success") {
+          } else if (result.type !== 'success') {
             sendPipeMessageOrApplyImmediately({
-              type: "unknown",
+              type: 'unknown',
               rawType: result.type,
             });
             return;
           }
           const params = new URLSearchParams(
-            result.url.substring(result.url.indexOf("#") + 1)
+            result.url.substring(result.url.indexOf('#') + 1)
           );
-          if (params.get("auth_error") === "1") {
-            const errorMessage = params.get("auth_error_message");
+          if (params.get('auth_error') === '1') {
+            const errorMessage = params.get('auth_error_message');
             sendPipeMessageOrApplyImmediately({
-              type: "error",
-              message: errorMessage ?? "",
+              type: 'error',
+              message: errorMessage ?? '',
             });
             return;
           }
 
-          const idToken = params.get("id_token");
+          const idToken = params.get('id_token');
           if (!idToken) {
             sendPipeMessageOrApplyImmediately({
-              type: "error",
-              message: "no id token",
+              type: 'error',
+              message: 'no id token',
             });
             return;
           }
 
-          const refreshToken = params.get("refresh_token") ?? undefined;
-          const onboard = params.get("onboard") === "1";
+          const refreshToken = params.get('refresh_token') ?? undefined;
+          const onboard = params.get('onboard') === '1';
 
           sendPipeMessageOrApplyImmediately({
-            type: "success",
+            type: 'success',
             idToken,
             refreshToken,
             onboard,
@@ -271,25 +271,25 @@ export const Login = ({
   );
 
   const onLongPressMessage = useCallback(async () => {
-    if (Constants.expoConfig?.extra?.environment !== "dev") {
+    if (Constants.expoConfig?.extra?.environment !== 'dev') {
       return;
     }
 
     setVWC(errorVWC, null);
     try {
       const response = await apiFetch(
-        "/api/1/dev/login",
+        '/api/1/dev/login',
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json; charset=utf-8",
+            'Content-Type': 'application/json; charset=utf-8',
           },
           body: JSON.stringify({
             sub: selectDevAccountSub(),
             refresh_token_desired: true,
           }),
         },
-        loginContext
+        null
       );
 
       if (!response.ok) {
@@ -301,7 +301,7 @@ export const Login = ({
         refresh_token: string;
         onboard: boolean;
       } = await response.json();
-      await loginContext.setAuthTokens({
+      await loginContextRaw.setAuthTokens({
         idToken: data.id_token,
         refreshToken: data.refresh_token,
       });
@@ -309,7 +309,7 @@ export const Login = ({
     } catch (e) {
       setVWC(errorVWC, await describeError(e));
     }
-  }, [loginContext, state, errorVWC]);
+  }, [loginContextRaw, state, errorVWC]);
 
   const backgroundVWC = useMappedValueWithCallbacks(
     resources,
@@ -354,19 +354,19 @@ export const Login = ({
         <ProvidersList
           items={[
             {
-              key: "Google",
+              key: 'Google',
               icon: <Google style={styles.google} />,
-              name: "Sign in with Google",
+              name: 'Sign in with Google',
             },
             {
-              key: "SignInWithApple",
+              key: 'SignInWithApple',
               icon: <Apple style={styles.apple} />,
-              name: "Sign in with Apple",
+              name: 'Sign in with Apple',
             },
             {
-              key: "Direct",
+              key: 'Direct',
               icon: <Email style={styles.email} />,
-              name: "Sign in with Email",
+              name: 'Sign in with Email',
             },
           ]}
           onItemPressed={(key) => onContinueWithProvider(key)}
@@ -379,7 +379,7 @@ export const Login = ({
 };
 
 function selectDevAccountSub() {
-  if (DEV_ACCOUNT_USER_IDENTITY_ID === "guest") {
+  if (DEV_ACCOUNT_USER_IDENTITY_ID === 'guest') {
     return `guest-${Math.random().toString(36).substring(2)}`;
   }
 

@@ -1,37 +1,37 @@
-import { ReactElement, useCallback, useContext } from "react";
-import { FeatureComponentProps } from "../../models/Feature";
-import { AppNotifsResources } from "./AppNotifsResources";
-import { AppNotifsState } from "./AppNotifsState";
-import { useStartSession } from "../../../../shared/hooks/useInappNotificationSession";
-import { adaptValueWithCallbacksAsVariableStrategyProps } from "../../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps";
-import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
-import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks";
-import { Platform, View, Text, StyleProp, TextStyle } from "react-native";
-import { setVWC } from "../../../../shared/lib/setVWC";
-import { useValueWithCallbacksEffect } from "../../../../shared/hooks/useValueWithCallbacksEffect";
-import { styles } from "./AppNotifsStyles";
-import { STANDARD_BLACK_GRAY_GRADIENT_SVG } from "../../../../styling/colors";
-import { StatusBar } from "expo-status-bar";
-import * as SVG from "react-native-svg";
-import { FilledInvertedButton } from "../../../../shared/components/FilledInvertedButton";
-import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
-import { LinkButton } from "../../../../shared/components/LinkButton";
-import { FullscreenView } from "../../../../shared/components/FullscreenView";
-import { useContentWidth } from "../../../../shared/lib/useContentWidth";
-import { SvgLinearGradientBackground } from "../../../../shared/anim/SvgLinearGradientBackground";
-import { PartialPushIcon } from "../requestNotificationTime/partialIcons/PartialPushIcon";
-import { useReactManagedValueAsValueWithCallbacks } from "../../../../shared/hooks/useReactManagedValueAsValueWithCallbacks";
-import { TimeRange } from "../requestNotificationTime/EditTimeRange";
+import { ReactElement, useCallback, useContext } from 'react';
+import { FeatureComponentProps } from '../../models/Feature';
+import { AppNotifsResources } from './AppNotifsResources';
+import { AppNotifsState } from './AppNotifsState';
+import { useStartSession } from '../../../../shared/hooks/useInappNotificationSession';
+import { adaptValueWithCallbacksAsVariableStrategyProps } from '../../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps';
+import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
+import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
+import { Platform, View, Text, StyleProp, TextStyle } from 'react-native';
+import { setVWC } from '../../../../shared/lib/setVWC';
+import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
+import { styles } from './AppNotifsStyles';
+import { STANDARD_BLACK_GRAY_GRADIENT_SVG } from '../../../../styling/colors';
+import { StatusBar } from 'expo-status-bar';
+import * as SVG from 'react-native-svg';
+import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
+import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
+import { LinkButton } from '../../../../shared/components/LinkButton';
+import { FullscreenView } from '../../../../shared/components/FullscreenView';
+import { useContentWidth } from '../../../../shared/lib/useContentWidth';
+import { SvgLinearGradientBackground } from '../../../../shared/anim/SvgLinearGradientBackground';
+import { PartialPushIcon } from '../requestNotificationTime/partialIcons/PartialPushIcon';
+import { useReactManagedValueAsValueWithCallbacks } from '../../../../shared/hooks/useReactManagedValueAsValueWithCallbacks';
+import { TimeRange } from '../requestNotificationTime/EditTimeRange';
 import {
   DEFAULT_DAYS,
   DEFAULT_TIME_RANGE,
-} from "../requestNotificationTime/constants";
-import { DayOfWeek } from "../requestNotificationTime/RequestNotificationTimeResources";
-import { EditReminderTime } from "../requestNotificationTime/EditReminderTime";
-import { ModalProvider } from "../../../../shared/contexts/ModalContext";
-import { apiFetch } from "../../../../shared/lib/apiFetch";
-import { LoginContext } from "../../../../shared/contexts/LoginContext";
-import { useTimezone } from "../../../../shared/hooks/useTimezone";
+} from '../requestNotificationTime/constants';
+import { DayOfWeek } from '../requestNotificationTime/RequestNotificationTimeResources';
+import { EditReminderTime } from '../requestNotificationTime/EditReminderTime';
+import { ModalProvider } from '../../../../shared/contexts/ModalContext';
+import { apiFetch } from '../../../../shared/lib/apiFetch';
+import { LoginContext } from '../../../../shared/contexts/LoginContext';
+import { useTimezone } from '../../../../shared/hooks/useTimezone';
 
 /**
  * Displays our screen asking the user if they want to receive notifications. We
@@ -42,7 +42,7 @@ export const AppNotifs = ({
   state,
   resources,
 }: FeatureComponentProps<AppNotifsState, AppNotifsResources>): ReactElement => {
-  const loginContext = useContext(LoginContext);
+  const loginContextRaw = useContext(LoginContext);
   const timezone = useTimezone();
 
   useStartSession(
@@ -57,7 +57,7 @@ export const AppNotifs = ({
     if (sentOpen.get() || session === null) {
       return undefined;
     }
-    session.storeAction("open", {
+    session.storeAction('open', {
       last_requested_locally:
         state.get().lastRequestedLocally?.getTime() ?? null,
       platform: Platform.OS,
@@ -81,15 +81,21 @@ export const AppNotifs = ({
       return;
     }
 
+    const loginRaw = loginContextRaw.value.get();
+    if (loginRaw.state !== 'logged-in') {
+      return;
+    }
+    const login = loginRaw;
+
     const session = resources.get().session;
     setVWC(nativePromptIsOpen, true);
     try {
-      session?.storeAction("open_native", {
+      session?.storeAction('open_native', {
         time_range: timeRange.get(),
         days: Array.from(days.get()),
       });
       const newStatus = await state.get().requestUsingNativeDialog();
-      session?.storeAction("close_native", {
+      session?.storeAction('close_native', {
         granted: newStatus.granted,
         error: null,
       });
@@ -97,26 +103,26 @@ export const AppNotifs = ({
       if (newStatus.granted) {
         try {
           await apiFetch(
-            "/api/1/users/me/attributes/notification_time",
+            '/api/1/users/me/attributes/notification_time',
             {
-              method: "POST",
-              headers: { "Content-Type": "application/json; charset=utf-8" },
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json; charset=utf-8' },
               body: JSON.stringify({
                 days_of_week: Array.from(days.get()),
                 time_range: timeRange.get(),
-                channel: "push",
+                channel: 'push',
                 timezone: timezone.timeZone,
-                timezone_technique: timezone.guessed ? "app-guessed" : "app",
+                timezone_technique: timezone.guessed ? 'app-guessed' : 'app',
               }),
             },
-            loginContext
+            login
           );
         } catch (e) {
-          console.log("Failed to set notification time", e);
+          console.log('Failed to set notification time', e);
         }
       }
     } catch (e) {
-      session?.storeAction("close_native", {
+      session?.storeAction('close_native', {
         granted: false,
         error: `${e}`,
       });
@@ -135,7 +141,7 @@ export const AppNotifs = ({
     days,
     timeRange,
     timezone,
-    loginContext,
+    loginContextRaw,
   ]);
 
   const doSkip = useCallback(async () => {
@@ -146,7 +152,7 @@ export const AppNotifs = ({
     const session = resources.get().session;
     setVWC(isSkipping, true);
     try {
-      await session?.storeAction("skip", null);
+      await session?.storeAction('skip', null);
     } finally {
       try {
         await state.get().onDoneRequestingLocally();
@@ -169,7 +175,7 @@ export const AppNotifs = ({
     <View style={styles.container}>
       <SvgLinearGradientBackground
         state={{
-          type: "react-rerender",
+          type: 'react-rerender',
           props: STANDARD_BLACK_GRAY_GRADIENT_SVG,
         }}
       >

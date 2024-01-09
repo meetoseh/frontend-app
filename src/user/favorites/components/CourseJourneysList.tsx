@@ -1,25 +1,25 @@
-import { ReactElement, useCallback, useContext, useMemo, useRef } from "react";
-import { JourneyRef, journeyRefKeyMap } from "../../journey/models/JourneyRef";
-import { LoginContext } from "../../../shared/contexts/LoginContext";
-import { OsehImageStateRequestHandler } from "../../../shared/images/useOsehImageStateRequestHandler";
+import { ReactElement, useCallback, useContext, useMemo, useRef } from 'react';
+import { JourneyRef, journeyRefKeyMap } from '../../journey/models/JourneyRef';
+import { LoginContext } from '../../../shared/contexts/LoginContext';
+import { OsehImageStateRequestHandler } from '../../../shared/images/useOsehImageStateRequestHandler';
 import {
   InfiniteListing,
   NetworkedInfiniteListing,
-} from "../../../shared/lib/InfiniteListing";
-import { styles } from "./FavoritesSharedStyles";
-import { InfiniteList } from "../../../shared/components/InfiniteList";
+} from '../../../shared/lib/InfiniteListing';
+import { styles } from './FavoritesSharedStyles';
+import { InfiniteList } from '../../../shared/components/InfiniteList';
 import {
   MinimalCourseJourney,
   minimalCourseJourneyKeyMap,
-} from "../lib/MinimalCourseJourney";
-import { CourseJourneyItem } from "./CourseJourneyItem";
-import { RenderGuardedComponent } from "../../../shared/components/RenderGuardedComponent";
-import { ValueWithCallbacks } from "../../../shared/lib/Callbacks";
-import { useMappedValuesWithCallbacks } from "../../../shared/hooks/useMappedValuesWithCallbacks";
-import { apiFetch } from "../../../shared/lib/apiFetch";
-import { convertUsingKeymap } from "../../../shared/lib/CrudFetcher";
-import { useWindowSize } from "../../../shared/hooks/useWindowSize";
-import { View, Text } from "react-native";
+} from '../lib/MinimalCourseJourney';
+import { CourseJourneyItem } from './CourseJourneyItem';
+import { RenderGuardedComponent } from '../../../shared/components/RenderGuardedComponent';
+import { ValueWithCallbacks } from '../../../shared/lib/Callbacks';
+import { useMappedValuesWithCallbacks } from '../../../shared/hooks/useMappedValuesWithCallbacks';
+import { apiFetch } from '../../../shared/lib/apiFetch';
+import { convertUsingKeymap } from '../../../shared/lib/CrudFetcher';
+import { useWindowSize } from '../../../shared/hooks/useWindowSize';
+import { View, Text } from 'react-native';
 
 export type CourseJourneysListProps = {
   /**
@@ -50,40 +50,38 @@ export const CourseJourneysList = ({
   listHeight,
   imageHandler,
 }: CourseJourneysListProps): ReactElement => {
-  const loginContext = useContext(LoginContext);
-  const loginContextRef = useRef(loginContext);
-  loginContextRef.current = loginContext;
+  const loginContextRaw = useContext(LoginContext);
 
   const infiniteListing = useMemo<InfiniteListing<MinimalCourseJourney>>(() => {
     const numVisible = Math.ceil(listHeight.get() / 85) * 25;
     const result = new NetworkedInfiniteListing<MinimalCourseJourney>(
-      "/api/1/users/me/search_course_journeys",
+      '/api/1/users/me/search_course_journeys',
       Math.min(numVisible * 2 + 10, 150),
       numVisible,
       10,
       {},
       [
         {
-          key: "joined_course_at",
-          dir: "desc",
+          key: 'joined_course_at',
+          dir: 'desc',
           before: null,
           after: null,
         },
         {
-          key: "course_uid",
-          dir: "asc",
+          key: 'course_uid',
+          dir: 'asc',
           before: null,
           after: null,
         },
         {
-          key: "priority",
-          dir: "asc",
+          key: 'priority',
+          dir: 'asc',
           before: null,
           after: null,
         },
         {
-          key: "association_uid",
-          dir: "asc",
+          key: 'association_uid',
+          dir: 'asc',
           before: null,
           after: null,
         },
@@ -91,33 +89,33 @@ export const CourseJourneysList = ({
       (item, dir) => {
         return [
           {
-            key: "joined_course_at",
-            dir: dir === "before" ? "asc" : "desc",
+            key: 'joined_course_at',
+            dir: dir === 'before' ? 'asc' : 'desc',
             before: null,
             after: item.joinedCourseAt.toLocaleString(),
           },
           {
-            key: "course_uid",
-            dir: dir === "before" ? "desc" : "asc",
+            key: 'course_uid',
+            dir: dir === 'before' ? 'desc' : 'asc',
             before: null,
             after: item.course.uid,
           },
           {
-            key: "priority",
-            dir: dir === "before" ? "desc" : "asc",
+            key: 'priority',
+            dir: dir === 'before' ? 'desc' : 'asc',
             before: null,
             after: item.priority,
           },
           {
-            key: "association_uid",
-            dir: dir === "before" ? "desc" : "asc",
+            key: 'association_uid',
+            dir: dir === 'before' ? 'desc' : 'asc',
             before: null,
             after: item.associationUid,
           },
         ];
       },
       minimalCourseJourneyKeyMap,
-      () => loginContextRef.current
+      loginContextRaw
     );
     result.reset();
     return result;
@@ -129,27 +127,29 @@ export const CourseJourneysList = ({
       if (loading.current) {
         return;
       }
-      if (loginContext.state !== "logged-in") {
+      const loginRaw = loginContextRaw.value.get();
+      if (loginRaw.state !== 'logged-in') {
         return;
       }
+      const login = loginRaw;
 
       loading.current = true;
       try {
         const response = await apiFetch(
-          "/api/1/courses/start_journey",
+          '/api/1/courses/start_journey',
           {
-            method: "POST",
-            headers: { "Content-Type": "application/json; charset=utf-8" },
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json; charset=utf-8' },
             body: JSON.stringify({
               journey_uid: journeyUid,
               course_uid: courseUid,
             }),
           },
-          loginContext
+          login
         );
         if (!response.ok) {
           console.log(
-            "failed to start journey from course:",
+            'failed to start journey from course:',
             response.status,
             await response.text()
           );
@@ -162,7 +162,7 @@ export const CourseJourneysList = ({
         loading.current = false;
       }
     },
-    [loginContext, showJourney]
+    [loginContextRaw, showJourney]
   );
 
   const boundComponent = useMemo<
@@ -234,26 +234,32 @@ const CourseJourneyItemComponent = ({
   previous: ValueWithCallbacks<MinimalCourseJourney | null>;
   instructorImages: OsehImageStateRequestHandler;
 }): ReactElement => {
-  const loginContext = useContext(LoginContext);
+  const loginContextRaw = useContext(LoginContext);
   const gotoJourney = useCallback(async () => {
+    const loginRaw = loginContextRaw.value.get();
+    if (loginRaw.state !== 'logged-in') {
+      return;
+    }
+    const login = loginRaw;
+
     const item = itemVWC.get();
     await gotoJourneyInCourse(item.journey.uid, item.course.uid);
 
     if (item.isNext) {
       apiFetch(
-        "/api/1/courses/advance",
+        '/api/1/courses/advance',
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json; charset=utf-8" },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
           body: JSON.stringify({
             course_uid: item.course.uid,
             journey_uid: item.journey.uid,
           }),
         },
-        loginContext
+        login
       );
     }
-  }, [gotoJourneyInCourse, loginContext, itemVWC]);
+  }, [gotoJourneyInCourse, loginContextRaw, itemVWC]);
   const mapItems = useCallback(
     (fn: (item: MinimalCourseJourney) => MinimalCourseJourney) => {
       replaceItem(() => true, fn);

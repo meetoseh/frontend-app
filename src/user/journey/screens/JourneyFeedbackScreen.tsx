@@ -5,33 +5,33 @@ import {
   useEffect,
   useMemo,
   useRef,
-} from "react";
-import { JourneyScreenProps } from "../models/JourneyScreenProps";
-import { styles } from "./JourneyFeedbackScreenStyles";
-import { LoginContext } from "../../../shared/contexts/LoginContext";
+} from 'react';
+import { JourneyScreenProps } from '../models/JourneyScreenProps';
+import { styles } from './JourneyFeedbackScreenStyles';
+import { LoginContext } from '../../../shared/contexts/LoginContext';
 import {
   Callbacks,
   ValueWithCallbacks,
   WritableValueWithCallbacks,
   createWritableValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../../../shared/lib/Callbacks";
-import { ease, easeInOut, easeOutBack } from "../../../shared/lib/Bezier";
+} from '../../../shared/lib/Callbacks';
+import { ease, easeInOut, easeOutBack } from '../../../shared/lib/Bezier';
 import {
   BezierAnimation,
   animIsComplete,
   calculateAnimValue,
-} from "../../../shared/lib/BezierAnimation";
-import { useMappedValueWithCallbacks } from "../../../shared/hooks/useMappedValueWithCallbacks";
-import { setVWC } from "../../../shared/lib/setVWC";
-import { useValueWithCallbacksEffect } from "../../../shared/hooks/useValueWithCallbacksEffect";
+} from '../../../shared/lib/BezierAnimation';
+import { useMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValueWithCallbacks';
+import { setVWC } from '../../../shared/lib/setVWC';
+import { useValueWithCallbacksEffect } from '../../../shared/hooks/useValueWithCallbacksEffect';
 import {
   BezierAnimator,
   BezierColorAnimator,
-} from "../../../shared/anim/AnimationLoop";
-import { useAnimatedValueWithCallbacks } from "../../../shared/anim/useAnimatedValueWithCallbacks";
-import { apiFetch } from "../../../shared/lib/apiFetch";
-import { useWindowSize } from "../../../shared/hooks/useWindowSize";
+} from '../../../shared/anim/AnimationLoop';
+import { useAnimatedValueWithCallbacks } from '../../../shared/anim/useAnimatedValueWithCallbacks';
+import { apiFetch } from '../../../shared/lib/apiFetch';
+import { useWindowSize } from '../../../shared/hooks/useWindowSize';
 import {
   View,
   Text,
@@ -39,24 +39,24 @@ import {
   ViewStyle,
   TextStyle,
   StyleProp,
-} from "react-native";
-import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks";
-import { CloseButton } from "../../../shared/components/CloseButton";
-import { useTopBarHeight } from "../../../shared/hooks/useTopBarHeight";
-import { StatusBar } from "expo-status-bar";
+} from 'react-native';
+import { OsehImageBackgroundFromStateValueWithCallbacks } from '../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks';
+import { CloseButton } from '../../../shared/components/CloseButton';
+import { useTopBarHeight } from '../../../shared/hooks/useTopBarHeight';
+import { StatusBar } from 'expo-status-bar';
 import {
   LinearGradientBackground,
   LinearGradientState,
-} from "../../../shared/anim/LinearGradientBackground";
-import { adaptValueWithCallbacksAsVariableStrategyProps } from "../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps";
-import { GrayscaledView } from "../../../shared/components/GrayscaledView";
-import { RenderGuardedComponent } from "../../../shared/components/RenderGuardedComponent";
-import { CustomButtonProps } from "../../../shared/models/CustomButtonProps";
-import { FilledInvertedButton } from "../../../shared/components/FilledInvertedButton";
-import { LinkButton } from "../../../shared/components/LinkButton";
-import { useIsEffectivelyTinyScreen } from "../../../shared/hooks/useIsEffectivelyTinyScreen";
-import { useContentWidth } from "../../../shared/lib/useContentWidth";
-import { onJourneyRated } from "../lib/JourneyFeedbackRequestReviewStore";
+} from '../../../shared/anim/LinearGradientBackground';
+import { adaptValueWithCallbacksAsVariableStrategyProps } from '../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps';
+import { GrayscaledView } from '../../../shared/components/GrayscaledView';
+import { RenderGuardedComponent } from '../../../shared/components/RenderGuardedComponent';
+import { CustomButtonProps } from '../../../shared/models/CustomButtonProps';
+import { FilledInvertedButton } from '../../../shared/components/FilledInvertedButton';
+import { LinkButton } from '../../../shared/components/LinkButton';
+import { useIsEffectivelyTinyScreen } from '../../../shared/hooks/useIsEffectivelyTinyScreen';
+import { useContentWidth } from '../../../shared/lib/useContentWidth';
+import { onJourneyRated } from '../lib/JourneyFeedbackRequestReviewStore';
 
 /**
  * Asks the user for feedback about the journey so that we can curate the
@@ -67,7 +67,7 @@ export const JourneyFeedbackScreen = ({
   shared,
   setScreen,
 }: JourneyScreenProps): ReactElement => {
-  const loginContext = useContext(LoginContext);
+  const loginContextRaw = useContext(LoginContext);
   const responseVWC = useWritableValueWithCallbacks<1 | 2 | 3 | 4 | null>(
     () => null
   );
@@ -230,37 +230,39 @@ export const JourneyFeedbackScreen = ({
 
   const storeResponse = useCallback(async () => {
     const response = responseVWC.get();
-    if (response === null || loginContext.state !== "logged-in") {
+    const loginRaw = loginContextRaw.value.get();
+    if (response === null || loginRaw.state !== 'logged-in') {
       return;
     }
+    const login = loginRaw;
 
     const resp = await apiFetch(
-      "/api/1/journeys/feedback",
+      '/api/1/journeys/feedback',
       {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json; charset=utf-8",
+          'Content-Type': 'application/json; charset=utf-8',
         },
         body: JSON.stringify({
           journey_uid: journey.uid,
           journey_jwt: journey.jwt,
-          version: "oseh_jf-otp_sKjKVHs8wbI",
+          version: 'oseh_jf-otp_sKjKVHs8wbI',
           response: response,
           feedback: null,
         }),
         keepalive: true,
       },
-      loginContext
+      login
     );
 
     if (!resp.ok) {
-      console.warn("Failed to store feedback response", resp);
+      console.warn('Failed to store feedback response', resp);
     }
-  }, [loginContext, responseVWC, journey.uid, journey.jwt]);
+  }, [loginContextRaw, responseVWC, journey.uid, journey.jwt]);
 
   const onX = useCallback(() => {
     storeResponse();
-    setScreen("post", true);
+    setScreen('post', true);
     const response = responseVWC.get();
     if (response !== null) {
       onJourneyRated(journey.uid, response).then((wantStoreReview) => {
@@ -317,28 +319,28 @@ export const JourneyFeedbackScreen = ({
           >
             <FeedbackButton
               onClick={clickResponse[0]}
-              emoji={"😍"}
+              emoji={'😍'}
               text="Loved"
               state={emojiStatesVWCs[0]}
             />
             <View style={styles.answerSpacing} />
             <FeedbackButton
               onClick={clickResponse[1]}
-              emoji={"😌"}
+              emoji={'😌'}
               text="Liked"
               state={emojiStatesVWCs[1]}
             />
             <View style={styles.answerSpacing} />
             <FeedbackButton
               onClick={clickResponse[2]}
-              emoji={"😕"}
+              emoji={'😕'}
               text="Disliked"
               state={emojiStatesVWCs[2]}
             />
             <View style={styles.answerSpacing} />
             <FeedbackButton
               onClick={clickResponse[3]}
-              emoji={"☹️"}
+              emoji={'☹️'}
               text="Hated"
               state={emojiStatesVWCs[3]}
             />
@@ -483,7 +485,7 @@ const FeedbackButton = ({
                 useMappedValueWithCallbacks(stateVWC, (s) => s.grayscale)
               )}
               child={{
-                type: "react-rerender",
+                type: 'react-rerender',
                 props: useMemo(
                   () => <Text style={styles.answerEmojiText}>{emoji}</Text>,
                   [emoji]
@@ -500,7 +502,7 @@ const FeedbackButton = ({
 
 type SimpleFeedbackButtonState = {
   grayscale: number;
-  gradient: FeedbackButtonState["gradient"];
+  gradient: FeedbackButtonState['gradient'];
 };
 
 const getTarget = (selected: boolean): SimpleFeedbackButtonState => {

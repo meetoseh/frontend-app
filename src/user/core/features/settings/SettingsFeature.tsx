@@ -1,23 +1,23 @@
-import { ReactElement, useCallback, useContext } from "react";
-import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks";
-import { setVWC } from "../../../../shared/lib/setVWC";
-import { Feature } from "../../models/Feature";
-import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMappedValuesWithCallbacks";
-import { SettingsState } from "./SettingsState";
-import { SettingsResources } from "./SettingsResources";
-import { LoginContext } from "../../../../shared/contexts/LoginContext";
-import { useValueWithCallbacksEffect } from "../../../../shared/hooks/useValueWithCallbacksEffect";
-import { Settings } from "./Settings";
-import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
-import { useIdentities } from "./hooks/useIdentities";
-import { apiFetch } from "../../../../shared/lib/apiFetch";
-import { describeError } from "../../../../shared/lib/describeError";
+import { ReactElement, useCallback, useContext } from 'react';
+import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
+import { setVWC } from '../../../../shared/lib/setVWC';
+import { Feature } from '../../models/Feature';
+import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
+import { SettingsState } from './SettingsState';
+import { SettingsResources } from './SettingsResources';
+import { LoginContext } from '../../../../shared/contexts/LoginContext';
+import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
+import { Settings } from './Settings';
+import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
+import { useIdentities } from './hooks/useIdentities';
+import { apiFetch } from '../../../../shared/lib/apiFetch';
+import { describeError } from '../../../../shared/lib/describeError';
 
 /**
  * Simple link page where the user can perform some key actions, like logging out.
  */
 export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
-  identifier: "settings",
+  identifier: 'settings',
   useWorldState: () => {
     const showVWC = useWritableValueWithCallbacks<boolean>(() => false);
     const setShow = useCallback(
@@ -36,7 +36,7 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
     );
   },
   useResources: (stateVWC, requiredVWC, allStatesVWC) => {
-    const loginContext = useContext(LoginContext);
+    const loginContextRaw = useContext(LoginContext);
     const haveProVWC = useWritableValueWithCallbacks<boolean | undefined>(
       () => undefined
     );
@@ -63,7 +63,7 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
       allStatesVWC,
       (allStates) => {
         return () => {
-          allStates.favorites.setTab("courses", false);
+          allStates.favorites.setTab('courses', false);
           allStates.favorites.setShow(true, true);
         };
       },
@@ -95,9 +95,11 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
       requiredVWC,
       useCallback(
         (required: boolean) => {
-          if (!required || loginContext.state !== "logged-in") {
+          const loginRaw = loginContextRaw.value.get();
+          if (!required || loginRaw.state !== 'logged-in') {
             return undefined;
           }
+          const login = loginRaw;
 
           let active = true;
           fetchHavePro();
@@ -107,14 +109,14 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
 
           async function fetchHaveProInner() {
             let response = await apiFetch(
-              "/api/1/users/me/entitlements/pro",
+              '/api/1/users/me/entitlements/pro',
               {
-                method: "GET",
+                method: 'GET',
                 headers: {
-                  Pragma: "no-cache",
+                  Pragma: 'no-cache',
                 },
               },
-              loginContext
+              login
             );
             if (!active) {
               return;
@@ -122,11 +124,11 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
 
             if (response.status === 429) {
               response = await apiFetch(
-                "/api/1/users/me/entitlements/pro",
+                '/api/1/users/me/entitlements/pro',
                 {
-                  method: "GET",
+                  method: 'GET',
                 },
-                loginContext
+                login
               );
               if (!active) {
                 return;
@@ -156,7 +158,7 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
             }
           }
         },
-        [loginContext, haveProVWC, loadErrorVWC]
+        [loginContextRaw, haveProVWC, loadErrorVWC]
       )
     );
 
@@ -203,7 +205,7 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
           return {
             loading: false,
             havePro: undefined,
-            identities: { type: "loading" },
+            identities: { type: 'loading' },
             loadError: loadErrorVWC.get(),
             gotoEditReminderTimes: () => {},
             gotoMyLibrary: () => {},
@@ -214,7 +216,7 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
         return {
           loading:
             haveProVWC.get() === undefined ||
-            identitiesVWC.get().type === "loading",
+            identitiesVWC.get().type === 'loading',
           havePro: haveProVWC.get(),
           loadError: null,
           identities: identitiesVWC.get(),

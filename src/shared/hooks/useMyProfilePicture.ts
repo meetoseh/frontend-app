@@ -1,26 +1,29 @@
-import { useEffect } from "react";
-import { LoginContextValue } from "../contexts/LoginContext";
-import { OsehImageState } from "../images/OsehImageState";
-import { OsehImageStateRequestHandler } from "../images/useOsehImageStateRequestHandler";
-import { OsehImageRef } from "../images/OsehImageRef";
+import { useEffect } from 'react';
+import {
+  LoginContextValue,
+  LoginContextValueLoggedIn,
+} from '../contexts/LoginContext';
+import { OsehImageState } from '../images/OsehImageState';
+import { OsehImageStateRequestHandler } from '../images/useOsehImageStateRequestHandler';
+import { OsehImageRef } from '../images/OsehImageRef';
 import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
-} from "../anim/VariableStrategyProps";
+} from '../anim/VariableStrategyProps';
 import {
   Callbacks,
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../lib/Callbacks";
-import { useUnwrappedValueWithCallbacks } from "./useUnwrappedValueWithCallbacks";
-import { apiFetch } from "../lib/apiFetch";
+} from '../lib/Callbacks';
+import { useUnwrappedValueWithCallbacks } from './useUnwrappedValueWithCallbacks';
+import { apiFetch } from '../lib/apiFetch';
 
 type MyProfilePictureStateProps = {
   /**
    * The current login context; profile pictures are always unavailable
    * when not logged in.
    */
-  loginContext: LoginContextValue;
+  loginContext: LoginContextValueLoggedIn | null;
 
   /**
    * Desired display width of the image
@@ -45,8 +48,8 @@ type MyProfilePictureStateProps = {
 };
 
 export type MyProfilePictureState =
-  | { state: "loading" | "unavailable"; image: null }
-  | { state: "available"; image: OsehImageState };
+  | { state: 'loading' | 'unavailable'; image: null }
+  | { state: 'available'; image: OsehImageState };
 
 /**
  * Acts as a react hook for finding, selecting, and downloading the
@@ -62,7 +65,7 @@ export const useMyProfilePictureState = (
 ): MyProfilePictureState => {
   return useUnwrappedValueWithCallbacks(
     useMyProfilePictureStateValueWithCallbacks({
-      type: "react-rerender",
+      type: 'react-rerender',
       props,
     })
   );
@@ -76,7 +79,7 @@ export const useMyProfilePictureStateValueWithCallbacks = (
   propsVariableStrategy: VariableStrategyProps<MyProfilePictureStateProps>
 ): ValueWithCallbacks<MyProfilePictureState> => {
   const state = useWritableValueWithCallbacks<MyProfilePictureState>(() => ({
-    state: "loading",
+    state: 'loading',
     image: null,
   }));
   const propsVWC = useVariableStrategyPropsAsValueWithCallbacks(
@@ -117,13 +120,9 @@ export const useMyProfilePictureStateValueWithCallbacks = (
     ): (() => void) | undefined {
       const loginContext = props.loginContext;
       const load = props.load ?? true;
-      if (
-        loginContext.state !== "logged-in" ||
-        loginContext.userAttributes === null ||
-        !load
-      ) {
-        if (state.get().state !== "loading") {
-          state.set({ state: "loading", image: null });
+      if (loginContext === null || !load) {
+        if (state.get().state !== 'loading') {
+          state.set({ state: 'loading', image: null });
           state.callbacks.call(undefined);
         }
         return;
@@ -144,7 +143,7 @@ export const useMyProfilePictureStateValueWithCallbacks = (
 
         try {
           const response = await apiFetch(
-            "/api/1/users/me/picture",
+            '/api/1/users/me/picture',
             {},
             loginContext
           );
@@ -154,11 +153,11 @@ export const useMyProfilePictureStateValueWithCallbacks = (
           if (!response.ok) {
             if (response.status === 404) {
               const data = await response.json();
-              if (data.type !== "not_available" && retryCounter < 2) {
+              if (data.type !== 'not_available' && retryCounter < 2) {
                 setTimeout(getImageRef.bind(undefined, retryCounter + 1), 2500);
               } else {
-                if (state.get().state !== "unavailable") {
-                  state.set({ state: "unavailable", image: null });
+                if (state.get().state !== 'unavailable') {
+                  state.set({ state: 'unavailable', image: null });
                   state.callbacks.call(undefined);
                 }
               }
@@ -170,8 +169,8 @@ export const useMyProfilePictureStateValueWithCallbacks = (
               return;
             }
             console.error("Couldn't fetch profile picture", response, text);
-            if (state.get().state !== "unavailable") {
-              state.set({ state: "unavailable", image: null });
+            if (state.get().state !== 'unavailable') {
+              state.set({ state: 'unavailable', image: null });
               state.callbacks.call(undefined);
             }
             return;
@@ -185,8 +184,8 @@ export const useMyProfilePictureStateValueWithCallbacks = (
           manageImage(data);
         } catch (e) {
           console.error("Couldn't fetch profile picture", e);
-          if (state.get().state !== "unavailable") {
-            state.set({ state: "unavailable", image: null });
+          if (state.get().state !== 'unavailable') {
+            state.set({ state: 'unavailable', image: null });
             state.callbacks.call(undefined);
           }
         }
@@ -198,7 +197,7 @@ export const useMyProfilePictureStateValueWithCallbacks = (
           jwt: ref.jwt,
           displayWidth: props.displayWidth,
           displayHeight: props.displayHeight,
-          alt: "profile",
+          alt: 'profile',
         });
 
         request.stateChanged.add(handleStateChanged);
@@ -210,7 +209,7 @@ export const useMyProfilePictureStateValueWithCallbacks = (
 
         function handleStateChanged() {
           state.set({
-            state: "available",
+            state: 'available',
             image: request.state,
           });
           state.callbacks.call(undefined);

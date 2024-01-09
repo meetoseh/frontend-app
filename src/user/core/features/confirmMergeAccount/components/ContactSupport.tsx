@@ -1,20 +1,21 @@
-import { ReactElement, useContext } from "react";
-import { FeatureComponentProps } from "../../../models/Feature";
-import { ConfirmMergeAccountResources } from "../ConfirmMergeAccountResources";
-import { ConfirmMergeAccountState } from "../ConfirmMergeAccountState";
-import { ConfirmMergeAccountWrapper } from "./ConfirmMergeAccountWrapper";
-import { useWritableValueWithCallbacks } from "../../../../../shared/lib/Callbacks";
-import { LoginContext } from "../../../../../shared/contexts/LoginContext";
-import { styles } from "./styles";
-import { RenderGuardedComponent } from "../../../../../shared/components/RenderGuardedComponent";
-import { ModalContext } from "../../../../../shared/contexts/ModalContext";
-import { useErrorModal } from "../../../../../shared/hooks/useErrorModal";
-import { useValueWithCallbacksEffect } from "../../../../../shared/hooks/useValueWithCallbacksEffect";
-import { setVWC } from "../../../../../shared/lib/setVWC";
-import { View, Text } from "react-native";
-import { FilledInvertedButton } from "../../../../../shared/components/FilledInvertedButton";
-import * as Linking from "expo-linking";
-import { LinkButton } from "../../../../../shared/components/LinkButton";
+import { ReactElement, useContext } from 'react';
+import { FeatureComponentProps } from '../../../models/Feature';
+import { ConfirmMergeAccountResources } from '../ConfirmMergeAccountResources';
+import { ConfirmMergeAccountState } from '../ConfirmMergeAccountState';
+import { ConfirmMergeAccountWrapper } from './ConfirmMergeAccountWrapper';
+import { useWritableValueWithCallbacks } from '../../../../../shared/lib/Callbacks';
+import { LoginContext } from '../../../../../shared/contexts/LoginContext';
+import { styles } from './styles';
+import { RenderGuardedComponent } from '../../../../../shared/components/RenderGuardedComponent';
+import { ModalContext } from '../../../../../shared/contexts/ModalContext';
+import { useErrorModal } from '../../../../../shared/hooks/useErrorModal';
+import { useValueWithCallbacksEffect } from '../../../../../shared/hooks/useValueWithCallbacksEffect';
+import { setVWC } from '../../../../../shared/lib/setVWC';
+import { View, Text } from 'react-native';
+import { FilledInvertedButton } from '../../../../../shared/components/FilledInvertedButton';
+import * as Linking from 'expo-linking';
+import { LinkButton } from '../../../../../shared/components/LinkButton';
+import { useMappedValueWithCallbacks } from '../../../../../shared/hooks/useMappedValueWithCallbacks';
 
 export const ContactSupport = ({
   resources,
@@ -23,9 +24,15 @@ export const ContactSupport = ({
   ConfirmMergeAccountState,
   ConfirmMergeAccountResources
 >): ReactElement => {
-  const loginContext = useContext(LoginContext);
+  const loginContextRaw = useContext(LoginContext);
   const modalContext = useContext(ModalContext);
-  const givenName = loginContext.userAttributes?.givenName;
+  const givenNameVWC = useMappedValueWithCallbacks(
+    loginContextRaw.value,
+    (loginRaw) =>
+      loginRaw.state === 'logged-in'
+        ? loginRaw.userAttributes.givenName
+        : undefined
+  );
   const closeDisabled = useWritableValueWithCallbacks(() => false);
   const onDismiss = useWritableValueWithCallbacks(() => () => {});
 
@@ -35,7 +42,7 @@ export const ContactSupport = ({
     return undefined;
   });
 
-  useErrorModal(modalContext.modals, error, "merging accounts");
+  useErrorModal(modalContext.modals, error, 'merging accounts');
 
   return (
     <ConfirmMergeAccountWrapper
@@ -44,9 +51,14 @@ export const ContactSupport = ({
       closeDisabled={closeDisabled}
       onDismiss={onDismiss}
     >
-      <Text style={styles.title}>
-        {givenName ? <>{givenName},</> : <>Contact support</>}
-      </Text>
+      <RenderGuardedComponent
+        props={givenNameVWC}
+        component={(givenName) => (
+          <Text style={styles.title}>
+            {givenName ? <>{givenName},</> : <>Contact support</>}
+          </Text>
+        )}
+      />
       <Text style={styles.description}>
         Sorry, something went wrong when trying to merge your accounts. Please
         contact hi@oseh.com for assistance.
@@ -58,7 +70,7 @@ export const ContactSupport = ({
             <FilledInvertedButton
               onPress={() => {
                 Linking.openURL(
-                  "mailto:hi@oseh.com?subject=Error merging accounts"
+                  'mailto:hi@oseh.com?subject=Error merging accounts'
                 );
                 onDismiss.get()();
               }}

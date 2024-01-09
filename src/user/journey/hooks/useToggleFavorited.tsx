@@ -1,19 +1,19 @@
-import { ReactElement, useCallback, useContext } from "react";
-import { VariableStrategyProps } from "../../../shared/anim/VariableStrategyProps";
-import { Modals } from "../../../shared/contexts/ModalContext";
+import { ReactElement, useCallback, useContext } from 'react';
+import { VariableStrategyProps } from '../../../shared/anim/VariableStrategyProps';
+import { Modals } from '../../../shared/contexts/ModalContext';
 import {
   ValueWithCallbacks,
   WritableValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../../../shared/lib/Callbacks";
-import { useFavoritedModal } from "../../favorites/hooks/useFavoritedModal";
-import { adaptValueWithCallbacksAsVariableStrategyProps } from "../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps";
-import { useUnfavoritableModal } from "../../favorites/hooks/useUnfavoritableModal";
-import { useUnfavoritedModal } from "../../favorites/hooks/useUnfavoritedModal";
-import { useErrorModal } from "../../../shared/hooks/useErrorModal";
-import { LoginContext } from "../../../shared/contexts/LoginContext";
-import { toggleFavorited } from "../lib/toggleFavorited";
-import { setVWC } from "../../../shared/lib/setVWC";
+} from '../../../shared/lib/Callbacks';
+import { useFavoritedModal } from '../../favorites/hooks/useFavoritedModal';
+import { adaptValueWithCallbacksAsVariableStrategyProps } from '../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps';
+import { useUnfavoritableModal } from '../../favorites/hooks/useUnfavoritableModal';
+import { useUnfavoritedModal } from '../../favorites/hooks/useUnfavoritedModal';
+import { useErrorModal } from '../../../shared/hooks/useErrorModal';
+import { LoginContext } from '../../../shared/contexts/LoginContext';
+import { toggleFavorited } from '../lib/toggleFavorited';
+import { setVWC } from '../../../shared/lib/setVWC';
 
 type UseToggleFavoritedProps = {
   /**
@@ -63,7 +63,7 @@ export const useToggleFavorited = ({
   knownUnfavoritable,
   working: workingVWC,
 }: UseToggleFavoritedProps): (() => Promise<void>) => {
-  const loginContext = useContext(LoginContext);
+  const loginContextRaw = useContext(LoginContext);
   const showLikedUntilVWC = useWritableValueWithCallbacks<number | undefined>(
     () => undefined
   );
@@ -90,7 +90,7 @@ export const useToggleFavorited = ({
     adaptValueWithCallbacksAsVariableStrategyProps(showUnlikableUntilVWC),
     modals
   );
-  useErrorModal(modals, errorVWC, "useToggleFavorited");
+  useErrorModal(modals, errorVWC, 'useToggleFavorited');
 
   return useCallback(async () => {
     const id = counterVWC.get() + 1;
@@ -98,10 +98,17 @@ export const useToggleFavorited = ({
     if (workingVWC !== undefined) {
       setVWC(workingVWC, true);
     }
+
     try {
+      const loginRaw = loginContextRaw.value.get();
+      if (loginRaw.state !== 'logged-in') {
+        return;
+      }
+      const login = loginRaw;
+
       await toggleFavorited(
-        loginContext,
-        journey.type === "react-rerender" ? journey.props : journey.props(),
+        login,
+        journey.type === 'react-rerender' ? journey.props : journey.props(),
         shared,
         showLikedUntilVWC,
         showUnlikedUntilVWC,
@@ -111,7 +118,7 @@ export const useToggleFavorited = ({
           if (v === undefined) {
             return undefined;
           }
-          if (v.type === "react-rerender") {
+          if (v.type === 'react-rerender') {
             return v.props;
           }
           return v.props();
@@ -123,7 +130,7 @@ export const useToggleFavorited = ({
       }
     }
   }, [
-    loginContext,
+    loginContextRaw,
     showLikedUntilVWC,
     showUnlikedUntilVWC,
     showUnlikableUntilVWC,

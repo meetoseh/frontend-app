@@ -1,36 +1,36 @@
-import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
+import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import {
   MappedValueWithCallbacksOpts,
   useMappedValueWithCallbacks,
-} from "../../../../shared/hooks/useMappedValueWithCallbacks";
-import { FeatureComponentProps } from "../../models/Feature";
-import { SettingsResources } from "./SettingsResources";
-import { SettingsState } from "./SettingsState";
-import { styles } from "./SettingsStyles";
-import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks";
-import { ReactElement, useCallback, useContext, useMemo } from "react";
-import { LoginContext } from "../../../../shared/contexts/LoginContext";
-import { useErrorModal } from "../../../../shared/hooks/useErrorModal";
+} from '../../../../shared/hooks/useMappedValueWithCallbacks';
+import { FeatureComponentProps } from '../../models/Feature';
+import { SettingsResources } from './SettingsResources';
+import { SettingsState } from './SettingsState';
+import { styles } from './SettingsStyles';
+import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
+import { ReactElement, useCallback, useContext, useMemo } from 'react';
+import { LoginContext } from '../../../../shared/contexts/LoginContext';
+import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
 import {
   ModalContextValue,
   Modals,
   ModalsOutlet,
-} from "../../../../shared/contexts/ModalContext";
-import { View, Text } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { CloseButton } from "../../../../shared/components/CloseButton";
-import { STANDARD_BLACK_GRAY_GRADIENT_SVG } from "../../../../styling/colors";
-import { FullscreenView } from "../../../../shared/components/FullscreenView";
-import { SvgLinearGradientBackground } from "../../../../shared/anim/SvgLinearGradientBackground";
-import { useContentWidth } from "../../../../shared/lib/useContentWidth";
-import { useHandleDeleteAccount } from "./hooks/useHandleDeleteAccount";
-import { SettingLink, SettingsLinks } from "./components/SettingLinks";
-import { SettingSection } from "./components/SettingSection";
-import Wordmark from "../../../../shared/icons/Wordmark";
-import Constants from "expo-constants";
-import { useManageConnectWithProvider } from "./hooks/useManageConnectWithProvider";
-import { MergeProvider } from "../mergeAccount/MergeAccountState";
-import { deleteJourneyFeedbackRequestReviewStoredState } from "../../../journey/lib/JourneyFeedbackRequestReviewStore";
+} from '../../../../shared/contexts/ModalContext';
+import { View, Text } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { CloseButton } from '../../../../shared/components/CloseButton';
+import { STANDARD_BLACK_GRAY_GRADIENT_SVG } from '../../../../styling/colors';
+import { FullscreenView } from '../../../../shared/components/FullscreenView';
+import { SvgLinearGradientBackground } from '../../../../shared/anim/SvgLinearGradientBackground';
+import { useContentWidth } from '../../../../shared/lib/useContentWidth';
+import { useHandleDeleteAccount } from './hooks/useHandleDeleteAccount';
+import { SettingLink, SettingsLinks } from './components/SettingLinks';
+import { SettingSection } from './components/SettingSection';
+import Wordmark from '../../../../shared/icons/Wordmark';
+import Constants from 'expo-constants';
+import { useManageConnectWithProvider } from './hooks/useManageConnectWithProvider';
+import { MergeProvider } from '../mergeAccount/MergeAccountState';
+import { deleteJourneyFeedbackRequestReviewStoredState } from '../../../journey/lib/JourneyFeedbackRequestReviewStore';
 
 /**
  * Shows a basic settings screen for the user. Requires a login context and a modal
@@ -40,7 +40,7 @@ export const Settings = ({
   state,
   resources,
 }: FeatureComponentProps<SettingsState, SettingsResources>) => {
-  const loginContext = useContext(LoginContext);
+  const loginContextRaw = useContext(LoginContext);
   const modals = useWritableValueWithCallbacks((): Modals => []);
   const modalContext: ModalContextValue = useMemo(() => ({ modals }), [modals]);
   const errorVWC = useWritableValueWithCallbacks<ReactElement | null>(
@@ -50,14 +50,14 @@ export const Settings = ({
     () => null
   );
   const handleDeleteAccount = useHandleDeleteAccount(
-    loginContext,
+    loginContextRaw,
     modalContext,
     errorVWC,
     () => state.get().setShow(false, true)
   );
 
-  useErrorModal(modalContext.modals, errorVWC, "settings");
-  useErrorModal(modalContext.modals, mergeError, "merge account in settings");
+  useErrorModal(modalContext.modals, errorVWC, 'settings');
+  useErrorModal(modalContext.modals, mergeError, 'merge account in settings');
 
   const onClickX = useCallback(() => {
     state.get().setShow(false, true);
@@ -65,8 +65,8 @@ export const Settings = ({
 
   const myLibraryLink = useWritableValueWithCallbacks(
     (): SettingLink => ({
-      text: "My Library",
-      key: "my-library",
+      text: 'My Library',
+      key: 'my-library',
       onClick: () => {
         resources.get().gotoMyLibrary();
         return undefined;
@@ -76,12 +76,13 @@ export const Settings = ({
 
   const logoutLink = useWritableValueWithCallbacks(
     (): SettingLink => ({
-      text: "Logout",
-      key: "logout",
+      text: 'Logout',
+      key: 'logout',
       onClick: () => {
-        if (loginContext.state === "logged-in") {
+        const loginRaw = loginContextRaw.value.get();
+        if (loginRaw.state === 'logged-in') {
           deleteJourneyFeedbackRequestReviewStoredState();
-          loginContext.setAuthTokens(null);
+          loginContextRaw.setAuthTokens(null);
           // a delay is an easy way to avoid flashing the homescreen while
           // logout finishes as contexts are slower than setShow
           setTimeout(() => state.get().setShow(false, true), 1000);
@@ -98,8 +99,8 @@ export const Settings = ({
 
   const remindersLink = useWritableValueWithCallbacks(
     (): SettingLink => ({
-      text: "Reminders",
-      key: "edit-reminders",
+      text: 'Reminders',
+      key: 'edit-reminders',
       onClick: () => {
         resources.get().gotoEditReminderTimes();
         return undefined;
@@ -111,32 +112,32 @@ export const Settings = ({
 
   const contactSupportLink = useWritableValueWithCallbacks(
     (): SettingLink => ({
-      text: "Contact Support",
-      key: "contact-support",
-      onClick: "mailto:hi@oseh.com",
+      text: 'Contact Support',
+      key: 'contact-support',
+      onClick: 'mailto:hi@oseh.com',
     })
   );
 
   const privacyPolicyLink = useWritableValueWithCallbacks(
     (): SettingLink => ({
-      text: "Privacy Policy",
-      key: "privacy-policy",
-      onClick: "https://www.oseh.com/privacy",
+      text: 'Privacy Policy',
+      key: 'privacy-policy',
+      onClick: 'https://www.oseh.com/privacy',
     })
   );
 
   const termsAndConditionsLink = useWritableValueWithCallbacks(
     (): SettingLink => ({
-      text: "Terms & Conditions",
-      key: "terms-and-conditions",
-      onClick: "https://www.oseh.com/terms",
+      text: 'Terms & Conditions',
+      key: 'terms-and-conditions',
+      onClick: 'https://www.oseh.com/terms',
     })
   );
 
   const deleteAccountLink = useWritableValueWithCallbacks(
     (): SettingLink => ({
-      text: "Delete Account",
-      key: "delete-account",
+      text: 'Delete Account',
+      key: 'delete-account',
       onClick: () => {
         handleDeleteAccount();
         return undefined;
@@ -172,18 +173,18 @@ export const Settings = ({
       name: string
     ): SettingLink | null => {
       if (
-        provider === "Dev" &&
-        Constants.expoConfig?.extra?.environment !== "dev"
+        provider === 'Dev' &&
+        Constants.expoConfig?.extra?.environment !== 'dev'
       ) {
         return null;
       }
 
       const key = `connect-via-${provider}`;
-      if (r.identities.type !== "success") {
+      if (r.identities.type !== 'success') {
         return {
           text: `Connect ${name}`,
           details:
-            r.identities.type === "error" ? ["An error occurred"] : undefined,
+            r.identities.type === 'error' ? ['An error occurred'] : undefined,
           key,
           onClick: () => manageConnectWithProvider(provider, name),
         };
@@ -204,9 +205,9 @@ export const Settings = ({
       return {
         text: `Connected with ${name}`,
         key,
-        details: providerIdentities.map((i) => i.email ?? "unknown"),
+        details: providerIdentities.map((i) => i.email ?? 'unknown'),
         onClick: () => manageConnectWithProvider(provider, name),
-        action: "none",
+        action: 'none',
       };
     },
     [manageConnectWithProvider]
@@ -221,25 +222,25 @@ export const Settings = ({
 
   const identityDirectLink = useMappedValueWithCallbacks(
     resources,
-    (r) => getLinkForProvider(r, "Direct", "Email"),
+    (r) => getLinkForProvider(r, 'Direct', 'Email'),
     identityOpts
   );
 
   const identityGoogleLink = useMappedValueWithCallbacks(
     resources,
-    (r) => getLinkForProvider(r, "Google", "Sign in with Google"),
+    (r) => getLinkForProvider(r, 'Google', 'Sign in with Google'),
     identityOpts
   );
 
   const identityAppleLink = useMappedValueWithCallbacks(
     resources,
-    (r) => getLinkForProvider(r, "SignInWithApple", "Sign in with Apple"),
+    (r) => getLinkForProvider(r, 'SignInWithApple', 'Sign in with Apple'),
     identityOpts
   );
 
   const identityDevLink = useMappedValueWithCallbacks(
     resources,
-    (r) => getLinkForProvider(r, "Dev", "Dev"),
+    (r) => getLinkForProvider(r, 'Dev', 'Dev'),
     identityOpts
   );
 
@@ -264,7 +265,7 @@ export const Settings = ({
             <FullscreenView
               style={{
                 ...styles.container,
-                backgroundColor: "black",
+                backgroundColor: 'black',
               }}
             >
               <CloseButton onPress={onClickX} />
@@ -278,7 +279,7 @@ export const Settings = ({
           <View style={styles.container}>
             <SvgLinearGradientBackground
               state={{
-                type: "react-rerender",
+                type: 'react-rerender',
                 props: STANDARD_BLACK_GRAY_GRADIENT_SVG,
               }}
             >
@@ -305,7 +306,7 @@ export const Settings = ({
                   <View style={styles.footer}>
                     <Wordmark width={98} height={24} />
                     <Text style={styles.version}>
-                      {Constants.manifest?.version || "development"}
+                      {Constants.manifest?.version || 'development'}
                     </Text>
                   </View>
                 </View>

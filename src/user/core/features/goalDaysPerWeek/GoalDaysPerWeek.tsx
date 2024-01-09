@@ -1,38 +1,38 @@
-import { ReactElement, useCallback, useContext, useMemo } from "react";
-import { FeatureComponentProps } from "../../models/Feature";
-import { GoalDaysPerWeekState } from "./GoalDaysPerWeekState";
-import { GoalDaysPerWeekResources } from "./GoalDaysPerWeekResources";
+import { ReactElement, useCallback, useContext, useMemo } from 'react';
+import { FeatureComponentProps } from '../../models/Feature';
+import { GoalDaysPerWeekState } from './GoalDaysPerWeekState';
+import { GoalDaysPerWeekResources } from './GoalDaysPerWeekResources';
 import {
   styles,
   buttonStyles,
   activeButtonStyles,
-} from "./GoalDaysPerWeekStyles";
-import { useStartSession } from "../../../../shared/hooks/useInappNotificationSession";
-import { LoginContext } from "../../../../shared/contexts/LoginContext";
+} from './GoalDaysPerWeekStyles';
+import { useStartSession } from '../../../../shared/hooks/useInappNotificationSession';
+import { LoginContext } from '../../../../shared/contexts/LoginContext';
 import {
   InterestsContext,
   InterestsContextValue,
-} from "../../../../shared/contexts/InterestsContext";
+} from '../../../../shared/contexts/InterestsContext';
 import {
   ValueWithCallbacks,
   WritableValueWithCallbacks,
   createWritableValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../../../../shared/lib/Callbacks";
-import { setVWC } from "../../../../shared/lib/setVWC";
-import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
-import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
-import { useErrorModal } from "../../../../shared/hooks/useErrorModal";
-import { Modals, ModalsOutlet } from "../../../../shared/contexts/ModalContext";
-import { apiFetch } from "../../../../shared/lib/apiFetch";
-import { describeError } from "../../../../shared/lib/describeError";
-import { View, Text, TextStyle, StyleProp } from "react-native";
-import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks";
-import { StatusBar } from "expo-status-bar";
-import { FilledInvertedButton } from "../../../../shared/components/FilledInvertedButton";
-import { FilledButton } from "../../../../shared/components/FilledButton";
-import { useTimedValueWithCallbacks } from "../../../../shared/hooks/useTimedValue";
-import { useContentWidth } from "../../../../shared/lib/useContentWidth";
+} from '../../../../shared/lib/Callbacks';
+import { setVWC } from '../../../../shared/lib/setVWC';
+import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
+import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
+import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
+import { Modals, ModalsOutlet } from '../../../../shared/contexts/ModalContext';
+import { apiFetch } from '../../../../shared/lib/apiFetch';
+import { describeError } from '../../../../shared/lib/describeError';
+import { View, Text, TextStyle, StyleProp } from 'react-native';
+import { OsehImageBackgroundFromStateValueWithCallbacks } from '../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks';
+import { StatusBar } from 'expo-status-bar';
+import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
+import { FilledButton } from '../../../../shared/components/FilledButton';
+import { useTimedValueWithCallbacks } from '../../../../shared/hooks/useTimedValue';
+import { useContentWidth } from '../../../../shared/lib/useContentWidth';
 
 export const GoalDaysPerWeek = ({
   state,
@@ -42,11 +42,11 @@ export const GoalDaysPerWeek = ({
   GoalDaysPerWeekResources
 >): ReactElement => {
   useStartSession({
-    type: "callbacks",
+    type: 'callbacks',
     props: () => resources.get().session,
     callbacks: resources.callbacks,
   });
-  const loginContext = useContext(LoginContext);
+  const loginContextRaw = useContext(LoginContext);
   const interests = useContext(InterestsContext);
   const goal = useWritableValueWithCallbacks<number>(() => 3);
   const error = useWritableValueWithCallbacks<ReactElement | null>(() => null);
@@ -94,23 +94,28 @@ export const GoalDaysPerWeek = ({
     if (preventClickBleedthrough.get()) {
       return;
     }
+    const loginRaw = loginContextRaw.value.get();
+    if (loginRaw.state !== 'logged-in') {
+      return;
+    }
+    const login = loginRaw;
 
     const selected = goal.get();
-    resources.get().session?.storeAction?.call(undefined, "set_goal", {
+    resources.get().session?.storeAction?.call(undefined, 'set_goal', {
       days_per_week: selected,
     });
     state.get().ian?.onShown?.call(undefined, true);
     try {
       const response = await apiFetch(
-        "/api/1/users/me/goal",
+        '/api/1/users/me/goal',
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json; charset=utf-8" },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
           body: JSON.stringify({
             days_per_week: selected,
           }),
         },
-        loginContext
+        login
       );
 
       if (!response.ok) {
@@ -123,11 +128,18 @@ export const GoalDaysPerWeek = ({
       const err = await describeError(e);
       setVWC(error, err);
     }
-  }, [state, resources, error, goal, loginContext, preventClickBleedthrough]);
+  }, [
+    state,
+    resources,
+    error,
+    goal,
+    loginContextRaw,
+    preventClickBleedthrough,
+  ]);
 
   const title = useMemo(() => getTitle(interests), [interests]);
   const modals = useWritableValueWithCallbacks<Modals>(() => []);
-  useErrorModal(modals, error, "Set Goal");
+  useErrorModal(modals, error, 'Set Goal');
 
   const contentWidth = useContentWidth();
 
@@ -198,9 +210,9 @@ const getTitle = (interests: InterestsContextValue): ReactElement => {
     </Title>
   );
 
-  if (interests.state !== "loaded") {
+  if (interests.state !== 'loaded') {
     return defaultCopy;
-  } else if (interests.primaryInterest === "sleep") {
+  } else if (interests.primaryInterest === 'sleep') {
     return (
       // eslint-disable-next-line react-native/no-raw-text
       <Title>

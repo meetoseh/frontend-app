@@ -1,18 +1,18 @@
-import { useContext, useEffect, useMemo } from "react";
-import { LoginContext } from "../../../shared/contexts/LoginContext";
-import { useMappedValueWithCallbacks } from "../../../shared/hooks/useMappedValueWithCallbacks";
-import { useWritableValueWithCallbacks } from "../../../shared/lib/Callbacks";
-import { InteractivePrompt } from "../models/InteractivePrompt";
-import { PromptProps } from "../models/PromptProps";
-import { PromptResources } from "../models/PromptResources";
-import { PromptSettings } from "../models/PromptSettings";
-import { useIndexableFakeMove } from "./useIndexableFakeMove";
-import { useJoinLeave } from "./useJoinLeave";
-import { useOnFinished } from "./useOnFinished";
-import { useProfilePictures } from "./useProfilePictures";
-import { usePromptTime } from "./usePromptTime";
-import { useSimpleSelectionHandler } from "./useSimpleSelectionHandler";
-import { useStats } from "./useStats";
+import { useContext, useEffect, useMemo } from 'react';
+import { LoginContext } from '../../../shared/contexts/LoginContext';
+import { useMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValueWithCallbacks';
+import { useWritableValueWithCallbacks } from '../../../shared/lib/Callbacks';
+import { InteractivePrompt } from '../models/InteractivePrompt';
+import { PromptProps } from '../models/PromptProps';
+import { PromptResources } from '../models/PromptResources';
+import { PromptSettings } from '../models/PromptSettings';
+import { useIndexableFakeMove } from './useIndexableFakeMove';
+import { useJoinLeave } from './useJoinLeave';
+import { useOnFinished } from './useOnFinished';
+import { useProfilePictures } from './useProfilePictures';
+import { usePromptTime } from './usePromptTime';
+import { useSimpleSelectionHandler } from './useSimpleSelectionHandler';
+import { useStats } from './useStats';
 
 /**
  * Loads the prompt resources for the prompt with the given settings.
@@ -26,32 +26,32 @@ export const usePromptResources = <P extends InteractivePrompt, R>(
   settings: PromptSettings<P, R>
 ): PromptResources<P, R> => {
   const time = usePromptTime({
-    type: "react-rerender",
+    type: 'react-rerender',
     props: { initialTime: -250, paused: props.paused ?? false },
   });
   const stats = useStats({
     prompt: {
-      type: "react-rerender",
+      type: 'react-rerender',
       props: props.prompt,
     },
     promptTime: {
-      type: "callbacks",
+      type: 'callbacks',
       props: time.get,
       callbacks: time.callbacks,
     },
   });
   const profilePictures = useProfilePictures({
     prompt: {
-      type: "react-rerender",
+      type: 'react-rerender',
       props: props.prompt,
     },
     promptTime: {
-      type: "callbacks",
+      type: 'callbacks',
       props: time.get,
       callbacks: time.callbacks,
     },
     stats: {
-      type: "callbacks",
+      type: 'callbacks',
       props: stats.get,
       callbacks: stats.callbacks,
     },
@@ -87,76 +87,81 @@ export const usePromptResources = <P extends InteractivePrompt, R>(
   }, [selectedValue, props.onResponse]);
   const clientPredictedResponseDistribution = useIndexableFakeMove({
     promptTime: {
-      type: "callbacks",
+      type: 'callbacks',
       props: time.get,
       callbacks: time.callbacks,
     },
     responses: {
-      type: "callbacks",
+      type: 'callbacks',
       props: trueResponseDistribution.get,
       callbacks: trueResponseDistribution.callbacks,
     },
     selection: {
-      type: "callbacks",
+      type: 'callbacks',
       props: selectedIndex.get,
       callbacks: selectedIndex.callbacks,
     },
   });
   const joinLeave = useJoinLeave({
     prompt: {
-      type: "react-rerender",
+      type: 'react-rerender',
       props: props.prompt,
     },
     promptTime: {
-      type: "callbacks",
+      type: 'callbacks',
       props: time.get,
       callbacks: time.callbacks,
     },
   });
   const { onSkip } = useOnFinished({
     joinLeave: {
-      type: "callbacks",
+      type: 'callbacks',
       props: joinLeave.get,
       callbacks: joinLeave.callbacks,
     },
     promptTime: {
-      type: "callbacks",
+      type: 'callbacks',
       props: time.get,
       callbacks: time.callbacks,
     },
     selection: {
-      type: "callbacks",
+      type: 'callbacks',
       props: selectedValue.get,
       callbacks: selectedValue.callbacks,
     },
     onFinished: props.onFinished,
   });
-  const loginContext = useContext(LoginContext);
+  const loginContextRaw = useContext(LoginContext);
   useSimpleSelectionHandler({
     selection: {
-      type: "callbacks",
+      type: 'callbacks',
       props: selectedIndex.get,
       callbacks: selectedIndex.callbacks,
     },
-    prompt: { type: "react-rerender", props: props.prompt },
+    prompt: { type: 'react-rerender', props: props.prompt },
     joinLeave: {
-      type: "callbacks",
+      type: 'callbacks',
       props: joinLeave.get,
       callbacks: joinLeave.callbacks,
     },
     promptTime: {
-      type: "callbacks",
+      type: 'callbacks',
       props: time.get,
       callbacks: time.callbacks,
     },
-    callback: (selected: number | null, time: number) =>
-      settings.storeResponse(
-        loginContext,
+    callback: async (selected: number | null, time: number) => {
+      const loginRaw = loginContextRaw.value.get();
+      if (loginRaw.state !== 'logged-in') {
+        return;
+      }
+      return settings.storeResponse(
+        loginRaw,
         props.prompt,
         time,
         settings.getSelectionFromIndex(props.prompt, selected),
         selected
-      ),
+      );
+    },
   });
 
   props.leavingCallback.current = () => {

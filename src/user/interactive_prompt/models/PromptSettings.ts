@@ -1,4 +1,7 @@
-import { LoginContextValue } from '../../../shared/contexts/LoginContext';
+import {
+  LoginContextValue,
+  LoginContextValueLoggedIn,
+} from '../../../shared/contexts/LoginContext';
 import { InteractivePrompt } from './InteractivePrompt';
 import { Stats } from '../hooks/useStats';
 
@@ -35,7 +38,7 @@ export type PromptSettings<P extends InteractivePrompt, R> = {
    * @returns A promise which resolves when the response is stored successfully
    */
   storeResponse: (
-    loginContext: LoginContextValue,
+    login: LoginContextValueLoggedIn,
     prompt: P,
     time: number,
     response: R,

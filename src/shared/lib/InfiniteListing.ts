@@ -1,14 +1,14 @@
-import { LoginContextValue } from "../contexts/LoginContext";
-import { CancelablePromise } from "./CancelablePromise";
-import { Callbacks } from "./Callbacks";
-import { createCancelablePromiseFromCallbacks } from "./createCancelablePromiseFromCallbacks";
+import { LoginContextValue } from '../contexts/LoginContext';
+import { CancelablePromise } from './CancelablePromise';
+import { Callbacks } from './Callbacks';
+import { createCancelablePromiseFromCallbacks } from './createCancelablePromiseFromCallbacks';
 import {
   CrudFetcherFilter,
   CrudFetcherKeyMap,
   CrudFetcherSort,
   convertUsingKeymap,
-} from "./CrudFetcher";
-import { apiFetch } from "./apiFetch";
+} from './CrudFetcher';
+import { apiFetch } from './apiFetch';
 
 /**
  * When just going through a list of items normally, the api will return
@@ -25,7 +25,7 @@ import { apiFetch } from "./apiFetch";
  */
 export type InfiniteListingSortMaker<T> = (
   item: T,
-  dir: "before" | "after"
+  dir: 'before' | 'after'
 ) => CrudFetcherSort;
 
 /**
@@ -117,7 +117,7 @@ export class NetworkedInfiniteListing<T extends object> {
     initialSort: CrudFetcherSort,
     sortMaker: InfiniteListingSortMaker<T>,
     keyMap: CrudFetcherKeyMap<T> | ((raw: any) => T),
-    getLoginContext: () => LoginContextValue
+    loginContextRaw: LoginContextValue
   ) {
     this.cachedList = new CachedServerList(
       new ServerList(
@@ -127,7 +127,7 @@ export class NetworkedInfiniteListing<T extends object> {
         initialSort,
         sortMaker,
         keyMap,
-        getLoginContext
+        loginContextRaw
       ),
       Math.max(2 * visibleLimit, 2 * loadLimit),
       visibleLimit,
@@ -192,7 +192,7 @@ export class NetworkedInfiniteListing<T extends object> {
         }
       })
       .catch((e) => {
-        if (e !== "Locked") {
+        if (e !== 'Locked') {
           throw e;
         }
       });
@@ -216,7 +216,7 @@ export class NetworkedInfiniteListing<T extends object> {
         }
       })
       .catch((e) => {
-        if (e !== "Locked") {
+        if (e !== 'Locked') {
           throw e;
         }
       });
@@ -235,7 +235,7 @@ export class NetworkedInfiniteListing<T extends object> {
     this.items =
       this.items?.map((item) =>
         isItem(item)
-          ? typeof newItem === "function"
+          ? typeof newItem === 'function'
             ? newItem(item)
             : newItem
           : item
@@ -474,7 +474,7 @@ export class ProceduralInfiniteListing<T extends object> {
     this.items =
       this.items?.map((item) =>
         isItem(item)
-          ? typeof newItem === "function"
+          ? typeof newItem === 'function'
             ? newItem(item)
             : newItem
           : item
@@ -621,7 +621,7 @@ class CachedServerList<T extends object> {
     if (this.locked) {
       return {
         done: () => true,
-        promise: Promise.reject("Locked"),
+        promise: Promise.reject('Locked'),
         cancel: () => {},
       };
     }
@@ -679,7 +679,7 @@ class CachedServerList<T extends object> {
 
     const promise = (async (): Promise<T[] | null> => {
       if (!active) {
-        throw new Error("canceled");
+        throw new Error('canceled');
       }
 
       this._maybeFetchBefore();
@@ -689,7 +689,7 @@ class CachedServerList<T extends object> {
         if (!result.done()) {
           result.cancel();
           throw new Error(
-            "Invariant violation: tryPopAndUnshift() returned !done() despite this.before.length > 0"
+            'Invariant violation: tryPopAndUnshift() returned !done() despite this.before.length > 0'
           );
         }
         return await result.promise;
@@ -712,11 +712,11 @@ class CachedServerList<T extends object> {
         throw e;
       }
       if (!active) {
-        throw new Error("Canceled");
+        throw new Error('Canceled');
       }
       if (!fetchBeforePromise.done()) {
         throw new Error(
-          "Invariant violation: raced canceledPromise and fetchBeforePromise, neither was done"
+          'Invariant violation: raced canceledPromise and fetchBeforePromise, neither was done'
         );
       }
       if (this.before.length === 0) {
@@ -727,7 +727,7 @@ class CachedServerList<T extends object> {
       const result = this.tryPopAndUnshift();
       if (!result.done()) {
         throw new Error(
-          "Invariant violation: tryPopAndUnshift() returned !done() despite this.before.length > 0"
+          'Invariant violation: tryPopAndUnshift() returned !done() despite this.before.length > 0'
         );
       }
       return await result.promise;
@@ -765,7 +765,7 @@ class CachedServerList<T extends object> {
     if (this.locked) {
       return {
         done: () => true,
-        promise: Promise.reject("Locked"),
+        promise: Promise.reject('Locked'),
         cancel: () => {},
       };
     }
@@ -819,7 +819,7 @@ class CachedServerList<T extends object> {
 
     const promise = (async (): Promise<T[] | null> => {
       if (!active) {
-        throw new Error("canceled");
+        throw new Error('canceled');
       }
 
       this._maybeFetchAfter();
@@ -829,7 +829,7 @@ class CachedServerList<T extends object> {
         if (!result.done()) {
           result.cancel();
           throw new Error(
-            "Invariant violation: tryShiftAndPush() returned !done() despite this.after.length > 0"
+            'Invariant violation: tryShiftAndPush() returned !done() despite this.after.length > 0'
           );
         }
         return await result.promise;
@@ -852,11 +852,11 @@ class CachedServerList<T extends object> {
         throw e;
       }
       if (!active) {
-        throw new Error("Canceled");
+        throw new Error('Canceled');
       }
       if (!fetchAfterPromise.done()) {
         throw new Error(
-          "Invariant violation: raced canceledPromise and fetchAfterPromise, neither was done"
+          'Invariant violation: raced canceledPromise and fetchAfterPromise, neither was done'
         );
       }
       if (this.after.length === 0) {
@@ -867,7 +867,7 @@ class CachedServerList<T extends object> {
       const result = this.tryShiftAndPush();
       if (!result.done()) {
         throw new Error(
-          "Invariant violation: tryShiftAndPush() returned !done() despite this.after.length > 0"
+          'Invariant violation: tryShiftAndPush() returned !done() despite this.after.length > 0'
         );
       }
       return await result.promise;
@@ -898,7 +898,7 @@ class CachedServerList<T extends object> {
 
     if (this.locked) {
       return {
-        promise: Promise.reject(new Error("Cannot reset while locked")),
+        promise: Promise.reject(new Error('Cannot reset while locked')),
         cancel: () => {},
         done: () => true,
       };
@@ -928,7 +928,7 @@ class CachedServerList<T extends object> {
         const response = await firstPage.promise;
         cancelers.remove(firstPage.cancel);
         if (!active) {
-          throw new Error("Canceled");
+          throw new Error('Canceled');
         }
 
         this.visible = response.items.slice(0, this.pageSize);
@@ -943,7 +943,7 @@ class CachedServerList<T extends object> {
           const response = await nextPage.promise;
           cancelers.remove(nextPage.cancel);
           if (!active) {
-            throw new Error("Canceled");
+            throw new Error('Canceled');
           }
 
           const numForVisible = Math.min(
@@ -960,7 +960,7 @@ class CachedServerList<T extends object> {
         return this.visible;
       } catch (e) {
         if (!active) {
-          throw new Error("Canceled");
+          throw new Error('Canceled');
         }
 
         active = false;
@@ -989,7 +989,7 @@ class CachedServerList<T extends object> {
     for (let arr of [this.before, this.visible, this.after]) {
       for (let i = 0; i < arr.length; i++) {
         if (isItem(arr[i])) {
-          arr[i] = typeof newItem === "function" ? newItem(arr[i]) : newItem;
+          arr[i] = typeof newItem === 'function' ? newItem(arr[i]) : newItem;
         }
       }
     }
@@ -1026,7 +1026,7 @@ class CachedServerList<T extends object> {
     };
     const promise = (async (): Promise<void> => {
       if (!active) {
-        throw new Error("Canceled");
+        throw new Error('Canceled');
       }
 
       const fetchBefore = this.serverList.loadBefore(
@@ -1042,11 +1042,11 @@ class CachedServerList<T extends object> {
         throw e;
       }
       if (!active) {
-        throw new Error("Canceled");
+        throw new Error('Canceled');
       }
       if (!fetchBefore.done()) {
         throw new Error(
-          "Invariant violation: raced canceledPromise and fetchBefore, neither was done"
+          'Invariant violation: raced canceledPromise and fetchBefore, neither was done'
         );
       }
       canceledPromise.cancel();
@@ -1054,7 +1054,7 @@ class CachedServerList<T extends object> {
 
       const result = await fetchBefore.promise;
       if (!active) {
-        throw new Error("Canceled");
+        throw new Error('Canceled');
       }
 
       this.before.push(...result.items);
@@ -1103,7 +1103,7 @@ class CachedServerList<T extends object> {
     };
     const promise = (async (): Promise<void> => {
       if (!active) {
-        throw new Error("Canceled");
+        throw new Error('Canceled');
       }
 
       const fetchAfter = this.serverList.loadAfter(
@@ -1120,11 +1120,11 @@ class CachedServerList<T extends object> {
         throw e;
       }
       if (!active) {
-        throw new Error("Canceled");
+        throw new Error('Canceled');
       }
       if (!fetchAfter.done()) {
         throw new Error(
-          "Invariant violation: raced canceledPromise and fetchAfter, neither was done."
+          'Invariant violation: raced canceledPromise and fetchAfter, neither was done.'
         );
       }
       canceledPromise.cancel();
@@ -1132,7 +1132,7 @@ class CachedServerList<T extends object> {
 
       const result = await fetchAfter.promise;
       if (!active) {
-        throw new Error("Canceled");
+        throw new Error('Canceled');
       }
 
       this.after.push(...result.items);
@@ -1235,20 +1235,10 @@ class ServerList<T> {
    */
   private readonly keyMap: CrudFetcherKeyMap<T> | ((raw: any) => T);
   /**
-   * A function which fetches the current login context. Within a react context
-   * this wouldn't need to be a function, but to adapt it into this class the
-   * following pattern would normally be used:
-   *
-   * ```ts
-   * const Component = () => {
-   *   const loginContext = useContext(LoginContext);
-   *   const loginContextRef = useRef(loginContext);
-   *   loginContextRef.current = loginContext;
-   *   const getLoginContext = useCallback(() => loginContextRef.current, []);
-   * }
-   * ```
+   * The value provided from useContext(LoginContext), which never updates,
+   * hence is not an issue to use as a dependency.
    */
-  private readonly getLoginContext: () => LoginContextValue;
+  private readonly loginContextRaw: LoginContextValue;
 
   constructor(
     endpoint: string,
@@ -1257,7 +1247,7 @@ class ServerList<T> {
     initialSort: CrudFetcherSort,
     sortMaker: InfiniteListingSortMaker<T>,
     keyMap: CrudFetcherKeyMap<T> | ((raw: any) => T),
-    getLoginContext: () => LoginContextValue
+    loginContextRaw: LoginContextValue
   ) {
     this.endpoint = endpoint;
     this.limit = limit;
@@ -1265,7 +1255,7 @@ class ServerList<T> {
     this.initialSort = initialSort;
     this.sortMaker = sortMaker;
     this.keyMap = keyMap;
-    this.getLoginContext = getLoginContext;
+    this.loginContextRaw = loginContextRaw;
   }
 
   private loadWithSort(
@@ -1288,21 +1278,21 @@ class ServerList<T> {
     const promise = (async (): Promise<ServerListResponse<T>> => {
       if (!active) {
         active = false;
-        throw new Error("Promise cancelled");
+        throw new Error('Promise cancelled');
       }
 
-      const loginContext = this.getLoginContext.call(undefined);
-      if (loginContext.state === "loading") {
+      const loginContext = this.loginContextRaw.value.get();
+      if (loginContext.state === 'loading') {
         active = false;
-        throw new Error("LoginContext still loading");
+        throw new Error('LoginContext still loading');
       }
 
       const response = await apiFetch(
         this.endpoint,
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json; charset=utf-8",
+            'Content-Type': 'application/json; charset=utf-8',
           },
           body: JSON.stringify({
             filters: this.filter,
@@ -1311,11 +1301,11 @@ class ServerList<T> {
           }),
           ...(signal === undefined ? {} : { signal }),
         },
-        loginContext
+        loginContext.state === 'logged-in' ? loginContext : null
       );
       if (!active) {
         active = false;
-        throw new Error("Promise cancelled");
+        throw new Error('Promise cancelled');
       }
       if (!response.ok) {
         active = false;
@@ -1325,11 +1315,11 @@ class ServerList<T> {
         await response.json();
       if (!active) {
         active = false;
-        throw new Error("Promise cancelled");
+        throw new Error('Promise cancelled');
       }
       const keyMap = this.keyMap;
       const items =
-        typeof keyMap === "function"
+        typeof keyMap === 'function'
           ? data.items.map((i) => keyMap.call(undefined, i))
           : data.items.map((i) => convertUsingKeymap(i, keyMap));
 
@@ -1379,7 +1369,7 @@ class ServerList<T> {
    * @returns A cancelable promise for the items before the given item
    */
   loadBefore(item: T): CancelablePromise<ServerListResponse<T>> {
-    return this.loadWithSort(this.sortMaker.call(undefined, item, "before"));
+    return this.loadWithSort(this.sortMaker.call(undefined, item, 'before'));
   }
 
   /**
@@ -1398,6 +1388,6 @@ class ServerList<T> {
    * @returns A cancelable promise for the items after the given item
    */
   loadAfter(item: T): CancelablePromise<ServerListResponse<T>> {
-    return this.loadWithSort(this.sortMaker.call(undefined, item, "after"));
+    return this.loadWithSort(this.sortMaker.call(undefined, item, 'after'));
   }
 }

@@ -1,15 +1,17 @@
 import {
   ReactElement,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
   useRef,
   useState,
-} from "react";
-import { LoginContext } from "../contexts/LoginContext";
-import { apiFetch } from "../lib/apiFetch";
-import { Platform } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+} from 'react';
+import { LoginContext } from '../contexts/LoginContext';
+import { apiFetch } from '../lib/apiFetch';
+import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useValueWithCallbacksEffect } from './useValueWithCallbacksEffect';
 
 /**
  * The user associated with a visitor
@@ -80,7 +82,7 @@ export type Visitor = VisitorLoading | VisitorLoaded;
  * @returns The visitor, or null if it does not exist.
  */
 export const loadVisitorFromStore = async (): Promise<StoredVisitor | null> => {
-  const storedVisitorRaw = await AsyncStorage.getItem("visitor");
+  const storedVisitorRaw = await AsyncStorage.getItem('visitor');
   return storedVisitorRaw === null
     ? null
     : (JSON.parse(storedVisitorRaw) as StoredVisitor);
@@ -97,14 +99,14 @@ export const writeVisitorToStore = async (
 ): Promise<void> => {
   if (visitor === null) {
     try {
-      await AsyncStorage.removeItem("visitor");
+      await AsyncStorage.removeItem('visitor');
     } catch (e) {
-      console.error("error removing visitor from store: ", e);
+      console.error('error removing visitor from store: ', e);
     }
     return;
   }
 
-  await AsyncStorage.setItem("visitor", JSON.stringify(visitor));
+  await AsyncStorage.setItem('visitor', JSON.stringify(visitor));
 };
 
 /**
@@ -113,7 +115,7 @@ export const writeVisitorToStore = async (
  * only be included once per page.
  */
 export const useVisitor = (): Visitor => {
-  const loginContext = useContext(LoginContext);
+  const loginContextRaw = useContext(LoginContext);
   const [loading, setLoading] = useState(true);
   const guard = useRef<Promise<void> | null>(null);
   const [visitorUID, setVisitorUID] = useState<string | null>(null);
@@ -122,147 +124,159 @@ export const useVisitor = (): Visitor => {
   );
   const [visitorCounter, setVisitorCounter] = useState(0);
 
-  useEffect(() => {
-    if (loginContext.state === "loading") {
-      return;
-    }
-
-    let active = true;
-    takeLockAndHandleVisitor();
-    return () => {
-      active = false;
-    };
-
-    async function handleVisitor() {
-      const storedVisitor = await loadVisitorFromStore();
-
-      const currentUserSub = loginContext.userAttributes?.sub ?? null;
-      const utm = (() => {
-        const res = getUTMFromURL();
-        if (
-          res !== null &&
-          handledUTM.current !== null &&
-          areUTMsEqual(handledUTM.current.utm, res) &&
-          handledUTM.current.visitorUID === storedVisitor?.uid
-        ) {
-          return null;
+  useValueWithCallbacksEffect(
+    loginContextRaw.value,
+    useCallback(
+      (loginRaw) => {
+        if (loginRaw.state === 'loading') {
+          return;
         }
-        return res;
-      })();
+        const login = loginRaw;
 
-      const minTime = Date.now() - 1000 * 60 * 60 * 24;
-
-      let newVisitor: StoredVisitor | null = null;
-
-      if (storedVisitor === null && currentUserSub === null && utm === null) {
-        const response = await apiFetch(
-          "/api/1/visitors/?source=" + Platform.OS,
-          { method: "POST" },
-          null
-        );
-        if (!response.ok) {
-          throw response;
-        }
-
-        const data = await response.json();
-        newVisitor = { uid: data.uid, user: null };
-      } else if (
-        currentUserSub !== null &&
-        utm === null &&
-        (storedVisitor?.user?.sub !== currentUserSub ||
-          (storedVisitor?.user?.time ?? 0) < minTime)
-      ) {
-        const response = await apiFetch(
-          "/api/1/visitors/users?source=" + Platform.OS,
-          {
-            method: "POST",
-            headers:
-              storedVisitor === null ? {} : { Visitor: storedVisitor.uid },
-          },
-          loginContext
-        );
-        if (!response.ok) {
-          throw response;
-        }
-
-        const data = await response.json();
-        newVisitor = {
-          uid: data.uid,
-          user: { sub: currentUserSub, time: Date.now() },
+        let active = true;
+        takeLockAndHandleVisitor();
+        return () => {
+          active = false;
         };
-      } else if (utm !== null) {
-        const response = await apiFetch(
-          "/api/1/visitors/utms?source=" + Platform.OS,
-          {
-            method: "POST",
-            headers: Object.assign(
-              (storedVisitor === null
-                ? {}
-                : { Visitor: storedVisitor.uid }) as {
-                [key: string]: string;
-              },
+
+        async function handleVisitor() {
+          const storedVisitor = await loadVisitorFromStore();
+
+          const currentUserSub =
+            login.state === 'logged-in' ? login.userAttributes.sub : null;
+          const utm = (() => {
+            const res = getUTMFromURL();
+            if (
+              res !== null &&
+              handledUTM.current !== null &&
+              areUTMsEqual(handledUTM.current.utm, res) &&
+              handledUTM.current.visitorUID === storedVisitor?.uid
+            ) {
+              return null;
+            }
+            return res;
+          })();
+
+          const minTime = Date.now() - 1000 * 60 * 60 * 24;
+
+          let newVisitor: StoredVisitor | null = null;
+
+          if (
+            storedVisitor === null &&
+            currentUserSub === null &&
+            utm === null
+          ) {
+            const response = await apiFetch(
+              '/api/1/visitors/?source=' + Platform.OS,
+              { method: 'POST' },
+              null
+            );
+            if (!response.ok) {
+              throw response;
+            }
+
+            const data = await response.json();
+            newVisitor = { uid: data.uid, user: null };
+          } else if (
+            currentUserSub !== null &&
+            utm === null &&
+            (storedVisitor?.user?.sub !== currentUserSub ||
+              (storedVisitor?.user?.time ?? 0) < minTime)
+          ) {
+            const response = await apiFetch(
+              '/api/1/visitors/users?source=' + Platform.OS,
               {
-                "Content-Type": "application/json; charset=utf-8",
-              } as { [key: string]: string }
-            ),
-            body: JSON.stringify({
-              utm_source: utm.source,
-              utm_medium: utm.medium,
-              utm_campaign: utm.campaign,
-              utm_content: utm.content,
-              utm_term: utm.term,
-            }),
-          },
-          loginContext
-        );
-        if (!response.ok) {
-          throw response;
+                method: 'POST',
+                headers:
+                  storedVisitor === null ? {} : { Visitor: storedVisitor.uid },
+              },
+              login.state === 'logged-in' ? login : null
+            );
+            if (!response.ok) {
+              throw response;
+            }
+
+            const data = await response.json();
+            newVisitor = {
+              uid: data.uid,
+              user: { sub: currentUserSub, time: Date.now() },
+            };
+          } else if (utm !== null) {
+            const response = await apiFetch(
+              '/api/1/visitors/utms?source=' + Platform.OS,
+              {
+                method: 'POST',
+                headers: Object.assign(
+                  (storedVisitor === null
+                    ? {}
+                    : { Visitor: storedVisitor.uid }) as {
+                    [key: string]: string;
+                  },
+                  {
+                    'Content-Type': 'application/json; charset=utf-8',
+                  } as { [key: string]: string }
+                ),
+                body: JSON.stringify({
+                  utm_source: utm.source,
+                  utm_medium: utm.medium,
+                  utm_campaign: utm.campaign,
+                  utm_content: utm.content,
+                  utm_term: utm.term,
+                }),
+              },
+              login.state === 'logged-in' ? login : null
+            );
+            if (!response.ok) {
+              throw response;
+            }
+
+            const data = await response.json();
+            newVisitor = {
+              uid: data.uid,
+              user:
+                currentUserSub === null
+                  ? null
+                  : { sub: currentUserSub, time: Date.now() },
+            };
+            handledUTM.current = { utm, visitorUID: newVisitor.uid };
+          }
+
+          if (newVisitor !== null) {
+            await writeVisitorToStore(newVisitor);
+            setVisitorUID(newVisitor.uid);
+          } else if (storedVisitor !== null) {
+            setVisitorUID(storedVisitor.uid);
+          }
         }
 
-        const data = await response.json();
-        newVisitor = {
-          uid: data.uid,
-          user:
-            currentUserSub === null
-              ? null
-              : { sub: currentUserSub, time: Date.now() },
-        };
-        handledUTM.current = { utm, visitorUID: newVisitor.uid };
-      }
+        async function takeLockAndHandleVisitor() {
+          setLoading(true);
+          while (guard.current !== null) {
+            try {
+              await guard.current;
+            } catch (e) {
+              console.error('handling visitor error (1): ', e);
+            }
+          }
 
-      if (newVisitor !== null) {
-        await writeVisitorToStore(newVisitor);
-        setVisitorUID(newVisitor.uid);
-      } else if (storedVisitor !== null) {
-        setVisitorUID(storedVisitor.uid);
-      }
-    }
-
-    async function takeLockAndHandleVisitor() {
-      setLoading(true);
-      while (guard.current !== null) {
-        try {
-          await guard.current;
-        } catch (e) {
-          console.error("handling visitor error (1): ", e);
+          guard.current = Promise.resolve();
+          (async () => {
+            guard.current = handleVisitor();
+            try {
+              await guard.current;
+            } catch (e) {
+              console.error('handling visitor error (2): ', e);
+            }
+            guard.current = null;
+            if (active) {
+              setLoading(false);
+            }
+          })();
         }
-      }
-
-      guard.current = Promise.resolve();
-      (async () => {
-        guard.current = handleVisitor();
-        try {
-          await guard.current;
-        } catch (e) {
-          console.error("handling visitor error (2): ", e);
-        }
-        guard.current = null;
-        if (active) {
-          setLoading(false);
-        }
-      })();
-    }
-  }, [loginContext, visitorCounter]);
+      },
+      [visitorCounter]
+    )
+  );
 
   return useMemo(
     () =>

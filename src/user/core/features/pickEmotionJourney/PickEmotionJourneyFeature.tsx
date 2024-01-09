@@ -5,36 +5,36 @@ import {
   useContext,
   useEffect,
   useRef,
-} from "react";
-import { Feature } from "../../models/Feature";
-import { PickEmotionJourneyResources } from "./PickEmotionJourneyResources";
-import { PickEmotionJourneyState } from "./PickEmotionJourneyState";
-import { LoginContext } from "../../../../shared/contexts/LoginContext";
+} from 'react';
+import { Feature } from '../../models/Feature';
+import { PickEmotionJourneyResources } from './PickEmotionJourneyResources';
+import { PickEmotionJourneyState } from './PickEmotionJourneyState';
+import { LoginContext } from '../../../../shared/contexts/LoginContext';
 import {
   JourneyRef,
   journeyRefKeyMap,
-} from "../../../journey/models/JourneyRef";
-import { useJourneyShared } from "../../../journey/hooks/useJourneyShared";
-import { Emotion } from "./Emotion";
-import { useWindowSizeValueWithCallbacks } from "../../../../shared/hooks/useWindowSize";
-import { PickEmotionJourney } from "./PickEmotionJourney";
-import { useOsehImageStateRequestHandler } from "../../../../shared/images/useOsehImageStateRequestHandler";
-import { OsehImageState } from "../../../../shared/images/OsehImageState";
-import { OsehImageRef } from "../../../../shared/images/OsehImageRef";
-import { useMyProfilePictureStateValueWithCallbacks } from "../../../../shared/hooks/useMyProfilePicture";
+} from '../../../journey/models/JourneyRef';
+import { useJourneyShared } from '../../../journey/hooks/useJourneyShared';
+import { Emotion } from './Emotion';
+import { useWindowSizeValueWithCallbacks } from '../../../../shared/hooks/useWindowSize';
+import { PickEmotionJourney } from './PickEmotionJourney';
+import { useOsehImageStateRequestHandler } from '../../../../shared/images/useOsehImageStateRequestHandler';
+import { OsehImageState } from '../../../../shared/images/OsehImageState';
+import { OsehImageRef } from '../../../../shared/images/OsehImageRef';
+import { useMyProfilePictureStateValueWithCallbacks } from '../../../../shared/hooks/useMyProfilePicture';
 import {
   Callbacks,
   useWritableValueWithCallbacks,
-} from "../../../../shared/lib/Callbacks";
-import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMappedValuesWithCallbacks";
-import { useReactManagedValueAsValueWithCallbacks } from "../../../../shared/hooks/useReactManagedValueAsValueWithCallbacks";
-import { useOsehImageStateValueWithCallbacks } from "../../../../shared/images/useOsehImageStateValueWithCallbacks";
-import { OsehImageProps } from "../../../../shared/images/OsehImageProps";
-import { apiFetch } from "../../../../shared/lib/apiFetch";
-import { describeError } from "../../../../shared/lib/describeError";
-import { convertUsingKeymap } from "../../../../shared/lib/CrudFetcher";
-import { useLogoutHandler } from "../../../../shared/hooks/useLogoutHandler";
-import { setVWC } from "../../../../shared/lib/setVWC";
+} from '../../../../shared/lib/Callbacks';
+import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
+import { useReactManagedValueAsValueWithCallbacks } from '../../../../shared/hooks/useReactManagedValueAsValueWithCallbacks';
+import { useOsehImageStateValueWithCallbacks } from '../../../../shared/images/useOsehImageStateValueWithCallbacks';
+import { OsehImageProps } from '../../../../shared/images/OsehImageProps';
+import { apiFetch } from '../../../../shared/lib/apiFetch';
+import { describeError } from '../../../../shared/lib/describeError';
+import { convertUsingKeymap } from '../../../../shared/lib/CrudFetcher';
+import { useLogoutHandler } from '../../../../shared/hooks/useLogoutHandler';
+import { setVWC } from '../../../../shared/lib/setVWC';
 
 type Selected = {
   word: Emotion;
@@ -50,7 +50,7 @@ export const PickEmotionJourneyFeature: Feature<
   PickEmotionJourneyState,
   PickEmotionJourneyResources
 > = {
-  identifier: "pickEmotionJourney",
+  identifier: 'pickEmotionJourney',
   useWorldState: () => {
     const classesTakenThisSessionVWC = useWritableValueWithCallbacks<number>(
       () => 0
@@ -68,7 +68,7 @@ export const PickEmotionJourneyFeature: Feature<
       (words: Emotion[]) => {
         const now = new Date();
         const uid =
-          "osehc_words_" +
+          'osehc_words_' +
           Math.random().toString(36).substring(2) +
           now.getTime().toString(36);
         recentlyViewedVWC.set(
@@ -96,7 +96,7 @@ export const PickEmotionJourneyFeature: Feature<
           if (r.clientUid === clientUid) {
             const newSelected = r.words.find((w) => w.word === selected.word);
             if (newSelected === undefined) {
-              throw new Error("Selected emotion not found in words");
+              throw new Error('Selected emotion not found in words');
             }
             result.push({ ...r, selected: newSelected });
           } else {
@@ -143,7 +143,6 @@ export const PickEmotionJourneyFeature: Feature<
     );
   },
   useResources: (stateVWC, requiredVWC, allStatesVWC) => {
-    const loginContext = useContext(LoginContext);
     const optionsVWC = useWritableValueWithCallbacks<{
       clientUid: string;
       words: Emotion[];
@@ -152,7 +151,7 @@ export const PickEmotionJourneyFeature: Feature<
       () => null
     );
     const journeySharedVWC = useJourneyShared({
-      type: "callbacks",
+      type: 'callbacks',
       props: () => selectedVWC.get()?.journey ?? null,
       callbacks: selectedVWC.callbacks,
     });
@@ -168,38 +167,39 @@ export const PickEmotionJourneyFeature: Feature<
       [requiredVWC, windowSizeVWC],
       (): OsehImageProps => {
         return {
-          uid: requiredVWC.get() ? "oseh_if_0ykGW_WatP5-mh-0HRsrNw" : null,
+          uid: requiredVWC.get() ? 'oseh_if_0ykGW_WatP5-mh-0HRsrNw' : null,
           jwt: null,
           displayWidth: windowSizeVWC.get().width,
           displayHeight: windowSizeVWC.get().height,
-          alt: "",
+          alt: '',
           isPublic: true,
         };
       }
     );
     const backgroundVWC = useOsehImageStateValueWithCallbacks(
       {
-        type: "callbacks",
+        type: 'callbacks',
         props: () => backgroundPropsVWC.get(),
         callbacks: backgroundPropsVWC.callbacks,
       },
       images
     );
     const loginContextRaw = useContext(LoginContext);
-    const loginContextVWC =
-      useReactManagedValueAsValueWithCallbacks(loginContextRaw);
     const profilePictureProps = useMappedValuesWithCallbacks(
-      [requiredVWC, loginContextVWC],
-      () => ({
-        loginContext: loginContextVWC.get(),
-        displayWidth: 45,
-        displayHeight: 45,
-        handler: images,
-        load: requiredVWC.get(),
-      })
+      [requiredVWC, loginContextRaw.value],
+      () => {
+        const loginRaw = loginContextRaw.value.get();
+        return {
+          loginContext: loginRaw.state === 'logged-in' ? loginRaw : null,
+          displayWidth: 45,
+          displayHeight: 45,
+          handler: images,
+          load: requiredVWC.get(),
+        };
+      }
     );
     const profilePictureVWC = useMyProfilePictureStateValueWithCallbacks({
-      type: "callbacks",
+      type: 'callbacks',
       props: () => profilePictureProps.get(),
       callbacks: profilePictureProps.callbacks,
     });
@@ -218,9 +218,11 @@ export const PickEmotionJourneyFeature: Feature<
     useEffect(() => {
       let cleanup: (() => void) | null = null;
       reloadEmotions.current.add(handlePropsChanged);
+      loginContextRaw.value.callbacks.add(handlePropsChanged);
       handlePropsChanged();
       return () => {
         reloadEmotions.current.remove(handlePropsChanged);
+        loginContextRaw.value.callbacks.remove(handlePropsChanged);
         if (cleanup !== null) {
           cleanup();
           cleanup = null;
@@ -228,6 +230,12 @@ export const PickEmotionJourneyFeature: Feature<
       };
 
       function handleProps(): () => void {
+        const loginRaw = loginContextRaw.value.get();
+        if (loginRaw.state !== 'logged-in') {
+          return () => {};
+        }
+        const login = loginRaw;
+
         let active = true;
         fetchOptions();
         return () => {
@@ -242,10 +250,10 @@ export const PickEmotionJourneyFeature: Feature<
 
           const now = new Date();
           const response = await apiFetch(
-            "/api/1/emotions/personalized",
+            '/api/1/emotions/personalized',
             {
-              method: "POST",
-              headers: { "Content-Type": "application/json; charset=utf-8" },
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json; charset=utf-8' },
               body: JSON.stringify({
                 recently_seen: stateVWC
                   .get()
@@ -258,7 +266,7 @@ export const PickEmotionJourneyFeature: Feature<
                 num_emotions: 12,
               }),
             },
-            loginContext
+            login
           );
 
           if (!response.ok) {
@@ -275,10 +283,6 @@ export const PickEmotionJourneyFeature: Feature<
         }
 
         async function fetchOptions() {
-          if (loginContext.state !== "logged-in") {
-            return;
-          }
-
           try {
             await fetchOptionsInner();
             if (errorVWC.get() !== null) {
@@ -305,7 +309,7 @@ export const PickEmotionJourneyFeature: Feature<
 
         cleanup = handleProps();
       }
-    }, [errorVWC, loginContext, optionsVWC, stateVWC, selectedVWC]);
+    }, [errorVWC, loginContextRaw, optionsVWC, stateVWC, selectedVWC]);
 
     const onSelect = useCallback(
       async (
@@ -315,13 +319,15 @@ export const PickEmotionJourneyFeature: Feature<
       ) => {
         const options = optionsVWC.get();
         const selected = selectedVWC.get();
+        const loginRaw = loginContextRaw.value.get();
         if (
           options === null ||
           !options.words.some((w) => w === word) ||
-          loginContext.state !== "logged-in"
+          loginRaw.state !== 'logged-in'
         ) {
           return;
         }
+        const login = loginRaw;
 
         if (replacedEmotionUserUid === undefined) {
           if (selected === null) {
@@ -333,16 +339,16 @@ export const PickEmotionJourneyFeature: Feature<
 
         try {
           const response = await apiFetch(
-            "/api/1/emotions/start_related_journey",
+            '/api/1/emotions/start_related_journey',
             {
-              method: "POST",
-              headers: { "Content-Type": "application/json; charset=utf-8" },
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json; charset=utf-8' },
               body: JSON.stringify({
                 emotion: word.word,
                 replaced_emotion_user_uid: replacedEmotionUserUid,
               }),
             },
-            loginContext
+            login
           );
 
           if (!response.ok) {
@@ -372,7 +378,7 @@ export const PickEmotionJourneyFeature: Feature<
           errorVWC.callbacks.call(undefined);
         }
       },
-      [loginContext, errorVWC, optionsVWC, selectedVWC]
+      [loginContextRaw, errorVWC, optionsVWC, selectedVWC]
     );
 
     useEffect(() => {
@@ -406,8 +412,8 @@ export const PickEmotionJourneyFeature: Feature<
             jwt: ref.jwt,
             displayWidth: 38,
             displayHeight: 38,
-            alt: "",
-            placeholderColor: "#cccccc",
+            alt: '',
+            placeholderColor: '#cccccc',
           })
         );
         for (const r of requests) {
@@ -518,7 +524,7 @@ export const PickEmotionJourneyFeature: Feature<
             error === null &&
             (options === null ||
               background.loading ||
-              profilePicture.state === "loading" ||
+              profilePicture.state === 'loading' ||
               (profilePicture.image !== null && profilePicture.image.loading)),
           error: error,
           profilePicture: profilePicture,

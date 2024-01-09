@@ -1,24 +1,24 @@
-import { ReactElement, useCallback, useContext, useMemo, useRef } from "react";
-import { JourneyRef, journeyRefKeyMap } from "../../journey/models/JourneyRef";
-import { LoginContext } from "../../../shared/contexts/LoginContext";
-import { OsehImageStateRequestHandler } from "../../../shared/images/useOsehImageStateRequestHandler";
+import { ReactElement, useCallback, useContext, useMemo, useRef } from 'react';
+import { JourneyRef, journeyRefKeyMap } from '../../journey/models/JourneyRef';
+import { LoginContext } from '../../../shared/contexts/LoginContext';
+import { OsehImageStateRequestHandler } from '../../../shared/images/useOsehImageStateRequestHandler';
 import {
   InfiniteListing,
   NetworkedInfiniteListing,
-} from "../../../shared/lib/InfiniteListing";
-import { MinimalJourney, minimalJourneyKeyMap } from "../lib/MinimalJourney";
-import { HistoryItem } from "./HistoryItem";
-import { styles } from "./FavoritesSharedStyles";
-import { InfiniteList } from "../../../shared/components/InfiniteList";
+} from '../../../shared/lib/InfiniteListing';
+import { MinimalJourney, minimalJourneyKeyMap } from '../lib/MinimalJourney';
+import { HistoryItem } from './HistoryItem';
+import { styles } from './FavoritesSharedStyles';
+import { InfiniteList } from '../../../shared/components/InfiniteList';
 import {
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../../../shared/lib/Callbacks";
-import { RenderGuardedComponent } from "../../../shared/components/RenderGuardedComponent";
-import { apiFetch } from "../../../shared/lib/apiFetch";
-import { useWindowSize } from "../../../shared/hooks/useWindowSize";
-import { convertUsingKeymap } from "../../../shared/lib/CrudFetcher";
-import { View, Text } from "react-native";
+} from '../../../shared/lib/Callbacks';
+import { RenderGuardedComponent } from '../../../shared/components/RenderGuardedComponent';
+import { apiFetch } from '../../../shared/lib/apiFetch';
+import { useWindowSize } from '../../../shared/hooks/useWindowSize';
+import { convertUsingKeymap } from '../../../shared/lib/CrudFetcher';
+import { View, Text } from 'react-native';
 
 export type FavoritesListProps = {
   /**
@@ -49,34 +49,32 @@ export const FavoritesList = ({
   listHeight,
   imageHandler,
 }: FavoritesListProps): ReactElement => {
-  const loginContext = useContext(LoginContext);
-  const loginContextRef = useRef(loginContext);
-  loginContextRef.current = loginContext;
+  const loginContextRaw = useContext(LoginContext);
   const windowSize = useWindowSize();
 
   const infiniteListing = useMemo<InfiniteListing<MinimalJourney>>(() => {
     const numVisible = Math.ceil(listHeight.get() / 85) * 25;
     const result = new NetworkedInfiniteListing<MinimalJourney>(
-      "/api/1/users/me/search_history",
+      '/api/1/users/me/search_history',
       Math.min(numVisible * 2 + 10, 150),
       numVisible,
       10,
       {
         liked_at: {
-          operator: "neq",
+          operator: 'neq',
           value: null,
         },
       },
       [
         {
-          key: "liked_at",
-          dir: "desc",
+          key: 'liked_at',
+          dir: 'desc',
           before: null,
           after: null,
         },
         {
-          key: "uid",
-          dir: "asc",
+          key: 'uid',
+          dir: 'asc',
           before: null,
           after: null,
         },
@@ -84,21 +82,21 @@ export const FavoritesList = ({
       (item, dir) => {
         return [
           {
-            key: "liked_at",
-            dir: dir === "before" ? "asc" : "desc",
+            key: 'liked_at',
+            dir: dir === 'before' ? 'asc' : 'desc',
             before: null,
             after: item.likedAt === null ? null : item.likedAt.getTime() / 1000,
           },
           {
-            key: "uid",
-            dir: dir === "before" ? "desc" : "asc",
+            key: 'uid',
+            dir: dir === 'before' ? 'desc' : 'asc',
             before: null,
             after: item.uid,
           },
         ];
       },
       minimalJourneyKeyMap,
-      () => loginContextRef.current
+      loginContextRaw
     );
     result.reset();
     return result;
@@ -110,18 +108,20 @@ export const FavoritesList = ({
       if (loading.current) {
         return;
       }
-      if (loginContext.state !== "logged-in") {
+      const loginContextUnch = loginContextRaw.value.get();
+      if (loginContextUnch.state !== 'logged-in') {
         return;
       }
+      const loginContext = loginContextUnch;
 
       loading.current = true;
       try {
         const response = await apiFetch(
-          "/api/1/users/me/start_journey_from_history",
+          '/api/1/users/me/start_journey_from_history',
           {
-            method: "POST",
+            method: 'POST',
             headers: {
-              "Content-Type": "application/json; charset=utf-8",
+              'Content-Type': 'application/json; charset=utf-8',
             },
             body: JSON.stringify({
               journey_uid: uid,
@@ -131,7 +131,7 @@ export const FavoritesList = ({
         );
         if (!response.ok) {
           console.log(
-            "failed to start journey from history:",
+            'failed to start journey from history:',
             response.status,
             await response.text()
           );
@@ -144,7 +144,7 @@ export const FavoritesList = ({
         loading.current = false;
       }
     },
-    [loginContext, showJourney]
+    [loginContextRaw, showJourney]
   );
 
   const boundComponent = useMemo<

@@ -1,15 +1,15 @@
-import { ReactElement, useCallback, useContext, useRef } from "react";
-import { LoginContext } from "../../../shared/contexts/LoginContext";
-import { JourneyScreenProps } from "../models/JourneyScreenProps";
-import { styles } from "./JourneyLobbyScreenStyles";
-import { JourneyPrompt } from "../components/JourneyPrompt";
-import { useMappedValueWithCallbacks } from "../../../shared/hooks/useMappedValueWithCallbacks";
-import { View } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { CloseButton } from "../../../shared/components/CloseButton";
-import { OsehImageBackgroundFromStateValueWithCallbacks } from "../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks";
-import { useTopBarHeight } from "../../../shared/hooks/useTopBarHeight";
-import { useIsEffectivelyTinyScreen } from "../../../shared/hooks/useIsEffectivelyTinyScreen";
+import { ReactElement, useCallback, useContext, useRef } from 'react';
+import { LoginContext } from '../../../shared/contexts/LoginContext';
+import { JourneyScreenProps } from '../models/JourneyScreenProps';
+import { styles } from './JourneyLobbyScreenStyles';
+import { JourneyPrompt } from '../components/JourneyPrompt';
+import { useMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValueWithCallbacks';
+import { View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { CloseButton } from '../../../shared/components/CloseButton';
+import { OsehImageBackgroundFromStateValueWithCallbacks } from '../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks';
+import { useTopBarHeight } from '../../../shared/hooks/useTopBarHeight';
+import { useIsEffectivelyTinyScreen } from '../../../shared/hooks/useIsEffectivelyTinyScreen';
 
 /**
  * Shows the screen for the lobby prior to the actual class, where the user
@@ -21,7 +21,7 @@ export const JourneyLobbyScreen = ({
   shared,
   setScreen,
 }: JourneyScreenProps): ReactElement => {
-  const loginContext = useContext(LoginContext);
+  const loginContextRaw = useContext(LoginContext);
   const leavingCallback = useRef<(() => void) | null>(null);
   if (leavingCallback.current === undefined) {
     leavingCallback.current = null;
@@ -31,14 +31,14 @@ export const JourneyLobbyScreen = ({
     if (leavingCallback.current !== null) {
       leavingCallback.current();
     }
-    setScreen("start", true);
+    setScreen('start', true);
   }, [setScreen]);
 
   const gotoStart = useCallback(() => {
     if (leavingCallback.current !== null) {
       leavingCallback.current();
     }
-    setScreen("start", false);
+    setScreen('start', false);
   }, [setScreen]);
 
   const topBarHeight = useTopBarHeight();
@@ -66,7 +66,7 @@ export const JourneyLobbyScreen = ({
         >
           <JourneyPrompt
             journey={journey}
-            loginContext={loginContext}
+            loginContext={loginContextRaw}
             onFinished={gotoStart}
             leavingCallback={leavingCallback}
           />

@@ -1,51 +1,54 @@
-import { useContext, useEffect } from "react";
-import { Feature } from "../../models/Feature";
+import { useContext, useEffect } from 'react';
+import { Feature } from '../../models/Feature';
 import {
   LoginContext,
   LoginContextValue,
-} from "../../../../shared/contexts/LoginContext";
+  LoginContextValueLoggedIn,
+} from '../../../../shared/contexts/LoginContext';
 import {
   Channel,
   RequestNotificationTimeState,
-} from "./RequestNotificationTimeState";
+} from './RequestNotificationTimeState';
 import {
   ChannelSettings,
   DayOfWeek,
   RequestNotificationTimeResources,
-} from "./RequestNotificationTimeResources";
-import { RequestNotificationTime } from "./RequestNotificationTime";
+} from './RequestNotificationTimeResources';
+import { RequestNotificationTime } from './RequestNotificationTime';
 import {
   InappNotification,
   useInappNotificationValueWithCallbacks,
-} from "../../../../shared/hooks/useInappNotification";
-import { useInappNotificationSessionValueWithCallbacks } from "../../../../shared/hooks/useInappNotificationSession";
-import { useReactManagedValueAsValueWithCallbacks } from "../../../../shared/hooks/useReactManagedValueAsValueWithCallbacks";
-import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks";
-import { useMappedValuesWithCallbacks } from "../../../../shared/hooks/useMappedValuesWithCallbacks";
-import { setVWC } from "../../../../shared/lib/setVWC";
-import { useValueWithCallbacksEffect } from "../../../../shared/hooks/useValueWithCallbacksEffect";
-import { useValuesWithCallbacksEffect } from "../../../../shared/hooks/useValuesWithCallbacksEffect";
-import { apiFetch } from "../../../../shared/lib/apiFetch";
+} from '../../../../shared/hooks/useInappNotification';
+import { useInappNotificationSessionValueWithCallbacks } from '../../../../shared/hooks/useInappNotificationSession';
+import { useReactManagedValueAsValueWithCallbacks } from '../../../../shared/hooks/useReactManagedValueAsValueWithCallbacks';
+import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
+import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
+import { setVWC } from '../../../../shared/lib/setVWC';
+import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
+import { useValuesWithCallbacksEffect } from '../../../../shared/hooks/useValuesWithCallbacksEffect';
+import { apiFetch } from '../../../../shared/lib/apiFetch';
+import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
 
 export const RequestNotificationTimeFeature: Feature<
   RequestNotificationTimeState,
   RequestNotificationTimeResources
 > = {
-  identifier: "requestNotificationTime",
+  identifier: 'requestNotificationTime',
   useWorldState: () => {
-    const loginContext = useContext(LoginContext);
-    const missingPhone = useReactManagedValueAsValueWithCallbacks(
-      loginContext.state === "loading"
-        ? undefined
-        : loginContext.state !== "logged-in" ||
-            loginContext.userAttributes === null ||
+    const loginContextRaw = useContext(LoginContext);
+    const missingPhone = useMappedValueWithCallbacks(
+      loginContextRaw.value,
+      (loginContext) =>
+        loginContext.state === 'loading'
+          ? undefined
+          : loginContext.state !== 'logged-in' ||
             loginContext.userAttributes.phoneNumber === null
     );
 
     const ian = useInappNotificationValueWithCallbacks({
-      type: "react-rerender",
+      type: 'react-rerender',
       props: {
-        uid: "oseh_ian_n-1kL6iJ76lhSgxLSAPJrQ",
+        uid: 'oseh_ian_n-1kL6iJ76lhSgxLSAPJrQ',
         suppress: false,
       },
     });
@@ -56,8 +59,10 @@ export const RequestNotificationTimeFeature: Feature<
     useEffect(() => {
       let cleanup: (() => void) | null = null;
       ian.callbacks.add(handleIANChanged);
+      loginContextRaw.value.callbacks.add(handleIANChanged);
       return () => {
         ian.callbacks.remove(handleIANChanged);
+        loginContextRaw.value.callbacks.remove(handleIANChanged);
         if (cleanup !== null) {
           cleanup();
           cleanup = null;
@@ -72,10 +77,12 @@ export const RequestNotificationTimeFeature: Feature<
           return;
         }
 
-        if (loginContext.state !== "logged-in") {
+        const loginRaw = loginContextRaw.value.get();
+        if (loginRaw.state !== 'logged-in') {
           setServerWantsNotificationTime(undefined);
           return;
         }
+        const login = loginRaw;
 
         let active = true;
         askServer();
@@ -85,7 +92,7 @@ export const RequestNotificationTimeFeature: Feature<
 
         async function askServer() {
           try {
-            const channels = await askServerInner(loginContext);
+            const channels = await askServerInner(login);
             if (active) {
               setServerWantsNotificationTime(
                 channels.wantsNotificationTimePrompt ? channels.channels : null
@@ -94,7 +101,7 @@ export const RequestNotificationTimeFeature: Feature<
           } catch (e) {
             if (active) {
               console.error(
-                "Server did not respond to wants_notification_time_prompt request: ",
+                'Server did not respond to wants_notification_time_prompt request: ',
                 e
               );
               setServerWantsNotificationTime(null);
@@ -138,7 +145,7 @@ export const RequestNotificationTimeFeature: Feature<
           return true;
         });
       }
-    }, [loginContext, ian, serverWantsNotificationTime]);
+    }, [loginContextRaw, ian, serverWantsNotificationTime]);
 
     const clientRequested = useWritableValueWithCallbacks(() => false);
 
@@ -157,9 +164,9 @@ export const RequestNotificationTimeFeature: Feature<
   },
 
   useResources: (stateVWC, requiredVWC) => {
-    const loginContext = useContext(LoginContext);
+    const loginContextRaw = useContext(LoginContext);
     const session = useInappNotificationSessionValueWithCallbacks({
-      type: "callbacks",
+      type: 'callbacks',
       props: () => ({ uid: stateVWC.get().ian?.uid ?? null }),
       callbacks: stateVWC.callbacks,
     });
@@ -172,16 +179,19 @@ export const RequestNotificationTimeFeature: Feature<
       ChannelSettings
     > | null>(() => null);
 
-    useValueWithCallbacksEffect(requiredVWC, (req) => {
+    useValuesWithCallbacksEffect([requiredVWC, loginContextRaw.value], () => {
+      const req = requiredVWC.get();
+      const loginRaw = loginContextRaw.value.get();
       if (!req) {
         setVWC(currentSettingsVWC, null);
         return undefined;
       }
 
-      if (loginContext.state !== "logged-in") {
+      if (loginRaw.state !== 'logged-in') {
         setVWC(currentSettingsVWC, null);
         return undefined;
       }
+      const login = loginRaw;
 
       let active = true;
       fetchSettings();
@@ -191,11 +201,11 @@ export const RequestNotificationTimeFeature: Feature<
 
       async function fetchSettingsInner() {
         const response = await apiFetch(
-          "/api/1/users/me/daily_reminder_settings",
+          '/api/1/users/me/daily_reminder_settings',
           {
-            method: "GET",
+            method: 'GET',
           },
-          loginContext
+          login
         );
 
         if (!response.ok) {
@@ -204,7 +214,7 @@ export const RequestNotificationTimeFeature: Feature<
 
         const data: Record<
           Channel,
-          Omit<ChannelSettings, "days" | "isReal"> & {
+          Omit<ChannelSettings, 'days' | 'isReal'> & {
             days: DayOfWeek[];
             is_real: boolean;
           }
@@ -234,7 +244,7 @@ export const RequestNotificationTimeFeature: Feature<
         } catch (e) {
           if (active) {
             console.log(
-              "Failed to fetch current settings, treating as empty:",
+              'Failed to fetch current settings, treating as empty:',
               e
             );
             setVWC(currentSettingsVWC, {
@@ -249,13 +259,13 @@ export const RequestNotificationTimeFeature: Feature<
       function makeDefaultSettings(): ChannelSettings {
         return {
           days: new Set<DayOfWeek>([
-            "Sunday",
-            "Monday",
-            "Tuesday",
-            "Wednesday",
-            "Thursday",
-            "Friday",
-            "Saturday",
+            'Sunday',
+            'Monday',
+            'Tuesday',
+            'Wednesday',
+            'Thursday',
+            'Friday',
+            'Saturday',
           ]),
           start: 8 * 3600,
           end: 10 * 3600,
@@ -264,57 +274,67 @@ export const RequestNotificationTimeFeature: Feature<
       }
     });
 
-    useValuesWithCallbacksEffect([stateVWC, requiredVWC, channelsVWC], () => {
-      if (channelsVWC.get() !== undefined) {
-        return;
-      }
-
-      if (!requiredVWC.get()) {
-        setVWC(channelsVWC, undefined);
-        return;
-      }
-
-      let active = true;
-      getLatestServerChannels();
-      return () => {
-        active = false;
-      };
-
-      async function getLatestServerChannels() {
-        try {
-          const resp = await askServerInner(loginContext);
-          if (!active) {
-            return;
-          }
-
-          if (
-            !stateVWC.get().clientRequested &&
-            resp.wantsNotificationTimePrompt &&
-            resp.channels !== null
-          ) {
-            setVWC(channelsVWC, resp.channels);
-            return;
-          }
-          setVWC(channelsVWC, resp.potentialChannels);
-        } catch (e) {
-          if (active) {
-            console.error("Could not update server channels: ", e);
-            const allChannels: Channel[] = ["email", "sms", "push"];
-            setVWC(channelsVWC, allChannels);
-          }
+    useValuesWithCallbacksEffect(
+      [stateVWC, requiredVWC, channelsVWC, loginContextRaw.value],
+      () => {
+        if (channelsVWC.get() !== undefined) {
           return;
         }
+
+        if (!requiredVWC.get()) {
+          setVWC(channelsVWC, undefined);
+          return;
+        }
+
+        const loginRaw = loginContextRaw.value.get();
+        if (loginRaw.state !== 'logged-in') {
+          return;
+        }
+        const login = loginRaw;
+
+        let active = true;
+        getLatestServerChannels();
+        return () => {
+          active = false;
+        };
+
+        async function getLatestServerChannels() {
+          try {
+            const resp = await askServerInner(login);
+            if (!active) {
+              return;
+            }
+
+            if (
+              !stateVWC.get().clientRequested &&
+              resp.wantsNotificationTimePrompt &&
+              resp.channels !== null
+            ) {
+              setVWC(channelsVWC, resp.channels);
+              return;
+            }
+            setVWC(channelsVWC, resp.potentialChannels);
+          } catch (e) {
+            if (active) {
+              console.error('Could not update server channels: ', e);
+              const allChannels: Channel[] = ['email', 'sms', 'push'];
+              setVWC(channelsVWC, allChannels);
+            }
+            return;
+          }
+        }
       }
-    });
+    );
 
     return useMappedValuesWithCallbacks(
-      [channelsVWC, session, currentSettingsVWC],
+      [channelsVWC, session, currentSettingsVWC, loginContextRaw.value],
       () => {
         const channels = channelsVWC.get();
         const currentSettings = currentSettingsVWC.get();
+        const loginRaw = loginContextRaw.value.get();
         const channelsCp: Channel[] =
           channels !== undefined ? [...channels] : [];
-        const preferredChannelsOrder: Channel[] = ["push", "sms", "email"];
+        const preferredChannelsOrder: Channel[] = ['push', 'sms', 'email'];
         channelsCp.sort((a, b) => {
           const aIdx = preferredChannelsOrder.indexOf(a);
           const bIdx = preferredChannelsOrder.indexOf(b);
@@ -337,14 +357,14 @@ export const RequestNotificationTimeFeature: Feature<
         return {
           session: session.get(),
           loading:
-            loginContext.state === "loading" ||
+            loginRaw.state === 'loading' ||
             currentSettings === null ||
             channels === undefined,
           currentSettings,
           setCurrentSettings:
             currentSettings === null
               ? () => {
-                  throw new Error("not initialized");
+                  throw new Error('not initialized');
                 }
               : (newSettings) => {
                   setVWC(currentSettingsVWC, newSettings);
@@ -395,15 +415,17 @@ export const RequestNotificationTimeFeature: Feature<
   ),
 };
 
-async function askServerInner(loginContext: LoginContextValue): Promise<{
+async function askServerInner(
+  loginContext: LoginContextValueLoggedIn
+): Promise<{
   wantsNotificationTimePrompt: boolean;
   channels: Channel[];
   potentialChannels: Channel[];
 }> {
   const response = await apiFetch(
-    "/api/1/users/me/wants_notification_time_prompt",
+    '/api/1/users/me/wants_notification_time_prompt',
     {
-      method: "GET",
+      method: 'GET',
     },
     loginContext
   );

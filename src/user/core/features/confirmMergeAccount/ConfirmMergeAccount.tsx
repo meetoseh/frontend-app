@@ -4,32 +4,32 @@ import {
   useContext,
   useEffect,
   useRef,
-} from "react";
-import { FeatureComponentProps } from "../../models/Feature";
-import { ConfirmMergeAccountResources } from "./ConfirmMergeAccountResources";
+} from 'react';
+import { FeatureComponentProps } from '../../models/Feature';
+import { ConfirmMergeAccountResources } from './ConfirmMergeAccountResources';
 import {
   ConfirmMergeAccountState,
   oauthMergeResultKeyMap,
-} from "./ConfirmMergeAccountState";
-import { useStartSession } from "../../../../shared/hooks/useInappNotificationSession";
-import { Buffer } from "buffer";
-import { LoginContext } from "../../../../shared/contexts/LoginContext";
-import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
-import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
-import { SplashScreen } from "../../../splash/SplashScreen";
-import { useValueWithCallbacksEffect } from "../../../../shared/hooks/useValueWithCallbacksEffect";
-import { NoChangeRequired } from "./components/NoChangeRequired";
-import { CreatedAndAttached } from "./components/CreatedAndAttached";
-import { TrivialMerge } from "./components/TrivialMerge";
-import { ConfirmationRequired } from "./components/ConfirmationRequired";
-import { ConfirmFinish } from "./components/ConfirmFinish";
-import { ContactSupport } from "./components/ContactSupport";
-import { ReviewReminders } from "./components/ReviewReminders";
-import { apiFetch } from "../../../../shared/lib/apiFetch";
-import { convertUsingKeymap } from "../../../../shared/lib/CrudFetcher";
-import { describeError } from "../../../../shared/lib/describeError";
-import { useWritableValueWithCallbacks } from "../../../../shared/lib/Callbacks";
-import { ModalContext, Modals } from "../../../../shared/contexts/ModalContext";
+} from './ConfirmMergeAccountState';
+import { useStartSession } from '../../../../shared/hooks/useInappNotificationSession';
+import { Buffer } from 'buffer';
+import { LoginContext } from '../../../../shared/contexts/LoginContext';
+import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
+import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
+import { SplashScreen } from '../../../splash/SplashScreen';
+import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
+import { NoChangeRequired } from './components/NoChangeRequired';
+import { CreatedAndAttached } from './components/CreatedAndAttached';
+import { TrivialMerge } from './components/TrivialMerge';
+import { ConfirmationRequired } from './components/ConfirmationRequired';
+import { ConfirmFinish } from './components/ConfirmFinish';
+import { ContactSupport } from './components/ContactSupport';
+import { ReviewReminders } from './components/ReviewReminders';
+import { apiFetch } from '../../../../shared/lib/apiFetch';
+import { convertUsingKeymap } from '../../../../shared/lib/CrudFetcher';
+import { describeError } from '../../../../shared/lib/describeError';
+import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
+import { ModalContext, Modals } from '../../../../shared/contexts/ModalContext';
 
 export const ConfirmMergeAccount = ({
   resources,
@@ -38,11 +38,11 @@ export const ConfirmMergeAccount = ({
   ConfirmMergeAccountState,
   ConfirmMergeAccountResources
 >): ReactElement => {
-  const loginContext = useContext(LoginContext);
+  const loginContextRaw = useContext(LoginContext);
 
   useStartSession(
     {
-      type: "callbacks",
+      type: 'callbacks',
       props: () => resources.get().session,
       callbacks: resources.callbacks,
     },
@@ -55,21 +55,21 @@ export const ConfirmMergeAccount = ({
         try {
           const mergeToken = state.get().mergeToken;
           if (mergeToken !== null && mergeToken !== undefined) {
-            const payloadBase64 = mergeToken.split(".")[1];
-            const payloadJson = Buffer.from(payloadBase64, "base64").toString(
-              "utf8"
+            const payloadBase64 = mergeToken.split('.')[1];
+            const payloadJson = Buffer.from(payloadBase64, 'base64').toString(
+              'utf8'
             );
             const payload = JSON.parse(payloadJson);
             tokenOriginalUserSub = payload.sub ?? null;
-            provider = payload["oseh:provider"] ?? null;
+            provider = payload['oseh:provider'] ?? null;
             providerSub =
-              (payload["oseh:provider_claims"] ?? {})["sub"] ?? null;
+              (payload['oseh:provider_claims'] ?? {})['sub'] ?? null;
           }
         } catch (e) {
-          console.log("error getting merge token debug information:", e);
+          console.log('error getting merge token debug information:', e);
         }
 
-        resources.get().session?.storeAction("open", {
+        resources.get().session?.storeAction('open', {
           token_original_user_sub: tokenOriginalUserSub,
           provider,
           provider_sub: providerSub,
@@ -79,80 +79,87 @@ export const ConfirmMergeAccount = ({
   );
 
   const triedStartMerge = useRef(false);
-  useEffect(() => {
-    if (
-      triedStartMerge.current ||
-      loginContext.state !== "logged-in" ||
-      state.get().result !== null
-    ) {
-      return;
-    }
+  useValueWithCallbacksEffect(
+    loginContextRaw.value,
+    useCallback(
+      (loginRaw) => {
+        if (
+          triedStartMerge.current ||
+          loginRaw.state !== 'logged-in' ||
+          state.get().result !== null
+        ) {
+          return;
+        }
+        const login = loginRaw;
 
-    triedStartMerge.current = true;
-    tryStartMerge();
-    return undefined;
+        triedStartMerge.current = true;
+        tryStartMerge();
+        return undefined;
 
-    async function tryStartMergeInner() {
-      const mergeToken = state.get().mergeToken;
-      if (mergeToken === null || mergeToken === undefined) {
-        throw new Error("merge token is null or undefined");
-      }
+        async function tryStartMergeInner() {
+          const mergeToken = state.get().mergeToken;
+          if (mergeToken === null || mergeToken === undefined) {
+            throw new Error('merge token is null or undefined');
+          }
 
-      const response = await apiFetch(
-        "/api/1/oauth/merge/start",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json; charset=utf-8",
-          },
-          body: JSON.stringify({
-            merge_token: mergeToken,
-          }),
-        },
-        loginContext
-      );
-
-      if (!response.ok) {
-        throw response;
-      }
-
-      const raw = await response.json();
-      const parsed = convertUsingKeymap(raw, oauthMergeResultKeyMap);
-      resources.get().session?.storeAction("start", {
-        ...parsed,
-        conflictDetails:
-          parsed.conflictDetails === null ||
-          parsed.conflictDetails === undefined
-            ? null
-            : {
-                ...parsed.conflictDetails,
-                mergeJwt: "REDACTED",
+          const response = await apiFetch(
+            '/api/1/oauth/merge/start',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json; charset=utf-8',
               },
-      });
-      state.get().onInitialMergeResult(parsed, null);
-    }
+              body: JSON.stringify({
+                merge_token: mergeToken,
+              }),
+            },
+            login
+          );
 
-    async function tryStartMerge() {
-      state.get().onFetchingInitialMergeResult();
-      try {
-        await tryStartMergeInner();
-      } catch (e) {
-        console.log("error starting merge:", e);
-        const error = await describeError(e);
-        resources.get().session?.storeAction("start", {
-          error:
-            e instanceof Response ? `${e.status}: ${e.statusText}` : `${e}`,
-        });
-        state.get().onInitialMergeResult(false, error);
-      }
-    }
-  }, [state, resources, loginContext]);
+          if (!response.ok) {
+            throw response;
+          }
+
+          const raw = await response.json();
+          const parsed = convertUsingKeymap(raw, oauthMergeResultKeyMap);
+          resources.get().session?.storeAction('start', {
+            ...parsed,
+            conflictDetails:
+              parsed.conflictDetails === null ||
+              parsed.conflictDetails === undefined
+                ? null
+                : {
+                    ...parsed.conflictDetails,
+                    mergeJwt: 'REDACTED',
+                  },
+          });
+          state.get().onInitialMergeResult(parsed, null);
+        }
+
+        async function tryStartMerge() {
+          state.get().onFetchingInitialMergeResult();
+          try {
+            await tryStartMergeInner();
+          } catch (e) {
+            console.log('error starting merge:', e);
+            const error = await describeError(e);
+            resources.get().session?.storeAction('start', {
+              error:
+                e instanceof Response ? `${e.status}: ${e.statusText}` : `${e}`,
+            });
+            state.get().onInitialMergeResult(false, error);
+          }
+        }
+      },
+      [state, resources]
+    )
+  );
 
   const screen = useMappedValueWithCallbacks(
     state,
     (state) => {
       if (state.promptingReviewReminderSettings) {
-        return "reviewReminderSettings";
+        return 'reviewReminderSettings';
       }
 
       if (
@@ -160,7 +167,7 @@ export const ConfirmMergeAccount = ({
         state.result === null ||
         state.confirmResult === undefined
       ) {
-        return "splash";
+        return 'splash';
       }
 
       if (
@@ -168,22 +175,22 @@ export const ConfirmMergeAccount = ({
         state.confirmResult === false ||
         state.error !== null
       ) {
-        return "contactSupport";
+        return 'contactSupport';
       }
 
-      if (state.result.result !== "confirmationRequired") {
+      if (state.result.result !== 'confirmationRequired') {
         return state.result.result;
       }
 
       if (state.confirmResult === null) {
-        return "confirmationRequired";
+        return 'confirmationRequired';
       }
 
       if (state.confirmResult) {
-        return "confirmFinish";
+        return 'confirmFinish';
       }
 
-      return "contactSupport";
+      return 'contactSupport';
     },
     {
       outputEqualityFn: (a, b) => a === b,
@@ -194,20 +201,20 @@ export const ConfirmMergeAccount = ({
     screen,
     useCallback(
       (screen) => {
-        if (screen === "noChangeRequired") {
-          resources.get().session?.storeAction("no_change_required", null);
-        } else if (screen === "createdAndAttached") {
-          resources.get().session?.storeAction("created_and_attached", null);
-        } else if (screen === "trivialMerge") {
-          resources.get().session?.storeAction("trivial_merge", null);
-        } else if (screen === "confirmationRequired") {
-          resources.get().session?.storeAction("confirmation_required", null);
-        } else if (screen === "confirmFinish") {
-          resources.get().session?.storeAction("confirm_finish", null);
-        } else if (screen === "reviewReminderSettings") {
-          resources.get().session?.storeAction("review_notifications", null);
-        } else if (screen !== "splash") {
-          resources.get().session?.storeAction("contact_support", null);
+        if (screen === 'noChangeRequired') {
+          resources.get().session?.storeAction('no_change_required', null);
+        } else if (screen === 'createdAndAttached') {
+          resources.get().session?.storeAction('created_and_attached', null);
+        } else if (screen === 'trivialMerge') {
+          resources.get().session?.storeAction('trivial_merge', null);
+        } else if (screen === 'confirmationRequired') {
+          resources.get().session?.storeAction('confirmation_required', null);
+        } else if (screen === 'confirmFinish') {
+          resources.get().session?.storeAction('confirm_finish', null);
+        } else if (screen === 'reviewReminderSettings') {
+          resources.get().session?.storeAction('review_notifications', null);
+        } else if (screen !== 'splash') {
+          resources.get().session?.storeAction('contact_support', null);
         }
         return undefined;
       },
@@ -223,19 +230,19 @@ export const ConfirmMergeAccount = ({
       <RenderGuardedComponent
         props={screen}
         component={(screen) => {
-          if (screen === "noChangeRequired") {
+          if (screen === 'noChangeRequired') {
             return <NoChangeRequired state={state} resources={resources} />;
-          } else if (screen === "createdAndAttached") {
+          } else if (screen === 'createdAndAttached') {
             return <CreatedAndAttached state={state} resources={resources} />;
-          } else if (screen === "trivialMerge") {
+          } else if (screen === 'trivialMerge') {
             return <TrivialMerge state={state} resources={resources} />;
-          } else if (screen === "confirmationRequired") {
+          } else if (screen === 'confirmationRequired') {
             return <ConfirmationRequired state={state} resources={resources} />;
-          } else if (screen === "confirmFinish") {
+          } else if (screen === 'confirmFinish') {
             return <ConfirmFinish state={state} resources={resources} />;
-          } else if (screen === "reviewReminderSettings") {
+          } else if (screen === 'reviewReminderSettings') {
             return <ReviewReminders state={state} resources={resources} />;
-          } else if (screen === "splash") {
+          } else if (screen === 'splash') {
             return <SplashScreen />;
           } else {
             return <ContactSupport state={state} resources={resources} />;
