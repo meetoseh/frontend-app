@@ -1,4 +1,4 @@
-import { ReactElement, useMemo } from "react";
+import { ReactElement, useMemo } from 'react';
 import {
   Image,
   ImageSourcePropType,
@@ -6,8 +6,9 @@ import {
   StyleProp,
   View,
   ViewProps,
-} from "react-native";
-import { OsehImageState } from "./OsehImageState";
+} from 'react-native';
+import { OsehImageState } from './OsehImageState';
+import { base64URLToByteArray, thumbHashToDataURL } from '../lib/colorUtils';
 
 type OsehImageStateFromStateProps = {
   /**
@@ -24,7 +25,7 @@ type OsehImageStateFromStateProps = {
   /**
    * Can be used to prevent the image from being interacted with.
    */
-  pointerEvents?: ViewProps["pointerEvents"];
+  pointerEvents?: ViewProps['pointerEvents'];
 };
 /**
  * Uses the standard rendering for the given oseh image state, using a placeholder
@@ -50,8 +51,12 @@ export const OsehImageFromState = ({
       return { uri: state.localUrl };
     }
 
+    if (state.thumbhash !== null) {
+      return { uri: thumbHashToDataURL(base64URLToByteArray(state.thumbhash)) };
+    }
+
     return null;
-  }, [state.localUrl]);
+  }, [state.localUrl, state.thumbhash]);
 
   return source ? (
     pointerEvents === undefined ? (

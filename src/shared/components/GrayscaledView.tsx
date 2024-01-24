@@ -1,22 +1,22 @@
-import { ViewStyle, Image, PixelRatio } from "react-native";
+import { ViewStyle, Image, PixelRatio } from 'react-native';
 import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
-} from "../anim/VariableStrategyProps";
-import { ReactElement, useCallback } from "react";
+} from '../anim/VariableStrategyProps';
+import { ReactElement, useCallback } from 'react';
 import {
   WritableValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../lib/Callbacks";
-import ViewShot, { releaseCapture } from "react-native-view-shot";
-import { useValueWithCallbacksEffect } from "../hooks/useValueWithCallbacksEffect";
-import { setVWC } from "../lib/setVWC";
-import { RenderGuardedComponent } from "./RenderGuardedComponent";
-import { useMappedValuesWithCallbacks } from "../hooks/useMappedValuesWithCallbacks";
-import { GrayscaledImage } from "../anim/GrayscaledImage";
-import { adaptValueWithCallbacksAsVariableStrategyProps } from "../lib/adaptValueWithCallbacksAsVariableStrategyProps";
-import { useValuesWithCallbacksEffect } from "../hooks/useValuesWithCallbacksEffect";
-import * as FileSystem from "expo-file-system";
+} from '../lib/Callbacks';
+import ViewShot, { releaseCapture } from 'react-native-view-shot';
+import { useValueWithCallbacksEffect } from '../hooks/useValueWithCallbacksEffect';
+import { setVWC } from '../lib/setVWC';
+import { RenderGuardedComponent } from './RenderGuardedComponent';
+import { useMappedValuesWithCallbacks } from '../hooks/useMappedValuesWithCallbacks';
+import { GrayscaledImage } from '../anim/GrayscaledImage';
+import { adaptValueWithCallbacksAsVariableStrategyProps } from '../lib/adaptValueWithCallbacksAsVariableStrategyProps';
+import { useValuesWithCallbacksEffect } from '../hooks/useValuesWithCallbacksEffect';
+import * as FileSystem from 'expo-file-system';
 
 type GrayscaledViewProps = {
   /**
@@ -68,7 +68,7 @@ export const GrayscaledView = ({
     strengthVariableStrategy
   );
   const styleVWC = useVariableStrategyPropsAsValueWithCallbacks(
-    styleVariableStrategy ?? { type: "react-rerender", props: undefined }
+    styleVariableStrategy ?? { type: 'react-rerender', props: undefined }
   );
   const childVWC = useVariableStrategyPropsAsValueWithCallbacks(
     childVariableStrategy
@@ -120,7 +120,7 @@ export const GrayscaledView = ({
               });
             },
             (err) => {
-              console.warn("grayscaled view failed to get size: " + err);
+              console.warn('grayscaled view failed to get size: ' + err);
             }
           );
         });

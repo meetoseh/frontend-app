@@ -4,26 +4,26 @@ import {
   useEffect,
   useMemo,
   useRef,
-} from "react";
-import { Callbacks } from "../lib/Callbacks";
-import { OsehImagePropsLoadable } from "./OsehImageProps";
-import { OsehImageState } from "./OsehImageState";
-import { LeastRecentlyUsedCache } from "../lib/LeastRecentlyUsedCache";
+} from 'react';
+import { Callbacks } from '../lib/Callbacks';
+import { OsehImagePropsLoadable } from './OsehImageProps';
+import { OsehImageState } from './OsehImageState';
+import { LeastRecentlyUsedCache } from '../lib/LeastRecentlyUsedCache';
 import {
   PlaylistItem,
   PlaylistWithJWT,
   fetchPrivatePlaylist,
   fetchPublicPlaylist,
   selectBestItemUsingPixelRatio,
-} from "./Playlist";
-import { RefCountedDict } from "../lib/RefCountedDict";
-import { CancelablePromise } from "../lib/CancelablePromise";
-import { DownloadedItem } from "./DownloadedItem";
-import { USES_WEBP } from "./usesWebp";
-import { downloadItem } from "./downloadItem";
-import { cropImage } from "./cropImage";
-import { InteractionManager, PixelRatio } from "react-native";
-import { HTTP_API_URL } from "../lib/apiFetch";
+} from './Playlist';
+import { RefCountedDict } from '../lib/RefCountedDict';
+import { CancelablePromise } from '../lib/CancelablePromise';
+import { DownloadedItem } from './DownloadedItem';
+import { USES_WEBP } from './usesWebp';
+import { downloadItem } from './downloadItem';
+import { cropImage } from './cropImage';
+import { InteractionManager, PixelRatio } from 'react-native';
+import { HTTP_API_URL } from '../lib/apiFetch';
 
 /**
  * Describes a manually ref-counted reference to a given OsehImageState. While
@@ -86,21 +86,21 @@ type CropID = string;
 /** Provides a valid filename unique to the given crop */
 const getCropID = (url: string, width: number, height: number): CropID => {
   // if it includes query parameters, use fallback flow
-  if (url.includes("?")) {
+  if (url.includes('?')) {
     return getFallbackCropID(url, width, height);
   }
 
-  const lastSlashIdx = url.lastIndexOf("/");
+  const lastSlashIdx = url.lastIndexOf('/');
   if (lastSlashIdx < 0) {
     return getFallbackCropID(url, width, height);
   }
 
   const lastPart = url.substring(lastSlashIdx + 1);
-  if (!lastPart.startsWith("oseh_ife_")) {
+  if (!lastPart.startsWith('oseh_ife_')) {
     return getFallbackCropID(url, width, height);
   }
 
-  const extensionIdx = lastPart.indexOf(".");
+  const extensionIdx = lastPart.indexOf('.');
   const uid = extensionIdx < 0 ? lastPart : lastPart.substring(0, extensionIdx);
 
   return `${uid}-${width}-${height}`;
@@ -130,7 +130,7 @@ const encodeAsFilename = (s: string): string => {
       includedUpToExcl = i;
     }
 
-    parts.push("x" + s.charCodeAt(i).toString(16));
+    parts.push('x' + s.charCodeAt(i).toString(16));
     includedUpToExcl = i + 1;
   }
 
@@ -138,7 +138,7 @@ const encodeAsFilename = (s: string): string => {
     parts.push(s.substring(includedUpToExcl));
   }
 
-  return parts.join("");
+  return parts.join('');
 };
 
 /**
@@ -184,6 +184,7 @@ export const useOsehImageStateRequestHandler = ({
         alt: props.alt,
         loading: true,
         placeholderColor: props.placeholderColor,
+        thumbhash: null,
       },
       stateChanged: new Callbacks<OsehImageState>(),
       release: () => {
@@ -272,13 +273,13 @@ export const useOsehImageStateRequestHandler = ({
         requestQueuedCallbacks.current.remove(scheduleHandleQueue);
         canceledCallbacks.call(undefined);
         if (playlistsByImageFileUID.size !== 0) {
-          throw new Error("failed to cleanup playlistsByImageFileUID");
+          throw new Error('failed to cleanup playlistsByImageFileUID');
         }
         if (imagesByURL.size !== 0) {
-          throw new Error("failed to cleanup imagesByURL");
+          throw new Error('failed to cleanup imagesByURL');
         }
         if (cropsByCropID.size !== 0) {
-          throw new Error("failed to cleanup cropsByCropID");
+          throw new Error('failed to cleanup cropsByCropID');
         }
       }
     };
@@ -345,7 +346,7 @@ export const useOsehImageStateRequestHandler = ({
         }
 
         console.error(
-          "error while loading image: ",
+          'error while loading image: ',
           req.props,
           `from API url ${HTTP_API_URL}\n\nerror: `,
           e
@@ -406,6 +407,19 @@ export const useOsehImageStateRequestHandler = ({
       };
       req.releasedCallbacks.add(releaseItem);
       canceledCallbacks.add(releaseItem);
+
+      if (req.requested.state.thumbhash !== bestItem.item.thumbhash) {
+        req.requested.state = {
+          ...req.requested.state,
+          thumbhash: bestItem.item.thumbhash,
+        };
+        req.requested.stateChanged.call(req.requested.state);
+
+        if (!active || req.released) {
+          return;
+        }
+      }
+
       let item: DownloadedItem;
       try {
         item = await getPlaylistItem(bestItem.item, playlist.jwt);
@@ -492,7 +506,7 @@ export const useOsehImageStateRequestHandler = ({
       const playlistPromise: Promise<PlaylistWithJWT> = new Promise(
         async (resolve, reject) => {
           if (done) {
-            reject("canceled");
+            reject('canceled');
             return;
           }
 
@@ -510,7 +524,7 @@ export const useOsehImageStateRequestHandler = ({
             if (abortController !== null) {
               abortController.abort();
             }
-            reject("canceled");
+            reject('canceled');
           };
 
           let playlist: PlaylistWithJWT;
@@ -582,7 +596,7 @@ export const useOsehImageStateRequestHandler = ({
       const imagePromise: Promise<DownloadedItem> = new Promise(
         async (resolve, reject) => {
           if (done) {
-            reject("canceled");
+            reject('canceled');
             return;
           }
 
@@ -600,7 +614,7 @@ export const useOsehImageStateRequestHandler = ({
             if (abortController !== null) {
               abortController.abort();
             }
-            reject("canceled");
+            reject('canceled');
           };
 
           let downloadedItem: DownloadedItem;
@@ -663,7 +677,7 @@ export const useOsehImageStateRequestHandler = ({
       const cropPromise: Promise<DownloadedItem> = new Promise(
         async (resolve, reject) => {
           if (done) {
-            reject("canceled");
+            reject('canceled');
             return;
           }
 
@@ -673,7 +687,7 @@ export const useOsehImageStateRequestHandler = ({
             cropID
           );
           if (done) {
-            reject("canceled");
+            reject('canceled');
             return;
           }
 

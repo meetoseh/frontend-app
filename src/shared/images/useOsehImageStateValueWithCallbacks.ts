@@ -3,7 +3,10 @@ import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
 } from '../anim/VariableStrategyProps';
-import { ValueWithCallbacks, useWritableValueWithCallbacks } from '../lib/Callbacks';
+import {
+  ValueWithCallbacks,
+  useWritableValueWithCallbacks,
+} from '../lib/Callbacks';
 import { OsehImageProps, OsehImagePropsLoadable } from './OsehImageProps';
 import { OsehImageState } from './OsehImageState';
 import { OsehImageStateRequestHandler } from './useOsehImageStateRequestHandler';
@@ -15,6 +18,7 @@ const createLoadingState = (props: OsehImageProps): OsehImageState => ({
   alt: props.alt,
   loading: true,
   placeholderColor: props.placeholderColor,
+  thumbhash: null,
 });
 
 /**
@@ -40,10 +44,13 @@ export const useOsehImageStateValueWithCallbacks = (
   handler: OsehImageStateRequestHandler
 ): ValueWithCallbacks<OsehImageState> => {
   const result = useWritableValueWithCallbacks<OsehImageState>(() =>
-    createLoadingState(props.type === 'react-rerender' ? props.props : props.props())
+    createLoadingState(
+      props.type === 'react-rerender' ? props.props : props.props()
+    )
   );
 
-  const propsAsValueWithCallbacks = useVariableStrategyPropsAsValueWithCallbacks(props);
+  const propsAsValueWithCallbacks =
+    useVariableStrategyPropsAsValueWithCallbacks(props);
 
   useEffect(() => {
     let active = true;

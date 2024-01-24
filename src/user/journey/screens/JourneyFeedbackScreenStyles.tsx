@@ -1,76 +1,61 @@
-import { StyleSheet } from "react-native";
-import * as Colors from "../../../styling/colors";
+import { StyleSheet } from 'react-native';
+import * as Colors from '../../../styling/colors';
 
 export const styles = StyleSheet.create({
   container: {
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'stretch',
     backgroundColor: Colors.WHITE,
   },
   innerContainer: {
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
   },
-  content: {
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    flexGrow: 1,
-    paddingTop: 0,
+  shareContainerWrapper: {
+    borderRadius: 8,
+    overflow: 'hidden',
   },
-  title: {
-    fontFamily: "OpenSans-Regular",
-    fontSize: 24,
-    lineHeight: 32,
-    color: Colors.GRAYSCALE_WHITE,
-    marginBottom: 24,
-    textAlign: "left",
-    justifyContent: "flex-start",
-    alignItems: "center",
+  shareContainer: {
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    alignItems: 'stretch',
   },
-  answers: {
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "stretch",
+  shareInfo: {
+    padding: 12,
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
   },
-  answerOuter: {
-    borderRadius: 10,
-    overflow: "hidden",
+  shareTitle: {
+    color: Colors.PRIMARY_LIGHT,
+    fontFamily: 'OpenSans-Regular',
+    fontSize: 22,
+    marginBottom: 2,
   },
-  answer: {
-    paddingVertical: 13,
-    paddingHorizontal: 26,
-    flexDirection: "row",
-    flexWrap: "nowrap",
-    justifyContent: "flex-start",
-    alignItems: "center",
-  },
-  answerSpacing: {
-    width: 1,
-    height: 18,
-  },
-  answerEmojiContainer: {},
-  answerEmojiText: {
-    fontFamily: "OpenSans-Regular",
-    fontSize: 32,
-    letterSpacing: 0.25,
-  },
-  answerText: {
-    marginLeft: 18,
-    fontFamily: "OpenSans-Regular",
+  shareInstructor: {
+    color: Colors.GRAYSCALE_MID_GRAY,
+    fontFamily: 'OpenSans-Regular',
     fontSize: 16,
-    letterSpacing: 0.25,
-    color: Colors.WHITE,
   },
-  infoText: {
-    marginTop: 18,
-    fontFamily: "OpenSans-Regular",
-    fontSize: 14,
-    lineHeight: 24,
+  shareControls: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    padding: 12,
+    gap: 9,
+  },
+  feedback: {
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+  },
+  feedbackText: {
+    color: Colors.PRIMARY_LIGHT,
+    fontFamily: 'OpenSans-Regular',
+    fontSize: 16,
+    lineHeight: 19,
     letterSpacing: 0.25,
-    textAlign: "center",
-    color: Colors.WHITE,
+    marginBottom: 12,
   },
 });

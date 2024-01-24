@@ -4,8 +4,8 @@ import {
   useCallback,
   useEffect,
   useMemo,
-} from "react";
-import { useStateCompat as useState } from "../hooks/useStateCompat";
+} from 'react';
+import { useStateCompat as useState } from '../hooks/useStateCompat';
 import {
   Pressable,
   StyleProp,
@@ -13,16 +13,17 @@ import {
   Text,
   View,
   ViewStyle,
-} from "react-native";
-import { CustomButtonProps } from "../models/CustomButtonProps";
-import { InlineOsehSpinner } from "./InlineOsehSpinner";
+} from 'react-native';
+import { CustomButtonProps } from '../models/CustomButtonProps';
+import { InlineOsehSpinner } from './InlineOsehSpinner';
 import {
   LinearGradientBackground,
   LinearGradientState,
-} from "../anim/LinearGradientBackground";
-import { RenderGuardedComponent } from "./RenderGuardedComponent";
-import { useWritableValueWithCallbacks } from "../lib/Callbacks";
-import { setVWC } from "../lib/setVWC";
+} from '../anim/LinearGradientBackground';
+import { RenderGuardedComponent } from './RenderGuardedComponent';
+import { useWritableValueWithCallbacks } from '../lib/Callbacks';
+import { setVWC } from '../lib/setVWC';
+import { useValueWithCallbacksEffect } from '../hooks/useValueWithCallbacksEffect';
 
 type GradientStyleProps = {
   gradient?: LinearGradientState;
@@ -43,15 +44,15 @@ const TRANSPARENT_GRADIENT: LinearGradientState = {
 };
 
 const liftedToOuterStyles: (keyof ViewStyle)[] = [
-  "margin",
-  "marginBottom",
-  "marginTop",
-  "marginLeft",
-  "marginRight",
-  "marginStart",
-  "marginEnd",
-  "marginVertical",
-  "marginHorizontal",
+  'margin',
+  'marginBottom',
+  'marginTop',
+  'marginLeft',
+  'marginRight',
+  'marginStart',
+  'marginEnd',
+  'marginVertical',
+  'marginHorizontal',
 ];
 
 /**
@@ -67,6 +68,8 @@ export const FilledButton = ({
   spinnerVariant,
   width,
   marginTop,
+  refVWC: rawRefVWC,
+  onLayout,
   children,
 }: PropsWithChildren<
   CustomButtonProps & {
@@ -80,7 +83,7 @@ export const FilledButton = ({
       containerWithSpinner: ViewStyle;
       spinnerContainer: ViewStyle;
     };
-    spinnerVariant: "white" | "black" | "primary";
+    spinnerVariant: 'white' | 'black' | 'primary';
   }
 >): ReactElement => {
   const handlePress = useCallback(() => {
@@ -119,7 +122,7 @@ export const FilledButton = ({
 
   const childrenContainerStyles = useMemo(() => {
     const cp = Object.assign({}, containerStyles);
-    if ("gradient" in containerStyles) {
+    if ('gradient' in containerStyles) {
       delete cp.gradient;
     }
 
@@ -179,6 +182,22 @@ export const FilledButton = ({
     setForegroundColor(styles.text.color);
   }, [pressed, disabled, setForegroundColor, styles]);
 
+  const alwaysAvailableRefVWC = useWritableValueWithCallbacks<View | null>(
+    () => null
+  );
+  useValueWithCallbacksEffect(
+    alwaysAvailableRefVWC,
+    useCallback(
+      (ref) => {
+        if (rawRefVWC !== undefined) {
+          setVWC(rawRefVWC, ref);
+        }
+        return undefined;
+      },
+      [rawRefVWC]
+    )
+  );
+
   // we need to always support the gradient to avoid
   // losing press events when switching :/
 
@@ -188,10 +207,12 @@ export const FilledButton = ({
       onPressOut={handlePressOut}
       onPress={handlePress}
       style={pressableStyles}
+      ref={(r) => setVWC(alwaysAvailableRefVWC, r)}
+      onLayout={onLayout}
     >
       <LinearGradientBackground
         state={{
-          type: "react-rerender",
+          type: 'react-rerender',
           props: containerStyles.gradient ?? TRANSPARENT_GRADIENT,
         }}
       >
@@ -199,12 +220,12 @@ export const FilledButton = ({
           {spinner && (
             <View style={styles.spinnerContainer}>
               <InlineOsehSpinner
-                size={{ type: "react-rerender", props: { height: 24 } }}
+                size={{ type: 'react-rerender', props: { height: 24 } }}
                 variant={spinnerVariant}
               />
             </View>
           )}
-          {typeof children === "string" ? (
+          {typeof children === 'string' ? (
             <RenderGuardedComponent
               props={myTextStyle}
               component={(s) => <Text style={s}>{children}</Text>}

@@ -1,14 +1,14 @@
-import { ReactElement, useEffect, useMemo } from "react";
-import { useStateCompat as useState } from "../../shared/hooks/useStateCompat";
-import { getJwtExpiration } from "../../shared/lib/getJwtExpiration";
-import { useJourneyShared } from "./hooks/useJourneyShared";
-import { JourneyRef } from "./models/JourneyRef";
-import { JourneyScreenProps } from "./models/JourneyScreenProps";
-import { JourneyLobbyScreen } from "./screens/JourneyLobbyScreen";
-import { JourneyStartScreen } from "./screens/JourneyStartScreen";
-import { Journey } from "./screens/Journey";
-import { JourneyFeedbackScreen } from "./screens/JourneyFeedbackScreen";
-import { JourneyPostScreen } from "./screens/JourneyPostScreen";
+import { ReactElement, useEffect, useMemo } from 'react';
+import { useStateCompat as useState } from '../../shared/hooks/useStateCompat';
+import { getJwtExpiration } from '../../shared/lib/getJwtExpiration';
+import { useJourneyShared } from './hooks/useJourneyShared';
+import { JourneyRef } from './models/JourneyRef';
+import { JourneyScreenProps } from './models/JourneyScreenProps';
+import { JourneyLobbyScreen } from './screens/JourneyLobbyScreen';
+import { JourneyStartScreen } from './screens/JourneyStartScreen';
+import { Journey } from './screens/Journey';
+import { JourneyFeedbackScreen } from './screens/JourneyFeedbackScreen';
+import { JourneyPostScreen } from './screens/JourneyPostScreen';
 
 type JourneyRouterProps = {
   /**
@@ -25,23 +25,40 @@ type JourneyRouterProps = {
    * True if this is an onboarding journey, false otherwise.
    */
   isOnboarding: boolean;
+
+  /**
+   * If take another class support is available, the relevant information.
+   */
+  takeAnother: {
+    /**
+     * The emotion or word for the type of class that will be found, e.g.,
+     * "grounded". Used in e.g "Take another grounded class"
+     */
+    emotion: string;
+
+    /**
+     * The function to call when the user requests to take another class.
+     */
+    onTakeAnother: () => void;
+  } | null;
 };
 
 export type JourneyRouterScreenId =
-  | "lobby"
-  | "start"
-  | "journey"
-  | "feedback"
-  | "post";
+  | 'lobby'
+  | 'start'
+  | 'journey'
+  | 'feedback'
+  | 'post';
 
 export const JourneyRouter = ({
   journey,
   onFinished,
   isOnboarding,
+  takeAnother,
 }: JourneyRouterProps): ReactElement => {
-  const [screen, setScreen] = useState<JourneyRouterScreenId>("lobby");
+  const [screen, setScreen] = useState<JourneyRouterScreenId>('lobby');
   const sharedState = useJourneyShared({
-    type: "react-rerender",
+    type: 'react-rerender',
     props: journey,
   });
   const screenProps: JourneyScreenProps = useMemo(() => {
@@ -51,18 +68,18 @@ export const JourneyRouter = ({
       setScreen: (screen) => {
         screen = screen as JourneyRouterScreenId;
 
-        if (screen === "journey") {
+        if (screen === 'journey') {
           const audio = sharedState.get().audio;
           if (!audio.loaded || audio.play === null || audio.audio === null) {
             console.warn(
-              "setScreen to journey, but audio not loaded. going to start"
+              'setScreen to journey, but audio not loaded. going to start'
             );
-            setScreen("start");
+            setScreen('start');
             return;
           }
 
           audio.play();
-          setScreen("journey");
+          setScreen('journey');
           return;
         }
 
@@ -70,8 +87,9 @@ export const JourneyRouter = ({
       },
       onJourneyFinished: onFinished,
       isOnboarding,
+      takeAnother,
     };
-  }, [journey, sharedState, onFinished, isOnboarding]);
+  }, [journey, sharedState, onFinished, isOnboarding, takeAnother]);
 
   useEffect(() => {
     const expireTime = getJwtExpiration(journey.jwt);
@@ -95,23 +113,23 @@ export const JourneyRouter = ({
     }
   }, [journey.jwt, onFinished]);
 
-  if (screen === "lobby") {
+  if (screen === 'lobby') {
     return <JourneyLobbyScreen {...screenProps} />;
   }
 
-  if (screen === "start") {
+  if (screen === 'start') {
     return <JourneyStartScreen {...screenProps} />;
   }
 
-  if (screen === "journey") {
+  if (screen === 'journey') {
     return <Journey {...screenProps} />;
   }
 
-  if (screen === "feedback") {
+  if (screen === 'feedback') {
     return <JourneyFeedbackScreen {...screenProps} />;
   }
 
-  if (screen === "post") {
+  if (screen === 'post') {
     return <JourneyPostScreen {...screenProps} />;
   }
 

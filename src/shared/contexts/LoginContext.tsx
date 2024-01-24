@@ -6,7 +6,6 @@ import {
   useMemo,
   useRef,
 } from 'react';
-import { useStateCompat as useState } from '../hooks/useStateCompat';
 import { deleteSecurePaginated } from '../lib/deleteSecurePaginated';
 import { storeSecurePaginated } from '../lib/storeSecurePaginated';
 import { retrieveSecurePaginated } from '../lib/retrieveSecurePaginated';

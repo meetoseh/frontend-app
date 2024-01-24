@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useStateCompat as useState } from "../hooks/useStateCompat";
+import { useStateCompat as useState } from '../hooks/useStateCompat';
 import { OsehImageProps, OsehImagePropsLoadable } from './OsehImageProps';
 import { OsehImageState } from './OsehImageState';
 import { OsehImageStateRequestHandler } from './useOsehImageStateRequestHandler';
@@ -11,6 +11,7 @@ const createLoadingState = (props: OsehImageProps): OsehImageState => ({
   alt: props.alt,
   loading: true,
   placeholderColor: props.placeholderColor,
+  thumbhash: null,
 });
 
 /**
@@ -20,7 +21,7 @@ const createLoadingState = (props: OsehImageProps): OsehImageState => ({
  * such as DPI. This will then download the image, and if necessary, crop it
  * to the desired size before returning a URL to the corresponding blob via
  * the states localUrl property.
- * 
+ *
  * This hook will cause react rerenders as the state loads; to avoid this
  * in animation heavy components, prefer useOsehImageStateValueWithCallbacks
  * and OsehImageFromStateValueWithCallbacks, which never trigger rerenders
@@ -36,7 +37,9 @@ export const useOsehImageState = (
   props: OsehImageProps,
   handler: OsehImageStateRequestHandler
 ): OsehImageState => {
-  const [state, setState] = useState<OsehImageState>(() => createLoadingState(props));
+  const [state, setState] = useState<OsehImageState>(() =>
+    createLoadingState(props)
+  );
 
   useEffect(() => {
     const cpProps: OsehImageProps = {

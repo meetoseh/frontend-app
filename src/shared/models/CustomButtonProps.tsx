@@ -1,4 +1,5 @@
-import { StyleProp, TextStyle } from "react-native";
+import { LayoutChangeEvent, StyleProp, TextStyle, View } from 'react-native';
+import { WritableValueWithCallbacks } from '../lib/Callbacks';
 
 export type CustomButtonProps = {
   /**
@@ -41,4 +42,15 @@ export type CustomButtonProps = {
    * If specified, the button will have a margin on the top of this value.
    */
   marginTop?: number;
+
+  /**
+   * If specified, we forward the ref of the container view for the button
+   * to this vwc
+   */
+  refVWC?: WritableValueWithCallbacks<View | null>;
+
+  /**
+   * If specified, forwarded to the onLayout for the container view for the button
+   */
+  onLayout?: (event: LayoutChangeEvent) => void;
 };

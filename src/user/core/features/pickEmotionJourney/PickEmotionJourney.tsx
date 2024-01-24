@@ -126,6 +126,10 @@ export const PickEmotionJourney = ({
     setStep({ journeyUid: selected.journey.uid, step: 'lobby' });
   }, [resources]);
 
+  const onTakeAnother = useCallback(() => {
+    resources.get().takeAnotherClass();
+  }, [resources]);
+
   const onFinishJourney = useCallback(() => {
     resources.get().onFinishedJourney.call(undefined);
     state.get().onFinishedClass.call(undefined);
@@ -198,11 +202,7 @@ export const PickEmotionJourney = ({
   const sharedVWC = useMappedValueWithCallbacks(
     resources,
     (r) =>
-      r.selected?.shared ??
-      createLoadingJourneyShared(
-        { width: 0, height: 0 },
-        { width: 0, height: 0 }
-      )
+      r.selected?.shared ?? createLoadingJourneyShared({ width: 0, height: 0 })
   );
 
   const requestedReview = useRef(false);
@@ -271,6 +271,10 @@ export const PickEmotionJourney = ({
           setScreen,
           onJourneyFinished: onFinishJourney,
           isOnboarding: resources.get().isOnboarding,
+          takeAnother: {
+            emotion: selected.word.word,
+            onTakeAnother,
+          },
         };
 
         if (step.step === 'lobby') {

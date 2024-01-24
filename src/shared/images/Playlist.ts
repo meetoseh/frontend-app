@@ -1,6 +1,6 @@
-import { CrudFetcherKeyMap, convertUsingKeymap } from "../lib/CrudFetcher";
-import { HTTP_API_URL } from "../lib/apiFetch";
-import { compareSizes } from "./compareSizes";
+import { CrudFetcherKeyMap, convertUsingKeymap } from '../lib/CrudFetcher';
+import { HTTP_API_URL } from '../lib/apiFetch';
+import { compareSizes } from './compareSizes';
 
 /**
  * An item within a playlist
@@ -26,10 +26,15 @@ export type PlaylistItem = {
    * The size of the item in bytes
    */
   sizeBytes: number;
+  /**
+   * The thumbhash of the image, base64url encoded.
+   * See https://evanw.github.io/thumbhash/
+   */
+  thumbhash: string;
 };
 
 export const playlistItemKeymap: CrudFetcherKeyMap<PlaylistItem> = {
-  size_bytes: "sizeBytes",
+  size_bytes: 'sizeBytes',
 };
 
 export const playlistItemsEqual = (
@@ -98,7 +103,7 @@ export type Playlist = {
 
 export const playlistKeymap: CrudFetcherKeyMap<Playlist> = {
   items: (_, v: { [format: string]: any[] }) => ({
-    key: "items",
+    key: 'items',
     value: Object.fromEntries(
       Object.entries(v).map(([key, val]) => [
         key,
@@ -173,7 +178,7 @@ export const fetchPrivatePlaylist = async (
   const response = await fetch(
     `${HTTP_API_URL}/api/1/image_files/playlist/${uid}`,
     {
-      method: "GET",
+      method: 'GET',
       headers: { authorization: `bearer ${jwt}` },
       ...(abortSignal ? { signal: abortSignal } : {}),
     }
@@ -207,7 +212,7 @@ export const fetchPublicPlaylist = async (
   const response = await fetch(
     `${HTTP_API_URL}/api/1/image_files/playlist/${uid}?public=1`,
     {
-      method: "GET",
+      method: 'GET',
       ...(abortSignal ? { signal: abortSignal } : {}),
     }
   );
@@ -216,10 +221,10 @@ export const fetchPublicPlaylist = async (
     throw response;
   }
 
-  const jwt = response.headers.get("x-image-file-jwt");
+  const jwt = response.headers.get('x-image-file-jwt');
   if (jwt === null) {
     throw new Error(
-      "Public playlist response did not include JWT in x-image-file-jwt header"
+      'Public playlist response did not include JWT in x-image-file-jwt header'
     );
   }
 
@@ -242,22 +247,22 @@ export function selectFormat<T extends Playlist>(
   playlist: T,
   usesWebp: boolean,
   want: { width: number; height: number }
-): string & keyof T["items"] {
+): string & keyof T['items'] {
   const area = want.width * want.height;
 
   if (usesWebp && playlist.items.webp) {
-    return "webp";
+    return 'webp';
   }
 
   if (area <= 200 * 200 && playlist.items.png) {
-    return "png";
+    return 'png';
   }
 
   if (playlist.items.jpeg) {
-    return "jpeg";
+    return 'jpeg';
   }
 
-  return "png";
+  return 'png';
 }
 
 /**
@@ -271,7 +276,7 @@ const selectBestItemFromItems = (
   want: { width: number; height: number }
 ): PlaylistItem => {
   if (items.length === 0) {
-    throw new Error("Cannot select best item from empty list");
+    throw new Error('Cannot select best item from empty list');
   }
 
   let best = items[0];

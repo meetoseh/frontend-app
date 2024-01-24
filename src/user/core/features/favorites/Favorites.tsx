@@ -96,6 +96,7 @@ export const Favorites = ({
               journey={journey}
               onFinished={onJourneyFinished}
               isOnboarding={false}
+              takeAnother={null}
             />
           );
         }
@@ -105,7 +106,7 @@ export const Favorites = ({
             <OsehImageBackgroundFromStateValueWithCallbacks
               state={background}
               style={{ ...styles.innerContainer, height: screenSize.height }}
-              disableAccessibilityScrolling
+              scrolling="disabled"
             >
               <ModalProvider>
                 <CloseButton onPress={onCloseClick} />

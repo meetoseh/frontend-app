@@ -4,14 +4,14 @@ import {
   RefObject,
   useEffect,
   useRef,
-} from "react";
-import { ValueWithCallbacks } from "../lib/Callbacks";
-import { OsehImageState } from "./OsehImageState";
-import { ImageStyle, ScrollView, View, ViewStyle } from "react-native";
-import { styles } from "./OsehImageBackgroundFromStateValueWithCallbacksStyles";
-import { RenderGuardedComponent } from "../components/RenderGuardedComponent";
-import { OsehImageFromState } from "./OsehImageFromState";
-import { useIsEffectivelyTinyScreen } from "../hooks/useIsEffectivelyTinyScreen";
+} from 'react';
+import { ValueWithCallbacks } from '../lib/Callbacks';
+import { OsehImageState } from './OsehImageState';
+import { ImageStyle, ScrollView, View, ViewStyle } from 'react-native';
+import { styles } from './OsehImageBackgroundFromStateValueWithCallbacksStyles';
+import { RenderGuardedComponent } from '../components/RenderGuardedComponent';
+import { OsehImageFromState } from './OsehImageFromState';
+import { useIsEffectivelyTinyScreen } from '../hooks/useIsEffectivelyTinyScreen';
 
 /**
  * Uses the standard rendering for the given oseh image state, using a placeholder
@@ -34,7 +34,8 @@ export const OsehImageBackgroundFromStateValueWithCallbacks = ({
   style,
   styleVWC,
   imageStyle,
-  disableAccessibilityScrolling,
+  scrolling,
+  scrollingBottomPadding = 40,
 }: PropsWithChildren<{
   state: ValueWithCallbacks<OsehImageState>;
   /**
@@ -50,15 +51,28 @@ export const OsehImageBackgroundFromStateValueWithCallbacks = ({
    */
   imageStyle?: ImageStyle | undefined;
   /**
-   * If true, disables accessibility scrolling on the body. This should only
-   * be used if there is a scrollable container inside the body.
+   * Determines the scrolling behavior of the body. If 'auto', the body will
+   * scroll if the screen is effectively tiny (i.e., font scaling is enabled
+   * or the viewport is unusually small). If 'disabled', the body will never
+   * scroll. If 'forced', the body will always scroll.
    */
-  disableAccessibilityScrolling?: boolean;
+  scrolling?: 'auto' | 'disabled' | 'forced';
+
+  /**
+   * The bottom padding to add when scrolling is enabled. Default 40. Disable
+   * to not set any special bottom padding.
+   */
+  scrollingBottomPadding?: number | 'disable';
 }>): ReactElement => {
   const containerRef = useRef<View>(null);
   const childContainerRef = useRef<View | ScrollView>(null);
+  const defaultIsTinyScreen = useIsEffectivelyTinyScreen();
   const isTinyScreen =
-    useIsEffectivelyTinyScreen() && disableAccessibilityScrolling !== true;
+    scrolling === 'forced'
+      ? true
+      : scrolling === 'disabled'
+      ? false
+      : defaultIsTinyScreen;
 
   useEffect(() => {
     if (containerRef.current === null) {
@@ -139,7 +153,9 @@ export const OsehImageBackgroundFromStateValueWithCallbacks = ({
         },
         isTinyScreen
           ? {
-              paddingBottom: 40,
+              ...(scrollingBottomPadding === 'disable'
+                ? {}
+                : { paddingBottom: scrollingBottomPadding }),
               minHeight: state.get().displayHeight,
             }
           : {
@@ -208,10 +224,12 @@ export const OsehImageBackgroundFromStateValueWithCallbacks = ({
             style,
             styleVWC?.get(),
             {
-              paddingBottom: 40,
               width: state.get().displayWidth,
               minHeight: state.get().displayHeight,
-            }
+            },
+            scrollingBottomPadding === 'disable'
+              ? undefined
+              : { paddingBottom: scrollingBottomPadding }
           )}
         >
           {children}
