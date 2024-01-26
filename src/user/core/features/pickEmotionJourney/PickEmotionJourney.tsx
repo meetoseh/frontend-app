@@ -50,7 +50,7 @@ export const PickEmotionJourney = ({
   useEffect(() => {
     const notSet = Symbol();
     let settingStepTo: typeof step | typeof notSet = notSet;
-    let active = false;
+    let active = true;
     resources.callbacks.add(handleSelectedChanged);
     handleSelectedChanged();
     return () => {
