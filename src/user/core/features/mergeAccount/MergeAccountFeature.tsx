@@ -195,8 +195,7 @@ export const MergeAccountFeature: Feature<
       return undefined;
     }
 
-    // return state.ian.showNow;
-    return true;
+    return state.ian.showNow;
   },
   useResources: (stateVWC, requiredVWC, allStatesVWC) => {
     const sessionPropsVWC = useMappedValuesWithCallbacks(
