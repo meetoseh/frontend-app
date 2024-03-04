@@ -20,6 +20,7 @@ import { RefCountedDict } from '../lib/RefCountedDict';
 import { CancelablePromise } from '../lib/CancelablePromise';
 import { DownloadedItem } from './DownloadedItem';
 import { USES_WEBP } from './usesWebp';
+import { USES_SVG } from './usesSvg';
 import { downloadItem } from './downloadItem';
 import { cropImage } from './cropImage';
 import { InteractionManager, PixelRatio } from 'react-native';
@@ -286,6 +287,7 @@ export const useOsehImageStateRequestHandler = ({
 
     async function realHandleQueue() {
       const usesWebp = await USES_WEBP;
+      const usesSvg = await USES_SVG;
 
       while (active) {
         const item = requestQueue.current.shift();
@@ -293,7 +295,7 @@ export const useOsehImageStateRequestHandler = ({
           break;
         }
         if (!item.released) {
-          handleRequest(item, usesWebp);
+          handleRequest(item, usesWebp, usesSvg);
         }
       }
     }
@@ -324,7 +326,11 @@ export const useOsehImageStateRequestHandler = ({
       }
     }
 
-    async function handleRequest(req: OsehImageRequest, usesWebp: boolean) {
+    async function handleRequest(
+      req: OsehImageRequest,
+      usesWebp: boolean,
+      usesSvg: boolean
+    ) {
       let requeued = false;
       const requeue = () => {
         if (!req.released && !requeued) {
@@ -386,6 +392,7 @@ export const useOsehImageStateRequestHandler = ({
       const bestItem = selectBestItemUsingPixelRatio({
         playlist: playlist.playlist,
         usesWebp,
+        usesSvg,
         logical: {
           width: req.props.displayWidth,
           height: req.props.displayHeight,
