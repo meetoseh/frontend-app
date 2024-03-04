@@ -6,7 +6,7 @@ import {
   useRef,
 } from 'react';
 import { Callbacks } from '../lib/Callbacks';
-import { OsehImagePropsLoadable } from './OsehImageProps';
+import { DisplaySize, OsehImagePropsLoadable } from './OsehImageProps';
 import { OsehImageState } from './OsehImageState';
 import { LeastRecentlyUsedCache } from '../lib/LeastRecentlyUsedCache';
 import {
@@ -23,8 +23,10 @@ import { USES_WEBP } from './usesWebp';
 import { USES_SVG } from './usesSvg';
 import { downloadItem } from './downloadItem';
 import { cropImage } from './cropImage';
-import { InteractionManager, PixelRatio } from 'react-native';
-import { HTTP_API_URL } from '../lib/apiFetch';
+import { getJwtExpiration } from '../lib/getJwtExpiration';
+import { getCurrentServerTimeMS } from '../lib/getCurrentServerTimeMS';
+import { largestPhysicalPerLogical } from './DisplayRatioHelper';
+import { InteractionManager } from 'react-native';
 
 /**
  * Describes a manually ref-counted reference to a given OsehImageState. While
@@ -51,6 +53,16 @@ export type OsehImageRequestedState = {
    */
   state: OsehImageState;
   /**
+   * The actual requested display size. If the caller does not specify
+   * one of the dimensions, meaning they want to consider the available
+   * aspect ratios in the decision, then this will differ from the state
+   * displayWidth and displayHeight.
+   *
+   * Initially, the state displayWidth and displayHeight will be square
+   * with the value of the other dimension, until the playlist is available.
+   */
+  displaySize: DisplaySize;
+  /**
    * The callbacks invoked with the new state value whenever the state
    * value changes. Called only by the `useOsehImageFromRequestedState`
    */
@@ -64,6 +76,15 @@ export type OsehImageRequestedState = {
   release: () => void;
 };
 
+// a better type hint for when we don't want to accidentally pull the
+// display width or display height form the state instead of the displaySize
+type OsehImageRequestedStateClean = {
+  state: Omit<OsehImageState, 'displayWidth' | 'displayHeight'>;
+  displaySize: DisplaySize;
+  stateChanged: Callbacks<OsehImageState>;
+  release: () => void;
+};
+
 type OsehImageRequest = {
   props: OsehImagePropsLoadable;
   requested: OsehImageRequestedState;
@@ -71,6 +92,12 @@ type OsehImageRequest = {
   releasedCallbacks: Callbacks<undefined>;
 };
 
+type OsehImageRequestClean = {
+  props: OsehImagePropsLoadable;
+  requested: OsehImageRequestedStateClean;
+  released: boolean;
+  releasedCallbacks: Callbacks<undefined>;
+};
 /**
  * Describes an object capable of loading images using a manually ref-counted
  * strategy.
@@ -177,16 +204,35 @@ export const useOsehImageStateRequestHandler = ({
     let released = false;
     const releasedCallbacks = new Callbacks<undefined>();
 
+    const displaySize: DisplaySize =
+      props.displayWidth === null
+        ? {
+            displayWidth: null,
+            displayHeight: props.displayHeight,
+            compareAspectRatio: props.compareAspectRatio,
+          }
+        : props.displayHeight === null
+        ? {
+            displayWidth: props.displayWidth,
+            displayHeight: null,
+            compareAspectRatio: props.compareAspectRatio,
+          }
+        : {
+            displayWidth: props.displayWidth,
+            displayHeight: props.displayHeight,
+          };
+
     const requested = {
       state: {
         localUrl: null,
-        displayWidth: props.displayWidth,
-        displayHeight: props.displayHeight,
         alt: props.alt,
         loading: true,
         placeholderColor: props.placeholderColor,
         thumbhash: null,
+        displayWidth: props.displayWidth ?? props.displayHeight,
+        displayHeight: props.displayHeight ?? props.displayWidth,
       },
+      displaySize,
       stateChanged: new Callbacks<OsehImageState>(),
       release: () => {
         if (!released) {
@@ -327,15 +373,17 @@ export const useOsehImageStateRequestHandler = ({
     }
 
     async function handleRequest(
-      req: OsehImageRequest,
+      reqDangerous: OsehImageRequest,
       usesWebp: boolean,
       usesSvg: boolean
     ) {
+      const req = reqDangerous as OsehImageRequestClean;
+
       let requeued = false;
       const requeue = () => {
         if (!req.released && !requeued) {
           requeued = true;
-          requestQueue.current.push(req);
+          requestQueue.current.push(reqDangerous);
           requestQueuedCallbacks.current.call(undefined);
           canceledCallbacks.remove(requeue);
         }
@@ -354,14 +402,14 @@ export const useOsehImageStateRequestHandler = ({
         console.error(
           'error while loading image: ',
           req.props,
-          `from API url ${HTTP_API_URL}\n\nerror: `,
+          '\n\nerror: ',
           e
         );
         req.released = true;
         req.releasedCallbacks.call(undefined);
       };
 
-      const playlistPromise = getPlaylist(req.props);
+      let playlistPromise = getPlaylist(req.props);
       let playlistReleased = false;
       const releasePlaylist = () => {
         if (!playlistReleased) {
@@ -384,23 +432,44 @@ export const useOsehImageStateRequestHandler = ({
         return;
       }
 
-      const want = {
-        width: PixelRatio.getPixelSizeForLayoutSize(req.props.displayWidth),
-        height: PixelRatio.getPixelSizeForLayoutSize(req.props.displayHeight),
-      };
+      const jwtExpiration = getJwtExpiration(playlist.jwt);
+      const nowServerTime = await getCurrentServerTimeMS();
+      if (jwtExpiration <= nowServerTime - 5000) {
+        playlistsByImageFileUID.reduceRefCount(req.props.uid);
+        playlistPromise = getPlaylist(req.props, true);
+        try {
+          playlist = await playlistPromise;
+        } catch (e) {
+          handleError(e);
+          return;
+        }
+        if (!active || req.released) {
+          return;
+        }
+      }
 
       const bestItem = selectBestItemUsingPixelRatio({
         playlist: playlist.playlist,
         usesWebp,
         usesSvg,
-        logical: {
-          width: req.props.displayWidth,
-          height: req.props.displayHeight,
-        },
-        preferredPixelRatio: Math.min(
-          want.width / req.props.displayWidth,
-          want.height / req.props.displayHeight
-        ),
+        logical:
+          req.props.displayWidth === null
+            ? {
+                width: null,
+                height: req.props.displayHeight,
+                compareAspectRatios: req.props.compareAspectRatio,
+              }
+            : req.props.displayHeight === null
+            ? {
+                width: req.props.displayWidth,
+                height: null,
+                compareAspectRatios: req.props.compareAspectRatio,
+              }
+            : {
+                width: req.props.displayWidth,
+                height: req.props.displayHeight,
+              },
+        preferredPixelRatio: largestPhysicalPerLogical,
       });
 
       let bestItemReleased = false;
@@ -416,15 +485,52 @@ export const useOsehImageStateRequestHandler = ({
       canceledCallbacks.add(releaseItem);
 
       if (req.requested.state.thumbhash !== bestItem.item.thumbhash) {
-        req.requested.state = {
-          ...req.requested.state,
+        reqDangerous.requested.state = {
+          ...reqDangerous.requested.state,
           thumbhash: bestItem.item.thumbhash,
         };
-        req.requested.stateChanged.call(req.requested.state);
+        req.requested.stateChanged.call(reqDangerous.requested.state);
 
         if (!active || req.released) {
           return;
         }
+      }
+
+      const actualDisplayWidth =
+        (bestItem.cropTo?.width ?? bestItem.item.width) /
+        largestPhysicalPerLogical;
+      const actualDisplayHeight =
+        (bestItem.cropTo?.height ?? bestItem.item.height) /
+        largestPhysicalPerLogical;
+
+      if (
+        req.props.displayWidth === null &&
+        Math.abs(
+          actualDisplayWidth - reqDangerous.requested.state.displayWidth
+        ) *
+          largestPhysicalPerLogical >=
+          1
+      ) {
+        reqDangerous.requested.state = {
+          ...reqDangerous.requested.state,
+          displayWidth: actualDisplayWidth,
+        };
+        req.requested.stateChanged.call(reqDangerous.requested.state);
+      }
+
+      if (
+        req.props.displayHeight === null &&
+        Math.abs(
+          actualDisplayHeight - reqDangerous.requested.state.displayHeight
+        ) *
+          largestPhysicalPerLogical >=
+          1
+      ) {
+        reqDangerous.requested.state = {
+          ...reqDangerous.requested.state,
+          displayHeight: actualDisplayHeight,
+        };
+        req.requested.stateChanged.call(reqDangerous.requested.state);
       }
 
       let item: DownloadedItem;
@@ -445,7 +551,7 @@ export const useOsehImageStateRequestHandler = ({
           localUrl: item.localUrl,
           loading: false,
         };
-        req.requested.stateChanged.call(req.requested.state);
+        req.requested.stateChanged.call(reqDangerous.requested.state);
         return;
       }
       const cropID = getCropID(
@@ -467,7 +573,13 @@ export const useOsehImageStateRequestHandler = ({
       canceledCallbacks.add(releaseCrop);
       let crop: DownloadedItem;
       try {
-        crop = await getCrop(item, bestItem.cropTo, cropID);
+        crop = await getCrop(
+          item,
+          bestItem.item,
+          bestItem.cropTo,
+          cropID,
+          bestItem.item.format === 'svg'
+        );
       } catch (e) {
         handleError(e);
         return;
@@ -482,28 +594,30 @@ export const useOsehImageStateRequestHandler = ({
         localUrl: crop.localUrl,
         loading: false,
       };
-      req.requested.stateChanged.call(req.requested.state);
+      req.requested.stateChanged.call(reqDangerous.requested.state);
     }
 
     async function getPlaylist(
-      props: OsehImagePropsLoadable
+      props: OsehImagePropsLoadable,
+      skipCache: boolean = false
     ): Promise<PlaylistWithJWT> {
       const reused = playlistsByImageFileUID.get(props.uid);
       const replacing = reused !== undefined;
-      if (replacing) {
-        // checking for jwt means yielding, and there is no safe way to yield here
+      if (replacing && !skipCache) {
         return reused.promise;
       }
 
-      const cached = playlistsByImageFileUIDCache.get(props.uid);
-      if (cached !== undefined) {
-        playlistsByImageFileUIDCache.remove(props.uid);
-        playlistsByImageFileUID.set(props.uid, {
-          promise: cached,
-          cancel: () => undefined,
-          done: () => true,
-        });
-        return cached;
+      if (!skipCache) {
+        const cached = playlistsByImageFileUIDCache.get(props.uid);
+        if (cached !== undefined) {
+          playlistsByImageFileUIDCache.remove(props.uid);
+          playlistsByImageFileUID.set(props.uid, {
+            promise: cached,
+            cancel: () => undefined,
+            done: () => true,
+          });
+          return cached;
+        }
       }
 
       let done = false;
@@ -517,7 +631,9 @@ export const useOsehImageStateRequestHandler = ({
             return;
           }
 
-          const abortController: AbortController | null = new AbortController();
+          const abortController: AbortController | null = window.AbortController
+            ? new window.AbortController()
+            : null;
           const abortSignal: AbortSignal | null = abortController
             ? abortController.signal
             : null;
@@ -608,9 +724,7 @@ export const useOsehImageStateRequestHandler = ({
           }
 
           const abortController: AbortController | null = new AbortController();
-          const abortSignal: AbortSignal | null = abortController
-            ? abortController.signal
-            : null;
+          const abortSignal: AbortSignal | null = abortController.signal;
 
           realCanceler = () => {
             if (done) {
@@ -658,8 +772,10 @@ export const useOsehImageStateRequestHandler = ({
 
     async function getCrop(
       downloaded: DownloadedItem,
+      srcSize: { width: number; height: number },
       cropTo: { width: number; height: number },
-      cropID: string
+      cropID: string,
+      isVector: boolean
     ): Promise<DownloadedItem> {
       const reused = cropsByCropID.get(cropID);
       if (reused !== undefined) {
@@ -690,8 +806,10 @@ export const useOsehImageStateRequestHandler = ({
 
           const croppedUrl = await cropImage(
             downloaded.originalLocalUrl,
+            srcSize,
             cropTo,
-            cropID
+            cropID,
+            isVector
           );
           if (done) {
             reject('canceled');

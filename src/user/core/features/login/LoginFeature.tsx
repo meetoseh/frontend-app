@@ -103,11 +103,13 @@ export const LoginFeature: Feature<LoginState, LoginResources> = {
 
     return useMappedValuesWithCallbacks(
       [windowSizeVWC, background],
-      (): LoginResources => ({
-        background: background.get(),
-        windowSize: windowSizeVWC.get(),
-        loading: background.get().loading,
-      })
+      (): LoginResources => {
+        return {
+          background: background.get(),
+          windowSize: windowSizeVWC.get(),
+          loading: background.get().loading,
+        };
+      }
     );
   },
 

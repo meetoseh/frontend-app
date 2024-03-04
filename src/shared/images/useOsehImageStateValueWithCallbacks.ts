@@ -13,8 +13,8 @@ import { OsehImageStateRequestHandler } from './useOsehImageStateRequestHandler'
 
 const createLoadingState = (props: OsehImageProps): OsehImageState => ({
   localUrl: null,
-  displayWidth: props.displayWidth,
-  displayHeight: props.displayHeight,
+  displayWidth: props.displayWidth ?? props.displayHeight,
+  displayHeight: props.displayHeight ?? props.displayWidth,
   alt: props.alt,
   loading: true,
   placeholderColor: props.placeholderColor,
@@ -53,17 +53,12 @@ export const useOsehImageStateValueWithCallbacks = (
     useVariableStrategyPropsAsValueWithCallbacks(props);
 
   useEffect(() => {
-    let active = true;
     let canceler: (() => void) | null = null;
 
     propsAsValueWithCallbacks.callbacks.add(handlePropsChanged);
     handlePropsChanged();
 
     return () => {
-      if (!active) {
-        return;
-      }
-      active = false;
       propsAsValueWithCallbacks.callbacks.remove(handlePropsChanged);
       if (canceler) {
         canceler();
@@ -72,9 +67,6 @@ export const useOsehImageStateValueWithCallbacks = (
     };
 
     function handlePropsChanged() {
-      if (!active) {
-        return;
-      }
       if (canceler) {
         canceler();
         canceler = null;
@@ -84,11 +76,28 @@ export const useOsehImageStateValueWithCallbacks = (
     }
 
     function handleProps(props: OsehImageProps): () => void {
+      const cpDisplaySize =
+        props.displayWidth === null
+          ? {
+              displayWidth: null,
+              displayHeight: props.displayHeight,
+              compareAspectRatio: props.compareAspectRatio,
+            }
+          : props.displayHeight === null
+          ? {
+              displayWidth: props.displayWidth,
+              displayHeight: null,
+              compareAspectRatio: props.compareAspectRatio,
+            }
+          : {
+              displayWidth: props.displayWidth,
+              displayHeight: props.displayHeight,
+            };
+
       const cpProps: OsehImageProps = {
         uid: props.uid,
         jwt: props.jwt,
-        displayWidth: props.displayWidth,
-        displayHeight: props.displayHeight,
+        ...cpDisplaySize,
         alt: props.alt,
         isPublic: props.isPublic,
         placeholderColor: props.placeholderColor,

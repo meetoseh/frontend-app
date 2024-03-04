@@ -1,27 +1,27 @@
-import { StatusBar } from "expo-status-bar";
+import { StatusBar } from 'expo-status-bar';
 import {
   MutableRefObject,
   ReactElement,
   useCallback,
   useMemo,
   useRef,
-} from "react";
-import { View } from "react-native";
-import { styles } from "./SplashScreenStyles";
-import AnimatedLottieView from "lottie-react-native";
+} from 'react';
+import { View } from 'react-native';
+import { styles } from './SplashScreenStyles';
+import AnimatedLottieView from 'lottie-react-native';
 import {
   useWindowSize,
   useWindowSizeValueWithCallbacks,
-} from "../../shared/hooks/useWindowSize";
+} from '../../shared/hooks/useWindowSize';
 import {
   Callbacks,
   useWritableValueWithCallbacks,
-} from "../../shared/lib/Callbacks";
-import { useForwardBackwardEffect } from "../../shared/hooks/useForwardBackwardEffect";
-import { adaptValueWithCallbacksAsVariableStrategyProps } from "../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps";
-import { RenderGuardedComponent } from "../../shared/components/RenderGuardedComponent";
-import { useMappedValueWithCallbacks } from "../../shared/hooks/useMappedValueWithCallbacks";
-import { InlineOsehSpinner } from "../../shared/components/InlineOsehSpinner";
+} from '../../shared/lib/Callbacks';
+import { useForwardBackwardEffect } from '../../shared/hooks/useForwardBackwardEffect';
+import { adaptValueWithCallbacksAsVariableStrategyProps } from '../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps';
+import { RenderGuardedComponent } from '../../shared/components/RenderGuardedComponent';
+import { useMappedValueWithCallbacks } from '../../shared/hooks/useMappedValueWithCallbacks';
+import { InlineOsehSpinner } from '../../shared/components/InlineOsehSpinner';
 
 const BRANDMARK_HOLD_TIME_MS = { forward: 750, backward: 500 };
 const BRANDMARK_WIDTH = (windowSize: {
@@ -47,16 +47,16 @@ type SplashScreenProps = {
   /**
    * The style to use for the spinner. Defaults to 'brandmark'
    */
-  type?: "wordmark" | "brandmark" | undefined;
+  type?: 'wordmark' | 'brandmark' | undefined;
 };
 /**
  * Shows a fun animation and image which is typically used while the app is
  * loading.
  */
 export const SplashScreen = ({ type }: SplashScreenProps): ReactElement => {
-  const realStyle = type ?? "brandmark";
+  const realStyle = type ?? 'brandmark';
 
-  if (realStyle === "brandmark") {
+  if (realStyle === 'brandmark') {
     return <FastInlineOsehSpinnerSplashScreen />;
   }
 
@@ -76,7 +76,7 @@ const FastInlineOsehSpinnerSplashScreen = (): ReactElement => {
     <View style={styles.fastContainer}>
       <InlineOsehSpinner
         size={{
-          type: "callbacks",
+          type: 'callbacks',
           props: renderedSize.get,
           callbacks: renderedSize.callbacks,
         }}
@@ -88,7 +88,7 @@ const FastInlineOsehSpinnerSplashScreen = (): ReactElement => {
 };
 
 const LottieSplashScreen = ({ type }: SplashScreenProps): ReactElement => {
-  const realType = type ?? "brandmark";
+  const realType = type ?? 'brandmark';
 
   const playerVWC = useWritableValueWithCallbacks<
     AnimatedLottieView | undefined
@@ -115,44 +115,45 @@ const LottieSplashScreen = ({ type }: SplashScreenProps): ReactElement => {
     animationFinished.current = new Callbacks<boolean>();
   }
   const onAnimationFinishWrapper = useCallback((isCanceled: boolean) => {
+    console.log('onAnimationFinishWrapper', isCanceled);
     animationFinished.current.call(isCanceled);
   }, []);
 
   const windowSize = useWindowSize();
 
   const { playerStyle: playerStyleBrandmark } = useForwardBackwardEffect({
-    enabled: { type: "react-rerender", props: realType === "brandmark" },
+    enabled: { type: 'react-rerender', props: realType === 'brandmark' },
     player: adaptValueWithCallbacksAsVariableStrategyProps(playerVWC),
     onAnimationFinished: animationFinished.current,
     animationPoints: {
-      type: "react-rerender",
+      type: 'react-rerender',
       props: { in: BRANDMARK_INPOINT, out: BRANDMARK_OUTPOINT },
     },
     size: {
-      type: "react-rerender",
+      type: 'react-rerender',
       props: {
         aspectRatio: BRANDMARK_NATURAL_ASPECT_RATIO,
         width: BRANDMARK_WIDTH(windowSize),
       },
     },
-    holdTime: { type: "react-rerender", props: BRANDMARK_HOLD_TIME_MS },
+    holdTime: { type: 'react-rerender', props: BRANDMARK_HOLD_TIME_MS },
   });
   const { playerStyle: playerStyleWordmark } = useForwardBackwardEffect({
-    enabled: { type: "react-rerender", props: realType === "wordmark" },
+    enabled: { type: 'react-rerender', props: realType === 'wordmark' },
     player: adaptValueWithCallbacksAsVariableStrategyProps(playerVWC),
     onAnimationFinished: animationFinished.current,
     animationPoints: {
-      type: "react-rerender",
+      type: 'react-rerender',
       props: { in: WORDMARK_INPOINT, out: WORDMARK_OUTPOINT },
     },
     size: {
-      type: "react-rerender",
+      type: 'react-rerender',
       props: {
         aspectRatio: WORDMARK_NATURAL_ASPECT_RATIO,
         width: WORDMARK_WIDTH(windowSize),
       },
     },
-    holdTime: { type: "react-rerender", props: WORDMARK_HOLD_TIME_MS },
+    holdTime: { type: 'react-rerender', props: WORDMARK_HOLD_TIME_MS },
   });
 
   const containerStyle = useMemo(() => {
@@ -163,7 +164,7 @@ const LottieSplashScreen = ({ type }: SplashScreenProps): ReactElement => {
   }, [windowSize]);
 
   const playerStyleVWC =
-    realType === "brandmark" ? playerStyleBrandmark : playerStyleWordmark;
+    realType === 'brandmark' ? playerStyleBrandmark : playerStyleWordmark;
   return (
     <View style={containerStyle}>
       <RenderGuardedComponent
@@ -178,9 +179,9 @@ const LottieSplashScreen = ({ type }: SplashScreenProps): ReactElement => {
             style={playerStyle}
             onAnimationFinish={onAnimationFinishWrapper}
             source={
-              realType === "wordmark"
-                ? require("./assets/wordmark.lottie.json")
-                : require("./assets/brandmark.lottie.json")
+              realType === 'wordmark'
+                ? require('./assets/wordmark.lottie.json')
+                : require('./assets/brandmark.lottie.json')
             }
           />
         )}

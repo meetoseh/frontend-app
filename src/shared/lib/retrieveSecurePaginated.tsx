@@ -8,7 +8,9 @@ import * as Crypto from 'expo-crypto';
  *
  * @param baseKey The base key to use for the storage
  */
-export const retrieveSecurePaginated = async (baseKey: string): Promise<string | null> => {
+export const retrieveSecurePaginated = async (
+  baseKey: string
+): Promise<string | null> => {
   const lengthKey = `${baseKey}-length`;
   const digestKey = `${baseKey}-sha512`;
 
@@ -28,6 +30,7 @@ export const retrieveSecurePaginated = async (baseKey: string): Promise<string |
     return null;
   }
   const expectedNumParts = Math.ceil(expectedLengthNum / 2048);
+  console.log('retrieveSecurePaginated retrieving', expectedNumParts, 'parts');
 
   const expectedDigest = await SecureStore.getItemAsync(digestKey);
   if (expectedDigest === null) {
@@ -36,24 +39,38 @@ export const retrieveSecurePaginated = async (baseKey: string): Promise<string |
 
   const parts = [];
   for (let i = 0; i < expectedNumParts; i++) {
+    console.log(
+      'retrieveSecurePaginated retrieving',
+      expectedNumParts,
+      'parts; getting part index',
+      i
+    );
     const val = await SecureStore.getItemAsync(`${baseKey}-${i}`);
     if (val === null) {
+      console.log('retrieveSecurePaginated returning (part missing)');
       return null;
     }
 
+    console.log('retrieveSecurePaginated pushing part');
     parts.push(val);
   }
 
   const retrieved = parts.join('');
   if (retrieved.length !== expectedLengthNum) {
+    console.log('retrieveSecurePaginated returning (wrong length when joined)');
     return null;
   }
 
-  const digest = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA512, retrieved);
+  const digest = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA512,
+    retrieved
+  );
 
   if (digest !== expectedDigest) {
+    console.log('retrieveSecurePaginated returning (bad digest)');
     return null;
   }
 
+  console.log('retrieveSecurePaginated returning with stored value');
   return retrieved;
 };

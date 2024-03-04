@@ -1,15 +1,15 @@
-import { useEffect, useMemo } from "react";
-import AnimatedLottieView from "lottie-react-native";
+import { useEffect, useMemo } from 'react';
+import AnimatedLottieView from 'lottie-react-native';
 import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
-} from "../anim/VariableStrategyProps";
+} from '../anim/VariableStrategyProps';
 import {
   Callbacks,
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../lib/Callbacks";
-import { PixelRatio } from "react-native";
+} from '../lib/Callbacks';
+import { PixelRatio } from 'react-native';
 
 type CalculableSize =
   | { width: number; height: number }
@@ -91,7 +91,7 @@ const computeSize = (
   paddingRight: number;
   paddingBottom: number;
 } => {
-  if ("width" in size && "height" in size) {
+  if ('width' in size && 'height' in size) {
     const dpi = PixelRatio.get();
     const scaledTarget = {
       width: size.width * dpi,
@@ -108,7 +108,7 @@ const computeSize = (
       paddingRight: scaledPadding.paddingRight / dpi,
       paddingBottom: scaledPadding.paddingBottom / dpi,
     };
-  } else if ("width" in size && "aspectRatio" in size) {
+  } else if ('width' in size && 'aspectRatio' in size) {
     return computeSize({
       width: size.width,
       height: size.width / size.aspectRatio,
@@ -179,30 +179,32 @@ export const useForwardBackwardEffect = ({
        * immediately.
        */
       let state:
-        | "forward"
-        | "holding-after-forward"
-        | "backward"
-        | "holding-after-backward" = "forward";
+        | 'forward'
+        | 'holding-after-forward'
+        | 'backward'
+        | 'holding-after-backward' = 'forward';
       let holdTimeout: NodeJS.Timeout | null = null;
 
       const onComplete = () => {
-        if (state !== "forward" && state !== "backward") {
+        console.log('onComplete');
+        if (state !== 'forward' && state !== 'backward') {
           return;
         }
 
         player.pause();
         holdTimeout = setTimeout(onHoldFinished, holdTimeVWC.get()[state]);
         state =
-          state === "forward"
-            ? "holding-after-forward"
-            : "holding-after-backward";
+          state === 'forward'
+            ? 'holding-after-forward'
+            : 'holding-after-backward';
         onAnimationFinished.remove(onComplete);
       };
 
       const onHoldFinished = () => {
+        console.log('onHoldFinished');
         if (
-          state !== "holding-after-forward" &&
-          state !== "holding-after-backward"
+          state !== 'holding-after-forward' &&
+          state !== 'holding-after-backward'
         ) {
           return;
         }
@@ -210,17 +212,18 @@ export const useForwardBackwardEffect = ({
         holdTimeout = null;
         const { in: inpoint, out: outpoint } = animationPointsVWC.get();
 
-        if (state === "holding-after-forward") {
+        if (state === 'holding-after-forward') {
           player.play(outpoint, inpoint);
-          state = "backward";
+          state = 'backward';
         } else {
           player.play(inpoint, outpoint);
-          state = "forward";
+          state = 'forward';
         }
 
         onAnimationFinished.add(onComplete);
       };
 
+      console.log('onAnimationFinished callback registered');
       onAnimationFinished.add(onComplete);
       player.play(animationPointsVWC.get().in, animationPointsVWC.get().out);
 
@@ -230,7 +233,8 @@ export const useForwardBackwardEffect = ({
           holdTimeout = null;
         }
 
-        if (state === "forward" || state === "backward") {
+        if (state === 'forward' || state === 'backward') {
+          console.log('onAnimationFinished callback removed');
           onAnimationFinished.remove(onComplete);
         }
       };

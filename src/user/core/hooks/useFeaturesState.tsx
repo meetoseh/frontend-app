@@ -1,20 +1,20 @@
-import { ReactElement, useCallback, useRef } from "react";
-import { FeatureAllStates } from "../models/FeatureAllStates";
-import { RequestNameFeature } from "../features/requestName/RequestNameFeature";
-import { LoginFeature } from "../features/login/LoginFeature";
-import { PickEmotionJourneyFeature } from "../features/pickEmotionJourney/PickEmotionJourneyFeature";
-import { useMappedValueWithCallbacks } from "../../../shared/hooks/useMappedValueWithCallbacks";
-import { useMappedValuesWithCallbacks } from "../../../shared/hooks/useMappedValuesWithCallbacks";
-import { ValueWithCallbacks } from "../../../shared/lib/Callbacks";
-import { FavoritesFeature } from "../features/favorites/FavoritesFeature";
-import { SettingsFeature } from "../features/settings/SettingsFeature";
-import { AppNotifsFeature } from "../features/appNotifs/AppNotifsFeature";
-import { SignupRewardFeature } from "../features/signupReward/SignupRewardFeature";
-import { GoalDaysPerWeekFeature } from "../features/goalDaysPerWeek/GoalDaysPerWeekFeature";
-import { RequestPhoneFeature } from "../features/requestPhone/RequestPhoneFeature";
-import { RequestNotificationTimeFeature } from "../features/requestNotificationTime/RequestNotificationTimeFeature";
-import { ConfirmMergeAccountFeature } from "../features/confirmMergeAccount/ConfirmMergeAccountFeature";
-import { MergeAccountFeature } from "../features/mergeAccount/MergeAccountFeature";
+import { ReactElement, useCallback, useRef } from 'react';
+import { FeatureAllStates } from '../models/FeatureAllStates';
+import { RequestNameFeature } from '../features/requestName/RequestNameFeature';
+import { LoginFeature } from '../features/login/LoginFeature';
+import { PickEmotionJourneyFeature } from '../features/pickEmotionJourney/PickEmotionJourneyFeature';
+import { useMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValueWithCallbacks';
+import { useMappedValuesWithCallbacks } from '../../../shared/hooks/useMappedValuesWithCallbacks';
+import { ValueWithCallbacks } from '../../../shared/lib/Callbacks';
+import { FavoritesFeature } from '../features/favorites/FavoritesFeature';
+import { SettingsFeature } from '../features/settings/SettingsFeature';
+import { AppNotifsFeature } from '../features/appNotifs/AppNotifsFeature';
+import { SignupRewardFeature } from '../features/signupReward/SignupRewardFeature';
+import { GoalDaysPerWeekFeature } from '../features/goalDaysPerWeek/GoalDaysPerWeekFeature';
+import { RequestPhoneFeature } from '../features/requestPhone/RequestPhoneFeature';
+import { RequestNotificationTimeFeature } from '../features/requestNotificationTime/RequestNotificationTimeFeature';
+import { ConfirmMergeAccountFeature } from '../features/confirmMergeAccount/ConfirmMergeAccountFeature';
+import { MergeAccountFeature } from '../features/mergeAccount/MergeAccountFeature';
 
 const features = [
   LoginFeature,
@@ -171,7 +171,6 @@ export const useFeaturesState = (
             initWarnLoading(i);
             return undefined;
           }
-
           clearWarnLoading();
           return features[i].component(states[i] as any, resources[i] as any);
         }

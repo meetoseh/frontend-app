@@ -1,12 +1,14 @@
-import * as FileSystem from "expo-file-system";
-import { SaveFormat, manipulateAsync } from "expo-image-manipulator";
+import * as FileSystem from 'expo-file-system';
+import { SaveFormat, manipulateAsync } from 'expo-image-manipulator';
 
 const cropImageUnsafe = async (
   src: string,
+  srcSize: { width: number; height: number },
   cropTo: { width: number; height: number },
-  cacheableIdentifier: string
+  cacheableIdentifier: string,
+  isVector: boolean
 ): Promise<string> => {
-  const targetFolder = FileSystem.cacheDirectory + "cropped-images/";
+  const targetFolder = FileSystem.cacheDirectory + 'cropped-images/';
   const dirInfo = await FileSystem.getInfoAsync(targetFolder);
   if (!dirInfo.exists) {
     await FileSystem.makeDirectoryAsync(targetFolder, { intermediates: true });
@@ -14,9 +16,9 @@ const cropImageUnsafe = async (
 
   const format =
     cropTo.width * cropTo.height < 600 * 600 ? SaveFormat.PNG : SaveFormat.JPEG;
-  const ext = format === SaveFormat.PNG ? "png" : "jpeg";
+  const ext = format === SaveFormat.PNG ? 'png' : 'jpeg';
 
-  const targetFile = targetFolder + cacheableIdentifier + "." + ext;
+  const targetFile = targetFolder + cacheableIdentifier + '.' + ext;
   const fileInfo = await FileSystem.getInfoAsync(targetFile);
   if (fileInfo.exists) {
     return targetFile;
@@ -141,20 +143,34 @@ const cropImageUnsafe = async (
  * something goes wrong this returns the original image url.
  *
  * @param src The url of the image to crop
+ * @param srcSize The expected natural size of the image, primarily for vector
+ *   images
  * @param cropTo The size to crop the image to
  * @param cacheableIdentifier A unique string which identifies the source
  *   image and the crop settings. For the web this is unused, but for
  *   the apps it's used as a filename.
+ * @param isVector true if the src points to a vector image, i.e., we can
+ *   scale it arbitrarily without loss of quality. false if the src points
+ *   to a raster image, i.e., we can't scale it arbitrarily without loss
+ *   of quality.
  */
 export const cropImage = async (
   src: string,
+  srcSize: { width: number; height: number },
   cropTo: { width: number; height: number },
-  cacheableIdentifier: string
+  cacheableIdentifier: string,
+  isVector: boolean
 ): Promise<string> => {
   try {
-    return await cropImageUnsafe(src, cropTo, cacheableIdentifier);
+    return await cropImageUnsafe(
+      src,
+      srcSize,
+      cropTo,
+      cacheableIdentifier,
+      isVector
+    );
   } catch (e) {
-    console.error("Error cropping image", e);
+    console.error('Error cropping image', e);
     return src;
   }
 };
