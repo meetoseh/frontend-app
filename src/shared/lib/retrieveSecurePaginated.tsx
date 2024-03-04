@@ -30,7 +30,6 @@ export const retrieveSecurePaginated = async (
     return null;
   }
   const expectedNumParts = Math.ceil(expectedLengthNum / 2048);
-  console.log('retrieveSecurePaginated retrieving', expectedNumParts, 'parts');
 
   const expectedDigest = await SecureStore.getItemAsync(digestKey);
   if (expectedDigest === null) {
@@ -39,25 +38,16 @@ export const retrieveSecurePaginated = async (
 
   const parts = [];
   for (let i = 0; i < expectedNumParts; i++) {
-    console.log(
-      'retrieveSecurePaginated retrieving',
-      expectedNumParts,
-      'parts; getting part index',
-      i
-    );
     const val = await SecureStore.getItemAsync(`${baseKey}-${i}`);
     if (val === null) {
-      console.log('retrieveSecurePaginated returning (part missing)');
       return null;
     }
 
-    console.log('retrieveSecurePaginated pushing part');
     parts.push(val);
   }
 
   const retrieved = parts.join('');
   if (retrieved.length !== expectedLengthNum) {
-    console.log('retrieveSecurePaginated returning (wrong length when joined)');
     return null;
   }
 
@@ -67,10 +57,8 @@ export const retrieveSecurePaginated = async (
   );
 
   if (digest !== expectedDigest) {
-    console.log('retrieveSecurePaginated returning (bad digest)');
     return null;
   }
 
-  console.log('retrieveSecurePaginated returning with stored value');
   return retrieved;
 };

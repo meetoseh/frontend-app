@@ -55,6 +55,7 @@ import {
   SvgLinearGradientBackground,
   SvgLinearGradientBackgroundState,
 } from '../../../../shared/anim/SvgLinearGradientBackground';
+import { BottomNavBar } from '../../../bottomNav/BottomNavBar';
 
 /**
  * The settings for the profile pictures
@@ -202,6 +203,8 @@ export const PickEmotion = ({
     }
   );
 
+  const navbarVWC = useMappedValueWithCallbacks(resources, (r) => r.navbar);
+
   const layoutVWC = useMappedValueWithCallbacks(
     tentativelyPressedVWC,
     (tp): 'horizontal' | 'vertical' => {
@@ -293,6 +296,24 @@ export const PickEmotion = ({
                 onGotoClassClick={onGotoClassClick}
                 profilePicturesState={profilePicturesState}
               />
+            )
+          }
+        />
+        <RenderGuardedComponent
+          props={navbarVWC}
+          component={(enabled) =>
+            enabled ? (
+              <View style={styles.bottomNav}>
+                <BottomNavBar
+                  active="home"
+                  clickHandlers={{
+                    series: () => resources.get().gotoSeries(),
+                    account: () => resources.get().gotoSettings(),
+                  }}
+                />
+              </View>
+            ) : (
+              <></>
             )
           }
         />

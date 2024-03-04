@@ -66,6 +66,12 @@ export type UserAttributes = {
    * The users family name, if available. See name for more details.
    */
   familyName: string | null;
+
+  /**
+   * What feature flags, if any, the user has enabled. This is the oseh:feature_flags
+   * claim in the jwt.
+   */
+  featureFlags: Set<string>;
 };
 
 /**
@@ -243,6 +249,11 @@ export const extractUserAttributes = (
     }
   }
 
+  const featureFlagsClaim: string[] | null | undefined =
+    claims['oseh:feature_flags'];
+
+  const featureFlags = new Set(featureFlagsClaim ?? []);
+
   return {
     sub: claims.sub,
     email: claims.email,
@@ -250,6 +261,7 @@ export const extractUserAttributes = (
     name: nameClaims.name,
     givenName: nameClaims.given_name,
     familyName: nameClaims.family_name,
+    featureFlags,
   };
 };
 
@@ -310,7 +322,10 @@ export const storeUserAttributes = async (
   } else {
     await AsyncStorage.setItem(
       'user_attributes',
-      JSON.stringify(userAttributes)
+      JSON.stringify({
+        ...userAttributes,
+        featureFlags: Array.from(userAttributes.featureFlags),
+      })
     );
   }
 };
@@ -325,7 +340,18 @@ const retrieveUserAttributes = async (): Promise<UserAttributes | null> => {
     return null;
   }
 
-  return JSON.parse(userAttributesJson);
+  const raw = JSON.parse(userAttributesJson);
+  if (
+    raw.featureFlags === undefined ||
+    raw.featureFlags === null ||
+    typeof raw.featureFlags !== 'object' ||
+    !Array.isArray(raw.featureFlags)
+  ) {
+    raw.featureFlags = new Set();
+  } else {
+    raw.featureFlags = new Set(raw.featureFlags);
+  }
+  return raw;
 };
 
 /**

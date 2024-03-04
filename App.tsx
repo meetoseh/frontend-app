@@ -7,7 +7,7 @@ import { useConfigureBackgroundAudio } from './src/shared/hooks/useConfigureBack
 import { useMappedValuesWithCallbacks } from './src/shared/hooks/useMappedValuesWithCallbacks';
 import { useWritableValueWithCallbacks } from './src/shared/lib/Callbacks';
 import { useValueWithCallbacksEffect } from './src/shared/hooks/useValueWithCallbacksEffect';
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { setVWC } from './src/shared/lib/setVWC';
 import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';

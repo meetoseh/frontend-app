@@ -35,6 +35,7 @@ import { describeError } from '../../../../shared/lib/describeError';
 import { convertUsingKeymap } from '../../../../shared/lib/CrudFetcher';
 import { useLogoutHandler } from '../../../../shared/hooks/useLogoutHandler';
 import { setVWC } from '../../../../shared/lib/setVWC';
+import { useFeatureFlag } from '../../../../shared/lib/useFeatureFlag';
 
 type Selected = {
   word: Emotion;
@@ -489,6 +490,7 @@ export const PickEmotionJourneyFeature: Feature<
       useReactManagedValueAsValueWithCallbacks(onFinishedJourney);
     const takeAnotherClassVWC =
       useReactManagedValueAsValueWithCallbacks(takeAnotherClass);
+    const navbarVWC = useFeatureFlag('series');
 
     return useMappedValuesWithCallbacks(
       [
@@ -504,6 +506,7 @@ export const PickEmotionJourneyFeature: Feature<
         onSelectVWC,
         onFinishedJourneyVWC,
         takeAnotherClassVWC,
+        navbarVWC,
       ],
       (): PickEmotionJourneyResources => {
         const error = errorVWC.get();
@@ -518,6 +521,7 @@ export const PickEmotionJourneyFeature: Feature<
         const onSelect = onSelectVWC.get();
         const onFinishedJourney = onFinishedJourneyVWC.get();
         const takeAnotherClass = takeAnotherClassVWC.get();
+        const navbar = !!navbarVWC.get();
 
         return {
           loading:
@@ -551,6 +555,7 @@ export const PickEmotionJourneyFeature: Feature<
           background,
           forceSplash,
           isOnboarding,
+          navbar,
           onSelect,
           onFinishedJourney,
           takeAnotherClass,
@@ -559,6 +564,9 @@ export const PickEmotionJourneyFeature: Feature<
           },
           gotoSettings: () => {
             allStatesVWC.get().settings.setShow(true, true);
+          },
+          gotoSeries: () => {
+            // allStates.get().seriesList.setShow(true, true);
           },
         };
       }
