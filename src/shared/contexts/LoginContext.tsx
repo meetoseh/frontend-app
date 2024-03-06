@@ -442,7 +442,7 @@ const refreshTokens = async (
  *
  * @returns True if we can check if we're in the foreground, false otherwise
  */
-const canCheckForegrounded = async () => {
+export const canCheckForegrounded = async () => {
   return true;
 };
 
@@ -452,11 +452,11 @@ const canCheckForegrounded = async () => {
  *
  * @returns True if we're foregrounded, false otherwise
  */
-const isForegrounded = async () => {
+export const isForegrounded = async () => {
   return AppState.currentState === 'active';
 };
 
-type ForegroundChangedIdentifier = NativeEventSubscription;
+export type ForegroundChangedIdentifier = NativeEventSubscription;
 
 /**
  * Adds the given listener to be called when the foregrounded state changes.
@@ -466,7 +466,7 @@ type ForegroundChangedIdentifier = NativeEventSubscription;
  * @param listener The listener to add
  * @returns The thing to pass to removeForegroundChangedListener to remove
  */
-const addForegroundChangedListener = async (
+export const addForegroundChangedListener = async (
   listener: () => void
 ): Promise<ForegroundChangedIdentifier> => {
   return AppState.addEventListener('change', listener);
@@ -479,7 +479,7 @@ const addForegroundChangedListener = async (
  *
  * @param listener The listener to remove
  */
-const removeForegroundChangedListener = async (
+export const removeForegroundChangedListener = async (
   listener: ForegroundChangedIdentifier
 ) => {
   listener.remove();

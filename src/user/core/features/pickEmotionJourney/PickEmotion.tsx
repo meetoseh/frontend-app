@@ -56,6 +56,8 @@ import {
   SvgLinearGradientBackgroundState,
 } from '../../../../shared/anim/SvgLinearGradientBackground';
 import { BottomNavBar } from '../../../bottomNav/BottomNavBar';
+import { useBotBarHeight } from '../../../../shared/hooks/useBotBarHeight';
+import { debugView } from '../../../../shared/lib/debugView';
 
 /**
  * The settings for the profile pictures
@@ -204,6 +206,7 @@ export const PickEmotion = ({
   );
 
   const navbarVWC = useMappedValueWithCallbacks(resources, (r) => r.navbar);
+  const botBarHeight = useBotBarHeight();
 
   const layoutVWC = useMappedValueWithCallbacks(
     tentativelyPressedVWC,
@@ -216,7 +219,7 @@ export const PickEmotion = ({
   const isTinyScreen = useIsEffectivelyTinyScreen();
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onLayout={debugView('PickEmotion', false)}>
       <RenderGuardedComponent
         props={useMappedValueWithCallbacks(resources, (r) => r.error, {
           outputEqualityFn: Object.is,
@@ -230,7 +233,7 @@ export const PickEmotion = ({
         })}
         style={Object.assign({ paddingTop: topBarHeight }, styles.content)}
       >
-        <View style={styles.topNav}>
+        <View style={styles.topNav} onLayout={debugView('PickEmotion topNav')}>
           <Pressable style={styles.settingsLink} onPress={onGotoSettingsClick}>
             <RenderGuardedComponent
               props={profilePicture}
@@ -277,6 +280,7 @@ export const PickEmotion = ({
                 }
               : undefined
           )}
+          onLayout={debugView('PickEmotion question', false)}
         >
           How do you want to feel today?
         </Text>
@@ -303,13 +307,23 @@ export const PickEmotion = ({
           props={navbarVWC}
           component={(enabled) =>
             enabled ? (
-              <View style={styles.bottomNav}>
+              <View
+                style={styles.bottomNav}
+                onLayout={debugView('PickEmotion bottomNav', false)}
+              >
                 <BottomNavBar
                   active="home"
                   clickHandlers={{
                     series: () => resources.get().gotoSeries(),
                     account: () => resources.get().gotoSettings(),
                   }}
+                />
+                <View
+                  style={{ width: 1, height: botBarHeight }}
+                  onLayout={debugView(
+                    'PickEmotion bottomBarHeightSpacer',
+                    false
+                  )}
                 />
               </View>
             ) : (

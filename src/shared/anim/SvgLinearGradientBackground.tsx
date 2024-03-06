@@ -1,15 +1,22 @@
-import { View, ViewStyle } from "react-native";
+import { View, ViewStyle } from 'react-native';
 import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
-} from "./VariableStrategyProps";
-import * as SVG from "react-native-svg";
-import { RenderGuardedComponent } from "../components/RenderGuardedComponent";
+} from './VariableStrategyProps';
+import * as SVG from 'react-native-svg';
+import { RenderGuardedComponent } from '../components/RenderGuardedComponent';
 import {
   colorByteRGBFractionalAlphaToCSS,
   makeSVGNumber,
   simpleColorToCss,
-} from "./svgUtils";
+} from './svgUtils';
+import { debugView } from '../lib/debugView';
+import {
+  WritableValueWithCallbacks,
+  useWritableValueWithCallbacks,
+} from '../lib/Callbacks';
+import { setVWC } from '../lib/setVWC';
+import { useEffect } from 'react';
 
 export type SvgColorStop = {
   /** The stop color as a 0-255, 0-255, 0-255, 0-1 rgba value */
@@ -35,6 +42,7 @@ export type SvgLinearGradientBackgroundState = {
 export type SvgLinearGradientBackgroundProps = {
   state: VariableStrategyProps<SvgLinearGradientBackgroundState>;
   containerStyle?: ViewStyle;
+  refVWC?: WritableValueWithCallbacks<View | null>;
 };
 
 const areColorsEqual = (
@@ -55,14 +63,36 @@ const areColorsEqual = (
 export const SvgLinearGradientBackground = ({
   state: stateRaw,
   containerStyle,
+  refVWC: rawRefVWC,
   children,
 }: React.PropsWithChildren<SvgLinearGradientBackgroundProps>) => {
   const stateVWC = useVariableStrategyPropsAsValueWithCallbacks(stateRaw);
+  const realRefVWC = useWritableValueWithCallbacks<View | null>(() => null);
+
+  useEffect(() => {
+    if (rawRefVWC === undefined) {
+      return;
+    }
+
+    const raw = rawRefVWC;
+    realRefVWC.callbacks.add(onChange);
+    onChange();
+    return () => {
+      realRefVWC.callbacks.remove(onChange);
+    };
+
+    function onChange() {
+      setVWC(raw, realRefVWC.get());
+    }
+  }, [rawRefVWC, realRefVWC]);
 
   const svgn = makeSVGNumber;
 
   return (
-    <View style={{ position: "relative", ...containerStyle }}>
+    <View
+      style={{ position: 'relative', ...containerStyle }}
+      ref={(r) => setVWC(realRefVWC, r)}
+    >
       <RenderGuardedComponent
         props={stateVWC}
         component={(state) => (
@@ -70,7 +100,7 @@ export const SvgLinearGradientBackground = ({
             {!areColorsEqual(state.stop1.color, state.stop2.color) ? (
               <SVG.Svg
                 style={{
-                  position: "absolute",
+                  position: 'absolute',
                   top: 0,
                   left: 0,
                   right: 0,
@@ -105,7 +135,7 @@ export const SvgLinearGradientBackground = ({
             ) : (
               <View
                 style={{
-                  position: "absolute",
+                  position: 'absolute',
                   top: 0,
                   left: 0,
                   right: 0,

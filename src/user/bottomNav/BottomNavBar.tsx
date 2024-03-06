@@ -5,6 +5,7 @@ import { useWindowSize } from '../../shared/hooks/useWindowSize';
 import Home from './assets/Home';
 import Account from './assets/Account';
 import Series from './assets/Series';
+import { useBotBarHeight } from '../../shared/hooks/useBotBarHeight';
 
 export type BottomNavItem = 'home' | 'series' | 'account';
 
@@ -50,26 +51,22 @@ export const BottomNavBar = ({
   clickHandlers,
 }: BottomNavBarProps): ReactElement => {
   const windowSize = useWindowSize();
-  const bottom = Platform.select({
-    android: 18,
-    default: 0,
-  });
+  const bottom = useBotBarHeight();
 
   return (
-    <View
-      style={Object.assign({}, styles.container, {
-        width: windowSize.width,
-        bottom,
-      })}
-    >
-      {items.map((item) => (
-        <BottomNavItem
-          key={item.item}
-          active={active === item.item}
-          item={item}
-          handler={clickHandlers[item.item]}
-        />
-      ))}
+    <View>
+      <View
+        style={Object.assign({}, styles.container, { width: windowSize.width })}
+      >
+        {items.map((item) => (
+          <BottomNavItem
+            key={item.item}
+            active={active === item.item}
+            item={item}
+            handler={clickHandlers[item.item]}
+          />
+        ))}
+      </View>
     </View>
   );
 };

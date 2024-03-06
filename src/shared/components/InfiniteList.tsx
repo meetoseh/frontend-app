@@ -5,28 +5,28 @@ import {
   useEffect,
   useMemo,
   useRef,
-} from "react";
-import { InfiniteListing } from "../lib/InfiniteListing";
+} from 'react';
+import { InfiniteListing } from '../lib/InfiniteListing';
 import {
   Callbacks,
   ValueWithCallbacks,
   WritableValueWithCallbacks,
   createWritableValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../lib/Callbacks";
-import { useValueWithCallbacksEffect } from "../hooks/useValueWithCallbacksEffect";
-import { setVWC } from "../lib/setVWC";
-import { useMappedValueWithCallbacks } from "../hooks/useMappedValueWithCallbacks";
-import { RenderGuardedComponent } from "./RenderGuardedComponent";
-import { useMappedValuesWithCallbacks } from "../hooks/useMappedValuesWithCallbacks";
+} from '../lib/Callbacks';
+import { useValueWithCallbacksEffect } from '../hooks/useValueWithCallbacksEffect';
+import { setVWC } from '../lib/setVWC';
+import { useMappedValueWithCallbacks } from '../hooks/useMappedValueWithCallbacks';
+import { RenderGuardedComponent } from './RenderGuardedComponent';
+import { useMappedValuesWithCallbacks } from '../hooks/useMappedValuesWithCallbacks';
 import {
   View,
   Text,
   VirtualizedList,
   ViewToken,
   ViewStyle,
-} from "react-native";
-import { styles } from "./InfiniteListStyles";
+} from 'react-native';
+import { styles } from './InfiniteListStyles';
 
 type InfiniteListProps<T extends object> = {
   /**
@@ -78,6 +78,16 @@ type InfiniteListProps<T extends object> = {
   gap: number;
 
   /**
+   * Additional padding applied above the first item
+   */
+  firstTopPadding?: number;
+
+  /**
+   * Additional padding applied below the last item
+   */
+  lastBottomPadding?: number;
+
+  /**
    * The height to use for components whose data is still being loaded but we
    * are pretty confident are there. Reduces jank when scrolling when this value
    * is more accurate.
@@ -108,6 +118,8 @@ export function InfiniteList<T extends object>({
   height,
   width,
   gap,
+  firstTopPadding,
+  lastBottomPadding,
   initialComponentHeight,
   loadingElement,
   emptyElement,
@@ -119,23 +131,18 @@ export function InfiniteList<T extends object>({
     (listing) => listing.items === null
   );
 
-  // if the listing changes scroll to the top
-  useEffect(() => {
-    // todo
-  }, []);
-
   const stateVWC = useMappedValueWithCallbacks(
     listingVWC,
-    (listing): "loading" | "empty" | "elements" => {
+    (listing): 'loading' | 'empty' | 'elements' => {
       if (listing.items === null) {
-        return "loading";
+        return 'loading';
       }
 
       if (listing.items.length === 0) {
-        return "empty";
+        return 'empty';
       }
 
-      return "elements";
+      return 'elements';
     }
   );
 
@@ -240,15 +247,15 @@ export function InfiniteList<T extends object>({
   }, [listingUntrackable, itemsUnloadedAboveVWC]);
 
   return (
-    <View style={{ marginTop: -gap }}>
+    <View>
       <RenderGuardedComponent
         props={stateVWC}
         component={(s) => {
-          if (loadingElement !== undefined && s === "loading") {
+          if (loadingElement !== undefined && s === 'loading') {
             return loadingElement;
           }
 
-          if (emptyElement !== undefined && s === "empty") {
+          if (emptyElement !== undefined && s === 'empty') {
             return emptyElement;
           }
 
@@ -269,7 +276,16 @@ export function InfiniteList<T extends object>({
                       index: number;
                     }): ReactElement => {
                       return (
-                        <View key={index} style={{ paddingTop: gap, width }}>
+                        <View
+                          key={index}
+                          style={{
+                            paddingTop: index === 0 ? firstTopPadding : gap,
+                            paddingBottom:
+                              index === numAvailable - 1
+                                ? lastBottomPadding
+                                : gap,
+                          }}
+                        >
                           <ElementFromListing
                             listingVWC={listingVWC}
                             unloadedAboveVWC={itemsUnloadedAboveVWC}
@@ -341,8 +357,8 @@ const ElementFromListing = <T extends object>({
   height: number;
   width: number;
   index: number;
-  component: InfiniteListProps<T>["component"];
-  itemComparer: InfiniteListProps<T>["itemComparer"];
+  component: InfiniteListProps<T>['component'];
+  itemComparer: InfiniteListProps<T>['itemComparer'];
 }) => {
   const itemAndNeighbors = useMappedValuesWithCallbacks(
     [listingVWC, unloadedAboveVWC],
@@ -424,8 +440,8 @@ const ElementFromListingHaveData = <T extends object>({
   } | null>;
   height: number;
   width: number;
-  component: InfiniteListProps<T>["component"];
-  itemComparer: InfiniteListProps<T>["itemComparer"];
+  component: InfiniteListProps<T>['component'];
+  itemComparer: InfiniteListProps<T>['itemComparer'];
   listingVWC: ValueWithCallbacks<InfiniteListing<T>>;
 }) => {
   const initialItemAndNeighbors = itemAndNeighbors.get();

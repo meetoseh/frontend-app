@@ -15,6 +15,19 @@ export type CrudFetcherKeyMap<T> = {
     | (string & keyof T)
     | ((key: string, value: any) => MappedKey<T>);
 };
+
+export type CrudFetcherMapper<T> = CrudFetcherKeyMap<T> | ((v: any) => T);
+
+export const convertUsingMapper = <T extends object>(
+  raw: any,
+  mapper: CrudFetcherMapper<T>
+) => {
+  if (typeof mapper === 'function') {
+    return mapper(raw);
+  }
+  return convertUsingKeymap(raw, mapper);
+};
+
 type SortItem = {
   key: string;
   dir: 'asc' | 'desc';

@@ -17,7 +17,7 @@ import { InterestsAutoProvider } from './src/shared/contexts/InterestsContext';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
-  const cacheReadyVWC = useVersionedCache('1.0.4');
+  const cacheReadyVWC = useVersionedCache('1.0.6');
   const cacheReady = useUnwrappedValueWithCallbacks(cacheReadyVWC);
 
   if (!cacheReady) {

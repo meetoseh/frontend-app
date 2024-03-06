@@ -566,7 +566,7 @@ export const PickEmotionJourneyFeature: Feature<
             allStatesVWC.get().settings.setShow(true, true);
           },
           gotoSeries: () => {
-            // allStates.get().seriesList.setShow(true, true);
+            allStatesVWC.get().seriesList.setShow(true, true);
           },
         };
       }

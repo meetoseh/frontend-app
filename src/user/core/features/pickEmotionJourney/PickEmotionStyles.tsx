@@ -5,8 +5,6 @@ export const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     backgroundColor: Colors.WHITE,
-    flexDirection: 'column',
-    justifyContent: 'center',
   },
   content: {
     flexDirection: 'column',

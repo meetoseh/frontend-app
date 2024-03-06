@@ -1,11 +1,34 @@
-import { useMemo } from "react";
-import { OsehContentProps } from "./OsehContentProps";
+import { useMemo } from 'react';
+import { OsehContentProps } from './OsehContentProps';
 import {
   ContentFileNativeExport,
   OsehContentTarget,
-} from "./OsehContentTarget";
-import { HTTP_API_URL } from "../lib/apiFetch";
-import { Platform } from "react-native";
+} from './OsehContentTarget';
+import { HTTP_API_URL } from '../lib/apiFetch';
+import { Platform } from 'react-native';
+import { largestPhysicalPerLogical } from '../images/DisplayRatioHelper';
+
+type OsehContentTargetPropsAudio = {
+  uid: string;
+  jwt: string | null;
+  showAs: 'audio';
+  presign: boolean;
+  displayWidth?: undefined;
+  displayHeight?: undefined;
+};
+
+type OsehContentTargetPropsVideo = {
+  uid: string;
+  jwt: string | null;
+  showAs: 'video';
+  presign: boolean;
+  displayWidth: number;
+  displayHeight: number;
+};
+
+type OsehContentTargetProps =
+  | OsehContentTargetPropsAudio
+  | OsehContentTargetPropsVideo;
 
 /**
  * A hook for getting the target to download for an Oseh content file. On the
@@ -17,13 +40,15 @@ import { Platform } from "react-native";
 export const useOsehContentTarget = ({
   uid,
   jwt,
-  showAs = "audio",
-  presign = true,
-}: OsehContentProps): OsehContentTarget => {
+  showAs,
+  presign,
+  displayWidth,
+  displayHeight,
+}: OsehContentTargetProps): OsehContentTarget => {
   return useMemo<OsehContentTarget>(() => {
     if (uid === null || jwt === null) {
       return {
-        state: "loading",
+        state: 'loading',
         error: null,
         nativeExport: null,
         presigned: null,
@@ -32,9 +57,16 @@ export const useOsehContentTarget = ({
     }
 
     return {
-      state: "loaded",
+      state: 'loaded',
       error: null,
-      nativeExport: getNativeExport(uid, jwt, presign),
+      nativeExport: getNativeExport(
+        uid,
+        jwt,
+        presign,
+        showAs === 'audio'
+          ? undefined
+          : { width: displayWidth, height: displayHeight }
+      ),
       presigned: presign,
       jwt,
     };
@@ -48,7 +80,8 @@ export const useOsehContentTarget = ({
 export const getNativeExport = (
   uid: string,
   jwt: string,
-  presign: boolean
+  presign: boolean,
+  size?: { width: number; height: number }
 ): ContentFileNativeExport => {
   const path = Platform.select({
     ios: `/api/1/content_files/${uid}/ios.m3u8`,
@@ -56,10 +89,20 @@ export const getNativeExport = (
   });
 
   if (path === undefined) {
-    throw new Error("Unsupported platform for audio content");
+    throw new Error('Unsupported platform for audio content');
+  }
+
+  const qargs: [string, string][] = [['bmin', '90000']];
+  if (presign) {
+    qargs.push(['jwt', jwt]);
+  }
+  if (size !== undefined) {
+    qargs.push(['w', size.width.toString()]);
+    qargs.push(['h', size.height.toString()]);
+    qargs.push(['pr', largestPhysicalPerLogical.toString()]);
   }
 
   return {
-    url: `${HTTP_API_URL}${path}` + (presign ? "?jwt=" + jwt : ""),
+    url: `${HTTP_API_URL}${path}?` + new URLSearchParams(qargs).toString(),
   };
 };

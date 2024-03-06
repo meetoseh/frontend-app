@@ -15,6 +15,7 @@ import { RequestPhoneFeature } from '../features/requestPhone/RequestPhoneFeatur
 import { RequestNotificationTimeFeature } from '../features/requestNotificationTime/RequestNotificationTimeFeature';
 import { ConfirmMergeAccountFeature } from '../features/confirmMergeAccount/ConfirmMergeAccountFeature';
 import { MergeAccountFeature } from '../features/mergeAccount/MergeAccountFeature';
+import { SeriesListFeature } from '../features/seriesList/SeriesListFeature';
 
 const features = [
   LoginFeature,
@@ -27,6 +28,7 @@ const features = [
   RequestNotificationTimeFeature,
   GoalDaysPerWeekFeature,
   FavoritesFeature,
+  SeriesListFeature,
   SettingsFeature,
   PickEmotionJourneyFeature,
 ];
