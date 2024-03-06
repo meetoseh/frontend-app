@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { useStateCompat as useState } from '../hooks/useStateCompat';
-import { Dimensions, Platform, ScaledSize, StatusBar } from 'react-native';
+import { Dimensions, ScaledSize, StatusBar } from 'react-native';
+import { getBotBarHeight } from './useBotBarHeight';
 
 /**
  * Determines the amount of unusable space at the top of the screen, which we
@@ -44,26 +45,13 @@ export const useTopBarHeight = (): number => {
     };
   }, []);
 
-  return useMemo(() => {
-    return (
-      Platform.select({
-        ios: () => StatusBar.currentHeight ?? 24,
-        android: () => {
-          const bottomNavHeight = sizes.screen.height - sizes.window.height;
-          const statusHeight = StatusBar.currentHeight ?? 0;
-          if (bottomNavHeight > statusHeight) {
-            return bottomNavHeight - statusHeight;
-          } else {
-            console.log(
-              'android fallback instead of returning',
-              bottomNavHeight,
-              '-',
-              statusHeight
-            );
-            return 24;
-          }
-        },
-      })?.() ?? 24
-    );
-  }, [sizes]);
+  return useMemo(
+    () =>
+      StatusBar.currentHeight ??
+      Math.max(
+        sizes.screen.height - sizes.window.height - getBotBarHeight(),
+        0
+      ),
+    [sizes]
+  );
 };

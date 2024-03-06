@@ -1,6 +1,5 @@
-import { Dimensions, LayoutChangeEvent } from 'react-native';
+import { Dimensions, LayoutChangeEvent, StatusBar } from 'react-native';
 import { getBotBarHeight } from '../hooks/useBotBarHeight';
-
 export const debugView =
   (id: string, checklist: boolean = true) =>
   (e: LayoutChangeEvent) => {
@@ -15,7 +14,10 @@ export const debugView =
           screenSize.height - windowSize.height
         } ` +
         `smaller than the screen. The bottom bar is ${botBarHeight}px, meaning the ` +
-        `top bar is ${screenSize.height - windowSize.height - botBarHeight}px. `
+        `top bar is ${
+          screenSize.height - windowSize.height - botBarHeight
+        }px. The ` +
+        `reported status bar height is ${StatusBar.currentHeight}px`
     );
 
     if (checklist) {
