@@ -42,7 +42,6 @@ export const SeriesList = ({
     windowSizeVWC,
     (size) => size.height - botBarHeight - expectedBottomNavHeight
   );
-  console.log('listHeight=', listHeight.get());
   const containerRef = useWritableValueWithCallbacks<View | null>(() => null);
 
   useValuesWithCallbacksEffect([windowSizeVWC, containerRef], () => {
@@ -61,22 +60,15 @@ export const SeriesList = ({
   });
 
   return (
-    <View onLayout={debugView('SeriesList')}>
+    <View>
       <SvgLinearGradientBackground
         state={{
           type: 'react-rerender',
           props: STANDARD_BLACK_GRAY_GRADIENT_SVG,
         }}
       >
-        <View
-          style={styles.container}
-          ref={(r) => setVWC(containerRef, r)}
-          onLayout={debugView('containerSeriesList', false)}
-        >
-          <View
-            style={styles.contentContainer}
-            onLayout={debugView('contentContainerSeriesList', false)}
-          >
+        <View style={styles.container} ref={(r) => setVWC(containerRef, r)}>
+          <View style={styles.contentContainer}>
             <View style={styles.items}>
               <CourseCoverItemsList
                 showCourse={(course) => {
@@ -92,10 +84,7 @@ export const SeriesList = ({
               />
             </View>
           </View>
-          <View
-            style={styles.bottomNav}
-            onLayout={debugView('SeriesList bottomNav', false)}
-          >
+          <View style={styles.bottomNav}>
             <BottomNavBar
               active="series"
               clickHandlers={{

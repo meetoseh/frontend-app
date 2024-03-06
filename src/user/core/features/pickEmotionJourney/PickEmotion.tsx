@@ -219,7 +219,7 @@ export const PickEmotion = ({
   const isTinyScreen = useIsEffectivelyTinyScreen();
 
   return (
-    <View style={styles.container} onLayout={debugView('PickEmotion', false)}>
+    <View style={styles.container}>
       <RenderGuardedComponent
         props={useMappedValueWithCallbacks(resources, (r) => r.error, {
           outputEqualityFn: Object.is,
@@ -233,7 +233,7 @@ export const PickEmotion = ({
         })}
         style={Object.assign({ paddingTop: topBarHeight }, styles.content)}
       >
-        <View style={styles.topNav} onLayout={debugView('PickEmotion topNav')}>
+        <View style={styles.topNav}>
           <Pressable style={styles.settingsLink} onPress={onGotoSettingsClick}>
             <RenderGuardedComponent
               props={profilePicture}
@@ -280,7 +280,6 @@ export const PickEmotion = ({
                 }
               : undefined
           )}
-          onLayout={debugView('PickEmotion question', false)}
         >
           How do you want to feel today?
         </Text>
@@ -307,10 +306,7 @@ export const PickEmotion = ({
           props={navbarVWC}
           component={(enabled) =>
             enabled ? (
-              <View
-                style={styles.bottomNav}
-                onLayout={debugView('PickEmotion bottomNav', false)}
-              >
+              <View style={styles.bottomNav}>
                 <BottomNavBar
                   active="home"
                   clickHandlers={{
@@ -318,13 +314,7 @@ export const PickEmotion = ({
                     account: () => resources.get().gotoSettings(),
                   }}
                 />
-                <View
-                  style={{ width: 1, height: botBarHeight }}
-                  onLayout={debugView(
-                    'PickEmotion bottomBarHeightSpacer',
-                    false
-                  )}
-                />
+                <View style={{ width: 1, height: botBarHeight }} />
               </View>
             ) : (
               <></>
