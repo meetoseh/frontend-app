@@ -315,7 +315,9 @@ export const SeriesDetailsFeature: Feature<
           modals,
           gotoJourney(journey, course) {
             console.log('going to journey', journey);
-            // allStates.get().singleJourney.setShow({ type: 'generic', ref: journey });
+            allStates
+              .get()
+              .singleJourney.setShow({ type: 'generic', ref: journey });
             state.get().setShow(null, true);
           },
           gotoUpgrade() {

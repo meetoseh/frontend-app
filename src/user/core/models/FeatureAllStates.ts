@@ -13,6 +13,7 @@ import { SeriesListState } from '../features/seriesList/SeriesListState';
 import { SeriesPreviewState } from '../features/seriesPreview/SeriesPreviewState';
 import { SettingsState } from '../features/settings/SettingsState';
 import { SignupRewardState } from '../features/signupReward/SignupRewardState';
+import { SingleJourneyState } from '../features/singleJourney/SingleJourneyState';
 
 export type FeatureAllStates = {
   login: LoginState;
@@ -30,4 +31,5 @@ export type FeatureAllStates = {
   seriesList: SeriesListState;
   seriesPreview: SeriesPreviewState;
   seriesDetails: SeriesDetailsState;
+  singleJourney: SingleJourneyState;
 };

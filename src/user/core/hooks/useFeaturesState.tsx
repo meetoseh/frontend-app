@@ -18,6 +18,7 @@ import { MergeAccountFeature } from '../features/mergeAccount/MergeAccountFeatur
 import { SeriesListFeature } from '../features/seriesList/SeriesListFeature';
 import { SeriesPreviewFeature } from '../features/seriesPreview/SeriesPreviewFeature';
 import { SeriesDetailsFeature } from '../features/seriesDetails/SeriesDetailsFeature';
+import { SingleJourneyFeature } from '../features/singleJourney/SingleJourneyFeature';
 
 const features = [
   LoginFeature,
@@ -29,6 +30,7 @@ const features = [
   RequestPhoneFeature,
   RequestNotificationTimeFeature,
   GoalDaysPerWeekFeature,
+  SingleJourneyFeature,
   FavoritesFeature,
   SeriesDetailsFeature,
   SeriesPreviewFeature,
