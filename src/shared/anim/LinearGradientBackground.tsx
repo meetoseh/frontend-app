@@ -1,15 +1,15 @@
-import { LayoutChangeEvent, View } from "react-native";
-import { useCallback, useEffect, useRef } from "react";
-import { useStateCompat as useState } from "../hooks/useStateCompat";
-import { useWritableValueWithCallbacks } from "../lib/Callbacks";
+import { LayoutChangeEvent, View } from 'react-native';
+import { useCallback, useEffect, useRef } from 'react';
+import { useStateCompat as useState } from '../hooks/useStateCompat';
+import { useWritableValueWithCallbacks } from '../lib/Callbacks';
 import {
   SinglePassWebGLComponent,
   SinglePassWebGLComponentRenderer,
-} from "./SinglePassWebGLComponent";
+} from './SinglePassWebGLComponent';
 import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
-} from "./VariableStrategyProps";
+} from './VariableStrategyProps';
 
 export type ColorStop = {
   /** 0-255 for RGB, 0-1 for opacity */
@@ -34,14 +34,14 @@ export type LinearGradientProps = {
   state: VariableStrategyProps<LinearGradientState>;
 };
 
-type Attributes = "position";
-type Uniforms = "resolution" | "radius";
-type Buffers = "position";
+type Attributes = 'position';
+type Uniforms = 'resolution' | 'radius';
+type Buffers = 'position';
 type Textures = never;
 
 const numToGLSLFloat = (num: number): string => {
   const result = num.toString(10);
-  if (result.indexOf(".") === -1) {
+  if (result.indexOf('.') === -1) {
     return `${result}.0`;
   }
   return result;
@@ -53,7 +53,7 @@ const colorToGLSLPrecomputedColor = (
   return `vec4(${color
     .slice(0, 3)
     .map((n) => numToGLSLFloat(n / 255.0))
-    .join(", ")}, 1.0) * ${numToGLSLFloat(color[3])}`;
+    .join(', ')}, 1.0) * ${numToGLSLFloat(color[3])}`;
 };
 
 /**
@@ -71,7 +71,7 @@ const colorToGLSLPrecomputedColor = (
  */
 const createComputeColorFunction = (stops: ColorStop[]): string => {
   if (stops.length === 0) {
-    return "return vec4(0, 0, 0, 0);";
+    return 'return vec4(0, 0, 0, 0);';
   }
 
   if (stops.length === 1) {
@@ -113,7 +113,7 @@ const createComputeColorFunction = (stops: ColorStop[]): string => {
     );
   }
 
-  return `return ${terms.join(" + ")};`;
+  return `return ${terms.join(' + ')};`;
 };
 
 /**
@@ -220,7 +220,7 @@ const LinearGradientRenderer: SinglePassWebGLComponentRenderer<
 
     const vert = gl.createShader(gl.VERTEX_SHADER);
     if (vert === null) {
-      throw new Error("Failed to create vertex shader");
+      throw new Error('Failed to create vertex shader');
     }
     gl.shaderSource(
       vert,
@@ -243,12 +243,12 @@ const LinearGradientRenderer: SinglePassWebGLComponentRenderer<
     gl.compileShader(vert);
     const vertMessage = gl.getShaderInfoLog(vert);
     if (vertMessage !== null && vertMessage.length > 0) {
-      throw new Error("Failed to compile vertex shader: " + vertMessage);
+      throw new Error('Failed to compile vertex shader: ' + vertMessage);
     }
 
     const frag = gl.createShader(gl.FRAGMENT_SHADER);
     if (frag === null) {
-      throw new Error("Failed to create fragment shader");
+      throw new Error('Failed to create fragment shader');
     }
 
     gl.shaderSource(
@@ -270,8 +270,8 @@ const LinearGradientRenderer: SinglePassWebGLComponentRenderer<
       void main(void) {
         vec4 gradientColor = computeColor(${createComputeTExpression(
           props.angleDegreesClockwiseFromTop,
-          "v_position.x",
-          "v_position.y",
+          'v_position.x',
+          'v_position.y',
           gl.drawingBufferWidth,
           gl.drawingBufferHeight
         )});
@@ -293,12 +293,12 @@ const LinearGradientRenderer: SinglePassWebGLComponentRenderer<
     gl.compileShader(frag);
     const fragMessage = gl.getShaderInfoLog(frag);
     if (fragMessage !== null && fragMessage.length > 0) {
-      throw new Error("Failed to compile fragment shader: " + fragMessage);
+      throw new Error('Failed to compile fragment shader: ' + fragMessage);
     }
 
     const program = gl.createProgram();
     if (program === null) {
-      throw new Error("Failed to create program");
+      throw new Error('Failed to create program');
     }
     gl.attachShader(program, vert);
     gl.attachShader(program, frag);
@@ -308,7 +308,7 @@ const LinearGradientRenderer: SinglePassWebGLComponentRenderer<
 
     const positionBuffer = gl.createBuffer();
     if (positionBuffer === null) {
-      throw new Error("Failed to create position buffer");
+      throw new Error('Failed to create position buffer');
     }
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(
@@ -329,21 +329,21 @@ const LinearGradientRenderer: SinglePassWebGLComponentRenderer<
       ]),
       gl.STATIC_DRAW
     );
-    const resolutionLocation = gl.getUniformLocation(program, "u_resolution");
+    const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
     if (resolutionLocation === null) {
-      throw new Error("Failed to get resolution location");
+      throw new Error('Failed to get resolution location');
     }
 
-    const radiusLocation = gl.getUniformLocation(program, "u_radius");
+    const radiusLocation = gl.getUniformLocation(program, 'u_radius');
     if (radiusLocation === null) {
-      throw new Error("Failed to get radius location");
+      throw new Error('Failed to get radius location');
     }
 
     return {
       gl,
       program,
       attributes: {
-        position: gl.getAttribLocation(program, "a_position"),
+        position: gl.getAttribLocation(program, 'a_position'),
       },
       uniforms: {
         resolution: resolutionLocation,
@@ -360,10 +360,6 @@ const LinearGradientRenderer: SinglePassWebGLComponentRenderer<
     };
   },
   render: (state, props, dpi) => {
-    if (props.stops.length !== 2) {
-      throw new Error("only 2-stop gradients are supported");
-    }
-
     const gl = state.gl;
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.useProgram(state.program);
@@ -517,9 +513,9 @@ export const LinearGradientBackground = ({
     <View
       style={{
         ...(flatBackgroundColor === null
-          ? { position: "relative" }
+          ? { position: 'relative' }
           : {
-              backgroundColor: `rgba(${flatBackgroundColor.join(",")})`,
+              backgroundColor: `rgba(${flatBackgroundColor.join(',')})`,
             }),
       }}
       ref={containerRef}
@@ -528,7 +524,7 @@ export const LinearGradientBackground = ({
       {flatBackgroundColor === null && (
         <View
           style={{
-            position: "absolute",
+            position: 'absolute',
           }}
           ref={backgroundRef}
         >

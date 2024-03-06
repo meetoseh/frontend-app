@@ -1262,9 +1262,7 @@ class ServerList<T> {
     sort: CrudFetcherSort
   ): CancelablePromise<ServerListResponse<T>> {
     let active = true;
-    const abortController: AbortController | null = window.AbortController
-      ? new window.AbortController()
-      : null;
+    const abortController: AbortController | null = new AbortController();
     const signal = abortController?.signal;
     const cancel = () => {
       if (active) {

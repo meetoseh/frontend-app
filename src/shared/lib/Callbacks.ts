@@ -52,7 +52,9 @@ export class Callbacks<T> {
    * is assumed to be the callback that replaced the call, and it will be
    * skipped
    */
-  private callReplacedBy: ((alreadyCalled: ((event: T) => void)[]) => void) | null;
+  private callReplacedBy:
+    | ((alreadyCalled: ((event: T) => void)[]) => void)
+    | null;
 
   /**
    * Initializes an empty list of callbacks
@@ -159,7 +161,9 @@ export class Callbacks<T> {
    */
   call(event: T): void {
     if (this.calling) {
-      throw new Error('Cannot call call() while call() is already executing. Use replaceCall()');
+      throw new Error(
+        'Cannot call call() while call() is already executing. Use replaceCall()'
+      );
     }
 
     const callbacks = [];
@@ -169,7 +173,6 @@ export class Callbacks<T> {
       node = node.next;
     }
 
-    const identifier = Math.random().toString(36).substring(2, 15);
     this.calling = true;
     let i = 0;
     while (i < callbacks.length && this.callReplacedBy === null) {
@@ -197,7 +200,9 @@ export class Callbacks<T> {
    */
   replaceCall(forPreviousCallbacksEvent: T, forLaterCallbacksEvent: T): void {
     if (!this.calling) {
-      throw new Error('Cannot call replaceCall() while call() is not executing');
+      throw new Error(
+        'Cannot call replaceCall() while call() is not executing'
+      );
     }
 
     this.callReplacedBy = this._doReplaceCall.bind(
@@ -228,7 +233,9 @@ export class Callbacks<T> {
     }
 
     this.calling = true;
-    this.callReplacedBy = null as ((alreadyCalled: ((event: T) => void)[]) => void) | null;
+    this.callReplacedBy = null as
+      | ((alreadyCalled: ((event: T) => void)[]) => void)
+      | null;
     let i = 0;
     while (i < previousCallbacks.length && this.callReplacedBy === null) {
       if (previousCallbacks[i] === alreadyCalled[alreadyCalled.length - 1]) {
@@ -256,7 +263,9 @@ export class Callbacks<T> {
     this.calling = false;
 
     if (
-      (this.callReplacedBy as ((alreadyCalled: ((event: T) => void)[]) => void) | null) !== null
+      (this.callReplacedBy as
+        | ((alreadyCalled: ((event: T) => void)[]) => void)
+        | null) !== null
     ) {
       const replacedBy = this.callReplacedBy as unknown as (
         alreadyCalled: ((event: T) => void)[]
@@ -289,24 +298,54 @@ type CallbackNode<T> = {
  * This provides a particularly simple interface, which is preferable
  * in almost all circumstances.
  */
-export type ValueWithCallbacks<T> = {
+export type ValueWithTypedCallbacks<T, U> = {
   /**
    * A function which retrieves the current value
+   * @returns the current value
    */
   get: () => T;
+
   /**
-   * The callbacks that must be invoked whenever the value changes.
+   * Callbacks which are invoked whenever the value changes.
+   * For most use cases, the value the callbacks are invoked
+   * with do not matter.
    */
-  callbacks: Callbacks<undefined>;
+  callbacks: Callbacks<U>;
 };
 
-export type WritableValueWithCallbacks<T> = ValueWithCallbacks<T> & {
+/**
+ * Describes an object which can be provided as a react prop to
+ * give a value which can be changed without the prop changing.
+ *
+ * This provides a particularly simple interface, which is preferable
+ * in almost all circumstances.
+ */
+export type ValueWithCallbacks<T> = ValueWithTypedCallbacks<T, undefined>;
+
+/**
+ * Downgrades a typed value-with-callbacks to a standard "untyped" (undefined)
+ * variant. This is 'downgrading' since the reverse operation is generally not
+ * safe.
+ */
+export const downgradeTypedVWC = <T, U>(
+  vwc: ValueWithTypedCallbacks<T, U | undefined> | ValueWithCallbacks<T>
+): ValueWithCallbacks<T> => vwc as ValueWithCallbacks<T>;
+
+export type WritableValueWithTypedCallbacks<T, U> = ValueWithTypedCallbacks<
+  T,
+  U
+> & {
   /**
    * Sets the current value without invoking the callbacks. The
    * callbacks should be invoked separately.
    */
   set: (t: T) => void;
 };
+
+export type WritableValueWithCallbacks<T> = WritableValueWithTypedCallbacks<
+  T,
+  undefined
+>;
 
 /**
  * A simple react hook for creating a new writable value with
@@ -321,7 +360,9 @@ export const useWritableValueWithCallbacks = <T>(
   initial: () => T
 ): WritableValueWithCallbacks<T> => {
   const value = useRef<T>() as MutableRefObject<T>;
-  const callbacks = useRef<Callbacks<undefined>>() as MutableRefObject<Callbacks<undefined>>;
+  const callbacks = useRef<Callbacks<undefined>>() as MutableRefObject<
+    Callbacks<undefined>
+  >;
   if (callbacks.current === undefined) {
     value.current = initial();
     callbacks.current = new Callbacks<undefined>();
@@ -349,7 +390,9 @@ export const useWritableValueWithCallbacks = <T>(
  * @param initial the initial value
  * @returns a value with callbacks, initialized to initial
  */
-export const createWritableValueWithCallbacks = <T>(initial: T): WritableValueWithCallbacks<T> => {
+export const createWritableValueWithCallbacks = <T>(
+  initial: T
+): WritableValueWithCallbacks<T> => {
   let current = initial;
   const callbacks = new Callbacks<undefined>();
   return {

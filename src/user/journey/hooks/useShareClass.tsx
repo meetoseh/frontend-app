@@ -96,13 +96,9 @@ export const useShareClass = ({
     };
 
     async function checkShareableInner() {
-      const controller = window.AbortController
-        ? new window.AbortController()
-        : undefined;
-      const signal = controller?.signal;
-      const doAbort = () => {
-        controller?.abort();
-      };
+      const controller = new AbortController();
+      const signal = controller.signal;
+      const doAbort = () => controller.abort();
 
       cancelers.add(doAbort);
       if (!running) {
@@ -189,11 +185,9 @@ export const useShareClass = ({
         return lastLinkValue.link;
       }
 
-      const controller = window.AbortController
-        ? new window.AbortController()
-        : undefined;
-      const signal = controller ? controller.signal : undefined;
-      const doAbort = () => controller?.abort();
+      const controller = new AbortController();
+      const signal = controller.signal;
+      const doAbort = () => controller.abort();
       running.callbacks.add(doAbort);
       if (!running.get()) {
         running.callbacks.remove(doAbort);

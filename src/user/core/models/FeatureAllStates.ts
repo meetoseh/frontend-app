@@ -8,6 +8,7 @@ import { PickEmotionJourneyState } from '../features/pickEmotionJourney/PickEmot
 import { RequestNameState } from '../features/requestName/RequestNameState';
 import { RequestNotificationTimeState } from '../features/requestNotificationTime/RequestNotificationTimeState';
 import { RequestPhoneState } from '../features/requestPhone/RequestPhoneState';
+import { SeriesDetailsState } from '../features/seriesDetails/SeriesDetailsState';
 import { SeriesListState } from '../features/seriesList/SeriesListState';
 import { SeriesPreviewState } from '../features/seriesPreview/SeriesPreviewState';
 import { SettingsState } from '../features/settings/SettingsState';
@@ -28,4 +29,5 @@ export type FeatureAllStates = {
   confirmMergeAccount: ConfirmMergeAccountState;
   seriesList: SeriesListState;
   seriesPreview: SeriesPreviewState;
+  seriesDetails: SeriesDetailsState;
 };

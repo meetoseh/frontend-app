@@ -642,12 +642,8 @@ export const useOsehImageStateRequestHandler = ({
             return;
           }
 
-          const abortController: AbortController | null = window.AbortController
-            ? new window.AbortController()
-            : null;
-          const abortSignal: AbortSignal | null = abortController
-            ? abortController.signal
-            : null;
+          const abortController: AbortController | null = new AbortController();
+          const abortSignal: AbortSignal | null = abortController.signal;
 
           realCanceler = () => {
             if (done) {

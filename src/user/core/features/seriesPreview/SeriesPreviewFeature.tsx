@@ -193,7 +193,7 @@ export const SeriesPreviewFeature: Feature<
       loading: false,
       imageHandler,
       gotoDetails(series) {
-        // allStates.get().seriesDetails.setShow(series, true);
+        allStates.get().seriesDetails.setShow(series, true);
         state.get().setShow(null, false);
       },
     }));

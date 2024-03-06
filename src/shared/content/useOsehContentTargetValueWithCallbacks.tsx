@@ -119,11 +119,9 @@ export const useOsehContentTargetValueWithCallbacks = ({
           (a, b) => a.state === b.state
         );
 
-        const controller = window.AbortController
-          ? new AbortController()
-          : undefined;
-        const signal = controller?.signal;
-        const doAbort = () => controller?.abort();
+        const controller = new AbortController();
+        const signal = controller.signal;
+        const doAbort = () => controller.abort();
         cancelers.add(doAbort);
 
         try {

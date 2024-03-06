@@ -17,6 +17,7 @@ import { useValuesWithCallbacksEffect } from '../../../shared/hooks/useValuesWit
 import Check from '../assets/Check';
 import { useValueWithCallbacksEffect } from '../../../shared/hooks/useValueWithCallbacksEffect';
 import { convertLogicalHeightToPhysicalHeight } from '../../../shared/images/DisplayRatioHelper';
+import { useContentWidth } from '../../../shared/lib/useContentWidth';
 
 const DESIRED_HEIGHT = 76;
 
@@ -29,7 +30,7 @@ export const CourseJourney = ({
   index: number;
   imageHandler: OsehImageStateRequestHandler;
 }) => {
-  const windowSizeVWC = useWindowSizeValueWithCallbacks();
+  const contentWidth = useContentWidth();
   const realHeight = useWritableValueWithCallbacks<number>(
     () => DESIRED_HEIGHT
   );
@@ -54,11 +55,11 @@ export const CourseJourney = ({
   });
 
   const backgroundProps = useMappedValuesWithCallbacks(
-    [realHeight, windowSizeVWC],
+    [realHeight, foregroundLayoutSize],
     (): OsehImageProps => ({
       uid: association.journey.darkenedBackground.uid,
       jwt: association.journey.darkenedBackground.jwt,
-      displayWidth: Math.min(342, windowSizeVWC.get().width - 48),
+      displayWidth: foregroundLayoutSize.get()?.width ?? contentWidth,
       displayHeight: realHeight.get(),
       alt: '',
       placeholderColor: '#333333',
@@ -94,8 +95,12 @@ export const CourseJourney = ({
       >
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            {association.journey.lastTakenAt !== null && <Check />}
-            <Text style={styles.index}>{(index + 1).toLocaleString()}</Text>
+            {association.journey.lastTakenAt !== null && (
+              <View style={styles.check}>
+                <Check />
+              </View>
+            )}
+            <Text style={styles.index}>{(index + 1).toLocaleString()}. </Text>
             <Text style={styles.title}>{association.journey.title}</Text>
           </View>
           <View style={styles.headerRight}>

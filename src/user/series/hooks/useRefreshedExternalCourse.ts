@@ -157,10 +157,11 @@ export const useRefreshedExternalCourse = (
         return;
       }
 
-      const controller = window.AbortController
-        ? new AbortController()
-        : undefined;
+      const controller = new AbortController();
       const signal = controller?.signal;
+      signal.throwIfAborted ||= () => {
+        throw new Error('aborted');
+      };
       const doAbort = () => controller?.abort();
       cancelers.add(doAbort);
 
