@@ -34,6 +34,9 @@ import ClosedCaptioningEnabled from '../assets/ClosedCaptioningEnabled';
 import ClosedCaptioningDisabled from '../assets/ClosedCaptioningDisabled';
 import { OutlineWhiteButton } from '../../../shared/components/OutlineWhiteButton';
 import Arrow from '../assets/Arrow';
+import { debugView } from '../../../shared/lib/debugView';
+import { useTopBarHeight } from '../../../shared/hooks/useTopBarHeight';
+import { useBotBarHeight } from '../../../shared/hooks/useBotBarHeight';
 
 export type CoursePreviewProps = {
   course: ExternalCoursePreviewable;
@@ -99,7 +102,9 @@ export const CoursePreview = ({
   const videoLoadedVWC = useMappedValueWithCallbacks(
     playbackStatusVWC,
     (status) =>
-      status === null || !status.isLoaded ? false : !status.isBuffering
+      status === null || !status.isLoaded
+        ? false
+        : status.isPlaying || status.positionMillis > 0 || !status.isBuffering
   );
   const videoPlayingVWC = useMappedValueWithCallbacks(
     playbackStatusVWC,
@@ -208,8 +213,12 @@ export const CoursePreview = ({
     (): StyleProp<TextStyle> => undefined
   );
 
+  const topBarHeight = useTopBarHeight();
+  const bottomBarHeight = useBotBarHeight();
+  const videoRefVWC = useWritableValueWithCallbacks<Video | null>(() => null);
+
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onLayout={debugView('CoursePreview', false)}>
       <View style={styles.background}>
         <RenderGuardedComponent
           props={useMappedValuesWithCallbacks(
@@ -236,6 +245,7 @@ export const CoursePreview = ({
                     }
                   : undefined
               }
+              ref={(r) => setVWC(videoRefVWC, r)}
               resizeMode={ResizeMode.COVER}
               shouldPlay={shouldPlay}
               isLooping={false}
@@ -264,15 +274,30 @@ export const CoursePreview = ({
         />
       </View>
       <View style={styles.backgroundOverlay} />
-      <View style={styles.content} ref={(r) => setVWC(contentRef, r)}>
-        <View style={styles.closeButtonContainer}>
+      <View
+        style={styles.content}
+        ref={(r) => setVWC(contentRef, r)}
+        onLayout={debugView('CoursePreview--content', false)}
+      >
+        <View
+          style={Object.assign({}, styles.closeButtonContainer, {
+            paddingTop: styles.closeButtonContainer.paddingTop + topBarHeight,
+          })}
+          onLayout={debugView('CoursePreview--closeButtonContainer', false)}
+        >
           <View style={styles.closeButtonInnerContainer}>
             <Pressable onPress={onBack} style={styles.closeButton}>
-              <Close />
+              <Close width={20} height={20} />
             </Pressable>
           </View>
         </View>
-        <View style={styles.pausePlayControlContainer}>
+        <View
+          style={styles.pausePlayControlContainer}
+          onLayout={debugView(
+            'CoursePreview--pausePlayControlContainer',
+            false
+          )}
+        >
           <RenderGuardedComponent
             props={videoPlayPauseStateVWC}
             component={(state) =>
@@ -294,11 +319,21 @@ export const CoursePreview = ({
                       return;
                     }
 
+                    if (
+                      !vidState.isPlaying &&
+                      (vidState.didJustFinish ||
+                        (vidState.durationMillis !== undefined &&
+                          vidState.durationMillis === vidState.durationMillis))
+                    ) {
+                      const vid = videoRefVWC.get();
+                      vid?.setPositionAsync(0);
+                    }
+
                     setVWC(vidShouldPlayVWC, !vidState.isPlaying);
                   }}
                 >
-                  {state === 'playing' && <Play />}
-                  {state === 'paused' && <Pause />}
+                  {state === 'playing' && <Pause />}
+                  {state === 'paused' && <Play />}
                 </Pressable>
               )
             }
@@ -368,17 +403,18 @@ export const CoursePreview = ({
                     }
                   />
                 </View>
-                <View style={styles.actionIconsRow}>
+                <View style={styles.viewDetailsContainer}>
                   <OutlineWhiteButton
                     onPress={onViewDetails}
                     setTextStyle={(s) => setVWC(viewDetailsTextStyleVWC, s)}
+                    thin
                   >
                     <View style={styles.viewDetailsContent}>
                       <RenderGuardedComponent
                         props={viewDetailsTextStyleVWC}
                         component={(s) => <Text style={s}>View Series</Text>}
                       />
-                      <Arrow />
+                      <Arrow style={styles.viewDetailsArrow} />
                     </View>
                   </OutlineWhiteButton>
                 </View>
@@ -412,6 +448,7 @@ export const CoursePreview = ({
               </Text>
               <Text style={styles.totalTime}>{totalTime}</Text>
             </View>
+            <View style={{ width: 1, height: bottomBarHeight }} />
           </View>
         </View>
       </View>

@@ -1,26 +1,26 @@
-import { StyleSheet } from "react-native";
-import * as Colors from "../../styling/colors";
+import { StyleSheet } from 'react-native';
+import * as Colors from '../../styling/colors';
 
 export const styles = StyleSheet.create({
   container: {
-    alignItems: "center",
+    alignItems: 'center',
     backgroundColor: Colors.TRANSPARENT,
     borderColor: Colors.WHITE,
     borderRadius: 100,
-    borderStyle: "solid",
+    borderStyle: 'solid',
     borderWidth: 2,
     flex: undefined,
-    flexDirection: "row",
-    justifyContent: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
     minHeight: 56,
   },
 
   containerWithSpinner: {
-    position: "relative",
+    position: 'relative',
   },
 
   spinnerContainer: {
-    position: "absolute",
+    position: 'absolute',
     top: 16,
     left: 13,
   },
@@ -43,9 +43,24 @@ export const styles = StyleSheet.create({
 
   text: {
     color: Colors.WHITE,
-    fontFamily: "OpenSans-Regular",
+    fontFamily: 'OpenSans-Regular',
     fontSize: 16,
-    letterSpacing: 0.25,
     lineHeight: 24,
+  },
+});
+
+export const thinStyles = StyleSheet.create({
+  container: { ...styles.container, minHeight: 36, paddingHorizontal: 14 },
+  containerWithSpinner: styles.containerWithSpinner,
+  spinnerContainer: styles.spinnerContainer,
+  disabled: styles.disabled,
+  disabledText: styles.disabledText,
+  pressed: styles.pressed,
+  pressedText: styles.pressedText,
+  text: {
+    ...styles.text,
+    fontFamily: 'OpenSans-SemiBold',
+    fontSize: 14,
+    lineHeight: 17,
   },
 });

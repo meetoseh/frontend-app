@@ -3,13 +3,16 @@ import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
 } from '../anim/VariableStrategyProps';
-import { ValueWithCallbacks, useWritableValueWithCallbacks } from '../lib/Callbacks';
+import {
+  ValueWithCallbacks,
+  useWritableValueWithCallbacks,
+} from '../lib/Callbacks';
 import { OsehTranscript } from './OsehTranscript';
 import { OsehTranscriptRef } from './OsehTranscriptRef';
 import { useValueWithCallbacksEffect } from '../hooks/useValueWithCallbacksEffect';
 import { setVWC } from '../lib/setVWC';
-import { HTTP_API_URL } from '../ApiConstants';
-import { describeError } from '../forms/ErrorBlock';
+import { HTTP_API_URL } from '../lib/apiFetch';
+import { describeError } from '../lib/describeError';
 
 export type OsehTranscriptResult =
   | {
@@ -51,7 +54,9 @@ export type OsehTranscriptResult =
 export const useOsehTranscriptValueWithCallbacks = (
   ref: VariableStrategyProps<OsehTranscriptRef | null>
 ): ValueWithCallbacks<OsehTranscriptResult> => {
-  const result = useWritableValueWithCallbacks<OsehTranscriptResult>(() => ({ type: 'loading' }));
+  const result = useWritableValueWithCallbacks<OsehTranscriptResult>(() => ({
+    type: 'loading',
+  }));
   const refVWC = useVariableStrategyPropsAsValueWithCallbacks(ref);
 
   useValueWithCallbacksEffect(refVWC, (rawRef) => {
@@ -72,12 +77,15 @@ export const useOsehTranscriptValueWithCallbacks = (
     };
 
     async function fetchTranscriptInner() {
-      const response = await fetch(`${HTTP_API_URL}/api/1/transcripts/${ref.uid}`, {
-        method: 'GET',
-        headers: {
-          Authorization: `bearer ${ref.jwt}`,
-        },
-      });
+      const response = await fetch(
+        `${HTTP_API_URL}/api/1/transcripts/${ref.uid}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `bearer ${ref.jwt}`,
+          },
+        }
+      );
 
       if (!running) {
         return;

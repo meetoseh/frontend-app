@@ -16,6 +16,7 @@ import { RequestNotificationTimeFeature } from '../features/requestNotificationT
 import { ConfirmMergeAccountFeature } from '../features/confirmMergeAccount/ConfirmMergeAccountFeature';
 import { MergeAccountFeature } from '../features/mergeAccount/MergeAccountFeature';
 import { SeriesListFeature } from '../features/seriesList/SeriesListFeature';
+import { SeriesPreviewFeature } from '../features/seriesPreview/SeriesPreviewFeature';
 
 const features = [
   LoginFeature,
@@ -28,6 +29,7 @@ const features = [
   RequestNotificationTimeFeature,
   GoalDaysPerWeekFeature,
   FavoritesFeature,
+  SeriesPreviewFeature,
   SeriesListFeature,
   SettingsFeature,
   PickEmotionJourneyFeature,

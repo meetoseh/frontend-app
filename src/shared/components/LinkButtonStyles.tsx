@@ -1,23 +1,23 @@
-import { StyleSheet } from "react-native";
-import * as Colors from "../../styling/colors";
+import { StyleSheet } from 'react-native';
+import * as Colors from '../../styling/colors';
 
 export const styles = StyleSheet.create({
   container: {
-    alignItems: "center",
+    alignItems: 'center',
     backgroundColor: Colors.TRANSPARENT,
     borderRadius: 100,
     flex: undefined,
-    flexDirection: "row",
-    justifyContent: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
     minHeight: 56,
   },
 
   containerWithSpinner: {
-    position: "relative",
+    position: 'relative',
   },
 
   spinnerContainer: {
-    position: "absolute",
+    position: 'absolute',
     top: 16,
     left: 13,
   },
@@ -40,9 +40,8 @@ export const styles = StyleSheet.create({
 
   text: {
     color: Colors.WHITE,
-    fontFamily: "OpenSans-Regular",
+    fontFamily: 'OpenSans-Regular',
     fontSize: 16,
-    letterSpacing: 0.25,
     lineHeight: 24,
   },
 });

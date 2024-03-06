@@ -14,8 +14,13 @@ import { Platform } from 'react-native';
  *
  *   If things are not laying out as you expect, this is the first thing to check.
  */
-export const useBotBarHeight = () =>
+export const useBotBarHeight = () => getBotBarHeight();
+
+/**
+ * Gets the bot bar height outside of a react component
+ */
+export const getBotBarHeight = () =>
   Platform.select({
-    android: 18,
+    android: 24,
     default: 0,
   });

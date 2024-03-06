@@ -46,7 +46,7 @@ export const SeriesListFeature: Feature<SeriesListState, SeriesListResources> =
           state.get().setShow(false, false);
         },
         gotoCoursePreview: (course) => {
-          // allStates.get().seriesPreview.setShow(course, true);
+          allStates.get().seriesPreview.setShow(course, true);
           state.get().setShow(false, false);
         },
       }));

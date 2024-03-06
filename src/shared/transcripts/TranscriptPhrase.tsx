@@ -12,7 +12,7 @@ import { ease } from '../lib/Bezier';
 import { useValueWithCallbacksEffect } from '../hooks/useValueWithCallbacksEffect';
 import { setVWC } from '../lib/setVWC';
 import { styles } from './TranscriptPhraseStyles';
-import { View } from 'react-native';
+import { Text } from 'react-native';
 
 /**
  * Renders a single transcript phrase, fading it in and out as it becomes
@@ -28,7 +28,7 @@ export const TranscriptPhrase = (
     phrase: OsehTranscriptPhrase;
   }>
 ): ReactElement => {
-  const ele = useRef<View>(null);
+  const ele = useRef<Text>(null);
   const opacityTarget = useMappedValuesWithCallbacks(
     [props.currentTime],
     useCallback(() => {
@@ -68,8 +68,8 @@ export const TranscriptPhrase = (
   );
 
   return (
-    <View style={styles.container} ref={ele}>
+    <Text style={styles.container} ref={ele}>
       {props.children}
-    </View>
+    </Text>
   );
 };

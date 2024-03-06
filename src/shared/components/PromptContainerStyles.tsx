@@ -50,7 +50,6 @@ export const styles = StyleSheet.create({
     fontFamily: 'OpenSans-SemiBold',
     fontSize: 12,
     justifyContent: 'center',
-    letterSpacing: 0.25,
     textAlign: 'center',
   },
   secondaryCtaContainer: {
