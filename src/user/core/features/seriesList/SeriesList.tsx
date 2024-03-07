@@ -14,8 +14,6 @@ import { useTopBarHeight } from '../../../../shared/hooks/useTopBarHeight';
 import { StatusBar } from 'expo-status-bar';
 import { useBotBarHeight } from '../../../../shared/hooks/useBotBarHeight';
 import { styles as bottomNavStyles } from '../../../bottomNav/BottomNavBarStyles';
-import { debugView } from '../../../../shared/lib/debugView';
-import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { SvgLinearGradientBackground } from '../../../../shared/anim/SvgLinearGradientBackground';
 import { STANDARD_BLACK_GRAY_GRADIENT_SVG } from '../../../../styling/colors';
 import { CourseCoverItemsList } from '../../../series/components/CourseCoverItemsList';

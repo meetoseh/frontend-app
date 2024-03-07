@@ -17,6 +17,7 @@ export const styles = StyleSheet.create({
     top: 0,
     left: 0,
     backgroundColor: Colors.BLACK_OVERLAY,
+    borderRadius: 10,
   },
   content: {
     flexDirection: 'column',

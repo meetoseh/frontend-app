@@ -20,6 +20,10 @@ import { useValuesWithCallbacksEffect } from '../../../../../shared/hooks/useVal
 import { apiFetch } from '../../../../../shared/lib/apiFetch';
 import { convertUsingMapper } from '../../../../../shared/lib/CrudFetcher';
 import { describeError } from '../../../../../shared/lib/describeError';
+import {
+  ErrorBanner,
+  ErrorBannerText,
+} from '../../../../../shared/components/ErrorBanner';
 
 export type UseRevenueCatOfferingsResultLoading = {
   /** Discriminatory key; indicates we are still loading the offerings */
@@ -93,6 +97,20 @@ export const useRevenueCatOfferings = ({
     };
 
     async function refreshResultInner(signal: AbortSignal | undefined) {
+      if (RevenueCatPlatform === undefined) {
+        setVWC(
+          result,
+          createError(
+            <ErrorBanner>
+              <ErrorBannerText>
+                Unsupported platform for purchases
+              </ErrorBannerText>
+            </ErrorBanner>
+          )
+        );
+        return;
+      }
+
       signal?.throwIfAborted();
       const response = await apiFetch(
         `/api/1/users/me/offerings?platform=${RevenueCatPlatform}`,

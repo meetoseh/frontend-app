@@ -36,7 +36,6 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { SvgLinearGradientBackground } from '../../../../shared/anim/SvgLinearGradientBackground';
 import { STANDARD_BLACK_GRAY_GRADIENT_SVG } from '../../../../styling/colors';
-import { debugView } from '../../../../shared/lib/debugView';
 import { useTopBarHeight } from '../../../../shared/hooks/useTopBarHeight';
 import FullHeartIcon from '../../../journey/icons/FullHeartIcon';
 import EmptyHeartIcon from '../../../journey/icons/EmptyHeartIcon';
@@ -172,7 +171,7 @@ export const SeriesDetails = ({
   >(() => undefined);
 
   return (
-    <View style={styles.container} onLayout={debugView('SeriesDetails', false)}>
+    <View style={styles.container}>
       <SvgLinearGradientBackground
         state={{
           type: 'react-rerender',
@@ -180,22 +179,13 @@ export const SeriesDetails = ({
         }}
         containerStyle={styles.contentContainer}
       >
-        <View
-          style={styles.content}
-          ref={(r) => setVWC(contentRef, r)}
-          onLayout={debugView('SeriesDetails--content', false)}
-        >
+        <View style={styles.content} ref={(r) => setVWC(contentRef, r)}>
           <View
             style={Object.assign({}, styles.closeContainer, {
               paddingTop: styles.closeContainer.paddingTop + topBarHeight,
             })}
-            onLayout={debugView('SeriesDetails--closeContainer', false)}
           >
-            <Pressable
-              style={styles.closeButton}
-              onPress={onCloseClick}
-              onLayout={debugView('SeriesDetails--closeButton', false)}
-            >
+            <Pressable style={styles.closeButton} onPress={onCloseClick}>
               <Back />
             </Pressable>
           </View>
@@ -205,7 +195,6 @@ export const SeriesDetails = ({
                 width: contentWidth,
                 paddingBottom: styles.contentInner.paddingBottom + botBarHeight,
               })}
-              onLayout={debugView('SeriesDetails--contentInner', false)}
               scrollEnabled
             >
               <View style={styles.header}>

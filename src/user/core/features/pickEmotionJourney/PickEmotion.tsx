@@ -57,7 +57,6 @@ import {
 } from '../../../../shared/anim/SvgLinearGradientBackground';
 import { BottomNavBar } from '../../../bottomNav/BottomNavBar';
 import { useBotBarHeight } from '../../../../shared/hooks/useBotBarHeight';
-import { debugView } from '../../../../shared/lib/debugView';
 
 /**
  * The settings for the profile pictures

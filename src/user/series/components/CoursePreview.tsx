@@ -34,9 +34,9 @@ import ClosedCaptioningEnabled from '../assets/ClosedCaptioningEnabled';
 import ClosedCaptioningDisabled from '../assets/ClosedCaptioningDisabled';
 import { OutlineWhiteButton } from '../../../shared/components/OutlineWhiteButton';
 import Arrow from '../assets/Arrow';
-import { debugView } from '../../../shared/lib/debugView';
 import { useTopBarHeight } from '../../../shared/hooks/useTopBarHeight';
 import { useBotBarHeight } from '../../../shared/hooks/useBotBarHeight';
+import { SvgLinearGradient } from '../../../shared/anim/SvgLinearGradient';
 
 export type CoursePreviewProps = {
   course: ExternalCoursePreviewable;
@@ -104,7 +104,10 @@ export const CoursePreview = ({
     (status) =>
       status === null || !status.isLoaded
         ? false
-        : status.isPlaying || status.positionMillis > 0 || !status.isBuffering
+        : status.isPlaying ||
+          status.shouldPlay ||
+          status.positionMillis > 0 ||
+          !status.isBuffering
   );
   const videoPlayingVWC = useMappedValueWithCallbacks(
     playbackStatusVWC,
@@ -204,7 +207,11 @@ export const CoursePreview = ({
     }
     const size = windowSizeVWC.get();
     ref.setNativeProps({
-      style: { width: size.width, minHeight: size.height },
+      style: {
+        width: size.width,
+        minHeight: size.height,
+        flexBasis: size.height,
+      },
     });
     return undefined;
   });
@@ -218,7 +225,7 @@ export const CoursePreview = ({
   const videoRefVWC = useWritableValueWithCallbacks<Video | null>(() => null);
 
   return (
-    <View style={styles.container} onLayout={debugView('CoursePreview', false)}>
+    <View style={styles.container}>
       <View style={styles.background}>
         <RenderGuardedComponent
           props={useMappedValuesWithCallbacks(
@@ -273,17 +280,35 @@ export const CoursePreview = ({
           }
         />
       </View>
-      <View style={styles.backgroundOverlay} />
-      <View
-        style={styles.content}
-        ref={(r) => setVWC(contentRef, r)}
-        onLayout={debugView('CoursePreview--content', false)}
-      >
+      <View style={styles.backgroundOverlay}>
+        <SvgLinearGradient
+          state={{
+            stops: [
+              {
+                color: [0, 0, 0, 0.6],
+                offset: 0,
+              },
+              {
+                color: [0, 0, 0, 0],
+                offset: 0.5,
+              },
+              {
+                color: [0, 0, 0, 0],
+                offset: 1,
+              },
+            ],
+            x1: 0.5,
+            y1: 1,
+            x2: 0.5,
+            y2: 0,
+          }}
+        />
+      </View>
+      <View style={styles.content} ref={(r) => setVWC(contentRef, r)}>
         <View
           style={Object.assign({}, styles.closeButtonContainer, {
             paddingTop: styles.closeButtonContainer.paddingTop + topBarHeight,
           })}
-          onLayout={debugView('CoursePreview--closeButtonContainer', false)}
         >
           <View style={styles.closeButtonInnerContainer}>
             <Pressable onPress={onBack} style={styles.closeButton}>
@@ -291,13 +316,7 @@ export const CoursePreview = ({
             </Pressable>
           </View>
         </View>
-        <View
-          style={styles.pausePlayControlContainer}
-          onLayout={debugView(
-            'CoursePreview--pausePlayControlContainer',
-            false
-          )}
-        >
+        <View style={styles.pausePlayControlContainer}>
           <RenderGuardedComponent
             props={videoPlayPauseStateVWC}
             component={(state) =>
@@ -318,17 +337,29 @@ export const CoursePreview = ({
                     if (vidState === null || !vidState.isLoaded) {
                       return;
                     }
+                    console.log('pause/play toggle with', vidState);
 
+                    const vid = videoRefVWC.get();
                     if (
                       !vidState.isPlaying &&
                       (vidState.didJustFinish ||
                         (vidState.durationMillis !== undefined &&
-                          vidState.durationMillis === vidState.durationMillis))
+                          vidState.positionMillis ===
+                            vidState.durationMillis)) &&
+                      vid !== null
                     ) {
-                      const vid = videoRefVWC.get();
-                      vid?.setPositionAsync(0);
+                      console.log(
+                        'using setPositionAsync(0) followed by shouldPlay=true'
+                      );
+                      vid.setPositionAsync(0).then((s) => {
+                        console.log('new state after setting pos:', s);
+                        setVWC(playbackStatusVWC, s);
+                        setVWC(vidShouldPlayVWC, true);
+                      });
+                      return;
                     }
 
+                    console.log('toggling shouldPlay via react');
                     setVWC(vidShouldPlayVWC, !vidState.isPlaying);
                   }}
                 >
@@ -364,9 +395,11 @@ export const CoursePreview = ({
               <View style={styles.info}>
                 <Text style={styles.instructor}>{course.instructor.name}</Text>
                 <Text style={styles.title}>{course.title}</Text>
-                <Text style={styles.numClasses}>
-                  {course.numJourneys.toLocaleString()} Classes
-                </Text>
+                <View style={styles.numClassesContainer}>
+                  <Text style={styles.numClasses}>
+                    {course.numJourneys.toLocaleString()} Classes
+                  </Text>
+                </View>
               </View>
               <View style={styles.actions}>
                 <View style={styles.actionIconsRow}>
@@ -452,7 +485,7 @@ export const CoursePreview = ({
           </View>
         </View>
       </View>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
     </View>
   );
 };

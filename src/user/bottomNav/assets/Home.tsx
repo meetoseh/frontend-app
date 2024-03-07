@@ -8,15 +8,15 @@ import Svg, {
 } from 'react-native-svg';
 const SvgComponent = ({ active, ...props }: SvgProps & { active: boolean }) => (
   <Svg
-    width={38}
-    height={40}
+    width={48}
+    height={50}
     fill="none"
-    viewBox="-10 -10 38 40"
+    viewBox="-15 -15 48 50"
     style={{
-      marginLeft: -10,
-      marginTop: -10,
-      marginRight: -10,
-      marginBottom: -10,
+      marginLeft: -15,
+      marginTop: -15,
+      marginRight: -15,
+      marginBottom: -15,
     }}
     {...props}
   >
@@ -29,7 +29,7 @@ const SvgComponent = ({ active, ...props }: SvgProps & { active: boolean }) => (
             <Stop offset="90%" stopColor="#C8CDD0" stopOpacity="0" />
           </RadialGradient>
         </Defs>
-        <Circle cx="9" cy="10" r="16" fill="url(#glow)" />
+        <Circle cx="9" cy="10" r="21" fill="url(#glow)" />
       </>
     )}
     <Path

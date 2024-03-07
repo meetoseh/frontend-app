@@ -1,7 +1,8 @@
 import { useEffect, useMemo } from 'react';
 import { useStateCompat as useState } from '../hooks/useStateCompat';
-import { Dimensions, ScaledSize, StatusBar } from 'react-native';
+import { Dimensions, Platform, ScaledSize, StatusBar } from 'react-native';
 import { getBotBarHeight } from './useBotBarHeight';
+import Constants from 'expo-constants';
 
 /**
  * Determines the amount of unusable space at the top of the screen, which we
@@ -48,10 +49,28 @@ export const useTopBarHeight = (): number => {
   return useMemo(
     () =>
       StatusBar.currentHeight ??
-      Math.max(
-        sizes.screen.height - sizes.window.height - getBotBarHeight(),
-        0
-      ),
+      Platform.select({
+        ios: Constants.statusBarHeight,
+        default: Math.max(
+          sizes.screen.height - sizes.window.height - getBotBarHeight(),
+          0
+        ),
+      }),
     [sizes]
   );
 };
+
+/**
+ * Same calculation as useTopBarHeight, but as a function instead of a hook.
+ */
+export const getTopBarHeight = (): number =>
+  StatusBar.currentHeight ??
+  Platform.select({
+    ios: Constants.statusBarHeight,
+    default: Math.max(
+      Dimensions.get('screen').height -
+        Dimensions.get('window').height -
+        getBotBarHeight(),
+      0
+    ),
+  });

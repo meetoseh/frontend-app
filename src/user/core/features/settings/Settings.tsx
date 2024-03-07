@@ -32,8 +32,8 @@ import { useManageConnectWithProvider } from './hooks/useManageConnectWithProvid
 import { MergeProvider } from '../mergeAccount/MergeAccountState';
 import { deleteJourneyFeedbackRequestReviewStoredState } from '../../../journey/lib/JourneyFeedbackRequestReviewStore';
 import { BottomNavBar } from '../../../bottomNav/BottomNavBar';
+import { styles as bottomNavBarStyles } from '../../../bottomNav/BottomNavBarStyles';
 import { useBotBarHeight } from '../../../../shared/hooks/useBotBarHeight';
-import { debugView } from '../../../../shared/lib/debugView';
 import { useWindowSizeValueWithCallbacks } from '../../../../shared/hooks/useWindowSize';
 import { useValuesWithCallbacksEffect } from '../../../../shared/hooks/useValuesWithCallbacksEffect';
 import { setVWC } from '../../../../shared/lib/setVWC';
@@ -300,11 +300,7 @@ export const Settings = ({
         }
 
         return (
-          <View
-            style={styles.container}
-            ref={(r) => setVWC(containerRef, r)}
-            onLayout={debugView('Settings-container')}
-          >
+          <View style={styles.container} ref={(r) => setVWC(containerRef, r)}>
             <SvgLinearGradientBackground
               state={{
                 type: 'react-rerender',
@@ -312,16 +308,9 @@ export const Settings = ({
               }}
             >
               <View style={{ height: topBarHeight }} />
-              <FullscreenView
-                style={styles.background}
-                alwaysScroll
-                onLayout={debugView('Settings--background', false)}
-              >
+              <FullscreenView style={styles.background} alwaysScroll>
                 <CloseButton onPress={onClickX} bonusStyle={{ top: 8 }} />
-                <View
-                  style={{ ...styles.content, width: contentWidth }}
-                  onLayout={debugView('Settings--content', false)}
-                >
+                <View style={{ ...styles.content, width: contentWidth }}>
                   <View style={styles.sections}>
                     <SettingSection title="Account">
                       <SettingsLinks links={accountLinks} />
@@ -342,6 +331,25 @@ export const Settings = ({
                       {Constants.manifest?.version || 'development'}
                     </Text>
                   </View>
+                  <RenderGuardedComponent
+                    props={useMappedValueWithCallbacks(
+                      resources,
+                      (r) => r.navbar
+                    )}
+                    component={(navbar) =>
+                      !navbar ? (
+                        <></>
+                      ) : (
+                        <View
+                          style={{
+                            height:
+                              bottomNavBarStyles.container.minHeight +
+                              botBarHeight,
+                          }}
+                        />
+                      )
+                    }
+                  />
                 </View>
               </FullscreenView>
               <RenderGuardedComponent

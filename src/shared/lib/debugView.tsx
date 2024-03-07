@@ -1,11 +1,16 @@
 import { Dimensions, LayoutChangeEvent, StatusBar } from 'react-native';
 import { getBotBarHeight } from '../hooks/useBotBarHeight';
+import { getTopBarHeight } from '../hooks/useTopBarHeight';
+import Constants from 'expo-constants';
+
 export const debugView =
   (id: string, checklist: boolean = true) =>
   (e: LayoutChangeEvent) => {
     const screenSize = Dimensions.get('screen');
     const windowSize = Dimensions.get('window');
     const botBarHeight = getBotBarHeight();
+    const topBarHeight = getTopBarHeight();
+
     console.log(
       `${id} is rendering at w=${e.nativeEvent.layout.width} by h=${e.nativeEvent.layout.height} ` +
         `@ (x=${e.nativeEvent.layout.x}, y=${e.nativeEvent.layout.y}). The screen size is w=${screenSize.width} by h=${screenSize.height}. ` +
@@ -13,11 +18,8 @@ export const debugView =
         `w=${screenSize.width - windowSize.width} by h=${
           screenSize.height - windowSize.height
         } ` +
-        `smaller than the screen. The bottom bar is ${botBarHeight}px, meaning the ` +
-        `top bar is ${
-          screenSize.height - windowSize.height - botBarHeight
-        }px. The ` +
-        `reported status bar height is ${StatusBar.currentHeight}px`
+        `smaller than the screen. The bottom bar is ${botBarHeight}px, the top bar is ${topBarHeight}px. The ` +
+        `reported status bar height is ${StatusBar.currentHeight}px via react native and ${Constants.statusBarHeight}px via expo-constants. `
     );
 
     if (checklist) {

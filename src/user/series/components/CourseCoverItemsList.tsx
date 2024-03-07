@@ -16,6 +16,7 @@ import { Text } from 'react-native';
 import { styles } from './sharedStyles';
 import { useRefreshedExternalCourse } from '../hooks/useRefreshedExternalCourse';
 import { largestPhysicalPerLogical } from '../../../shared/images/DisplayRatioHelper';
+import { useTopBarHeight } from '../../../shared/hooks/useTopBarHeight';
 
 export type CourseCoverItemsListProps = {
   /**
@@ -53,6 +54,7 @@ export const CourseCoverItemsList = ({
     adaptValueWithCallbacksAsVariableStrategyProps(listHeight)
   );
   const contentWidth = useContentWidth();
+  const topBarHeight = useTopBarHeight();
 
   const boundComponent = useMemo<
     (
@@ -102,7 +104,7 @@ export const CourseCoverItemsList = ({
           itemComparer={compareCourses}
           height={listHeight}
           gap={10}
-          firstTopPadding={32}
+          firstTopPadding={topBarHeight + 8}
           lastBottomPadding={32}
           initialComponentHeight={initialComponentHeight}
           emptyElement={

@@ -39,7 +39,6 @@ import Series from './assets/Series';
 import Browse from './assets/Browse';
 import { StatusBar } from 'expo-status-bar';
 import Close from '../../../../shared/icons/Close';
-import { debugView } from '../../../../shared/lib/debugView';
 import { useTopBarHeight } from '../../../../shared/hooks/useTopBarHeight';
 import { useContentWidth } from '../../../../shared/lib/useContentWidth';
 import { useBotBarHeight } from '../../../../shared/hooks/useBotBarHeight';
@@ -270,23 +269,13 @@ export const Upgrade = ({
   return (
     <View style={styles.container}>
       <View style={styles.contentContainer}>
-        <View
-          style={styles.content}
-          onLayout={debugView('Upgrade--content', false)}
-          ref={(r) => setVWC(contentRef, r)}
-        >
-          <View
-            style={styles.imageBackground}
-            onLayout={debugView('Upgrade--imageBackground', false)}
-          >
+        <View style={styles.content} ref={(r) => setVWC(contentRef, r)}>
+          <View style={styles.imageBackground}>
             <OsehImageFromStateValueWithCallbacks
               state={backgroundImageState}
             />
           </View>
-          <View
-            style={styles.backgroundOverlay}
-            onLayout={debugView('Upgrade--backgroundOverlay')}
-          >
+          <View style={styles.backgroundOverlay}>
             <SvgLinearGradient
               state={{
                 stops: [
@@ -318,7 +307,6 @@ export const Upgrade = ({
             style={Object.assign({}, styles.closeContainer, {
               paddingTop: styles.closeContainer.paddingTop + topBarHeight,
             })}
-            onLayout={debugView('Upgrade--closeContainer', false)}
           >
             <Pressable
               style={styles.closeButton}
@@ -326,7 +314,6 @@ export const Upgrade = ({
                 resources.get().session?.storeAction('close', null);
                 state.get().setContext(null, true);
               }}
-              onLayout={debugView('Upgrade--closeButton', false)}
             >
               <Close />
             </Pressable>

@@ -10,7 +10,6 @@ import { LoginContext } from '../../../../../shared/contexts/LoginContext';
 import { setVWC } from '../../../../../shared/lib/setVWC';
 import { useValuesWithCallbacksEffect } from '../../../../../shared/hooks/useValuesWithCallbacksEffect';
 import { describeError } from '../../../../../shared/lib/describeError';
-import Constants from 'expo-constants';
 
 export type UseOfferingPriceProps = {
   /** The offerings whose price should be fetched */
@@ -42,6 +41,101 @@ export type UseOfferingPriceResult =
   | UseOfferingPriceResultLoading
   | UseOfferingPriceResultError
   | UseOfferingPriceResultSuccess;
+
+// For testing purposes right now
+const fixedPrices: Record<string, PurchasesStoreProduct> = {
+  'pro:p1m': {
+    price: 13,
+    currencyCode: 'usd',
+    priceString: '$13',
+    productCategory: 'SUBSCRIPTION',
+    defaultOption: {
+      pricingPhases: [
+        {
+          billingPeriod: { iso8601: 'P1M' },
+          recurrenceMode: 1,
+          billingCycleCount: null,
+          price: {
+            formatted: '$13',
+            amountMicros: 13000000,
+            currencyCode: 'usd',
+          },
+          offerPaymentMode: null,
+        },
+      ],
+    },
+  },
+  'pro:p1y': {
+    price: 100,
+    currencyCode: 'usd',
+    priceString: '$99',
+    productCategory: 'SUBSCRIPTION',
+    defaultOption: {
+      pricingPhases: [
+        {
+          billingPeriod: { iso8601: 'P1Y' },
+          recurrenceMode: 1,
+          billingCycleCount: null,
+          price: {
+            formatted: '$99',
+            amountMicros: 99000000,
+            currencyCode: 'usd',
+          },
+          offerPaymentMode: null,
+        },
+      ],
+    },
+  },
+  'pro:lifetime': {
+    price: 297,
+    currencyCode: 'usd',
+    priceString: '$297',
+    productCategory: 'NON_SUBSCRIPTION',
+    defaultOption: null,
+  },
+  oseh_99_1y_0d0: {
+    price: 99,
+    currencyCode: 'usd',
+    priceString: '$99',
+    productCategory: 'SUBSCRIPTION',
+    defaultOption: {
+      pricingPhases: [
+        {
+          billingPeriod: { iso8601: 'P1Y' },
+          recurrenceMode: 1,
+          billingCycleCount: null,
+          price: {
+            formatted: '$99',
+            amountMicros: 99000000,
+            currencyCode: 'usd',
+          },
+          offerPaymentMode: null,
+        },
+      ],
+    },
+  },
+  oseh_13_1m_0d0: {
+    price: 13,
+    currencyCode: 'usd',
+    priceString: '$13',
+    productCategory: 'SUBSCRIPTION',
+    defaultOption: {
+      pricingPhases: [
+        {
+          billingPeriod: { iso8601: 'P1M' },
+          recurrenceMode: 1,
+          billingCycleCount: null,
+          price: {
+            formatted: '$13',
+            amountMicros: 13000000,
+            currencyCode: 'usd',
+          },
+          offerPaymentMode: null,
+        },
+      ],
+    },
+  },
+};
 
 export const useOfferingPrice = ({
   offering: offeringVWC,
@@ -79,85 +173,24 @@ export const useOfferingPrice = ({
 
       async function fetchPricesInner(signal: AbortSignal | undefined) {
         signal?.throwIfAborted();
-        const env = Constants.expoConfig!.extra!.environment!;
-        if (env === 'dev') {
-          const fixed: Record<string, PurchasesStoreProduct> = {
-            'pro:p1m': {
-              price: 13,
-              currencyCode: 'usd',
-              priceString: '$13',
-              productCategory: 'SUBSCRIPTION',
-              defaultOption: {
-                pricingPhases: [
-                  {
-                    billingPeriod: { iso8601: 'P1M' },
-                    recurrenceMode: 1,
-                    billingCycleCount: null,
-                    price: {
-                      formatted: '$13',
-                      amountMicros: 13000000,
-                      currencyCode: 'usd',
-                    },
-                    offerPaymentMode: null,
-                  },
-                ],
-              },
-            },
-            'pro:p1y': {
-              price: 100,
-              currencyCode: 'usd',
-              priceString: '$99',
-              productCategory: 'SUBSCRIPTION',
-              defaultOption: {
-                pricingPhases: [
-                  {
-                    billingPeriod: { iso8601: 'P1Y' },
-                    recurrenceMode: 1,
-                    billingCycleCount: null,
-                    price: {
-                      formatted: '$99',
-                      amountMicros: 99000000,
-                      currencyCode: 'usd',
-                    },
-                    offerPaymentMode: null,
-                  },
-                ],
-              },
-            },
-            'pro:lifetime': {
-              price: 297,
-              currencyCode: 'usd',
-              priceString: '$297',
-              productCategory: 'NON_SUBSCRIPTION',
-              defaultOption: null,
-            },
-          };
-          const pricesByPlatformProductId: Record<
-            string,
-            PurchasesStoreProduct
-          > = {};
-          for (const pkg of offering.offering.packages) {
-            const pkgId =
-              pkg.platformProductIdentifier +
-              (pkg.platformProductPlanIdentifier === null
-                ? null
-                : ':' + pkg.platformProductPlanIdentifier);
+        const pricesByPlatformProductId: Record<string, PurchasesStoreProduct> =
+          {};
+        for (const pkg of offering.offering.packages) {
+          const pkgId =
+            pkg.platformProductIdentifier +
+            (pkg.platformProductPlanIdentifier === null
+              ? ''
+              : ':' + pkg.platformProductPlanIdentifier);
 
-            if (!(pkgId in fixed)) {
-              throw new Error(
-                `bad package: ${JSON.stringify(pkg)} with pkgId ${pkgId}`
-              );
-            }
-
-            pricesByPlatformProductId[pkgId] = fixed[pkgId];
+          if (!(pkgId in fixedPrices)) {
+            throw new Error(
+              `bad package: ${JSON.stringify(pkg)} with pkgId ${pkgId}`
+            );
           }
-          setVWC(result, createSuccess(pricesByPlatformProductId));
-          return;
-        }
 
-        throw new Error(
-          `useOfferingPrice not implemented in environment ${env}`
-        );
+          pricesByPlatformProductId[pkgId] = fixedPrices[pkgId];
+        }
+        setVWC(result, createSuccess(pricesByPlatformProductId));
       }
 
       async function fetchPrices() {

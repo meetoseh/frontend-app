@@ -14,7 +14,8 @@ export const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    right: 0,
+    bottom: 0,
   },
   content: {
     justifyContent: 'space-between',
@@ -93,15 +94,20 @@ export const styles = StyleSheet.create({
     textAlign: 'left',
     color: Colors.PRIMARY_LIGHT,
   },
-  numClasses: {
+  numClassesContainer: {
     backgroundColor: '#383a34',
     paddingHorizontal: 6,
+    marginTop: 5,
+    borderRadius: 4,
+    paddingBottom: 2 /* makes it appear more centered */,
+    alignContent: 'center',
+    justifyContent: 'center',
+  },
+  numClasses: {
     color: Colors.PRIMARY_LIGHT,
     fontFamily: 'OpenSans-Regular',
     fontSize: 16,
     textAlign: 'left',
-    borderRadius: 4,
-    marginTop: 5,
   },
   actions: {
     alignItems: 'flex-end',
