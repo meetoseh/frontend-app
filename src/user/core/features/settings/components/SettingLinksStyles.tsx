@@ -1,19 +1,19 @@
-import { StyleSheet } from "react-native";
-import * as Colors from "../../../../../styling/colors";
+import { StyleSheet } from 'react-native';
+import * as Colors from '../../../../../styling/colors';
 
 export const styles = StyleSheet.create({
   container: {
-    flexDirection: "column",
-    justifyContent: "flex-start",
-    alignItems: "stretch",
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    alignItems: 'stretch',
     backgroundColor: Colors.NEW_GRAYSCALE_DARK_GRAY,
     borderRadius: 10,
   },
   item: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 12,
   },
   itemFirst: {
@@ -35,30 +35,31 @@ export const styles = StyleSheet.create({
   },
   item_normal: {},
   content: {
-    justifyContent: "flex-start",
-    alignItems: "flex-start",
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
   },
   details: {
-    justifyContent: "flex-start",
-    alignItems: "flex-start",
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
   },
   detail: {
-    marginTop: 3,
-    fontFamily: "OpenSans-Regular",
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.25,
+    marginTop: 4,
+    fontFamily: 'OpenSans-Regular',
+    fontSize: 14,
     color: Colors.GRAYSCALE_MID_GRAY,
   },
   text: {
-    fontFamily: "OpenSans-Regular",
-    fontSize: 14,
-    lineHeight: 19,
-    letterSpacing: 0.25,
+    fontFamily: 'OpenSans-Regular',
+    fontSize: 16,
   },
   textDisabled: {},
   text_normal: {
     color: Colors.WHITE,
   },
-  actionContainer: {},
+  actionContainer: {
+    minWidth: 20,
+    minHeight: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });

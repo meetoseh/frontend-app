@@ -1,7 +1,13 @@
-import { PropsWithChildren } from "react";
-import { ScrollView, StyleProp, View, ViewStyle } from "react-native";
-import { useWindowSize } from "../hooks/useWindowSize";
-import { useIsEffectivelyTinyScreen } from "../hooks/useIsEffectivelyTinyScreen";
+import { PropsWithChildren } from 'react';
+import {
+  LayoutChangeEvent,
+  ScrollView,
+  StyleProp,
+  View,
+  ViewStyle,
+} from 'react-native';
+import { useWindowSize } from '../hooks/useWindowSize';
+import { useIsEffectivelyTinyScreen } from '../hooks/useIsEffectivelyTinyScreen';
 
 /**
  * Shows a regular view if no accessibility scaling is detected, and a ScrollView
@@ -13,6 +19,7 @@ export const FullscreenView = ({
   alwaysScroll,
   heightScale,
   children,
+  onLayout,
 }: PropsWithChildren<{
   style?: StyleProp<ViewStyle>;
   /**
@@ -29,6 +36,11 @@ export const FullscreenView = ({
    * of the view is scaled by this factor. Useful for modals.
    */
   heightScale?: number;
+
+  /**
+   * Layout event handler for the rendered container
+   */
+  onLayout?: (e: LayoutChangeEvent) => void;
 }>) => {
   const isTinyScreen = useIsEffectivelyTinyScreen();
   const windowSize = useWindowSize();
@@ -40,6 +52,7 @@ export const FullscreenView = ({
           width: windowSize.width,
           height: windowSize.height * (heightScale ?? 1),
         })}
+        onLayout={onLayout}
       >
         {children}
       </View>
@@ -55,6 +68,7 @@ export const FullscreenView = ({
         maxHeight: undefined,
         minHeight: windowSize.height,
       })}
+      onLayout={onLayout}
     >
       {children}
     </ScrollView>

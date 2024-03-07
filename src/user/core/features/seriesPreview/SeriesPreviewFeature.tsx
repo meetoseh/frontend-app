@@ -128,7 +128,6 @@ export const SeriesPreviewFeature: Feature<
             return;
           }
           if (raw.items.length === 0) {
-            window.history.pushState({}, '', `/`);
             setVWC(showVWC, null);
             return;
           }
@@ -136,7 +135,6 @@ export const SeriesPreviewFeature: Feature<
           const course = convertUsingMapper(raw.items[0], externalCourseKeyMap);
           const coursePreviewable = getPreviewableCourse(course);
           if (coursePreviewable === null) {
-            window.history.pushState({}, '', `/`);
             setVWC(showVWC, null);
             return;
           }

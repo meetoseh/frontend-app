@@ -1,5 +1,5 @@
-import { ReactElement } from "react";
-import { ErrorBanner, ErrorBannerText } from "../components/ErrorBanner";
+import { ReactElement } from 'react';
+import { ErrorBanner, ErrorBannerText } from '../components/ErrorBanner';
 
 /**
  * Guesses the best description for the given error. This works best
@@ -9,7 +9,7 @@ import { ErrorBanner, ErrorBannerText } from "../components/ErrorBanner";
  * @returns A description of the error
  */
 export const describeError = async (e: any): Promise<ReactElement> => {
-  console.error("describing error:", e);
+  console.error('describing error:', e);
   if (e instanceof TypeError) {
     return (
       <ErrorBanner>
@@ -20,14 +20,22 @@ export const describeError = async (e: any): Promise<ReactElement> => {
     );
   } else if (e instanceof Response) {
     e.text()
-      .then((t) => console.error("response text:", t))
+      .then((t) => console.error('response text:', t))
       .catch((e2) => {
-        console.error("failed to get response text:", e2);
+        console.error('failed to get response text:', e2);
       });
     return (
       <ErrorBanner>
         <ErrorBannerText>
           E{e.status} - try again or contact customer support at hi@oseh.com
+        </ErrorBannerText>
+      </ErrorBanner>
+    );
+  } else if (e instanceof Error && e.message === 'not implemented') {
+    return (
+      <ErrorBanner>
+        <ErrorBannerText>
+          This feature is not available in your current environment.
         </ErrorBannerText>
       </ErrorBanner>
     );

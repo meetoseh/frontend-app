@@ -14,6 +14,7 @@ import { SeriesPreviewState } from '../features/seriesPreview/SeriesPreviewState
 import { SettingsState } from '../features/settings/SettingsState';
 import { SignupRewardState } from '../features/signupReward/SignupRewardState';
 import { SingleJourneyState } from '../features/singleJourney/SingleJourneyState';
+import { UpgradeState } from '../features/upgrade/UpgradeState';
 
 export type FeatureAllStates = {
   login: LoginState;
@@ -32,4 +33,5 @@ export type FeatureAllStates = {
   seriesPreview: SeriesPreviewState;
   seriesDetails: SeriesDetailsState;
   singleJourney: SingleJourneyState;
+  upgrade: UpgradeState;
 };

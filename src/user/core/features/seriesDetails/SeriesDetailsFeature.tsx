@@ -129,14 +129,12 @@ export const SeriesDetailsFeature: Feature<
             return;
           }
           if (raw.items.length === 0) {
-            window.history.pushState({}, '', `/`);
             setVWC(showVWC, null);
             return;
           }
 
           const course = convertUsingMapper(raw.items[0], externalCourseKeyMap);
           if (course === null) {
-            window.history.pushState({}, '', `/`);
             setVWC(showVWC, null);
             return;
           }
@@ -145,11 +143,14 @@ export const SeriesDetailsFeature: Feature<
         }
 
         async function fetchSeriesBySlug() {
-          const controller = window.AbortController
-            ? new AbortController()
-            : undefined;
-          const signal = controller?.signal;
-          const doAbort = () => controller?.abort();
+          const controller = new AbortController();
+          const signal = controller.signal;
+          signal.throwIfAborted ||= () => {
+            if (signal.aborted) {
+              throw new Error('aborted');
+            }
+          };
+          const doAbort = () => controller.abort();
           cancelers.add(doAbort);
           if (!active) {
             cancelers.remove(doAbort);
@@ -322,12 +323,14 @@ export const SeriesDetailsFeature: Feature<
           },
           gotoUpgrade() {
             const course = courseVWC.get();
-            // allStates
-            //   .get()
-            //   .upgrade.setContext(
-            //     course !== undefined ? { type: 'series', course } : { type: 'generic' },
-            //     true
-            // );
+            allStates
+              .get()
+              .upgrade.setContext(
+                course !== undefined
+                  ? { type: 'series', course }
+                  : { type: 'generic' },
+                true
+              );
             state.get().setShow(null, false);
           },
         };

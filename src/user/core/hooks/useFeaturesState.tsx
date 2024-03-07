@@ -19,6 +19,7 @@ import { SeriesListFeature } from '../features/seriesList/SeriesListFeature';
 import { SeriesPreviewFeature } from '../features/seriesPreview/SeriesPreviewFeature';
 import { SeriesDetailsFeature } from '../features/seriesDetails/SeriesDetailsFeature';
 import { SingleJourneyFeature } from '../features/singleJourney/SingleJourneyFeature';
+import { UpgradeFeature } from '../features/upgrade/UpgradeFeature';
 
 const features = [
   LoginFeature,
@@ -32,6 +33,7 @@ const features = [
   GoalDaysPerWeekFeature,
   SingleJourneyFeature,
   FavoritesFeature,
+  UpgradeFeature,
   SeriesDetailsFeature,
   SeriesPreviewFeature,
   SeriesListFeature,

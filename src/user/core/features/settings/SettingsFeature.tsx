@@ -12,6 +12,7 @@ import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedV
 import { useIdentities } from './hooks/useIdentities';
 import { apiFetch } from '../../../../shared/lib/apiFetch';
 import { describeError } from '../../../../shared/lib/describeError';
+import { useFeatureFlag } from '../../../../shared/lib/useFeatureFlag';
 
 /**
  * Simple link page where the user can perform some key actions, like logging out.
@@ -191,6 +192,8 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
       }
     );
 
+    const navbarVWC = useFeatureFlag('series');
+
     return useMappedValuesWithCallbacks(
       [
         haveProVWC,
@@ -199,6 +202,7 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
         identitiesVWC,
         gotoMyLibraryVWC,
         confirmMergePassthroughsVWC,
+        navbarVWC,
       ],
       (): SettingsResources => {
         if (loadErrorVWC.get() !== null) {
@@ -207,8 +211,10 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
             havePro: undefined,
             identities: { type: 'loading' },
             loadError: loadErrorVWC.get(),
+            navbar: !!navbarVWC.get(),
             gotoEditReminderTimes: () => {},
             gotoMyLibrary: () => {},
+            gotoSeries: () => {},
             ...confirmMergePassthroughsVWC.get(),
           };
         }
@@ -219,9 +225,14 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
             identitiesVWC.get().type === 'loading',
           havePro: haveProVWC.get(),
           loadError: null,
+          navbar: !!navbarVWC.get(),
           identities: identitiesVWC.get(),
           gotoEditReminderTimes: gotoEditTimesVWC.get(),
           gotoMyLibrary: gotoMyLibraryVWC.get(),
+          gotoSeries: () => {
+            allStatesVWC.get().seriesList.setShow(true, true);
+            stateVWC.get().setShow(false, false);
+          },
           ...confirmMergePassthroughsVWC.get(),
         };
       }

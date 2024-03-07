@@ -31,6 +31,13 @@ import Constants from 'expo-constants';
 import { useManageConnectWithProvider } from './hooks/useManageConnectWithProvider';
 import { MergeProvider } from '../mergeAccount/MergeAccountState';
 import { deleteJourneyFeedbackRequestReviewStoredState } from '../../../journey/lib/JourneyFeedbackRequestReviewStore';
+import { BottomNavBar } from '../../../bottomNav/BottomNavBar';
+import { useBotBarHeight } from '../../../../shared/hooks/useBotBarHeight';
+import { debugView } from '../../../../shared/lib/debugView';
+import { useWindowSizeValueWithCallbacks } from '../../../../shared/hooks/useWindowSize';
+import { useValuesWithCallbacksEffect } from '../../../../shared/hooks/useValuesWithCallbacksEffect';
+import { setVWC } from '../../../../shared/lib/setVWC';
+import { useTopBarHeight } from '../../../../shared/hooks/useTopBarHeight';
 
 /**
  * Shows a basic settings screen for the user. Requires a login context and a modal
@@ -255,6 +262,23 @@ export const Settings = ({
   );
 
   const contentWidth = useContentWidth();
+  const topBarHeight = useTopBarHeight();
+  const botBarHeight = useBotBarHeight();
+  const windowSizeVWC = useWindowSizeValueWithCallbacks();
+  const containerRef = useWritableValueWithCallbacks<View | null>(() => null);
+
+  useValuesWithCallbacksEffect([windowSizeVWC, containerRef], () => {
+    const ele = containerRef.get();
+    if (ele === null) {
+      return undefined;
+    }
+    ele.setNativeProps({
+      style: {
+        minHeight: windowSizeVWC.get().height,
+      },
+    });
+    return undefined;
+  });
 
   return (
     <RenderGuardedComponent
@@ -276,29 +300,38 @@ export const Settings = ({
         }
 
         return (
-          <View style={styles.container}>
+          <View
+            style={styles.container}
+            ref={(r) => setVWC(containerRef, r)}
+            onLayout={debugView('Settings-container')}
+          >
             <SvgLinearGradientBackground
               state={{
                 type: 'react-rerender',
                 props: STANDARD_BLACK_GRAY_GRADIENT_SVG,
               }}
             >
-              <FullscreenView style={styles.background} alwaysScroll>
-                <CloseButton onPress={onClickX} />
-                <View style={{ ...styles.content, width: contentWidth }}>
+              <View style={{ height: topBarHeight }} />
+              <FullscreenView
+                style={styles.background}
+                alwaysScroll
+                onLayout={debugView('Settings--background', false)}
+              >
+                <CloseButton onPress={onClickX} bonusStyle={{ top: 8 }} />
+                <View
+                  style={{ ...styles.content, width: contentWidth }}
+                  onLayout={debugView('Settings--content', false)}
+                >
                   <View style={styles.sections}>
                     <SettingSection title="Account">
                       <SettingsLinks links={accountLinks} />
                     </SettingSection>
-                    <View style={styles.sectionSeparator} />
                     <SettingSection title="Logins">
                       <SettingsLinks links={identityLinks} />
                     </SettingSection>
-                    <View style={styles.sectionSeparator} />
                     <SettingSection title="Settings">
                       <SettingsLinks links={settingsLinks} />
                     </SettingSection>
-                    <View style={styles.sectionSeparator} />
                     <SettingSection title="Support">
                       <SettingsLinks links={supportLinks} />
                     </SettingSection>
@@ -311,6 +344,28 @@ export const Settings = ({
                   </View>
                 </View>
               </FullscreenView>
+              <RenderGuardedComponent
+                props={useMappedValueWithCallbacks(resources, (r) => r.navbar)}
+                component={(navbar) =>
+                  !navbar ? (
+                    <></>
+                  ) : (
+                    <View
+                      style={Object.assign({}, styles.bottomNav, {
+                        bottom: styles.bottomNav.bottom + botBarHeight,
+                      })}
+                    >
+                      <BottomNavBar
+                        active="account"
+                        clickHandlers={{
+                          home: () => state.get().setShow(false, true),
+                          series: () => resources.get().gotoSeries(),
+                        }}
+                      />
+                    </View>
+                  )
+                }
+              />
             </SvgLinearGradientBackground>
             <ModalsOutlet modals={modals} />
             <StatusBar style="light" />

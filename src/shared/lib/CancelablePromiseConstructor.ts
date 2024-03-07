@@ -1,5 +1,6 @@
 import { Callbacks } from './Callbacks';
 import { CancelablePromise } from './CancelablePromise';
+import Constants from 'expo-constants';
 
 /**
  * A constructed cancelable promise is a specific type of cancelable
@@ -213,8 +214,12 @@ export const constructCancelablePromise = <T>(
           console.trace('body called resolve() without setting state.done');
 
           state.done = true;
-          if (process.env.REACT_APP_ENVIRONMENT === 'dev') {
-            reject(new Error('body called resolve() or reject() without setting state.done'));
+          if (Constants.expoConfig!.extra!.environment! === 'dev') {
+            reject(
+              new Error(
+                'body called resolve() or reject() without setting state.done'
+              )
+            );
           }
           return;
         }
@@ -244,14 +249,18 @@ export const constructCancelablePromise = <T>(
         }
 
         if (constructor.guardBody) {
-          wrappedReject(new Error('body returned without resolving or rejecting'));
+          wrappedReject(
+            new Error('body returned without resolving or rejecting')
+          );
         } else {
           console.trace('body returned without resolving or rejecting');
 
-          if (process.env.REACT_APP_ENVIRONMENT === 'dev') {
+          if (Constants.expoConfig!.extra!.environment! === 'dev') {
             throw new Error('body returned without resolving or rejecting');
           } else {
-            wrappedReject(new Error('body returned without resolving or rejecting'));
+            wrappedReject(
+              new Error('body returned without resolving or rejecting')
+            );
           }
         }
       };
