@@ -190,6 +190,10 @@ export const SeriesPreviewFeature: Feature<
     return useWritableValueWithCallbacks(() => ({
       loading: false,
       imageHandler,
+      goBack() {
+        allStates.get().seriesList.setShow(true, true);
+        state.get().setShow(null, false);
+      },
       gotoDetails(series) {
         allStates.get().seriesDetails.setShow(series, true);
         state.get().setShow(null, false);

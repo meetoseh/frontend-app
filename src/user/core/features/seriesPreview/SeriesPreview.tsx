@@ -14,7 +14,10 @@ import { CoursePreview } from '../../../series/components/CoursePreview';
 export const SeriesPreview = ({
   state: stateVWC,
   resources: resourcesVWC,
-}: FeatureComponentProps<SeriesPreviewState, SeriesPreviewResources>): ReactElement => {
+}: FeatureComponentProps<
+  SeriesPreviewState,
+  SeriesPreviewResources
+>): ReactElement => {
   const courseVWC = useMappedValueWithCallbacks(stateVWC, (s) => s.show);
 
   return (
@@ -30,7 +33,7 @@ export const SeriesPreview = ({
             onViewDetails={() => {
               resourcesVWC.get().gotoDetails(course);
             }}
-            onBack={() => stateVWC.get().setShow(null, true)}
+            onBack={() => resourcesVWC.get().goBack()}
             imageHandler={resourcesVWC.get().imageHandler}
           />
         );
