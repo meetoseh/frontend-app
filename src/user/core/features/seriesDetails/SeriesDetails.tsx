@@ -11,11 +11,7 @@ import { SeriesDetailsResources } from './SeriesDetailsResources';
 import { SeriesDetailsState } from './SeriesDetailsState';
 import { useUnwrappedValueWithCallbacks } from '../../../../shared/hooks/useUnwrappedValueWithCallbacks';
 import { CourseJourney } from '../../../series/components/CourseJourney';
-import {
-  ModalContext,
-  Modals,
-  ModalsOutlet,
-} from '../../../../shared/contexts/ModalContext';
+import { ModalsOutlet } from '../../../../shared/contexts/ModalContext';
 import { useWorkingModal } from '../../../../shared/hooks/useWorkingModal';
 import { MinimalCourseJourney } from '../../../favorites/lib/MinimalCourseJourney';
 import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
@@ -34,8 +30,6 @@ import {
   ScrollView,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { SvgLinearGradientBackground } from '../../../../shared/anim/SvgLinearGradientBackground';
-import { STANDARD_BLACK_GRAY_GRADIENT_SVG } from '../../../../styling/colors';
 import { useTopBarHeight } from '../../../../shared/hooks/useTopBarHeight';
 import FullHeartIcon from '../../../journey/icons/FullHeartIcon';
 import EmptyHeartIcon from '../../../journey/icons/EmptyHeartIcon';
@@ -55,8 +49,8 @@ export const SeriesDetails = ({
 
   const showing = useMappedValueWithCallbacks(state, (s) => s.show);
   const onCloseClick = useCallback(() => {
-    state.get().setShow(null, true);
-  }, [state]);
+    resources.get().goBack();
+  }, [resources]);
 
   const hasEntitlementVWC = useMappedValueWithCallbacks(
     state,

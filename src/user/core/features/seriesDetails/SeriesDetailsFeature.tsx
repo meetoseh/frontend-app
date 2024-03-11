@@ -333,17 +333,27 @@ export const SeriesDetailsFeature: Feature<
     );
 
     return useMappedValuesWithCallbacks(
-      [journeysVWC, backgroundImageStateVWC],
+      [courseVWC, journeysVWC, backgroundImageStateVWC],
       (): SeriesDetailsResources => {
+        const course = courseVWC.get();
         const journeys = journeysVWC.get();
         const backgroundImage = backgroundImageStateVWC.get();
         return {
-          loading: journeys === undefined || backgroundImage.thumbhash === null,
+          loading:
+            course === null ||
+            course === undefined ||
+            journeys === undefined ||
+            (course.detailsBackgroundImage !== null &&
+              backgroundImage.thumbhash === null),
           imageHandler,
           journeys,
           courseLikeState,
           backgroundImage,
           modals,
+          goBack() {
+            allStates.get().seriesList.setShow(true, true);
+            state.get().setShow(null, false);
+          },
           gotoJourney(journey, course) {
             console.log('going to journey', journey);
             allStates
