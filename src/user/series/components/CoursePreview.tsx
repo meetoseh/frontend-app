@@ -36,6 +36,7 @@ import Arrow from '../assets/Arrow';
 import { useTopBarHeight } from '../../../shared/hooks/useTopBarHeight';
 import { useBotBarHeight } from '../../../shared/hooks/useBotBarHeight';
 import { SvgLinearGradient } from '../../../shared/anim/SvgLinearGradient';
+import { useValueWithCallbacksEffect } from '../../../shared/hooks/useValueWithCallbacksEffect';
 
 export type CoursePreviewProps = {
   course: ExternalCoursePreviewable;
@@ -131,6 +132,15 @@ export const CoursePreview = ({
     playbackStatusVWC,
     (status) => (status?.isLoaded ? status.positionMillis / 1000 : 0)
   );
+  const wantToAutoplayVWC = useWritableValueWithCallbacks(() => true);
+
+  useValueWithCallbacksEffect(videoLoadedVWC, (loaded) => {
+    if (loaded && wantToAutoplayVWC.get()) {
+      setVWC(wantToAutoplayVWC, false);
+      setVWC(vidShouldPlayVWC, true);
+    }
+    return undefined;
+  });
 
   const videoPlayPauseStateVWC = useMappedValuesWithCallbacks(
     [videoLoadedVWC, videoPlayingVWC],
