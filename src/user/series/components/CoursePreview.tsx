@@ -15,8 +15,7 @@ import { setVWC } from '../../../shared/lib/setVWC';
 import { useMappedValuesWithCallbacks } from '../../../shared/hooks/useMappedValuesWithCallbacks';
 import { useOsehContentTargetValueWithCallbacks } from '../../../shared/content/useOsehContentTargetValueWithCallbacks';
 import { useReactManagedValueAsValueWithCallbacks } from '../../../shared/hooks/useReactManagedValueAsValueWithCallbacks';
-import { useCallback, useContext } from 'react';
-import { ModalContext } from '../../../shared/contexts/ModalContext';
+import { useCallback } from 'react';
 import { RenderGuardedComponent } from '../../../shared/components/RenderGuardedComponent';
 import { InlineOsehSpinner } from '../../../shared/components/InlineOsehSpinner';
 import { useCurrentTranscriptPhrases } from '../../../shared/transcripts/useCurrentTranscriptPhrases';
@@ -55,7 +54,6 @@ export const CoursePreview = ({
   onBack,
   imageHandler,
 }: CoursePreviewProps) => {
-  const modalContext = useContext(ModalContext);
   const windowSizeVWC = useWindowSizeValueWithCallbacks();
   const coverImageProps = useMappedValueWithCallbacks(
     windowSizeVWC,
