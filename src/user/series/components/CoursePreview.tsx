@@ -91,8 +91,20 @@ export const CoursePreview = ({
   const videoTargetVWC = useOsehContentTargetValueWithCallbacks({
     ref: videoTargetRefVWC,
     displaySize: windowSizeVWC,
-    presign: true,
+    presign: false,
   });
+  const videoStyleVWC = useMappedValuesWithCallbacks(
+    [windowSizeVWC],
+    () => {
+      const screenSize = windowSizeVWC.get();
+
+      return { width: screenSize.width, height: screenSize.height };
+    },
+    {
+      outputEqualityFn: (a, b) => a.width === b.width && a.height === b.height,
+    }
+  );
+
   const videoReadyForDisplayVWC = useWritableValueWithCallbacks(() => false);
   const playbackStatusVWC =
     useWritableValueWithCallbacks<AVPlaybackStatus | null>(() => null);
@@ -231,18 +243,18 @@ export const CoursePreview = ({
           props={useMappedValuesWithCallbacks(
             [
               videoTargetVWC,
-              windowSizeVWC,
+              videoStyleVWC,
               vidShouldPlayVWC,
               vidShouldBeMutedVWC,
             ],
             () => ({
               target: videoTargetVWC.get(),
-              size: windowSizeVWC.get(),
               shouldPlay: vidShouldPlayVWC.get(),
               muted: vidShouldBeMutedVWC.get(),
+              videoStyle: videoStyleVWC.get(),
             })
           )}
-          component={({ target, size, shouldPlay, muted }) => (
+          component={({ target, shouldPlay, muted, videoStyle }) => (
             <Video
               source={
                 target.state === 'loaded'
@@ -263,16 +275,21 @@ export const CoursePreview = ({
                 setVWC(playbackStatusVWC, status)
               }
               isMuted={muted}
-              style={{ width: size.width, height: size.height }}
+              style={videoStyle}
             />
           )}
         />
       </View>
       <View style={styles.background}>
         <RenderGuardedComponent
-          props={videoLoadedVWC}
-          component={(loaded) =>
-            !loaded ? (
+          props={useMappedValuesWithCallbacks(
+            [videoLoadedVWC, videoPlayingVWC, videoCurrentTimeVWC],
+            () =>
+              !videoLoadedVWC.get() ||
+              (!videoPlayingVWC.get() && videoCurrentTimeVWC.get() === 0)
+          )}
+          component={(showCoverImage) =>
+            showCoverImage ? (
               <OsehImageFromStateValueWithCallbacks state={coverImageState} />
             ) : (
               <></>
@@ -337,8 +354,6 @@ export const CoursePreview = ({
                     if (vidState === null || !vidState.isLoaded) {
                       return;
                     }
-                    console.log('pause/play toggle with', vidState);
-
                     const vid = videoRefVWC.get();
                     if (
                       !vidState.isPlaying &&
@@ -348,18 +363,13 @@ export const CoursePreview = ({
                             vidState.durationMillis)) &&
                       vid !== null
                     ) {
-                      console.log(
-                        'using setPositionAsync(0) followed by shouldPlay=true'
-                      );
                       vid.setPositionAsync(0).then((s) => {
-                        console.log('new state after setting pos:', s);
                         setVWC(playbackStatusVWC, s);
                         setVWC(vidShouldPlayVWC, true);
                       });
                       return;
                     }
 
-                    console.log('toggling shouldPlay via react');
                     setVWC(vidShouldPlayVWC, !vidState.isPlaying);
                   }}
                 >

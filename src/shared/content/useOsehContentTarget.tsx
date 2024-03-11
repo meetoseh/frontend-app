@@ -103,6 +103,8 @@ export const getNativeExport = (
   }
 
   return {
-    url: `${HTTP_API_URL}${path}?` + new URLSearchParams(qargs).toString(),
+    url:
+      `${HTTP_API_URL}${path}?` +
+      qargs.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&'),
   };
 };

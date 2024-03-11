@@ -1,4 +1,5 @@
 import { Modals } from '../../../../shared/contexts/ModalContext';
+import { OsehImageState } from '../../../../shared/images/OsehImageState';
 import { OsehImageStateRequestHandler } from '../../../../shared/images/useOsehImageStateRequestHandler';
 import { WritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { UseCourseLikeStateResult } from '../../../favorites/hooks/useCourseLikeState';
@@ -14,6 +15,11 @@ export type SeriesDetailsResources = {
    * ready to present.
    */
   loading: boolean;
+
+  /**
+   * The background image to use.
+   */
+  backgroundImage: OsehImageState;
 
   /**
    * The image handler we use for series details; by storing this here,

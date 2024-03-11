@@ -43,6 +43,7 @@ import { useContentWidth } from '../../../../shared/lib/useContentWidth';
 import Back from './assets/Back';
 import { FilledPremiumButton } from '../../../../shared/components/FilledPremiumButton';
 import { useBotBarHeight } from '../../../../shared/hooks/useBotBarHeight';
+import { OsehImageBackgroundFromStateValueWithCallbacks } from '../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks';
 
 export const SeriesDetails = ({
   state,
@@ -172,12 +173,9 @@ export const SeriesDetails = ({
 
   return (
     <View style={styles.container}>
-      <SvgLinearGradientBackground
-        state={{
-          type: 'react-rerender',
-          props: STANDARD_BLACK_GRAY_GRADIENT_SVG,
-        }}
-        containerStyle={styles.contentContainer}
+      <OsehImageBackgroundFromStateValueWithCallbacks
+        state={useMappedValueWithCallbacks(resources, (r) => r.backgroundImage)}
+        style={styles.contentContainer}
       >
         <View style={styles.content} ref={(r) => setVWC(contentRef, r)}>
           <View
@@ -343,7 +341,7 @@ export const SeriesDetails = ({
           </View>
         </View>
         <ModalsOutlet modals={modals} />
-      </SvgLinearGradientBackground>
+      </OsehImageBackgroundFromStateValueWithCallbacks>
       <StatusBar style="light" />
     </View>
   );

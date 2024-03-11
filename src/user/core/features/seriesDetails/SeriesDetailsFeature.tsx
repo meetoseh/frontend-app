@@ -26,6 +26,10 @@ import { useCourseLikeState } from '../../../favorites/hooks/useCourseLikeState'
 import { Modals } from '../../../../shared/contexts/ModalContext';
 import { apiFetch } from '../../../../shared/lib/apiFetch';
 import { convertUsingMapper } from '../../../../shared/lib/CrudFetcher';
+import { useWindowSizeValueWithCallbacks } from '../../../../shared/hooks/useWindowSize';
+import { OsehImageProps } from '../../../../shared/images/OsehImageProps';
+import { useOsehImageStateValueWithCallbacks } from '../../../../shared/images/useOsehImageStateValueWithCallbacks';
+import { adaptValueWithCallbacksAsVariableStrategyProps } from '../../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps';
 
 export const SeriesDetailsFeature: Feature<
   SeriesDetailsState,
@@ -304,15 +308,41 @@ export const SeriesDetailsFeature: Feature<
       }
     });
 
+    const windowSizeVWC = useWindowSizeValueWithCallbacks();
+
+    const backgroundImagePropsVWC = useMappedValuesWithCallbacks(
+      [courseVWC, windowSizeVWC, required],
+      (r): OsehImageProps => {
+        const imgRef = !required.get()
+          ? null
+          : courseVWC.get()?.detailsBackgroundImage;
+        return {
+          uid: imgRef?.uid ?? null,
+          jwt: imgRef?.jwt ?? null,
+          displayWidth: windowSizeVWC.get().width,
+          displayHeight: windowSizeVWC.get().height,
+          alt: '',
+          placeholderColor: 'black',
+        };
+      }
+    );
+
+    const backgroundImageStateVWC = useOsehImageStateValueWithCallbacks(
+      adaptValueWithCallbacksAsVariableStrategyProps(backgroundImagePropsVWC),
+      imageHandler
+    );
+
     return useMappedValuesWithCallbacks(
-      [journeysVWC],
+      [journeysVWC, backgroundImageStateVWC],
       (): SeriesDetailsResources => {
         const journeys = journeysVWC.get();
+        const backgroundImage = backgroundImageStateVWC.get();
         return {
-          loading: journeys === undefined,
+          loading: journeys === undefined || backgroundImage.thumbhash === null,
           imageHandler,
           journeys,
           courseLikeState,
+          backgroundImage,
           modals,
           gotoJourney(journey, course) {
             console.log('going to journey', journey);
