@@ -20,6 +20,9 @@ web-build/
 /ios
 /oseh-*.json
 /pc-*.json
+*.pem
+/start-proxy.bat
+*.pyc
 
 # macOS
 .DS_Store

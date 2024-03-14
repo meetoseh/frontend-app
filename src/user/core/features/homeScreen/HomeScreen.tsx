@@ -28,9 +28,6 @@ import { RenderGuardedComponent } from '../../../../shared/components/RenderGuar
 import { MyProfilePicture } from '../../../../shared/components/MyProfilePicture';
 import { DAYS_OF_WEEK } from '../../../../shared/models/DayOfWeek';
 import { BlurView, BlurViewProps } from 'expo-blur';
-import { requireNativeViewManager } from 'expo-modules-core';
-
-const NativeBlurView = requireNativeViewManager('ExpoBlurView');
 
 /**
  * Displays the home screen for the user
@@ -230,16 +227,6 @@ export const HomeScreen = ({
     return undefined;
   });
 
-  const blurViewProps = useMemo<BlurViewProps>(() => {
-    const style: StyleProp<ViewStyle> = { width: 200, height: 50 };
-    return Platform.select({
-      android: { style, experimentalBlurMethod: 'dimezisBlurView' },
-      default: { style },
-    });
-  }, []);
-
-  console.log(blurViewProps);
-
   return (
     <FullscreenView style={styles.container}>
       <View style={styles.background}>
@@ -345,7 +332,10 @@ export const HomeScreen = ({
             style={styles.goalWrapper}
             ref={(r) => setVWC(goalWrapperRef, r)}
           >
-            <BlurView {...blurViewProps}></BlurView>
+            <BlurView
+              style={{ width: 200, height: 50 }}
+              experimentalBlurMethod="dimezisBlurView"
+            ></BlurView>
           </View>
         </View>
       </View>
