@@ -1,24 +1,28 @@
-import { ReactElement } from "react";
-import { ValueWithCallbacks } from "../../../shared/lib/Callbacks";
-import { kFormatter } from "../../../shared/lib/kFormatter";
-import { OsehImageState } from "../../../shared/images/OsehImageState";
-import { ProfilePicturesState } from "../hooks/useProfilePictures";
-import { styles } from "./ProfilePicturesStyles";
-import { useMappedValueWithCallbacks } from "../../../shared/hooks/useMappedValueWithCallbacks";
-import { RenderGuardedComponent } from "../../../shared/components/RenderGuardedComponent";
-import { useUnwrappedValueWithCallbacks } from "../../../shared/hooks/useUnwrappedValueWithCallbacks";
-import { View, Text } from "react-native";
-import { OsehImageFromState } from "../../../shared/images/OsehImageFromState";
-import { useIsEffectivelyTinyScreen } from "../../../shared/hooks/useIsEffectivelyTinyScreen";
+import { ReactElement } from 'react';
+import { ValueWithCallbacks } from '../../../shared/lib/Callbacks';
+import { kFormatter } from '../../../shared/lib/kFormatter';
+import { OsehImageState } from '../../../shared/images/OsehImageState';
+import { ProfilePicturesState } from '../hooks/useProfilePictures';
+import { styles } from './ProfilePicturesStyles';
+import { useMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValueWithCallbacks';
+import { RenderGuardedComponent } from '../../../shared/components/RenderGuardedComponent';
+import { useUnwrappedValueWithCallbacks } from '../../../shared/hooks/useUnwrappedValueWithCallbacks';
+import { View, Text } from 'react-native';
+import { OsehImageFromState } from '../../../shared/images/OsehImageFromState';
+import { useIsEffectivelyTinyScreen } from '../../../shared/hooks/useIsEffectivelyTinyScreen';
 
 export type HereSettings =
   | {
-      type: "filled";
+      type: 'filled';
       action: string;
     }
   | {
-      type: "floating";
+      type: 'floating';
       action: string;
+    }
+  | {
+      type: 'none';
+      action?: undefined;
     };
 
 /**
@@ -33,7 +37,7 @@ export const ProfilePictures = ({
 }) => {
   const trueHereSettings: HereSettings =
     hereSettings === undefined
-      ? { type: "filled", action: "here" }
+      ? { type: 'filled', action: 'here' }
       : hereSettings;
 
   const numPictures = useUnwrappedValueWithCallbacks(
@@ -71,7 +75,7 @@ export const ProfilePictures = ({
           }`;
 
           const type = trueHereSettings.type;
-          if (type === "filled") {
+          if (type === 'filled') {
             return (
               <View
                 style={Object.assign(
@@ -85,10 +89,12 @@ export const ProfilePictures = ({
                 <Text style={styles.hereSettingsFilledText}>{textContent}</Text>
               </View>
             );
-          } else if (type === "floating") {
+          } else if (type === 'floating') {
             return (
               <Text style={styles.hereSettingsFloatingText}>{textContent}</Text>
             );
+          } else if (type === 'none') {
+            return <></>;
           }
 
           ((t: never) => {

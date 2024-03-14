@@ -1,17 +1,17 @@
-import { ReactElement, useCallback } from "react";
+import { ReactElement, useCallback } from 'react';
 import {
   ValueWithCallbacks,
   WritableValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../../../../shared/lib/Callbacks";
-import { styles } from "./EditDaysStyles";
-import { DayOfWeek } from "./RequestNotificationTimeResources";
-import { useMappedValueWithCallbacks } from "../../../../shared/hooks/useMappedValueWithCallbacks";
-import { setVWC } from "../../../../shared/lib/setVWC";
-import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
-import { FilledInvertedButton } from "../../../../shared/components/FilledInvertedButton";
-import { StyleProp, TextStyle, View, Text } from "react-native";
-import { Checkbox } from "../../../../shared/components/Checkbox";
+} from '../../../../shared/lib/Callbacks';
+import { styles } from './EditDaysStyles';
+import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
+import { setVWC } from '../../../../shared/lib/setVWC';
+import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
+import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
+import { StyleProp, TextStyle, View, Text } from 'react-native';
+import { Checkbox } from '../../../../shared/components/Checkbox';
+import { DayOfWeek } from '../../../../shared/models/DayOfWeek';
 
 export type EditDaysProps = {
   /**
@@ -32,13 +32,13 @@ export type EditDaysProps = {
 };
 
 const daysOfWeek: DayOfWeek[] = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
 ];
 
 /**

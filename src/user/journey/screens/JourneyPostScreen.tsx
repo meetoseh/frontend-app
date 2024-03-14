@@ -29,24 +29,7 @@ import { useIsEffectivelyTinyScreen } from '../../../shared/hooks/useIsEffective
 import { useContentWidth } from '../../../shared/lib/useContentWidth';
 import { useValueWithCallbacksEffect } from '../../../shared/hooks/useValueWithCallbacksEffect';
 import { useMappedValuesWithCallbacks } from '../../../shared/hooks/useMappedValuesWithCallbacks';
-
-type DayOfWeek =
-  | 'Monday'
-  | 'Tuesday'
-  | 'Wednesday'
-  | 'Thursday'
-  | 'Friday'
-  | 'Saturday'
-  | 'Sunday';
-const DAYS_OF_WEEK: DayOfWeek[] = [
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-  'Sunday',
-];
+import { DAYS_OF_WEEK, DayOfWeek } from '../../../shared/models/DayOfWeek';
 
 type StreakInfo = {
   /**

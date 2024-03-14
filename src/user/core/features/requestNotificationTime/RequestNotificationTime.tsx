@@ -7,7 +7,6 @@ import {
 } from './RequestNotificationTimeState';
 import {
   ChannelSettings,
-  DayOfWeek,
   RequestNotificationTimeResources,
 } from './RequestNotificationTimeResources';
 import { useStartSession } from '../../../../shared/hooks/useInappNotificationSession';
@@ -46,6 +45,7 @@ import { EditReminderTime } from './EditReminderTime';
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
 import { useSavingModal } from '../../../../shared/hooks/useSavingModal';
 import { YesNoModal } from '../../../../shared/components/YesNoModal';
+import { DayOfWeek } from '../../../../shared/models/DayOfWeek';
 
 /**
  * Asks the user what times they want to receive notifications on various

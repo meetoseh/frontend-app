@@ -1,9 +1,10 @@
-import { ReactElement } from "react";
-import { MergeProvider } from "../mergeAccount/MergeAccountState";
+import { ReactElement } from 'react';
+import { MergeProvider } from '../mergeAccount/MergeAccountState';
 import {
   CrudFetcherKeyMap,
   convertUsingKeymap,
-} from "../../../../shared/lib/CrudFetcher";
+} from '../../../../shared/lib/CrudFetcher';
+import { DayOfWeek } from '../../../../shared/models/DayOfWeek';
 
 export type EmailForConflict = {
   /** The email address, e.g., anonymous@example.com */
@@ -25,7 +26,7 @@ export type EmailForConflict = {
 };
 
 export const emailForConflictKeyMap: CrudFetcherKeyMap<EmailForConflict> = {
-  email_address: "emailAddress",
+  email_address: 'emailAddress',
 };
 
 export type PhoneForConflict = {
@@ -48,26 +49,8 @@ export type PhoneForConflict = {
 };
 
 export const phoneForConflictKeyMap: CrudFetcherKeyMap<PhoneForConflict> = {
-  phone_number: "phoneNumber",
+  phone_number: 'phoneNumber',
 };
-
-export type DayOfWeek =
-  | "Monday"
-  | "Tuesday"
-  | "Wednesday"
-  | "Thursday"
-  | "Friday"
-  | "Saturday"
-  | "Sunday";
-export const DAYS_OF_WEEK: DayOfWeek[] = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
 
 export type DailyReminderSettingsForConflict = {
   /** The days of the week they receive notifications on this channel */
@@ -86,9 +69,9 @@ export type DailyReminderSettingsForConflict = {
 
 export const dailyReminderSettingsForConflictKeyMap: CrudFetcherKeyMap<DailyReminderSettingsForConflict> =
   {
-    days_of_week: "daysOfWeek",
-    start_time: "startTime",
-    end_time: "endTime",
+    days_of_week: 'daysOfWeek',
+    start_time: 'startTime',
+    end_time: 'endTime',
   };
 
 export type OauthEmailConflictInfo = {
@@ -116,23 +99,23 @@ export type OauthEmailConflictInfo = {
 export const oauthEmailConflictInfoKeyMap: CrudFetcherKeyMap<OauthEmailConflictInfo> =
   {
     original: (k, v) => ({
-      key: "original",
+      key: 'original',
       value: (v as any[]).map((e) =>
         convertUsingKeymap(e, emailForConflictKeyMap)
       ),
     }),
     merging: (k, v) => ({
-      key: "merging",
+      key: 'merging',
       value: (v as any[]).map((e) =>
         convertUsingKeymap(e, emailForConflictKeyMap)
       ),
     }),
     original_settings: (k, v) => ({
-      key: "originalSettings",
+      key: 'originalSettings',
       value: convertUsingKeymap(v, dailyReminderSettingsForConflictKeyMap),
     }),
     merging_settings: (k, v) => ({
-      key: "mergingSettings",
+      key: 'mergingSettings',
       value: convertUsingKeymap(v, dailyReminderSettingsForConflictKeyMap),
     }),
   };
@@ -162,23 +145,23 @@ export type OauthPhoneConflictInfo = {
 export const oauthPhoneConflictInfoKeyMap: CrudFetcherKeyMap<OauthPhoneConflictInfo> =
   {
     original: (k, v) => ({
-      key: "original",
+      key: 'original',
       value: (v as any[]).map((e) =>
         convertUsingKeymap(e, phoneForConflictKeyMap)
       ),
     }),
     merging: (k, v) => ({
-      key: "merging",
+      key: 'merging',
       value: (v as any[]).map((e) =>
         convertUsingKeymap(e, phoneForConflictKeyMap)
       ),
     }),
     original_settings: (k, v) => ({
-      key: "originalSettings",
+      key: 'originalSettings',
       value: convertUsingKeymap(v, dailyReminderSettingsForConflictKeyMap),
     }),
     merging_settings: (k, v) => ({
-      key: "mergingSettings",
+      key: 'mergingSettings',
       value: convertUsingKeymap(v, dailyReminderSettingsForConflictKeyMap),
     }),
   };
@@ -203,42 +186,42 @@ export type OauthMergeConfirmationRequiredDetails = {
 export const oauthMergeConfirmationRequiredDetailsKeyMap: CrudFetcherKeyMap<OauthMergeConfirmationRequiredDetails> =
   {
     email: (k, v) => ({
-      key: "email",
+      key: 'email',
       value:
         v === null || v === undefined
           ? null
           : convertUsingKeymap(v, oauthEmailConflictInfoKeyMap),
     }),
     phone: (k, v) => ({
-      key: "phone",
+      key: 'phone',
       value:
         v === null || v === undefined
           ? null
           : convertUsingKeymap(v, oauthPhoneConflictInfoKeyMap),
     }),
-    merge_jwt: "mergeJwt",
+    merge_jwt: 'mergeJwt',
   };
 
 export type OauthMergeResultCategory =
-  | "noChangeRequired"
-  | "createdAndAttached"
-  | "trivialMerge"
-  | "confirmationRequired"
-  | "originalUserDeleted";
+  | 'noChangeRequired'
+  | 'createdAndAttached'
+  | 'trivialMerge'
+  | 'confirmationRequired'
+  | 'originalUserDeleted';
 export const convertAPIOauthMergeResultCategory = (
   v: string
 ): OauthMergeResultCategory => {
   switch (v) {
-    case "no_change_required":
-      return "noChangeRequired";
-    case "created_and_attached":
-      return "createdAndAttached";
-    case "trivial_merge":
-      return "trivialMerge";
-    case "confirmation_required":
-      return "confirmationRequired";
-    case "original_user_deleted":
-      return "originalUserDeleted";
+    case 'no_change_required':
+      return 'noChangeRequired';
+    case 'created_and_attached':
+      return 'createdAndAttached';
+    case 'trivial_merge':
+      return 'trivialMerge';
+    case 'confirmation_required':
+      return 'confirmationRequired';
+    case 'original_user_deleted':
+      return 'originalUserDeleted';
     default:
       throw new Error(`Unexpected value ${v}`);
   }
@@ -284,18 +267,18 @@ export type OauthMergeResult = {
 
 export const oauthMergeResultKeyMap: CrudFetcherKeyMap<OauthMergeResult> = {
   result: (k, v) => ({
-    key: "result",
+    key: 'result',
     value: convertAPIOauthMergeResultCategory(v),
   }),
   conflict_details: (k, v) => ({
-    key: "conflictDetails",
+    key: 'conflictDetails',
     value:
       v === null || v === undefined
         ? null
         : convertUsingKeymap(v, oauthMergeConfirmationRequiredDetailsKeyMap),
   }),
-  original_login_options: "originalLoginOptions",
-  merging_login_options: "mergingLoginOptions",
+  original_login_options: 'originalLoginOptions',
+  merging_login_options: 'mergingLoginOptions',
 };
 
 /**

@@ -1,5 +1,5 @@
-import { DayOfWeek } from "./RequestNotificationTimeResources";
-import { Channel } from "./RequestNotificationTimeState";
+import { DayOfWeek } from '../../../../shared/models/DayOfWeek';
+import { Channel } from './RequestNotificationTimeState';
 
 /**
  * Determines the appropriate display name for the given channel.
@@ -8,8 +8,8 @@ export const nameForChannel = (
   channel: Channel,
   opts?: { capitalize?: boolean }
 ): string => {
-  if (channel === "sms") {
-    return "SMS";
+  if (channel === 'sms') {
+    return 'SMS';
   }
 
   if (opts?.capitalize) {
@@ -20,23 +20,23 @@ export const nameForChannel = (
 };
 
 const printedDaysOfWeekOrder: DayOfWeek[] = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
 ];
 
 const shortestRepresentation: Record<DayOfWeek, string> = {
-  Monday: "M",
-  Tuesday: "Tu",
-  Wednesday: "W",
-  Thursday: "Th",
-  Friday: "F",
-  Saturday: "Sa",
-  Sunday: "Su",
+  Monday: 'M',
+  Tuesday: 'Tu',
+  Wednesday: 'W',
+  Thursday: 'Th',
+  Friday: 'F',
+  Saturday: 'Sa',
+  Sunday: 'Su',
 };
 
 /**
@@ -44,18 +44,18 @@ const shortestRepresentation: Record<DayOfWeek, string> = {
  */
 export const makeDaysOfWeekPretty = (daysOfWeek: DayOfWeek[]): string => {
   if (daysOfWeek.length === 7) {
-    return "Every Day";
+    return 'Every Day';
   }
 
   if (
     daysOfWeek.length === 5 &&
-    daysOfWeek.every((d) => d !== "Saturday" && d !== "Sunday")
+    daysOfWeek.every((d) => d !== 'Saturday' && d !== 'Sunday')
   ) {
-    return "Every Week Day";
+    return 'Every Week Day';
   }
 
   if (daysOfWeek.length === 0) {
-    return "Never";
+    return 'Never';
   }
 
   if (daysOfWeek.length === 1) {
@@ -79,7 +79,7 @@ export const makeDaysOfWeekPretty = (daysOfWeek: DayOfWeek[]): string => {
     )}, and ${daysOfWeek[2].slice(0, 3)}`;
   }
 
-  return daysOfWeek.map((d) => shortestRepresentation[d]).join(", ");
+  return daysOfWeek.map((d) => shortestRepresentation[d]).join(', ');
 };
 
 /**
@@ -94,7 +94,7 @@ export const makeTimeRangePretty = (start: number, end: number): string => {
 };
 
 type SecondsOffsetFormatOptions = {
-  minutes?: "always" | "never" | "auto";
+  minutes?: 'always' | 'never' | 'auto';
   spaceAmPm?: boolean;
 };
 /**
@@ -106,7 +106,7 @@ export const makeSecondsOffsetPretty = (
 ): string => {
   const realOpts: Required<SecondsOffsetFormatOptions> = Object.assign(
     {
-      minutes: "auto",
+      minutes: 'auto',
       spaceAmPm: false,
     },
     opts
@@ -120,42 +120,42 @@ export const makeSecondsOffsetPretty = (
     h -= 24;
   }
 
-  let ampm = "AM";
+  let ampm = 'AM';
   if (h > 12) {
     h -= 12;
-    ampm = "PM";
+    ampm = 'PM';
   }
 
   if (h === 0 && m === 0 && s === 0) {
-    return "midnight";
+    return 'midnight';
   }
 
   if (h === 12 && m === 0 && s === 0) {
-    return "noon";
+    return 'noon';
   }
 
   const parts = [];
   if (h === 0) {
-    parts.push("12");
+    parts.push('12');
   } else {
     parts.push(h.toString());
   }
 
   if (
-    realOpts.minutes === "always" ||
-    (realOpts.minutes === "auto" && (m !== 0 || s !== 0))
+    realOpts.minutes === 'always' ||
+    (realOpts.minutes === 'auto' && (m !== 0 || s !== 0))
   ) {
-    parts.push(":");
-    parts.push(m.toString().padStart(2, "0"));
+    parts.push(':');
+    parts.push(m.toString().padStart(2, '0'));
 
     if (s !== 0) {
-      parts.push(":");
-      parts.push(s.toString().padStart(2, "0"));
+      parts.push(':');
+      parts.push(s.toString().padStart(2, '0'));
     }
   }
   if (realOpts.spaceAmPm) {
-    parts.push(" ");
+    parts.push(' ');
   }
   parts.push(ampm);
-  return parts.join("");
+  return parts.join('');
 };

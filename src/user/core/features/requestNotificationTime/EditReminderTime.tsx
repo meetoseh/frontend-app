@@ -4,35 +4,35 @@ import {
   WritableValueWithCallbacks,
   createWritableValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../../../../shared/lib/Callbacks";
-import { EditTimeRange, TimeRange, areRangesEqual } from "./EditTimeRange";
-import { DayOfWeek } from "./RequestNotificationTimeResources";
-import { styles } from "./EditReminderTimeStyles";
+} from '../../../../shared/lib/Callbacks';
+import { EditTimeRange, TimeRange, areRangesEqual } from './EditTimeRange';
+import { styles } from './EditReminderTimeStyles';
 import {
   PropsWithChildren,
   ReactElement,
   useCallback,
   useContext,
   useRef,
-} from "react";
-import { useValueWithCallbacksEffect } from "../../../../shared/hooks/useValueWithCallbacksEffect";
+} from 'react';
+import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
 import {
   ModalContext,
   addModalWithCallbackToRemove,
-} from "../../../../shared/contexts/ModalContext";
-import { setVWC } from "../../../../shared/lib/setVWC";
-import { SlideInModal } from "../../../../shared/components/SlideInModal";
-import { RenderGuardedComponent } from "../../../../shared/components/RenderGuardedComponent";
-import { EditDays } from "./EditDays";
+} from '../../../../shared/contexts/ModalContext';
+import { setVWC } from '../../../../shared/lib/setVWC';
+import { SlideInModal } from '../../../../shared/components/SlideInModal';
+import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
+import { EditDays } from './EditDays';
 import {
   makeDaysOfWeekPretty,
   makeTimeRangePretty,
   nameForChannel,
-} from "./formatUtils";
-import { Channel } from "./RequestNotificationTimeState";
-import { View, Text, StyleProp, TextStyle, Pressable } from "react-native";
-import { useContentWidth } from "../../../../shared/lib/useContentWidth";
-import RightCaret from "./icons/RightCaret";
+} from './formatUtils';
+import { Channel } from './RequestNotificationTimeState';
+import { View, Text, StyleProp, TextStyle, Pressable } from 'react-native';
+import { useContentWidth } from '../../../../shared/lib/useContentWidth';
+import RightCaret from './icons/RightCaret';
+import { DayOfWeek } from '../../../../shared/models/DayOfWeek';
 
 export type EditReminderTimeProps = {
   /**
@@ -331,14 +331,14 @@ export const EditReminderTime = ({
                   {makeDaysOfWeekPretty(Array.from(days))}
                   {days.size === 0 && (
                     <>
-                      {" "}
+                      {' '}
                       (No
                       {channel && (
                         <RenderGuardedComponent
                           props={channel}
                           component={(ch) => <> {nameForChannel(ch)}</>}
                         />
-                      )}{" "}
+                      )}{' '}
                       reminders)
                     </>
                   )}
@@ -385,10 +385,10 @@ const Option = ({
         notFirst ? styles.optionNotFirst : undefined,
         pressing
           ? {
-              backgroundColor: "rgba(255, 255, 255, 0.05)",
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
             }
           : {
-              backgroundColor: "transparent",
+              backgroundColor: 'transparent',
             }
       ),
     });
@@ -402,10 +402,10 @@ const Option = ({
         notFirst ? styles.optionNotFirst : undefined,
         pressingIn.get()
           ? {
-              backgroundColor: "rgba(255, 255, 255, 0.1)",
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
             }
           : {
-              backgroundColor: "transparent",
+              backgroundColor: 'transparent',
             }
       )}
       onPress={onPress}

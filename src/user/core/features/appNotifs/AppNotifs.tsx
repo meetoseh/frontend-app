@@ -26,12 +26,12 @@ import {
   DEFAULT_DAYS,
   DEFAULT_TIME_RANGE,
 } from '../requestNotificationTime/constants';
-import { DayOfWeek } from '../requestNotificationTime/RequestNotificationTimeResources';
 import { EditReminderTime } from '../requestNotificationTime/EditReminderTime';
 import { ModalProvider } from '../../../../shared/contexts/ModalContext';
 import { apiFetch } from '../../../../shared/lib/apiFetch';
 import { LoginContext } from '../../../../shared/contexts/LoginContext';
 import { useTimezone } from '../../../../shared/hooks/useTimezone';
+import { DayOfWeek } from '../../../../shared/models/DayOfWeek';
 
 /**
  * Displays our screen asking the user if they want to receive notifications. We

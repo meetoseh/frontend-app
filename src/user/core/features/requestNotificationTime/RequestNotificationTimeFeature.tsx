@@ -11,7 +11,6 @@ import {
 } from './RequestNotificationTimeState';
 import {
   ChannelSettings,
-  DayOfWeek,
   RequestNotificationTimeResources,
 } from './RequestNotificationTimeResources';
 import { RequestNotificationTime } from './RequestNotificationTime';
@@ -28,6 +27,7 @@ import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWi
 import { useValuesWithCallbacksEffect } from '../../../../shared/hooks/useValuesWithCallbacksEffect';
 import { apiFetch } from '../../../../shared/lib/apiFetch';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
+import { DayOfWeek } from '../../../../shared/models/DayOfWeek';
 
 export const RequestNotificationTimeFeature: Feature<
   RequestNotificationTimeState,
