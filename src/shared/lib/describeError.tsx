@@ -9,8 +9,8 @@ import { ErrorBanner, ErrorBannerText } from '../components/ErrorBanner';
  * @returns A description of the error
  */
 export const describeError = async (e: any): Promise<ReactElement> => {
-  console.error('describing error:', e);
   if (e instanceof TypeError) {
+    console.error('describing error:', e);
     return (
       <ErrorBanner>
         <ErrorBannerText>
@@ -19,6 +19,7 @@ export const describeError = async (e: any): Promise<ReactElement> => {
       </ErrorBanner>
     );
   } else if (e instanceof Response) {
+    console.error('describing error:', e);
     e.text()
       .then((t) => console.error('response text:', t))
       .catch((e2) => {
@@ -32,11 +33,18 @@ export const describeError = async (e: any): Promise<ReactElement> => {
       </ErrorBanner>
     );
   } else if (e instanceof Error && e.message === 'not implemented') {
+    console.error('describing error:', e);
     return (
       <ErrorBanner>
         <ErrorBannerText>
           This feature is not available in your current environment.
         </ErrorBannerText>
+      </ErrorBanner>
+    );
+  } else if (e instanceof Error && e.message === 'aborted') {
+    return (
+      <ErrorBanner>
+        <ErrorBannerText>The request was aborted - try again.</ErrorBannerText>
       </ErrorBanner>
     );
   } else {

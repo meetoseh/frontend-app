@@ -20,6 +20,7 @@ import { SeriesPreviewFeature } from '../features/seriesPreview/SeriesPreviewFea
 import { SeriesDetailsFeature } from '../features/seriesDetails/SeriesDetailsFeature';
 import { SingleJourneyFeature } from '../features/singleJourney/SingleJourneyFeature';
 import { UpgradeFeature } from '../features/upgrade/UpgradeFeature';
+import { HomeScreenFeature } from '../features/homeScreen/HomeScreenFeature';
 
 const features = [
   LoginFeature,
@@ -38,6 +39,7 @@ const features = [
   SeriesPreviewFeature,
   SeriesListFeature,
   SettingsFeature,
+  HomeScreenFeature,
   PickEmotionJourneyFeature,
 ];
 

@@ -30,21 +30,7 @@ import { useContentWidth } from '../../../shared/lib/useContentWidth';
 import { useValueWithCallbacksEffect } from '../../../shared/hooks/useValueWithCallbacksEffect';
 import { useMappedValuesWithCallbacks } from '../../../shared/hooks/useMappedValuesWithCallbacks';
 import { DAYS_OF_WEEK, DayOfWeek } from '../../../shared/models/DayOfWeek';
-
-type StreakInfo = {
-  /**
-   * The number of consecutive days the user has taken a class
-   */
-  streak: number;
-  /**
-   * The days of the week the user has taken a class
-   */
-  daysOfWeek: DayOfWeek[];
-  /**
-   * The number of days per week the user has taken a class
-   */
-  goalDaysPerWeek: number | null;
-};
+import { StreakInfo } from '../models/StreakInfo';
 
 export const JourneyPostScreen = ({
   journey,
