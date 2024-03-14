@@ -11,6 +11,7 @@ import { useOsehImageStateValueWithCallbacks } from '../../../../shared/images/u
 import { OsehImageProps } from '../../../../shared/images/OsehImageProps';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
 import { setVWC } from '../../../../shared/lib/setVWC';
+import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
 
 /**
  * Presents the user with the ability to login when they are logged out.
@@ -91,7 +92,6 @@ export const LoginFeature: Feature<LoginState, LoginResources> = {
         };
       }
     );
-
     const background = useOsehImageStateValueWithCallbacks(
       {
         type: 'callbacks',

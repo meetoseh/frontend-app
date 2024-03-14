@@ -670,10 +670,49 @@ export const LoginProvider = ({
     };
 
     async function loadFromStore() {
-      const [storedAuthTokens, storedUserAttributes] = await Promise.all([
-        retrieveAuthTokens(),
-        retrieveUserAttributes(),
+      let timedOutOrError = false;
+      const timeout = new Promise<void>((resolve) =>
+        setTimeout(() => {
+          timedOutOrError = true;
+          resolve();
+        }, 5000)
+      );
+      const storedAuthTokensPromise = retrieveAuthTokens();
+      const storedUserAttributesPromise = retrieveUserAttributes();
+      const storedDataPromise = Promise.all([
+        storedAuthTokensPromise,
+        storedUserAttributesPromise,
       ]);
+
+      try {
+        await Promise.race([timeout, storedDataPromise]);
+      } catch (e) {
+        console.log('error racing timeout and storedDataPromise:', e);
+        timedOutOrError = true;
+      }
+      if (timedOutOrError) {
+        if (!runningRef.current) {
+          return;
+        }
+        console.log(
+          'timed out or errored waiting for stored data in login context!'
+        );
+        console.log('clearing auth tokens...');
+        await storeAuthTokens(null);
+        console.log('clearing user attributes...');
+        await storeUserAttributes(null);
+        console.log('cleared successfully');
+        if (!runningRef.current) {
+          return;
+        }
+        setVWC(valueVWC, {
+          state: 'logged-out',
+        });
+        return;
+      }
+
+      const [storedAuthTokens, storedUserAttributes] = await storedDataPromise;
+
       if (!runningRef.current) {
         return;
       }
