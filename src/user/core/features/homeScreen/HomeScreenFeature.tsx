@@ -197,15 +197,14 @@ export const HomeScreenFeature: Feature<HomeScreenState, HomeScreenResources> =
             backgroundImage: bknd,
             emotions,
             startGotoEmotion: (emotion) => {
-              // allStatesVWC
-              //   .get()
-              //   .gotoEmotion.setShow({ emotion, anticipatory: true }, false);
-              // return () => {
-              //   allStatesVWC
-              //     .get()
-              //     .gotoEmotion.setShow({ emotion, anticipatory: false }, true);
-              // };
-              return () => {};
+              allStatesVWC
+                .get()
+                .gotoEmotion.setShow({ emotion, anticipatory: true }, false);
+              return () => {
+                allStatesVWC
+                  .get()
+                  .gotoEmotion.setShow({ emotion, anticipatory: false }, true);
+              };
             },
             gotoSeries: () => {
               allStatesVWC.get().seriesList.setShow(true, true);

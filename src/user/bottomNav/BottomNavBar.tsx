@@ -51,7 +51,6 @@ export const BottomNavBar = ({
   clickHandlers,
 }: BottomNavBarProps): ReactElement => {
   const windowSize = useWindowSize();
-  const bottom = useBotBarHeight();
 
   return (
     <View>

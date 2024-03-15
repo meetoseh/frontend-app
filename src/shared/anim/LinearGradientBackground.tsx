@@ -32,6 +32,7 @@ export type LinearGradientState = {
 
 export type LinearGradientProps = {
   state: VariableStrategyProps<LinearGradientState>;
+  onLayout?: (e: LayoutChangeEvent) => void;
 };
 
 type Attributes = 'position';
@@ -428,6 +429,7 @@ const LinearGradientRenderer: SinglePassWebGLComponentRenderer<
  */
 export const LinearGradientBackground = ({
   state: stateRaw,
+  onLayout,
   children,
 }: React.PropsWithChildren<LinearGradientProps>) => {
   const containerRef = useRef<View>(null);
@@ -443,6 +445,7 @@ export const LinearGradientBackground = ({
 
   const onContainerLayout = useCallback(
     (e: LayoutChangeEvent) => {
+      onLayout?.(e);
       if (
         e.nativeEvent?.layout?.width !== undefined &&
         e.nativeEvent?.layout?.height !== undefined
@@ -459,7 +462,7 @@ export const LinearGradientBackground = ({
         }
       }
     },
-    [trueSize]
+    [trueSize, onLayout]
   );
 
   useEffect(() => {

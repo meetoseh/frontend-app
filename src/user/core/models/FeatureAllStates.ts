@@ -2,6 +2,7 @@ import { AppNotifsState } from '../features/appNotifs/AppNotifsState';
 import { ConfirmMergeAccountState } from '../features/confirmMergeAccount/ConfirmMergeAccountState';
 import { FavoritesState } from '../features/favorites/FavoritesState';
 import { GoalDaysPerWeekState } from '../features/goalDaysPerWeek/GoalDaysPerWeekState';
+import { GotoEmotionState } from '../features/gotoEmotion/GotoEmotionState';
 import { HomeScreenState } from '../features/homeScreen/HomeScreenState';
 import { LoginState } from '../features/login/LoginState';
 import { MergeAccountState } from '../features/mergeAccount/MergeAccountState';
@@ -36,4 +37,5 @@ export type FeatureAllStates = {
   singleJourney: SingleJourneyState;
   upgrade: UpgradeState;
   homeScreen: HomeScreenState;
+  gotoEmotion: GotoEmotionState;
 };

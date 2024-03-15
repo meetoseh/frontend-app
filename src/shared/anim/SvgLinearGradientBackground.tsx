@@ -3,13 +3,7 @@ import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
 } from './VariableStrategyProps';
-import * as SVG from 'react-native-svg';
 import { RenderGuardedComponent } from '../components/RenderGuardedComponent';
-import {
-  colorByteRGBFractionalAlphaToCSS,
-  makeSVGNumber,
-  simpleColorToCss,
-} from './svgUtils';
 import {
   WritableValueWithCallbacks,
   useWritableValueWithCallbacks,
@@ -27,14 +21,13 @@ export type SvgLinearGradientBackgroundProps = {
 };
 
 /**
- * Renders a 2-stop linear gradient behind the children using react-native-svg
+ * Renders a n-stop linear gradient behind the children using react-native-svg
  * as the rendering engine. Skips rendering the svg when the stops are the same
  * color, for performance.
  *
  * This seems to be less likely to get a corrupted gradient compared to
  * the webgl version (LinearGradientBackground). Performance wise, it's
- * about the same. Feature wise it's limited to two stops and the border
- * isn't as pretty, but has more control over the direction.
+ * about the same.
  */
 export const SvgLinearGradientBackground = ({
   state: stateRaw,
@@ -61,8 +54,6 @@ export const SvgLinearGradientBackground = ({
       setVWC(raw, realRefVWC.get());
     }
   }, [rawRefVWC, realRefVWC]);
-
-  const svgn = makeSVGNumber;
 
   return (
     <View

@@ -98,3 +98,13 @@ export const STANDARD_ACTIVE_GRADIENT_SVG: SvgLinearGradientBackgroundState = {
   x2: 0.75376,
   y2: 0.95651,
 };
+
+export const STANDARD_DARK_BLACK_GRAY_GRADIENT_SVG: SvgLinearGradientBackgroundState =
+  {
+    stop1: { color: [1, 1, 1, 1], offset: 0 },
+    stop2: { color: [20, 25, 28, 1], offset: 1 },
+    x1: 0.5,
+    y1: 1,
+    x2: 0.5,
+    y2: 0,
+  };

@@ -10,10 +10,15 @@ import { SingleJourneyContext } from './SingleJourneyContext';
 import { SingleJourneyResources } from './SingleJourneyResources';
 import { SingleJourneyState } from './SingleJourneyState';
 
-export const SingleJourneyFeature: Feature<SingleJourneyState, SingleJourneyResources> = {
+export const SingleJourneyFeature: Feature<
+  SingleJourneyState,
+  SingleJourneyResources
+> = {
   identifier: 'singleJourney',
   useWorldState: () => {
-    const showVWC = useWritableValueWithCallbacks<SingleJourneyContext | null>(() => null);
+    const showVWC = useWritableValueWithCallbacks<SingleJourneyContext | null>(
+      () => null
+    );
 
     return useMappedValuesWithCallbacks([showVWC], () => ({
       show: showVWC.get(),
@@ -21,7 +26,7 @@ export const SingleJourneyFeature: Feature<SingleJourneyState, SingleJourneyReso
     }));
   },
   isRequired: (state) => state.show !== null,
-  useResources: (stateVWC, requiredVWC) => {
+  useResources: (stateVWC, requiredVWC, allStatesVWC) => {
     const sharedVWC = useJourneyShared({
       type: 'callbacks',
       props: () => stateVWC.get().show?.ref ?? null,
@@ -42,12 +47,20 @@ export const SingleJourneyFeature: Feature<SingleJourneyState, SingleJourneyReso
         const req = requiredVWC.get();
         return {
           loading: !req || shared.darkenedImage.loading,
-          step: show !== null && show.ref.uid === step.uid ? step.screen : 'lobby',
+          step:
+            show !== null && show.ref.uid === step.uid ? step.screen : 'lobby',
           journeyShared: shared,
-          setStep: (screen) => setVWC(stepVWC, { uid: show?.ref.uid ?? null, screen }),
+          setStep: (screen) =>
+            setVWC(stepVWC, { uid: show?.ref.uid ?? null, screen }),
+          onJourneyFinished: () => {
+            allStatesVWC.get().homeScreen.streakInfo.refresh?.();
+            stateVWC.get().setShow(null);
+          },
         };
       }
     );
   },
-  component: (state, resources) => <SingleJourney state={state} resources={resources} />,
+  component: (state, resources) => (
+    <SingleJourney state={state} resources={resources} />
+  ),
 };

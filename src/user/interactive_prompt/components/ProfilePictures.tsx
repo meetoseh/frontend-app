@@ -31,10 +31,15 @@ export type HereSettings =
 export const ProfilePictures = ({
   profilePictures,
   hereSettings,
+  center,
+  size: sizeRaw,
 }: {
   profilePictures: ValueWithCallbacks<ProfilePicturesState>;
+  center?: boolean;
   hereSettings?: HereSettings;
+  size?: number;
 }) => {
+  const size = sizeRaw ?? 38;
   const trueHereSettings: HereSettings =
     hereSettings === undefined
       ? { type: 'filled', action: 'here' }
@@ -51,7 +56,14 @@ export const ProfilePictures = ({
   const isTinyScreen = useIsEffectivelyTinyScreen();
 
   return (
-    <View style={styles.container}>
+    <View
+      style={Object.assign(
+        {},
+        styles.container,
+        center ? styles.containerCenter : undefined,
+        { minHeight: size }
+      )}
+    >
       {(() => {
         const result: ReactElement[] = [];
         for (let i = 0; i < numPictures; i++) {
@@ -60,7 +72,7 @@ export const ProfilePictures = ({
               key={i}
               props={profilePictures}
               component={(pics) => (
-                <ProfilePictureSlot picture={pics.pictures[i]} />
+                <ProfilePictureSlot picture={pics.pictures[i]} size={size} />
               )}
             />
           );
@@ -83,7 +95,8 @@ export const ProfilePictures = ({
                   styles.hereSettingsFilledContainer,
                   isTinyScreen
                     ? styles.accessibleHereSettingsFilledContainer
-                    : undefined
+                    : undefined,
+                  { width: size, height: size }
                 )}
               >
                 <Text style={styles.hereSettingsFilledText}>{textContent}</Text>
@@ -106,12 +119,24 @@ export const ProfilePictures = ({
   );
 };
 
-const ProfilePictureSlot = ({ picture }: { picture?: OsehImageState }) => {
+const ProfilePictureSlot = ({
+  picture,
+  size,
+}: {
+  picture?: OsehImageState;
+  size: number;
+}) => {
   if (picture === undefined || picture.loading) {
     return <></>;
   }
   return (
-    <View style={styles.pictureContainer}>
+    <View
+      style={Object.assign({}, styles.pictureContainer, {
+        width: size,
+        height: size,
+        borderRadius: Math.ceil(size / 2),
+      })}
+    >
       {picture !== undefined && (
         <OsehImageFromState state={picture} style={styles.picture} />
       )}

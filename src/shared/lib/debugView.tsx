@@ -2,6 +2,7 @@ import { Dimensions, LayoutChangeEvent, StatusBar } from 'react-native';
 import { getBotBarHeight } from '../hooks/useBotBarHeight';
 import { getTopBarHeight } from '../hooks/useTopBarHeight';
 import Constants from 'expo-constants';
+import { getContentWidth } from './useContentWidth';
 
 export const debugView =
   (id: string, checklist: boolean = true) =>
@@ -10,11 +11,12 @@ export const debugView =
     const windowSize = Dimensions.get('window');
     const botBarHeight = getBotBarHeight();
     const topBarHeight = getTopBarHeight();
+    const contentWidth = getContentWidth();
 
     console.log(
       `${id} is rendering at w=${e.nativeEvent.layout.width} by h=${e.nativeEvent.layout.height} ` +
         `@ (x=${e.nativeEvent.layout.x}, y=${e.nativeEvent.layout.y}). The screen size is w=${screenSize.width} by h=${screenSize.height}. ` +
-        `The window size is w=${windowSize.width} by h=${windowSize.height}. The window is ` +
+        `The window size is w=${windowSize.width} by h=${windowSize.height}. The content width is ${contentWidth}. The window is ` +
         `w=${screenSize.width - windowSize.width} by h=${
           screenSize.height - windowSize.height
         } ` +

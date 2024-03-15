@@ -5,6 +5,7 @@ import { makeSVGNumber as svgn } from '../../../../../shared/anim/svgUtils';
 import { useMappedValueWithCallbacks } from '../../../../../shared/hooks/useMappedValueWithCallbacks';
 import { useMappedValuesWithCallbacks } from '../../../../../shared/hooks/useMappedValuesWithCallbacks';
 import Svg, { Circle, Defs, Marker, Path } from 'react-native-svg';
+import { Platform } from 'react-native';
 
 export type VisualGoalState = {
   /**
@@ -146,42 +147,47 @@ export const VisualGoal = ({
 
   return (
     <Svg viewBox={`0 0 ${viewBox.w} ${viewBox.h}`} width="64" height="64">
-      <Defs>
-        <Marker
-          id="roundFilled"
-          viewBox="-1 -1 2 2"
-          markerWidth="1"
-          orient="auto"
-        >
-          <Circle r="1" fill={filledColor} fillOpacity={filledOpacity} />
-        </Marker>
-        <Marker
-          id="roundUnfilledStart"
-          viewBox="-1 -1 2 2"
-          markerWidth="1"
-          orient="auto"
-        >
-          <Path
-            d="M0.002 -1A1 1 0 0 0 0.002 1Z"
-            fill={unfilledColor}
-            fillOpacity={unfilledOpacity}
-            stroke="none"
-          />
-        </Marker>
-        <Marker
-          id="roundUnfilledEnd"
-          viewBox="-1 -1 2 2"
-          markerWidth="1"
-          orient="auto"
-        >
-          <Path
-            d="M-0.002 1A1 1 0 0 0 -0.002 -1Z"
-            fill={unfilledColor}
-            fillOpacity={unfilledOpacity}
-            stroke="none"
-          />
-        </Marker>
-      </Defs>
+      {Platform.select({
+        ios: (
+          <Defs>
+            <Marker
+              id="roundFilled"
+              viewBox="-1 -1 2 2"
+              markerWidth="1"
+              orient="auto"
+            >
+              <Circle r="1" fill={filledColor} fillOpacity={filledOpacity} />
+            </Marker>
+            <Marker
+              id="roundUnfilledStart"
+              viewBox="-1 -1 2 2"
+              markerWidth="1"
+              orient="auto"
+            >
+              <Path
+                d="M0.002 -1A1 1 0 0 0 0.002 1Z"
+                fill={unfilledColor}
+                fillOpacity={unfilledOpacity}
+                stroke="none"
+              />
+            </Marker>
+            <Marker
+              id="roundUnfilledEnd"
+              viewBox="-1 -1 2 2"
+              markerWidth="1"
+              orient="auto"
+            >
+              <Path
+                d="M-0.002 1A1 1 0 0 0 -0.002 -1Z"
+                fill={unfilledColor}
+                fillOpacity={unfilledOpacity}
+                stroke="none"
+              />
+            </Marker>
+          </Defs>
+        ),
+        default: <></>,
+      })}
       <RenderGuardedComponent
         props={useMappedValuesWithCallbacks(
           [pathInfoVWC, filledVWC],
@@ -234,12 +240,22 @@ export const VisualGoal = ({
         }}
       />
       <RenderGuardedComponent
-        props={useMappedValuesWithCallbacks([pathInfoVWC, filledVWC], () => ({
-          segments: pathInfoVWC.get(),
-          index: Math.floor(filledVWC.get()),
-          progress: filledVWC.get() - Math.floor(filledVWC.get()),
-          required: !Number.isInteger(filledVWC.get()),
-        }))}
+        props={useMappedValuesWithCallbacks([pathInfoVWC, filledVWC], () =>
+          /* We can reduce flickering by unnecessarily overlaying on integers */
+          Number.isInteger(filledVWC.get())
+            ? {
+                segments: pathInfoVWC.get(),
+                index: filledVWC.get() - 1,
+                progress: 1,
+                required: filledVWC.get() !== 0,
+              }
+            : {
+                segments: pathInfoVWC.get(),
+                index: Math.floor(filledVWC.get()),
+                progress: filledVWC.get() - Math.floor(filledVWC.get()),
+                required: true,
+              }
+        )}
         component={({ segments, index, progress, required }) => {
           if (!required) {
             return <></>;

@@ -21,6 +21,7 @@ import { SeriesDetailsFeature } from '../features/seriesDetails/SeriesDetailsFea
 import { SingleJourneyFeature } from '../features/singleJourney/SingleJourneyFeature';
 import { UpgradeFeature } from '../features/upgrade/UpgradeFeature';
 import { HomeScreenFeature } from '../features/homeScreen/HomeScreenFeature';
+import { GotoEmotionFeature } from '../features/gotoEmotion/GotoEmotionFeature';
 
 const features = [
   LoginFeature,
@@ -39,6 +40,7 @@ const features = [
   SeriesPreviewFeature,
   SeriesListFeature,
   SettingsFeature,
+  GotoEmotionFeature,
   HomeScreenFeature,
   PickEmotionJourneyFeature,
 ];

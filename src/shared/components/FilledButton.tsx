@@ -201,6 +201,8 @@ export const FilledButton = ({
   // we need to always support the gradient to avoid
   // losing press events when switching :/
 
+  console.log(childrenContainerStyles);
+
   return (
     <Pressable
       onPressIn={handlePressIn}

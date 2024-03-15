@@ -2,7 +2,7 @@ import { ReactElement, useCallback, useContext, useMemo } from 'react';
 import { FeatureComponentProps } from '../../models/Feature';
 import { HomeScreenResources } from './HomeScreenResources';
 import { HomeScreenState } from './HomeScreenState';
-import { View, Text, StyleProp, ViewStyle, Platform } from 'react-native';
+import { View, Text, Platform, Pressable, ScrollView } from 'react-native';
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { Emotion } from '../pickEmotionJourney/Emotion';
@@ -18,16 +18,20 @@ import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks'
 import { useValuesWithCallbacksEffect } from '../../../../shared/hooks/useValuesWithCallbacksEffect';
 import { useWindowSizeValueWithCallbacks } from '../../../../shared/hooks/useWindowSize';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
-import { VisualGoalState } from './components/VisualGoal';
+import { VisualGoal, VisualGoalState } from './components/VisualGoal';
 import { styles } from './HomeScreenStyles';
-import { FullscreenView } from '../../../../shared/components/FullscreenView';
 import { OsehImageFromStateValueWithCallbacks } from '../../../../shared/images/OsehImageFromStateValueWithCallbacks';
 import { SvgLinearGradient } from '../../../../shared/anim/SvgLinearGradient';
 import { StatusBar } from 'expo-status-bar';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { MyProfilePicture } from '../../../../shared/components/MyProfilePicture';
 import { DAYS_OF_WEEK } from '../../../../shared/models/DayOfWeek';
-import { BlurView, BlurViewProps } from 'expo-blur';
+import { SimpleBlurView } from '../../../../shared/components/SimpleBlurView';
+import { convertLogicalWidthToPhysicalWidth } from '../../../../shared/images/DisplayRatioHelper';
+import { useBotBarHeight } from '../../../../shared/hooks/useBotBarHeight';
+import { BottomNavBar } from '../../../bottomNav/BottomNavBar';
+import { SvgLinearGradientBackground } from '../../../../shared/anim/SvgLinearGradientBackground';
+import { STANDARD_DARK_BLACK_GRAY_GRADIENT_SVG } from '../../../../styling/colors';
 
 /**
  * Displays the home screen for the user
@@ -120,6 +124,7 @@ export const HomeScreen = ({
 
   const windowSizeVWC = useWindowSizeValueWithCallbacks();
 
+  const botBarHeight = useBotBarHeight();
   const estimatedEmotionsHeightVWC = useMappedValuesWithCallbacks(
     [windowSizeVWC, backgroundImageVWC],
     () => {
@@ -133,7 +138,8 @@ export const HomeScreen = ({
         24 /* question */ -
         28 /* question <-> emotion margin */ -
         24 /* emotion <-> bottom nav margin */ -
-        67 /* bottom nav */
+        67 /* bottom nav */ -
+        botBarHeight
       );
     }
   );
@@ -142,10 +148,6 @@ export const HomeScreen = ({
     estimatedEmotionsHeightVWC.get()
   );
 
-  const numberOfEmotionRowsVWC = useMappedValueWithCallbacks(
-    emotionsHeightVWC,
-    (h) => Math.min(4, Math.floor(h / 76))
-  );
   const emotionsVWC = useMappedValueWithCallbacks(
     resources,
     (r) => r.emotions.result ?? [],
@@ -153,6 +155,19 @@ export const HomeScreen = ({
       outputEqualityFn: (a, b) =>
         a.length === b.length && a.every((v, i) => v.word === b[i].word),
     }
+  );
+
+  const emotionRowHeightVWC = useWritableValueWithCallbacks(() => 60);
+  const numberOfEmotionRowsVWC = useMappedValuesWithCallbacks(
+    [emotionsHeightVWC, emotionRowHeightVWC],
+    (h) =>
+      Math.min(
+        4,
+        Math.floor(
+          emotionsHeightVWC.get() /
+            (emotionRowHeightVWC.get() + styles.emotions.gap)
+        )
+      )
   );
   const emotionRowsVWC = useMappedValuesWithCallbacks(
     [emotionsVWC, numberOfEmotionRowsVWC],
@@ -194,6 +209,63 @@ export const HomeScreen = ({
     }
   );
 
+  const emotionRowContentWidthsVWC = useWritableValueWithCallbacks<number[]>(
+    () => []
+  );
+  useValueWithCallbacksEffect(numberOfEmotionRowsVWC, (numRows) => {
+    const oldData = emotionRowContentWidthsVWC.get();
+    if (oldData.length === numRows) {
+      return undefined;
+    }
+    const arr = [];
+    for (let i = 0; i < numRows; i++) {
+      arr.push(0);
+    }
+    setVWC(emotionRowContentWidthsVWC, arr);
+    return undefined;
+  });
+  const emotionRowRefs = useWritableValueWithCallbacks<(ScrollView | null)[]>(
+    () => Array(numberOfEmotionRowsVWC.get()).fill(null)
+  );
+  useValueWithCallbacksEffect(numberOfEmotionRowsVWC, (numRows) => {
+    const oldData = emotionRowRefs.get();
+    if (oldData.length === numRows) {
+      return undefined;
+    }
+    const arr = [];
+    for (let i = 0; i < numRows; i++) {
+      arr.push(null);
+    }
+    setVWC(emotionRowRefs, arr);
+    return undefined;
+  });
+
+  useValuesWithCallbacksEffect(
+    [emotionRowContentWidthsVWC, emotionRowRefs, windowSizeVWC],
+    useCallback(() => {
+      const rows = emotionRowContentWidthsVWC.get();
+      const refs = emotionRowRefs.get();
+      const width = windowSizeVWC.get().width;
+      if (rows.length !== refs.length) {
+        return undefined;
+      }
+
+      for (let i = 0; i < rows.length; i++) {
+        const ele = refs[i];
+        if (ele === null) {
+          continue;
+        }
+        const contentWidth = rows[i];
+        if (contentWidth < width) {
+          ele.scrollTo({ x: 0, animated: false });
+          continue;
+        }
+        ele.scrollTo({ x: (contentWidth - width) / 2, animated: false });
+      }
+      return undefined;
+    }, [emotionRowContentWidthsVWC, emotionRowRefs, windowSizeVWC])
+  );
+
   const streakInfoVWC = useMappedValueWithCallbacks(state, (s) => s.streakInfo);
   const visualGoalStateVWC = useAnimationTargetAndRendered<VisualGoalState>(
     () => ({
@@ -216,19 +288,65 @@ export const HomeScreen = ({
   }, []);
 
   useValueWithCallbacksEffect(streakInfoVWC, (streakInfo) => {
-    setVWC(
-      visualGoalStateVWC.target,
-      {
-        filled: streakInfo.result?.daysOfWeek.length ?? 0,
-        goal: streakInfo.result?.goalDaysPerWeek ?? 3,
-      },
-      (a, b) => a.filled === b.filled && a.goal === b.goal
-    );
+    const newValue = {
+      filled: streakInfo.result?.daysOfWeek.length ?? 0,
+      goal: streakInfo.result?.goalDaysPerWeek ?? 3,
+    };
+
+    if (newValue.goal !== visualGoalStateVWC.target.get().goal) {
+      setVWC(
+        visualGoalStateVWC.target,
+        {
+          filled: visualGoalStateVWC.target.get().filled,
+          goal: newValue.goal,
+        },
+        () => false
+      );
+    }
+
+    if (newValue.filled !== visualGoalStateVWC.target.get().filled) {
+      let active = true;
+      let timeout: NodeJS.Timeout | null = setTimeout(
+        () => {
+          if (!active) {
+            return;
+          }
+          timeout = null;
+          setVWC(visualGoalStateVWC.target, newValue, () => false);
+        },
+        Platform.select({
+          ios: 500,
+          default: 1500,
+        })
+      );
+      return () => {
+        active = false;
+        if (timeout !== null) {
+          clearTimeout(timeout);
+          timeout = null;
+        }
+      };
+    }
+
+    return undefined;
+  });
+
+  const windowWidthVWC = useMappedValueWithCallbacks(
+    windowSizeVWC,
+    (v) => v.width
+  );
+
+  const foregroundRef = useWritableValueWithCallbacks<View | null>(() => null);
+  useValuesWithCallbacksEffect([windowSizeVWC, foregroundRef], () => {
+    const ele = foregroundRef.get();
+    if (ele !== null) {
+      ele.setNativeProps({ style: { height: windowSizeVWC.get().height } });
+    }
     return undefined;
   });
 
   return (
-    <FullscreenView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.background}>
         <OsehImageFromStateValueWithCallbacks state={backgroundImageVWC} />
         <View style={styles.backgroundOverlay}>
@@ -250,7 +368,12 @@ export const HomeScreen = ({
           />
         </View>
       </View>
-      <View style={styles.foreground}>
+      <View
+        ref={(r) => setVWC(foregroundRef, r)}
+        style={Object.assign({}, styles.foreground, {
+          height: windowSizeVWC.get().height,
+        })}
+      >
         <View
           style={styles.headerAndGoal}
           ref={(r) => setVWC(headerAndGoalRef, r)}
@@ -332,15 +455,184 @@ export const HomeScreen = ({
             style={styles.goalWrapper}
             ref={(r) => setVWC(goalWrapperRef, r)}
           >
-            <BlurView
-              style={{ width: 200, height: 50 }}
+            <SimpleBlurView
+              style={styles.goal}
+              intensity={4}
               experimentalBlurMethod="dimezisBlurView"
-            ></BlurView>
+            >
+              <View style={styles.goalInner}>
+                <View style={styles.goalVisual}>
+                  <View style={styles.goalVisualBackground}>
+                    <VisualGoal state={visualGoalStateVWC.rendered} />
+                  </View>
+                  <View style={styles.goalVisualForeground}>
+                    <Text
+                      style={styles.goalVisualText}
+                      allowFontScaling={false}
+                    >
+                      <RenderGuardedComponent
+                        props={streakInfoVWC}
+                        component={(v) =>
+                          v.type === 'success' ? (
+                            <>{v.result.daysOfWeek.length}</>
+                          ) : (
+                            <>?</>
+                          )
+                        }
+                      />
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.goalSection}>
+                  <Text style={styles.goalSectionTitle}>Goal</Text>
+                  <Text style={styles.goalSectionValue}>
+                    <RenderGuardedComponent
+                      props={streakInfoVWC}
+                      component={(v) =>
+                        v.type === 'success' ? (
+                          v.result.goalDaysPerWeek === null ? (
+                            <>Unset</>
+                          ) : (
+                            <>
+                              {v.result.daysOfWeek.length} of{' '}
+                              {v.result.goalDaysPerWeek}
+                            </>
+                          )
+                        ) : (
+                          <>?</>
+                        )
+                      }
+                    />
+                  </Text>
+                </View>
+                <View style={styles.goalSection}>
+                  <Text style={styles.goalSectionTitle}>Streak</Text>
+                  <Text style={styles.goalSectionValue}>
+                    <RenderGuardedComponent
+                      props={streakInfoVWC}
+                      component={(v) =>
+                        v.type === 'success' ? <>{v.result.streak}</> : <>?</>
+                      }
+                    />
+                  </Text>
+                </View>
+              </View>
+            </SimpleBlurView>
           </View>
         </View>
+        <SvgLinearGradientBackground
+          containerStyle={styles.content}
+          state={{
+            type: 'react-rerender',
+            props: STANDARD_DARK_BLACK_GRAY_GRADIENT_SVG,
+          }}
+        >
+          <Text style={styles.question}>How do you want to feel today?</Text>
+          <View
+            style={styles.emotions}
+            onLayout={(e) => {
+              const height = e.nativeEvent?.layout?.height;
+              if (height === undefined) {
+                return;
+              }
+              setVWC(emotionsHeightVWC, height);
+            }}
+          >
+            <RenderGuardedComponent
+              props={useMappedValuesWithCallbacks(
+                [emotionRowsVWC, windowWidthVWC],
+                () => ({ r: emotionRowsVWC.get(), width: windowWidthVWC.get() })
+              )}
+              component={({ r, width }) => (
+                <>
+                  {r.map((row, idx) => (
+                    <ScrollView
+                      key={idx}
+                      style={Object.assign({}, styles.emotionRow, { width })}
+                      contentContainerStyle={Object.assign(
+                        {},
+                        styles.emotionRowContent,
+                        Platform.select({
+                          // android centerContent doesn't work correctly
+                          android: { minWidth: width },
+                          default: undefined,
+                        })
+                      )}
+                      horizontal
+                      centerContent
+                      onLayout={(e) => {
+                        const height = e.nativeEvent?.layout?.height;
+                        if (
+                          height !== undefined &&
+                          height > emotionRowHeightVWC.get()
+                        ) {
+                          setVWC(emotionRowHeightVWC, height);
+                        }
+                      }}
+                      onContentSizeChange={(w) => {
+                        if (numberOfEmotionRowsVWC.get() <= idx) {
+                          return;
+                        }
+
+                        const rows = emotionRowContentWidthsVWC.get();
+                        if (
+                          Math.abs(
+                            convertLogicalWidthToPhysicalWidth(rows[idx]) -
+                              convertLogicalWidthToPhysicalWidth(w)
+                          ) < 1
+                        ) {
+                          return;
+                        }
+                        const newRows = rows.slice();
+                        newRows[idx] = w;
+                        setVWC(
+                          emotionRowContentWidthsVWC,
+                          newRows,
+                          () => false
+                        );
+                      }}
+                      ref={(r) => {
+                        if (numberOfEmotionRowsVWC.get() <= idx) {
+                          return;
+                        }
+
+                        const refs = emotionRowRefs.get();
+                        const newRefs = refs.slice();
+                        newRefs[idx] = r;
+                        setVWC(emotionRowRefs, newRefs, () => false);
+                      }}
+                    >
+                      {row.map((emotion) => (
+                        <Pressable
+                          onPress={() => {
+                            handleEmotionClick(emotion);
+                          }}
+                          style={styles.emotionButton}
+                          key={emotion.word}
+                        >
+                          <Text style={styles.emotionButtonText}>
+                            {emotion.word}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </ScrollView>
+                  ))}
+                </>
+              )}
+            />
+          </View>
+        </SvgLinearGradientBackground>
+        <BottomNavBar
+          active="home"
+          clickHandlers={{
+            series: () => resources.get().gotoSeries(),
+            account: () => resources.get().gotoAccount(),
+          }}
+        />
+        <View style={{ width: 1, height: botBarHeight }} />
       </View>
       <StatusBar style="light" />
-    </FullscreenView>
+    </View>
   );
 };
 
