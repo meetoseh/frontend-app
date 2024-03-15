@@ -29,19 +29,28 @@ export const SingleJourney = ({
     (r) => r.journeyShared
   );
   const screenVWC = useMappedValueWithCallbacks(resources, (r) => r.step);
+  const takeAnotherVWC = useMappedValueWithCallbacks(state, (s) =>
+    s.show?.type === 'emotion'
+      ? {
+          emotion: s.show.emotion.word,
+          onTakeAnother: () => resources.get().onTakeAnother(),
+        }
+      : null
+  );
 
-  const journeyAndScreenVWC = useMappedValuesWithCallbacks(
-    [journeyVWC, screenVWC],
+  const infoVWC = useMappedValuesWithCallbacks(
+    [journeyVWC, screenVWC, takeAnotherVWC],
     () => ({
       journey: journeyVWC.get(),
       screen: screenVWC.get(),
+      takeAnother: takeAnotherVWC.get(),
     })
   );
 
   return (
     <RenderGuardedComponent
-      props={journeyAndScreenVWC}
-      component={({ journey, screen }) => {
+      props={infoVWC}
+      component={({ journey, screen, takeAnother }) => {
         if (journey === null) {
           return <></>;
         }
@@ -82,7 +91,7 @@ export const SingleJourney = ({
           },
           onJourneyFinished: () => resources.get().onJourneyFinished(),
           isOnboarding: false,
-          takeAnother: null,
+          takeAnother,
         };
 
         if (screen === 'lobby') {
