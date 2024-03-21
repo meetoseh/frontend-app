@@ -328,7 +328,7 @@ export const Settings = ({
                   <View style={styles.footer}>
                     <Wordmark width={98} height={24} />
                     <Text style={styles.version}>
-                      {Constants.manifest?.version || 'development'}
+                      {Constants.expoConfig?.version || 'development'}
                     </Text>
                   </View>
                   <RenderGuardedComponent

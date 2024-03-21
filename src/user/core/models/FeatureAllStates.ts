@@ -17,6 +17,7 @@ import { SettingsState } from '../features/settings/SettingsState';
 import { SignupRewardState } from '../features/signupReward/SignupRewardState';
 import { SingleJourneyState } from '../features/singleJourney/SingleJourneyState';
 import { UpgradeState } from '../features/upgrade/UpgradeState';
+import { WelcomeVideoState } from '../features/welcomeVideo/WelcomeVideoState';
 
 export type FeatureAllStates = {
   login: LoginState;
@@ -38,4 +39,5 @@ export type FeatureAllStates = {
   upgrade: UpgradeState;
   homeScreen: HomeScreenState;
   gotoEmotion: GotoEmotionState;
+  welcomeVideo: WelcomeVideoState;
 };

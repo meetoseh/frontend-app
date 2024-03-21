@@ -37,6 +37,7 @@ import { useTopBarHeight } from '../../../shared/hooks/useTopBarHeight';
 import { useBotBarHeight } from '../../../shared/hooks/useBotBarHeight';
 import { SvgLinearGradient } from '../../../shared/anim/SvgLinearGradient';
 import { useValueWithCallbacksEffect } from '../../../shared/hooks/useValueWithCallbacksEffect';
+import { useVideoInfo } from '../../../shared/hooks/useVideoInfo';
 
 export type CoursePreviewProps = {
   course: ExternalCoursePreviewable;
@@ -104,116 +105,33 @@ export const CoursePreview = ({
     }
   );
 
-  const videoReadyForDisplayVWC = useWritableValueWithCallbacks(() => false);
-  const playbackStatusVWC =
-    useWritableValueWithCallbacks<AVPlaybackStatus | null>(() => null);
-  const vidShouldPlayVWC = useWritableValueWithCallbacks(() => false);
-  const vidShouldBeMutedVWC = useWritableValueWithCallbacks(() => false);
-
-  const videoLoadedVWC = useMappedValueWithCallbacks(
-    playbackStatusVWC,
-    (status) =>
-      status === null || !status.isLoaded
-        ? false
-        : status.isPlaying ||
-          status.shouldPlay ||
-          status.positionMillis > 0 ||
-          !status.isBuffering
-  );
-  const videoPlayingVWC = useMappedValueWithCallbacks(
-    playbackStatusVWC,
-    (status) => status?.isLoaded && status.isPlaying
-  );
-  const videoMutedVWC = useMappedValueWithCallbacks(
-    playbackStatusVWC,
-    (status) => status?.isLoaded && status.isMuted
-  );
-  const videoCurrentTimeVWC = useMappedValueWithCallbacks(
-    playbackStatusVWC,
-    (status) => (status?.isLoaded ? status.positionMillis / 1000 : 0)
-  );
-  const wantToAutoplayVWC = useWritableValueWithCallbacks(() => true);
-
-  useValueWithCallbacksEffect(videoLoadedVWC, (loaded) => {
-    if (loaded && wantToAutoplayVWC.get()) {
-      setVWC(wantToAutoplayVWC, false);
-      setVWC(vidShouldPlayVWC, true);
-    }
-    return undefined;
-  });
-
-  const videoPlayPauseStateVWC = useMappedValuesWithCallbacks(
-    [videoLoadedVWC, videoPlayingVWC],
-    (): 'loading' | 'playing' | 'paused' => {
-      if (!videoLoadedVWC.get()) {
-        return 'loading';
-      }
-      if (videoPlayingVWC.get()) {
-        return 'playing';
-      }
-      return 'paused';
-    }
-  );
-
-  const currentTranscriptPhrasesVWC = useCurrentTranscriptPhrases({
-    transcriptRef: useReactManagedValueAsValueWithCallbacks(
-      course.introVideoTranscript
-    ),
-    currentTime: videoCurrentTimeVWC,
-  });
-  const closedCaptioningPhrasesVWC = useMappedValueWithCallbacks(
-    currentTranscriptPhrasesVWC,
-    (v) => v.phrases
-  );
-  const closedCaptioningAvailableVWC = useMappedValueWithCallbacks(
-    currentTranscriptPhrasesVWC,
-    useCallback(
-      (v) => {
-        return course.introVideoTranscript !== null && v.error === null;
-      },
-      [course]
-    )
-  );
-  const closedCaptioningEnabledVWC = useWritableValueWithCallbacks(() => true);
-
-  const closedCaptioningStateVWC = useMappedValuesWithCallbacks(
-    [closedCaptioningAvailableVWC, closedCaptioningEnabledVWC],
-    () => ({
-      available: closedCaptioningAvailableVWC.get(),
-      enabled: closedCaptioningEnabledVWC.get(),
+  const videoInfo = useVideoInfo({
+    currentTranscriptPhrasesVWC: useCurrentTranscriptPhrases({
+      transcriptRef: useReactManagedValueAsValueWithCallbacks(
+        course.introVideoTranscript
+      ),
     }),
-    {
-      outputEqualityFn: (a, b) =>
-        a.available === b.available && a.enabled === b.enabled,
-    }
-  );
-
-  const totalTime = ((durationSeconds) => {
-    const minutes = Math.floor(durationSeconds / 60);
-    const seconds = Math.floor(durationSeconds % 60);
-
-    return `${minutes}:${seconds < 10 ? `0${seconds}` : seconds}`;
-  })(course.introVideoDuration);
+  });
 
   const progressFullRef = useWritableValueWithCallbacks<View | null>(
     () => null
   );
   const contentWidth = useContentWidth();
   useValuesWithCallbacksEffect(
-    [progressFullRef, videoCurrentTimeVWC],
+    [progressFullRef, videoInfo.currentTime],
     useCallback(() => {
       const ele = progressFullRef.get();
       if (ele === null) {
         return undefined;
       }
 
-      const currentTime = videoCurrentTimeVWC.get();
+      const currentTime = videoInfo.currentTime.get();
       const progress = currentTime / course.introVideoDuration;
       ele.setNativeProps({ style: { width: progress * contentWidth } });
       return undefined;
     }, [
       progressFullRef,
-      videoCurrentTimeVWC,
+      videoInfo.currentTime,
       course.introVideoDuration,
       contentWidth,
     ])
@@ -252,13 +170,13 @@ export const CoursePreview = ({
             [
               videoTargetVWC,
               videoStyleVWC,
-              vidShouldPlayVWC,
-              vidShouldBeMutedVWC,
+              videoInfo.shouldPlay,
+              videoInfo.shouldBeMuted,
             ],
             () => ({
               target: videoTargetVWC.get(),
-              shouldPlay: vidShouldPlayVWC.get(),
-              muted: vidShouldBeMutedVWC.get(),
+              shouldPlay: videoInfo.shouldPlay.get(),
+              muted: videoInfo.shouldBeMuted.get(),
               videoStyle: videoStyleVWC.get(),
             })
           )}
@@ -276,11 +194,11 @@ export const CoursePreview = ({
               resizeMode={ResizeMode.COVER}
               shouldPlay={shouldPlay}
               isLooping={false}
-              onLoadStart={() => setVWC(videoReadyForDisplayVWC, false)}
-              onReadyForDisplay={() => setVWC(videoReadyForDisplayVWC, true)}
-              onLoad={(status) => setVWC(playbackStatusVWC, status)}
+              onLoadStart={() => setVWC(videoInfo.readyForDisplay, false)}
+              onReadyForDisplay={() => setVWC(videoInfo.readyForDisplay, true)}
+              onLoad={(status) => setVWC(videoInfo.playbackStatus, status)}
               onPlaybackStatusUpdate={(status) =>
-                setVWC(playbackStatusVWC, status)
+                setVWC(videoInfo.playbackStatus, status)
               }
               isMuted={muted}
               style={videoStyle}
@@ -291,10 +209,10 @@ export const CoursePreview = ({
       <View style={styles.background}>
         <RenderGuardedComponent
           props={useMappedValuesWithCallbacks(
-            [videoLoadedVWC, videoPlayingVWC, videoCurrentTimeVWC],
+            [videoInfo.loaded, videoInfo.playing, videoInfo.currentTime],
             () =>
-              !videoLoadedVWC.get() ||
-              (!videoPlayingVWC.get() && videoCurrentTimeVWC.get() === 0)
+              !videoInfo.loaded.get() ||
+              (!videoInfo.playing.get() && videoInfo.currentTime.get() === 0)
           )}
           component={(showCoverImage) =>
             showCoverImage ? (
@@ -343,7 +261,7 @@ export const CoursePreview = ({
         </View>
         <View style={styles.pausePlayControlContainer}>
           <RenderGuardedComponent
-            props={videoPlayPauseStateVWC}
+            props={videoInfo.playPauseState}
             component={(state) =>
               state === 'loading' ? (
                 <InlineOsehSpinner
@@ -358,7 +276,7 @@ export const CoursePreview = ({
                 <Pressable
                   style={styles.pausePlayControlLoaded}
                   onPress={() => {
-                    const vidState = playbackStatusVWC.get();
+                    const vidState = videoInfo.playbackStatus.get();
                     if (vidState === null || !vidState.isLoaded) {
                       return;
                     }
@@ -372,13 +290,13 @@ export const CoursePreview = ({
                       vid !== null
                     ) {
                       vid.setPositionAsync(0).then((s) => {
-                        setVWC(playbackStatusVWC, s);
-                        setVWC(vidShouldPlayVWC, true);
+                        setVWC(videoInfo.playbackStatus, s);
+                        setVWC(videoInfo.shouldPlay, true);
                       });
                       return;
                     }
 
-                    setVWC(vidShouldPlayVWC, !vidState.isPlaying);
+                    setVWC(videoInfo.shouldPlay, !vidState.isPlaying);
                   }}
                 >
                   {state === 'playing' && <Pause />}
@@ -395,15 +313,17 @@ export const CoursePreview = ({
             })}
           >
             <RenderGuardedComponent
-              props={closedCaptioningStateVWC}
+              props={videoInfo.closedCaptioning.state}
               component={(state) =>
                 !state.enabled || !state.available ? (
                   <></>
                 ) : (
                   <View style={styles.transcript}>
                     <TranscriptContainer
-                      currentTime={videoCurrentTimeVWC}
-                      currentTranscriptPhrases={closedCaptioningPhrasesVWC}
+                      currentTime={videoInfo.currentTime}
+                      currentTranscriptPhrases={
+                        videoInfo.closedCaptioning.phrases
+                      }
                     />
                   </View>
                 )
@@ -422,18 +342,18 @@ export const CoursePreview = ({
               <View style={styles.actions}>
                 <View style={styles.actionIconsRow}>
                   <RenderGuardedComponent
-                    props={videoMutedVWC}
+                    props={videoInfo.muted}
                     component={(muted) => (
                       <Pressable
                         style={styles.actionIcon}
-                        onPress={() => setVWC(vidShouldBeMutedVWC, !muted)}
+                        onPress={() => setVWC(videoInfo.shouldBeMuted, !muted)}
                       >
                         {muted ? <Muted /> : <Unmuted />}
                       </Pressable>
                     )}
                   />
                   <RenderGuardedComponent
-                    props={closedCaptioningStateVWC}
+                    props={videoInfo.closedCaptioning.state}
                     component={(state) =>
                       !state.available ? (
                         <></>
@@ -441,7 +361,10 @@ export const CoursePreview = ({
                         <Pressable
                           style={styles.actionIcon}
                           onPress={() =>
-                            setVWC(closedCaptioningEnabledVWC, !state.enabled)
+                            setVWC(
+                              videoInfo.closedCaptioning.enabled,
+                              !state.enabled
+                            )
                           }
                         >
                           {state.enabled ? (
@@ -482,7 +405,7 @@ export const CoursePreview = ({
             <View style={styles.durationContainer}>
               <Text style={styles.currentTime}>
                 <RenderGuardedComponent
-                  props={videoCurrentTimeVWC}
+                  props={videoInfo.currentTime}
                   component={(inFractionalSeconds) => {
                     const inSeconds = Math.floor(inFractionalSeconds);
                     const minutes = Math.floor(inSeconds / 60);
@@ -497,7 +420,12 @@ export const CoursePreview = ({
                   }}
                 />
               </Text>
-              <Text style={styles.totalTime}>{totalTime}</Text>
+              <RenderGuardedComponent
+                props={videoInfo.totalTime}
+                component={(totalTime) => (
+                  <Text style={styles.totalTime}>{totalTime.formatted}</Text>
+                )}
+              />
             </View>
             <View style={{ width: 1, height: bottomBarHeight }} />
           </View>

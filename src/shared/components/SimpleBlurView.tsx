@@ -1,5 +1,5 @@
 import { BlurView, BlurViewProps } from 'expo-blur';
-import { PropsWithChildren, useEffect } from 'react';
+import { PropsWithChildren, useCallback, useEffect } from 'react';
 import {
   ValueWithCallbacks,
   WritableValueWithCallbacks,
@@ -9,10 +9,11 @@ import { Platform, View, Image } from 'react-native';
 import { useValueWithCallbacksEffect } from '../hooks/useValueWithCallbacksEffect';
 import { setVWC } from '../lib/setVWC';
 import { RenderGuardedComponent } from './RenderGuardedComponent';
-import ViewShot from 'react-native-view-shot';
+import ViewShot, { releaseCapture } from 'react-native-view-shot';
 import { useValuesWithCallbacksEffect } from '../hooks/useValuesWithCallbacksEffect';
 import { useTimedValueWithCallbacks } from '../hooks/useTimedValue';
 import { useMappedValuesWithCallbacks } from '../hooks/useMappedValuesWithCallbacks';
+import { useIsMounted } from '../hooks/useIsMounted';
 
 export type SimpleBlurViewProps = BlurViewProps & {
   captureAllowed?: ValueWithCallbacks<boolean>;
@@ -59,6 +60,31 @@ const AndroidCompatBlurView = ({
   );
   const delayingPopinVWC = useWritableValueWithCallbacks<boolean>(() => true);
   const captureVWC = useWritableValueWithCallbacks<string | null>(() => null);
+  const isMountedVWC = useIsMounted();
+
+  useValueWithCallbacksEffect(
+    captureVWC,
+    useCallback(
+      (c) => {
+        if (c == null) {
+          return undefined;
+        }
+
+        const capture = c;
+        return () => {
+          setTimeout(() => {
+            if (!isMountedVWC.get() || captureVWC.get() !== capture) {
+              if (captureVWC.get() === capture) {
+                setVWC(captureVWC, null);
+              }
+              releaseCapture(capture);
+            }
+          }, 100);
+        };
+      },
+      [captureVWC]
+    )
+  );
 
   const allowingCapturesVWC = captureAllowedRaw ?? defaultAllowingCapturesVWC;
   useValueWithCallbacksEffect(allowingCapturesVWC, (allowing) => {

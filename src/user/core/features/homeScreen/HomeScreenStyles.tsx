@@ -115,6 +115,10 @@ export const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
   },
+  goalSectionGoal: {
+    padding: 10,
+    marginHorizontal: -10,
+  },
   goalSectionTitle: {
     fontFamily: 'OpenSans-Regular',
     fontSize: 14,

@@ -186,7 +186,6 @@ export const useForwardBackwardEffect = ({
       let holdTimeout: NodeJS.Timeout | null = null;
 
       const onComplete = () => {
-        console.log('onComplete');
         if (state !== 'forward' && state !== 'backward') {
           return;
         }
@@ -201,7 +200,6 @@ export const useForwardBackwardEffect = ({
       };
 
       const onHoldFinished = () => {
-        console.log('onHoldFinished');
         if (
           state !== 'holding-after-forward' &&
           state !== 'holding-after-backward'

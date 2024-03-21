@@ -483,7 +483,16 @@ export const HomeScreen = ({
                     </Text>
                   </View>
                 </View>
-                <View style={styles.goalSection}>
+                <Pressable
+                  onPress={() => {
+                    resources.get().gotoUpdateGoal();
+                  }}
+                  style={Object.assign(
+                    {},
+                    styles.goalSection,
+                    styles.goalSectionGoal
+                  )}
+                >
                   <Text style={styles.goalSectionTitle}>Goal</Text>
                   <Text style={styles.goalSectionValue}>
                     <RenderGuardedComponent
@@ -504,7 +513,7 @@ export const HomeScreen = ({
                       }
                     />
                   </Text>
-                </View>
+                </Pressable>
                 <View style={styles.goalSection}>
                   <Text style={styles.goalSectionTitle}>Streak</Text>
                   <Text style={styles.goalSectionValue}>

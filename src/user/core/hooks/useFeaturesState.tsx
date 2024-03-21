@@ -22,12 +22,14 @@ import { SingleJourneyFeature } from '../features/singleJourney/SingleJourneyFea
 import { UpgradeFeature } from '../features/upgrade/UpgradeFeature';
 import { HomeScreenFeature } from '../features/homeScreen/HomeScreenFeature';
 import { GotoEmotionFeature } from '../features/gotoEmotion/GotoEmotionFeature';
+import { WelcomeVideoFeature } from '../features/welcomeVideo/WelcomeVideoFeature';
 
 const features = [
   LoginFeature,
   RequestNameFeature,
   ConfirmMergeAccountFeature,
   MergeAccountFeature,
+  WelcomeVideoFeature,
   SignupRewardFeature,
   AppNotifsFeature,
   RequestPhoneFeature,

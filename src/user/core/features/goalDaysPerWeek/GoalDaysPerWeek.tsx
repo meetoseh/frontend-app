@@ -48,7 +48,9 @@ export const GoalDaysPerWeek = ({
   });
   const loginContextRaw = useContext(LoginContext);
   const interests = useContext(InterestsContext);
-  const goal = useWritableValueWithCallbacks<number>(() => 3);
+  const goal = useWritableValueWithCallbacks<number>(
+    () => resources.get().initialGoal
+  );
   const error = useWritableValueWithCallbacks<ReactElement | null>(() => null);
   const preventClickBleedthrough = useTimedValueWithCallbacks(
     true,
@@ -124,6 +126,7 @@ export const GoalDaysPerWeek = ({
 
       resources.get().session?.reset?.call(undefined);
       state.get().ian?.onShown?.call(undefined);
+      resources.get().onGoalSet(selected);
     } catch (e) {
       const err = await describeError(e);
       setVWC(error, err);

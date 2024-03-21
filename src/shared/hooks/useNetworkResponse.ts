@@ -14,13 +14,15 @@ import {
 import { useValuesWithCallbacksEffect } from './useValuesWithCallbacksEffect';
 import { describeError } from '../lib/describeError';
 
-export type NetworkResponseError = {
+export type NetworkResponseError<T> = {
   /** For when the fetcher rejected */
   type: 'error';
   result: undefined;
   error: ReactElement;
   /** Switches to the loading state */
   refresh: () => void;
+  /** replaces the value with the given one */
+  replace: (value: T) => void;
 };
 
 export type NetworkResponseLoading = {
@@ -29,6 +31,7 @@ export type NetworkResponseLoading = {
   result: undefined;
   error: null;
   refresh: null;
+  replace: null;
 };
 
 export type NetworkResponseLoadPrevented = {
@@ -37,6 +40,7 @@ export type NetworkResponseLoadPrevented = {
   result: undefined;
   error: null;
   refresh: null;
+  replace: null;
 };
 
 export type NetworkResponseSuccess<T> = {
@@ -46,21 +50,24 @@ export type NetworkResponseSuccess<T> = {
   error: null;
   /** Switches to the loading state */
   refresh: () => void;
+  /** replaces the value with the given one */
+  replace: (value: T) => void;
 };
 
-export type NetworkResponseUnavailable = {
+export type NetworkResponseUnavailable<T> = {
   /** For when the result from fetcher is null */
   type: 'unavailable';
   result: null;
   error: null;
   refresh: () => void;
+  replace: (value: T) => void;
 };
 
 export type NetworkResponse<T> =
-  | NetworkResponseError
+  | NetworkResponseError<T>
   | NetworkResponseLoadPrevented
   | NetworkResponseLoading
-  | NetworkResponseUnavailable
+  | NetworkResponseUnavailable<T>
   | NetworkResponseSuccess<T>;
 
 export type UseNetworkResponseOpts = {
@@ -108,6 +115,7 @@ export const useNetworkResponse = <T>(
     result: undefined,
     error: null,
     refresh: null,
+    replace: null,
   }));
 
   const minRefreshTimeMS = opts?.minRefreshTimeMS ?? 500;
@@ -138,6 +146,7 @@ export const useNetworkResponse = <T>(
       result: undefined,
       error: null,
       refresh: null,
+      replace: null,
     });
     try {
       const minTime = new Promise((resolve) =>
@@ -157,6 +166,7 @@ export const useNetworkResponse = <T>(
           result: null,
           error: null,
           refresh,
+          replace,
         });
       } else {
         setVWC(result, {
@@ -164,6 +174,7 @@ export const useNetworkResponse = <T>(
           result: answer,
           error: null,
           refresh,
+          replace,
         });
       }
     } catch (e) {
@@ -176,9 +187,24 @@ export const useNetworkResponse = <T>(
         result: undefined,
         error: described,
         refresh,
+        replace,
       });
     }
   }, [result, fetcher, minRefreshTimeMS, loadPrevented, loginContextRaw]);
+
+  const replace = useCallback((value: T) => {
+    if (loadPrevented.get() || result.get().type === 'loading') {
+      return;
+    }
+
+    setVWC(result, {
+      type: 'success',
+      result: value,
+      error: null,
+      refresh,
+      replace,
+    });
+  }, []);
 
   useValuesWithCallbacksEffect(
     [loginContextRaw.value, ...(opts?.dependsOn ?? [])],
@@ -191,6 +217,7 @@ export const useNetworkResponse = <T>(
             result: undefined,
             error: null,
             refresh: null,
+            replace: null,
           },
           (a, b) => a.type === b.type
         );
@@ -219,6 +246,7 @@ export const useNetworkResponse = <T>(
                 result: null,
                 error: null,
                 refresh,
+                replace,
               });
             } else {
               setVWC(result, {
@@ -226,6 +254,7 @@ export const useNetworkResponse = <T>(
                 result: answer,
                 error: null,
                 refresh,
+                replace,
               });
             }
           }
@@ -241,6 +270,7 @@ export const useNetworkResponse = <T>(
               result: undefined,
               error: described,
               refresh,
+              replace,
             });
           }
         }
@@ -259,6 +289,7 @@ export const useNetworkResponse = <T>(
               result: undefined,
               error: null,
               refresh: null,
+              replace: null,
             },
             (a, b) => a.type === b.type
           );
