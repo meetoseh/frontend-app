@@ -31,14 +31,14 @@ export const JourneyLobbyScreen = ({
     if (leavingCallback.current !== null) {
       leavingCallback.current();
     }
-    setScreen('start', true);
+    setScreen('journey', true);
   }, [setScreen]);
 
   const gotoStart = useCallback(() => {
     if (leavingCallback.current !== null) {
       leavingCallback.current();
     }
-    setScreen('start', false);
+    setScreen('journey', false);
   }, [setScreen]);
 
   const topBarHeight = useTopBarHeight();
