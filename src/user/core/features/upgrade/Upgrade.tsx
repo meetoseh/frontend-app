@@ -17,7 +17,6 @@ import { setVWC } from '../../../../shared/lib/setVWC';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
 import { RevenueCatPackage } from './models/RevenueCatPackage';
-import { PurchasesStoreProduct } from './models/PurchasesStoreProduct';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
 import { useStartSession } from '../../../../shared/hooks/useInappNotificationSession';
 import { RevenueCatPlatform } from './lib/RevenueCatPlatform';
@@ -45,6 +44,10 @@ import { useBotBarHeight } from '../../../../shared/hooks/useBotBarHeight';
 import { OsehImageFromStateValueWithCallbacks } from '../../../../shared/images/OsehImageFromStateValueWithCallbacks';
 import { SvgLinearGradient } from '../../../../shared/anim/SvgLinearGradient';
 import { FilledPremiumButton } from '../../../../shared/components/FilledPremiumButton';
+import {
+  PurchasesPackage,
+  PurchasesStoreProduct,
+} from 'react-native-purchases';
 
 /**
  * Allows the user to upgrade to Oseh+, if they are eligible to do so
@@ -139,7 +142,7 @@ export const Upgrade = ({
 
   const offersAndPricesVWC = useMappedValueWithCallbacks(
     resources,
-    (r): [RevenueCatPackage, PurchasesStoreProduct][] => {
+    (r): [RevenueCatPackage, PurchasesStoreProduct, PurchasesPackage][] => {
       const offer = r.offer.offering;
       const price = r.offerPrice;
 
@@ -155,7 +158,7 @@ export const Upgrade = ({
                 ? ''
                 : ':' + pkg.platformProductPlanIdentifier)
           ];
-        return [pkg, pkgPrice];
+        return [pkg, pkgPrice.storeProduct, pkgPrice.rcPackage];
       });
     }
   );
@@ -195,11 +198,7 @@ export const Upgrade = ({
   const redirectingVWC = useWritableValueWithCallbacks<boolean>(() => false);
   const handleSubscribe = useCallback(async () => {
     const idx = activePackageIdxVWC.get();
-    const offer = offerVWC.get();
-    const pkg = offer?.packages[idx];
-    if (pkg === undefined) {
-      return;
-    }
+    const rcPkg = offersAndPricesVWC.get()[idx][2];
 
     const loginContextUnch = loginContextRaw.value.get();
     if (loginContextUnch.state !== 'logged-in') {
@@ -207,14 +206,26 @@ export const Upgrade = ({
     }
     const loginContext = loginContextUnch;
 
+    const purchases = resources.get().purchases;
+    if (purchases.loaded === undefined) {
+      return;
+    }
+
     if (redirectingVWC.get()) {
       return;
     }
     setVWC(redirectingVWC, true);
 
     try {
-      // TODO
-      throw new Error('not implemented');
+      resources
+        .get()
+        .session?.storeAction('subscribe_clicked', { immediate: true });
+      console.log('purchasing package...');
+      await purchases.loaded.purchasePackage(loginContext, rcPkg);
+      console.log('purchasing package completed successfully, closing');
+      resources.get().session?.reset();
+      state.get().ian?.onShown();
+      state.get().setContext(null, true);
     } catch (e) {
       const err = await describeError(e);
       setVWC(subscribeErrorVWC, err);
@@ -312,6 +323,8 @@ export const Upgrade = ({
               style={styles.closeButton}
               onPress={() => {
                 resources.get().session?.storeAction('close', null);
+                resources.get().session?.reset();
+                state.get().ian?.onShown();
                 state.get().setContext(null, true);
               }}
             >
@@ -458,7 +471,9 @@ const Offer = ({
   offerStyle: ViewStyle | undefined;
 }): ReactElement => {
   const iso8601Period =
-    price.defaultOption?.pricingPhases[0].billingPeriod.iso8601;
+    price.defaultOption?.pricingPhases[0].billingPeriod.iso8601 ??
+    price.subscriptionPeriod ??
+    undefined;
   const perStr =
     iso8601Period === undefined
       ? ' for life'

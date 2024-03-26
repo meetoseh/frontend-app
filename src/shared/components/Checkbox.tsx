@@ -1,15 +1,16 @@
-import { ReactElement, useCallback, useRef } from "react";
-import { styles as whiteWideStyles } from "./CheckboxStylesWhiteWide";
-import { View, Text, Pressable, ViewStyle } from "react-native";
-import * as SVG from "react-native-svg";
-import { STANDARD_ACTIVE_GRADIENT_SVG } from "../../styling/colors";
-import { makeSVGNumber, simpleColorToCss } from "../anim/svgUtils";
-import { useWritableValueWithCallbacks } from "../lib/Callbacks";
-import { setVWC } from "../lib/setVWC";
-import { useValueWithCallbacksEffect } from "../hooks/useValueWithCallbacksEffect";
-import { BezierAnimator } from "../anim/AnimationLoop";
-import { useAnimatedValueWithCallbacks } from "../anim/useAnimatedValueWithCallbacks";
-import { ease } from "../lib/Bezier";
+import { ReactElement, useCallback, useRef } from 'react';
+import { styles as whiteWideStyles } from './CheckboxStylesWhiteWide';
+import { View, Text, Pressable, ViewStyle } from 'react-native';
+import * as SVG from 'react-native-svg';
+import { STANDARD_ACTIVE_GRADIENT_SVG } from '../../styling/colors';
+import { makeSVGNumber, simpleColorToCss } from '../anim/svgUtils';
+import { useWritableValueWithCallbacks } from '../lib/Callbacks';
+import { setVWC } from '../lib/setVWC';
+import { useValueWithCallbacksEffect } from '../hooks/useValueWithCallbacksEffect';
+import { BezierAnimator } from '../anim/AnimationLoop';
+import { useAnimatedValueWithCallbacks } from '../anim/useAnimatedValueWithCallbacks';
+import { ease } from '../lib/Bezier';
+import { SvgColorStop } from '../anim/SvgLinearGradient';
 
 type CheckboxProps = {
   /**
@@ -25,7 +26,7 @@ type CheckboxProps = {
   /**
    * The label to display next to the checkbox.
    */
-  label: string;
+  label: string | ReactElement;
 
   /**
    * Whether the checkbox is disabled
@@ -44,7 +45,7 @@ type CheckboxProps = {
    * The style of the checkbox
    * @default 'whiteWide'
    */
-  checkboxStyle?: "whiteWide";
+  checkboxStyle?: 'whiteWide' | 'whiteWideRound';
 };
 
 /**
@@ -60,6 +61,7 @@ const WhiteWideCheckbox = ({
   label,
   containerStyle,
   disabled = false,
+  checkboxStyle = 'whiteWide',
 }: CheckboxProps): ReactElement => {
   const styles = whiteWideStyles;
 
@@ -123,6 +125,8 @@ const WhiteWideCheckbox = ({
     setValue(!value);
   }, [setValue, value, disabled]);
 
+  const round = checkboxStyle === 'whiteWideRound';
+
   return (
     <Pressable
       style={Object.assign(
@@ -143,11 +147,16 @@ const WhiteWideCheckbox = ({
       <Text style={styles.label}>{label}</Text>
       <View style={styles.iconContainer}>
         {value ? (
-          <CheckedIcon width={styles.icon.width} height={styles.icon.height} />
+          <CheckedIcon
+            width={styles.icon.width}
+            height={styles.icon.height}
+            round={round}
+          />
         ) : (
           <UncheckedIcon
             width={styles.icon.width}
             height={styles.icon.height}
+            round={round}
           />
         )}
       </View>
@@ -155,11 +164,26 @@ const WhiteWideCheckbox = ({
   );
 };
 
-const CheckedIcon = (props: SVG.SvgProps): ReactElement => {
+const CheckedIcon = ({
+  round,
+  ...props
+}: SVG.SvgProps & { round: boolean }): ReactElement => {
   const grad = STANDARD_ACTIVE_GRADIENT_SVG;
   const svgn = makeSVGNumber;
   const width = 20;
   const height = 20;
+
+  const stops: SvgColorStop[] =
+    grad.stops !== undefined ? grad.stops : [grad.stop1, grad.stop2];
+  const stopElements: ReactElement[] = stops.map((stop, i) => (
+    <SVG.Stop
+      key={i}
+      offset={svgn(stop.offset)}
+      stopColor={simpleColorToCss(stop.color)}
+      stopOpacity={stop.color[3]}
+    />
+  ));
+
   return (
     <SVG.Svg
       width={svgn(width)}
@@ -176,16 +200,7 @@ const CheckedIcon = (props: SVG.SvgProps): ReactElement => {
           x2={svgn(grad.x2)}
           y2={svgn(grad.y2)}
         >
-          <SVG.Stop
-            offset={svgn(grad.stop1.offset)}
-            stopColor={simpleColorToCss(grad.stop1.color)}
-            stopOpacity={svgn(grad.stop1.color[3])}
-          />
-          <SVG.Stop
-            offset={svgn(grad.stop2.offset)}
-            stopColor={simpleColorToCss(grad.stop2.color)}
-            stopOpacity={svgn(grad.stop2.color[3])}
-          />
+          {stopElements}
         </SVG.LinearGradient>
       </SVG.Defs>
       <SVG.Rect
@@ -193,33 +208,39 @@ const CheckedIcon = (props: SVG.SvgProps): ReactElement => {
         y="0.5"
         width={svgn(width - 1)}
         height={svgn(height - 1)}
-        rx={svgn(width * 0.25)}
-        ry={svgn(height * 0.25)}
+        rx={svgn(round ? width / 2 : width * 0.25)}
+        ry={svgn(round ? height / 2 : height * 0.25)}
         fill="url(#grad)"
         stroke="none"
       />
-      <SVG.Path
-        d="M4.66602 10.20911L8.43725 13.9803L15.9797 6.43787"
-        stroke="white"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeMiterlimit="10"
-      />
+      <SVG.G transform={round ? 'translate(-0.75, 0)' : undefined}>
+        <SVG.Path
+          d="M4.66602 10.20911L8.43725 13.9803L15.9797 6.43787"
+          stroke="white"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeMiterlimit="10"
+          fill="none"
+        />
+      </SVG.G>
     </SVG.Svg>
   );
 };
 
-const UncheckedIcon = (props: SVG.SvgProps): ReactElement => {
+const UncheckedIcon = ({
+  round,
+  ...props
+}: SVG.SvgProps & { round: boolean }): ReactElement => {
   return (
-    <SVG.Svg width="20" height="1620" viewBox="0 0 20 20" {...props}>
+    <SVG.Svg width="20" height="20" viewBox="0 0 20 20" {...props}>
       <SVG.Rect
         x="0.5"
         y="0.5"
         width="19"
         height="19"
-        rx="5"
-        ry="5"
+        rx={round ? '9.5' : '5'}
+        ry={round ? '9.5' : '5'}
         fill="none"
         stroke="#8C8C8C"
         strokeWidth="1"

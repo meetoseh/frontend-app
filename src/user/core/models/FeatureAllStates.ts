@@ -1,12 +1,17 @@
+import { AgeState } from '../features/age/AgeState';
 import { AppNotifsState } from '../features/appNotifs/AppNotifsState';
 import { ConfirmMergeAccountState } from '../features/confirmMergeAccount/ConfirmMergeAccountState';
 import { FavoritesState } from '../features/favorites/FavoritesState';
+import { GoalCategoriesState } from '../features/goalCategories/GoalCategoriesState';
 import { GoalDaysPerWeekState } from '../features/goalDaysPerWeek/GoalDaysPerWeekState';
 import { GotoEmotionState } from '../features/gotoEmotion/GotoEmotionState';
 import { HomeScreenState } from '../features/homeScreen/HomeScreenState';
+import { HomeScreenTutorialState } from '../features/homeScreenTutorial/HomeScreenTutorialState';
 import { LoginState } from '../features/login/LoginState';
+import { ManageMembershipState } from '../features/manageMembership/ManageMembershipState';
 import { MergeAccountState } from '../features/mergeAccount/MergeAccountState';
 import { PickEmotionJourneyState } from '../features/pickEmotionJourney/PickEmotionJourneyState';
+import { PurchasesState } from '../features/purchases/PurchasesState';
 import { RequestNameState } from '../features/requestName/RequestNameState';
 import { RequestNotificationTimeState } from '../features/requestNotificationTime/RequestNotificationTimeState';
 import { RequestPhoneState } from '../features/requestPhone/RequestPhoneState';
@@ -40,4 +45,9 @@ export type FeatureAllStates = {
   homeScreen: HomeScreenState;
   gotoEmotion: GotoEmotionState;
   welcomeVideo: WelcomeVideoState;
+  age: AgeState;
+  goalCategories: GoalCategoriesState;
+  homeScreenTutorial: HomeScreenTutorialState;
+  purchases: PurchasesState;
+  manageMembership: ManageMembershipState;
 };

@@ -1,6 +1,5 @@
-import { ReactElement, useCallback, useContext } from 'react';
+import { ReactElement, useCallback, useContext, useEffect } from 'react';
 import { UseRevenueCatOfferingsResult } from './useRevenueCatOfferings';
-import { PurchasesStoreProduct } from '../models/PurchasesStoreProduct';
 import {
   Callbacks,
   ValueWithCallbacks,
@@ -10,10 +9,20 @@ import { LoginContext } from '../../../../../shared/contexts/LoginContext';
 import { setVWC } from '../../../../../shared/lib/setVWC';
 import { useValuesWithCallbacksEffect } from '../../../../../shared/hooks/useValuesWithCallbacksEffect';
 import { describeError } from '../../../../../shared/lib/describeError';
+import {
+  PurchasesOffering,
+  PurchasesOfferings,
+  PurchasesPackage,
+  PurchasesStoreProduct,
+} from 'react-native-purchases';
+import { PurchasesState } from '../../purchases/PurchasesState';
+import { Platform } from 'react-native';
 
 export type UseOfferingPriceProps = {
   /** The offerings whose price should be fetched */
   offering: ValueWithCallbacks<UseRevenueCatOfferingsResult>;
+  /** The purchases state, which can be used to interact with react-native-purchases */
+  purchases: ValueWithCallbacks<PurchasesState>;
 };
 
 export type UseOfferingPriceResultLoading = {
@@ -34,7 +43,10 @@ export type UseOfferingPriceResultSuccess = {
    * For android, the base plan id is included in the key in
    * the format {platformProductId}:{platformProductPlanId}
    */
-  pricesByPlatformProductId: Record<string, PurchasesStoreProduct>;
+  pricesByPlatformProductId: Record<
+    string,
+    { storeProduct: PurchasesStoreProduct; rcPackage: PurchasesPackage }
+  >;
 };
 
 export type UseOfferingPriceResult =
@@ -42,111 +54,21 @@ export type UseOfferingPriceResult =
   | UseOfferingPriceResultError
   | UseOfferingPriceResultSuccess;
 
-// For testing purposes right now
-const fixedPrices: Record<string, PurchasesStoreProduct> = {
-  'pro:p1m': {
-    price: 13,
-    currencyCode: 'usd',
-    priceString: '$13',
-    productCategory: 'SUBSCRIPTION',
-    defaultOption: {
-      pricingPhases: [
-        {
-          billingPeriod: { iso8601: 'P1M' },
-          recurrenceMode: 1,
-          billingCycleCount: null,
-          price: {
-            formatted: '$13',
-            amountMicros: 13000000,
-            currencyCode: 'usd',
-          },
-          offerPaymentMode: null,
-        },
-      ],
-    },
-  },
-  'pro:p1y': {
-    price: 100,
-    currencyCode: 'usd',
-    priceString: '$99',
-    productCategory: 'SUBSCRIPTION',
-    defaultOption: {
-      pricingPhases: [
-        {
-          billingPeriod: { iso8601: 'P1Y' },
-          recurrenceMode: 1,
-          billingCycleCount: null,
-          price: {
-            formatted: '$99',
-            amountMicros: 99000000,
-            currencyCode: 'usd',
-          },
-          offerPaymentMode: null,
-        },
-      ],
-    },
-  },
-  'pro:lifetime': {
-    price: 297,
-    currencyCode: 'usd',
-    priceString: '$297',
-    productCategory: 'NON_SUBSCRIPTION',
-    defaultOption: null,
-  },
-  oseh_99_1y_0d0: {
-    price: 99,
-    currencyCode: 'usd',
-    priceString: '$99',
-    productCategory: 'SUBSCRIPTION',
-    defaultOption: {
-      pricingPhases: [
-        {
-          billingPeriod: { iso8601: 'P1Y' },
-          recurrenceMode: 1,
-          billingCycleCount: null,
-          price: {
-            formatted: '$99',
-            amountMicros: 99000000,
-            currencyCode: 'usd',
-          },
-          offerPaymentMode: null,
-        },
-      ],
-    },
-  },
-  oseh_13_1m_0d0: {
-    price: 13,
-    currencyCode: 'usd',
-    priceString: '$13',
-    productCategory: 'SUBSCRIPTION',
-    defaultOption: {
-      pricingPhases: [
-        {
-          billingPeriod: { iso8601: 'P1M' },
-          recurrenceMode: 1,
-          billingCycleCount: null,
-          price: {
-            formatted: '$13',
-            amountMicros: 13000000,
-            currencyCode: 'usd',
-          },
-          offerPaymentMode: null,
-        },
-      ],
-    },
-  },
-};
-
 export const useOfferingPrice = ({
   offering: offeringVWC,
+  purchases: purchasesVWC,
 }: UseOfferingPriceProps): ValueWithCallbacks<UseOfferingPriceResult> => {
   const loginContextRaw = useContext(LoginContext);
   const result = useWritableValueWithCallbacks<UseOfferingPriceResult>(() =>
     createLoading()
   );
 
+  useEffect(() => {
+    return purchasesVWC.get().addLoadRequest();
+  }, [purchasesVWC]);
+
   useValuesWithCallbacksEffect(
-    [offeringVWC, loginContextRaw.value],
+    [offeringVWC, purchasesVWC, loginContextRaw.value],
     useCallback(() => {
       const loginContextUnch = loginContextRaw.value.get();
       if (loginContextUnch.state !== 'logged-in') {
@@ -163,6 +85,18 @@ export const useOfferingPrice = ({
 
       const offering = offeringUnch;
 
+      const purchasesUnch = purchasesVWC.get();
+      if (purchasesUnch.loaded === undefined) {
+        if (purchasesUnch.error !== null) {
+          setVWC(result, createError(purchasesUnch.error));
+        } else {
+          setVWC(result, createLoading(), (a, b) => a.type === b.type);
+        }
+        return;
+      }
+
+      const purchases = purchasesUnch as Required<typeof purchasesUnch>;
+
       let active = true;
       const cancelers = new Callbacks<undefined>();
       fetchPrices();
@@ -173,22 +107,89 @@ export const useOfferingPrice = ({
 
       async function fetchPricesInner(signal: AbortSignal | undefined) {
         signal?.throwIfAborted();
-        const pricesByPlatformProductId: Record<string, PurchasesStoreProduct> =
-          {};
+
+        const pricesByPlatformProductId: Record<
+          string,
+          { storeProduct: PurchasesStoreProduct; rcPackage: PurchasesPackage }
+        > = {};
+        let startedTryingAt = Date.now();
+        let rcOfferings: PurchasesOfferings | null = null;
+        while (rcOfferings === null) {
+          signal?.throwIfAborted();
+          try {
+            rcOfferings = await purchases.loaded.getOfferings(loginContext);
+          } catch (e) {
+            if (
+              typeof e === 'object' &&
+              e !== null &&
+              e instanceof Error &&
+              e.message.includes('purchases is currently locked')
+            ) {
+              if (Date.now() - startedTryingAt > 10000) {
+                throw e;
+              }
+              await new Promise((resolve) => setTimeout(resolve, 16));
+              continue;
+            }
+            throw e;
+          }
+        }
+        if (rcOfferings.current === null) {
+          throw new Error('RevenueCat current offering not set');
+        }
         for (const pkg of offering.offering.packages) {
+          let matchingRCProduct: {
+            storeProduct: PurchasesStoreProduct;
+            rcPackage: PurchasesPackage;
+          } | null = null;
+          for (const rcPkg of rcOfferings.current.availablePackages) {
+            if (pkg.identifier !== rcPkg.identifier) {
+              continue;
+            }
+
+            if (pkg.platformProductIdentifier !== rcPkg.product.identifier) {
+              continue;
+            }
+
+            if (Platform.OS === 'android') {
+              if (pkg.platformProductPlanIdentifier === null) {
+                throw new Error(
+                  'missing platformProductPlanIdentifier on android'
+                );
+              }
+              if (rcPkg.product.subscriptionOptions === null) {
+                continue;
+              }
+
+              let found = false;
+              for (const opt of rcPkg.product.subscriptionOptions) {
+                if (opt.id === pkg.platformProductPlanIdentifier) {
+                  found = true;
+                  break;
+                }
+              }
+              if (!found) {
+                continue;
+              }
+            }
+
+            matchingRCProduct = {
+              storeProduct: rcPkg.product,
+              rcPackage: rcPkg,
+            };
+            break;
+          }
+
           const pkgId =
             pkg.platformProductIdentifier +
             (pkg.platformProductPlanIdentifier === null
               ? ''
               : ':' + pkg.platformProductPlanIdentifier);
 
-          if (!(pkgId in fixedPrices)) {
-            throw new Error(
-              `bad package: ${JSON.stringify(pkg)} with pkgId ${pkgId}`
-            );
+          if (matchingRCProduct === null) {
+            throw new Error('No matching RevenueCat package for ' + pkgId);
           }
-
-          pricesByPlatformProductId[pkgId] = fixedPrices[pkgId];
+          pricesByPlatformProductId[pkgId] = matchingRCProduct;
         }
         setVWC(result, createSuccess(pricesByPlatformProductId));
       }
@@ -224,12 +225,13 @@ export const useOfferingPrice = ({
           if (!active) {
             return;
           }
+          console.log('error fetching prices:', e);
           setVWC(result, createError(err));
         } finally {
           cancelers.remove(doAbort);
         }
       }
-    }, [offeringVWC, loginContextRaw.value, result])
+    }, [offeringVWC, purchasesVWC, loginContextRaw.value, result])
   );
 
   return result;
@@ -248,7 +250,10 @@ const createError = (error: ReactElement): UseOfferingPriceResultError => ({
 });
 
 const createSuccess = (
-  pricesByPlatformProductId: Record<string, PurchasesStoreProduct>
+  pricesByPlatformProductId: Record<
+    string,
+    { storeProduct: PurchasesStoreProduct; rcPackage: PurchasesPackage }
+  >
 ): UseOfferingPriceResultSuccess => ({
   type: 'success',
   pricesByPlatformProductId,

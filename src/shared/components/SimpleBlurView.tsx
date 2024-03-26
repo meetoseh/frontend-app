@@ -18,23 +18,53 @@ import { useIsMounted } from '../hooks/useIsMounted';
 export type SimpleBlurViewProps = BlurViewProps & {
   captureAllowed?: ValueWithCallbacks<boolean>;
   captured?: WritableValueWithCallbacks<boolean>;
+  androidTechnique?: { type: 'blur' } | { type: 'color'; color: string };
 };
 
 export const SimpleBlurView = ({
   children,
-  captureAllowed,
-  captured,
+  androidTechnique,
   ...rest
 }: PropsWithChildren<SimpleBlurViewProps>) => {
   return Platform.select({
-    android: (
-      <AndroidCompatBlurView {...rest}>{children}</AndroidCompatBlurView>
-    ),
+    android:
+      androidTechnique?.type === 'color' ? (
+        <AndroidColorBlurView color={androidTechnique.color} {...rest}>
+          {children}
+        </AndroidColorBlurView>
+      ) : (
+        <AndroidCompatBlurViewWrapper {...rest}>
+          {children}
+        </AndroidCompatBlurViewWrapper>
+      ),
     default: (
       <DefaultCompatBlurView {...rest}>{children}</DefaultCompatBlurView>
     ),
   });
 };
+
+const AndroidCompatBlurViewWrapper = (
+  props: PropsWithChildren<SimpleBlurViewProps>
+) => {
+  const captureFailureVWC = useWritableValueWithCallbacks<boolean>(() => false);
+
+  return (
+    <RenderGuardedComponent
+      props={captureFailureVWC}
+      component={(fallback) =>
+        fallback ? (
+          <View style={props.style}>{props.children}</View>
+        ) : (
+          <AndroidCompatBlurView
+            {...props}
+            onCaptureFailure={() => setVWC(captureFailureVWC, true)}
+          />
+        )
+      }
+    />
+  );
+};
+
 /**
  * The android blur view thats available right now will blur the foreground. To
  * prevent this, this component will draw a standard view, then take the size of
@@ -46,8 +76,13 @@ const AndroidCompatBlurView = ({
   children,
   captureAllowed: captureAllowedRaw,
   captured: capturedRaw,
+  onCaptureFailure,
   ...rest
-}: PropsWithChildren<SimpleBlurViewProps>) => {
+}: PropsWithChildren<
+  SimpleBlurViewProps & {
+    onCaptureFailure: () => void;
+  }
+>) => {
   // could also test to see what happens if we pop the children in with a delay?
   const sizeVWC = useWritableValueWithCallbacks<{
     width: number;
@@ -89,6 +124,7 @@ const AndroidCompatBlurView = ({
   const allowingCapturesVWC = captureAllowedRaw ?? defaultAllowingCapturesVWC;
   useValueWithCallbacksEffect(allowingCapturesVWC, (allowing) => {
     if (!allowing) {
+      console.log('clearing capture');
       setVWC(delayingPopinVWC, true);
       setVWC(captureVWC, null);
     }
@@ -163,6 +199,13 @@ const AndroidCompatBlurView = ({
                   <ViewShot
                     onCapture={(capture) => {
                       setVWC(captureVWC, capture);
+                    }}
+                    onCaptureFailure={(e) => {
+                      console.log(
+                        'failed to capture, falling back to unblurred',
+                        e
+                      );
+                      onCaptureFailure();
                     }}
                     captureMode="mount"
                   >
@@ -252,4 +295,37 @@ const DefaultCompatBlurView = ({
     }
   }, [captureAllowedRaw, capturedRaw]);
   return <BlurView {...rest}>{children}</BlurView>;
+};
+
+const AndroidColorBlurView = ({
+  captureAllowed: captureAllowedRaw,
+  captured: capturedRaw,
+  children,
+  color,
+  ...rest
+}: PropsWithChildren<{ color: string } & SimpleBlurViewProps>) => {
+  useEffect(() => {
+    if (capturedRaw === undefined) {
+      return;
+    }
+    if (captureAllowedRaw === undefined) {
+      setVWC(capturedRaw, true);
+      return;
+    }
+    const captured = capturedRaw;
+    const captureAllowed = captureAllowedRaw;
+    captureAllowed.callbacks.add(handle);
+    handle();
+    return () => {
+      captureAllowed.callbacks.remove(handle);
+    };
+
+    function handle() {
+      setVWC(captured, captureAllowed.get());
+    }
+  }, [captureAllowedRaw, capturedRaw]);
+
+  return (
+    <View style={[rest.style, { backgroundColor: color }]}>{children}</View>
+  );
 };

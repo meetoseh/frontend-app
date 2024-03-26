@@ -14,7 +14,10 @@ import {
 } from '../../../../shared/anim/AnimationLoop';
 import { ease } from '../../../../shared/lib/Bezier';
 import { LoginContext } from '../../../../shared/contexts/LoginContext';
-import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
+import {
+  ValueWithCallbacks,
+  useWritableValueWithCallbacks,
+} from '../../../../shared/lib/Callbacks';
 import { useValuesWithCallbacksEffect } from '../../../../shared/hooks/useValuesWithCallbacksEffect';
 import { useWindowSizeValueWithCallbacks } from '../../../../shared/hooks/useWindowSize';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
@@ -32,6 +35,7 @@ import { useBotBarHeight } from '../../../../shared/hooks/useBotBarHeight';
 import { BottomNavBar } from '../../../bottomNav/BottomNavBar';
 import { SvgLinearGradientBackground } from '../../../../shared/anim/SvgLinearGradientBackground';
 import { STANDARD_DARK_BLACK_GRAY_GRADIENT_SVG } from '../../../../styling/colors';
+import { styles as bottomNavStyles } from '../../../bottomNav/BottomNavBarStyles';
 
 /**
  * Displays the home screen for the user
@@ -39,10 +43,13 @@ import { STANDARD_DARK_BLACK_GRAY_GRADIENT_SVG } from '../../../../styling/color
 export const HomeScreen = ({
   state,
   resources,
-}: FeatureComponentProps<
-  HomeScreenState,
-  HomeScreenResources
->): ReactElement => {
+  tutorial,
+}: FeatureComponentProps<HomeScreenState, HomeScreenResources> & {
+  tutorial?: {
+    step: ValueWithCallbacks<'explain_top' | 'explain_bottom'>;
+    onNextStep: () => void;
+  };
+}): ReactElement => {
   const currentDate = useMemo(() => new Date(), []);
   const greeting = useMemo(() => {
     const hour = currentDate.getHours();
@@ -345,6 +352,57 @@ export const HomeScreen = ({
     return undefined;
   });
 
+  const bottomNavHeightVWC = useWritableValueWithCallbacks<number>(
+    () => bottomNavStyles.container.minHeight
+  );
+  const overlayVWC = useWritableValueWithCallbacks<View | null>(() => null);
+  const overlayStyleVWC = useMappedValuesWithCallbacks(
+    [
+      ...(tutorial === undefined ? [] : [tutorial.step]),
+      backgroundImageVWC,
+      bottomNavHeightVWC,
+    ],
+    (): {
+      top: number | undefined;
+      bottom: number | undefined;
+      height: number | undefined;
+    } => {
+      const step = tutorial?.step?.get();
+      if (step === undefined) {
+        return { top: undefined, bottom: undefined, height: undefined };
+      }
+
+      const imgHeight = backgroundImageVWC.get();
+      const botNavHeight = bottomNavHeightVWC.get();
+
+      if (step === 'explain_bottom') {
+        return { top: 0, bottom: undefined, height: imgHeight.displayHeight };
+      } else {
+        return {
+          top: imgHeight.displayHeight,
+          bottom: botNavHeight + botBarHeight,
+          height: undefined,
+        };
+      }
+    }
+  );
+
+  useValuesWithCallbacksEffect([overlayVWC, overlayStyleVWC], () => {
+    const overlay = overlayVWC.get();
+    if (overlay === null) {
+      return undefined;
+    }
+    const style = overlayStyleVWC.get();
+    if (style === undefined) {
+      return undefined;
+    }
+
+    overlay.setNativeProps({
+      style,
+    });
+    return undefined;
+  });
+
   return (
     <View style={styles.container}>
       <View style={styles.background}>
@@ -385,14 +443,17 @@ export const HomeScreen = ({
                 <RenderGuardedComponent props={nameVWC} component={(v) => v} />!
                 👋
               </Text>
-              <View style={styles.headerProfilePicture}>
+              <Pressable
+                style={styles.headerProfilePicture}
+                onPress={() => resources.get().gotoAccount()}
+              >
                 <MyProfilePicture
                   displayWidth={32}
                   displayHeight={32}
-                  imageHandler={resources.get().imageHandler}
+                  imageHandler={state.get().imageHandler}
                   style={styles.headerProfilePictureImg}
                 />
-              </View>
+              </Pressable>
             </View>
             <Text style={styles.headerBody}>
               <RenderGuardedComponent
@@ -631,15 +692,85 @@ export const HomeScreen = ({
             />
           </View>
         </SvgLinearGradientBackground>
-        <BottomNavBar
-          active="home"
-          clickHandlers={{
-            series: () => resources.get().gotoSeries(),
-            account: () => resources.get().gotoAccount(),
+        <View
+          onLayout={(e) => {
+            const height = e.nativeEvent?.layout?.height;
+            if (height !== undefined && height !== null && height > 0) {
+              setVWC(bottomNavHeightVWC, height);
+            }
           }}
-        />
+        >
+          <BottomNavBar
+            active="home"
+            clickHandlers={{
+              series: () => resources.get().gotoSeries(),
+              account: () => resources.get().gotoAccount(),
+            }}
+          />
+        </View>
         <View style={{ width: 1, height: botBarHeight }} />
       </View>
+      {tutorial !== undefined && (
+        <View
+          style={Object.assign({}, styles.overlay, overlayStyleVWC.get())}
+          ref={(r) => setVWC(overlayVWC, r)}
+        >
+          <SimpleBlurView
+            style={styles.overlayInner}
+            intensity={20}
+            tint="dark"
+            androidTechnique={{ type: 'color', color: '#191c1db0' }}
+          >
+            <RenderGuardedComponent
+              props={tutorial.step}
+              component={(step) =>
+                step === 'explain_top' ? (
+                  <View style={[styles.tutorial, styles.tutorial1]}>
+                    <Text style={styles.tutorialTitle}>
+                      Celebrate your journey
+                    </Text>
+                    <Text style={styles.tutorialText}>
+                      Track your progress and celebrate milestones &mdash;
+                      we&rsquo;re here to cheer you on 🎉
+                    </Text>
+                    <View style={styles.tutorialControls}>
+                      <Text style={styles.tutorialProgress}>1/2</Text>
+                      <Pressable
+                        style={styles.tutorialButton}
+                        onPress={() => {
+                          tutorial?.onNextStep();
+                        }}
+                      >
+                        <Text style={styles.tutorialButtonText}>Next</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={[styles.tutorial, styles.tutorial2]}>
+                    <Text style={styles.tutorialTitle}>
+                      Your perfect class is waiting
+                    </Text>
+                    <Text style={styles.tutorialText}>
+                      Select a mood and get a tailored class just for you.
+                    </Text>
+                    <View style={styles.tutorialControls}>
+                      <Text style={styles.tutorialProgress}>2/2</Text>
+                      <Pressable
+                        style={styles.tutorialButton}
+                        onPress={() => {
+                          tutorial?.onNextStep();
+                        }}
+                      >
+                        <Text style={styles.tutorialButtonText}>Done</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                )
+              }
+            />
+          </SimpleBlurView>
+        </View>
+      )}
       <StatusBar style="light" />
     </View>
   );

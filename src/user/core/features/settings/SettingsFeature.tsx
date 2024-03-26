@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useContext } from 'react';
+import { ReactElement, useCallback, useContext, useEffect } from 'react';
 import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { Feature } from '../../models/Feature';
@@ -13,6 +13,7 @@ import { useIdentities } from './hooks/useIdentities';
 import { apiFetch } from '../../../../shared/lib/apiFetch';
 import { describeError } from '../../../../shared/lib/describeError';
 import { useFeatureFlag } from '../../../../shared/lib/useFeatureFlag';
+import { useValuesWithCallbacksEffect } from '../../../../shared/hooks/useValuesWithCallbacksEffect';
 
 /**
  * Simple link page where the user can perform some key actions, like logging out.
@@ -38,11 +39,10 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
   },
   useResources: (stateVWC, requiredVWC, allStatesVWC) => {
     const loginContextRaw = useContext(LoginContext);
-    const haveProVWC = useWritableValueWithCallbacks<boolean | undefined>(
-      () => undefined
-    );
-    const loadErrorVWC = useWritableValueWithCallbacks<ReactElement | null>(
-      () => null
+    const purchasesVWC = useMappedValueWithCallbacks(
+      allStatesVWC,
+      (s) => s.purchases,
+      { outputEqualityFn: Object.is }
     );
     const gotoEditTimesVWC = useMappedValueWithCallbacks(
       allStatesVWC,
@@ -92,77 +92,6 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
       )
     );
 
-    useValueWithCallbacksEffect(
-      requiredVWC,
-      useCallback(
-        (required: boolean) => {
-          const loginRaw = loginContextRaw.value.get();
-          if (!required || loginRaw.state !== 'logged-in') {
-            return undefined;
-          }
-          const login = loginRaw;
-
-          let active = true;
-          fetchHavePro();
-          return () => {
-            active = false;
-          };
-
-          async function fetchHaveProInner() {
-            let response = await apiFetch(
-              '/api/1/users/me/entitlements/pro',
-              {
-                method: 'GET',
-                headers: {
-                  Pragma: 'no-cache',
-                },
-              },
-              login
-            );
-            if (!active) {
-              return;
-            }
-
-            if (response.status === 429) {
-              response = await apiFetch(
-                '/api/1/users/me/entitlements/pro',
-                {
-                  method: 'GET',
-                },
-                login
-              );
-              if (!active) {
-                return;
-              }
-            }
-
-            if (!response.ok) {
-              throw response;
-            }
-
-            const data: { is_active: boolean } = await response.json();
-            if (!active) {
-              return;
-            }
-
-            setVWC(haveProVWC, data.is_active);
-          }
-
-          async function fetchHavePro() {
-            try {
-              await fetchHaveProInner();
-            } catch (e) {
-              const err = await describeError(e);
-              if (active) {
-                setVWC(loadErrorVWC, err);
-              }
-            }
-          }
-        },
-        [loginContextRaw, haveProVWC, loadErrorVWC]
-      )
-    );
-
     const confirmMergePassthroughsVWC = useMappedValueWithCallbacks(
       allStatesVWC,
       (allStates) => {
@@ -192,38 +121,37 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
       }
     );
 
+    useValueWithCallbacksEffect(
+      requiredVWC,
+      useCallback(
+        (req) => {
+          if (req) {
+            return purchasesVWC.get().addLoadRequest();
+          }
+          return undefined;
+        },
+        [purchasesVWC]
+      )
+    );
+
     const navbarVWC = useFeatureFlag('series');
 
     return useMappedValuesWithCallbacks(
       [
-        haveProVWC,
-        loadErrorVWC,
         gotoEditTimesVWC,
         identitiesVWC,
         gotoMyLibraryVWC,
         confirmMergePassthroughsVWC,
         navbarVWC,
+        purchasesVWC,
       ],
       (): SettingsResources => {
-        if (loadErrorVWC.get() !== null) {
-          return {
-            loading: false,
-            havePro: undefined,
-            identities: { type: 'loading' },
-            loadError: loadErrorVWC.get(),
-            navbar: !!navbarVWC.get(),
-            gotoEditReminderTimes: () => {},
-            gotoMyLibrary: () => {},
-            gotoSeries: () => {},
-            ...confirmMergePassthroughsVWC.get(),
-          };
-        }
-
+        const purchases = purchasesVWC.get();
         return {
           loading:
-            haveProVWC.get() === undefined ||
+            purchases.loaded === undefined ||
             identitiesVWC.get().type === 'loading',
-          havePro: haveProVWC.get(),
+          havePro: purchases.loaded?.havePro,
           loadError: null,
           navbar: !!navbarVWC.get(),
           identities: identitiesVWC.get(),
@@ -231,6 +159,22 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
           gotoMyLibrary: gotoMyLibraryVWC.get(),
           gotoSeries: () => {
             allStatesVWC.get().seriesList.setShow(true, true);
+            stateVWC.get().setShow(false, false);
+          },
+          onRestorePurchases: async () => {
+            const loginContextUnch = loginContextRaw.value.get();
+            if (loginContextUnch.state !== 'logged-in') {
+              return;
+            }
+            const ctx = loginContextUnch;
+
+            const purchases = allStatesVWC.get().purchases;
+            if (purchases.loaded !== undefined) {
+              await purchases.loaded.restorePurchases(ctx);
+            }
+          },
+          gotoManageMembership: () => {
+            allStatesVWC.get().manageMembership.setShow(true, true);
             stateVWC.get().setShow(false, false);
           },
           ...confirmMergePassthroughsVWC.get(),

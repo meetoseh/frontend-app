@@ -65,4 +65,14 @@ export type SettingsResources = {
    * the confirm merge feature.
    */
   onSecureLoginCompleted: (mergeToken: string | null) => void;
+
+  /**
+   * May be called to restore any purchases the user has made.
+   */
+  onRestorePurchases: () => Promise<void>;
+
+  /**
+   * Should be called if the user wants to go to the manage membership screen.
+   */
+  gotoManageMembership: () => void;
 };

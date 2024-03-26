@@ -1,11 +1,11 @@
-import { ReactElement } from "react";
-import { RenderGuardedComponent } from "../../../../../shared/components/RenderGuardedComponent";
+import { ReactElement } from 'react';
+import { RenderGuardedComponent } from '../../../../../shared/components/RenderGuardedComponent';
 import {
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../../../../../shared/lib/Callbacks";
-import { setVWC } from "../../../../../shared/lib/setVWC";
-import { styles } from "./SettingLinksStyles";
+} from '../../../../../shared/lib/Callbacks';
+import { setVWC } from '../../../../../shared/lib/setVWC';
+import { styles } from './SettingLinksStyles';
 import {
   Linking,
   Pressable,
@@ -14,11 +14,11 @@ import {
   TextStyle,
   View,
   ViewStyle,
-} from "react-native";
-import { useMappedValueWithCallbacks } from "../../../../../shared/hooks/useMappedValueWithCallbacks";
-import { useMappedValuesWithCallbacks } from "../../../../../shared/hooks/useMappedValuesWithCallbacks";
-import { InlineOsehSpinner } from "../../../../../shared/components/InlineOsehSpinner";
-import RightCaret from "../../requestNotificationTime/icons/RightCaret";
+} from 'react-native';
+import { useMappedValueWithCallbacks } from '../../../../../shared/hooks/useMappedValueWithCallbacks';
+import { useMappedValuesWithCallbacks } from '../../../../../shared/hooks/useMappedValuesWithCallbacks';
+import { InlineOsehSpinner } from '../../../../../shared/components/InlineOsehSpinner';
+import RightCaret from '../../requestNotificationTime/icons/RightCaret';
 
 /**
  * Describes a link that can be used within a settings link block
@@ -48,7 +48,7 @@ export type SettingLink = {
    * The text style for the link, where normal is standard white
    * text
    */
-  style?: "normal";
+  style?: 'normal';
 
   /**
    * Which icon to display on the right side of the link, if any,
@@ -56,7 +56,7 @@ export type SettingLink = {
    *
    * Defaults to 'arrow'
    */
-  action?: "arrow" | "none";
+  action?: 'arrow' | 'none';
 
   /**
    * If clicking the link should redirect the user to a new page,
@@ -183,7 +183,7 @@ const SettingLinkComponent = ({
         isSpinner ? styles.itemSpinner : undefined,
         isDisabled ? styles.itemDisabled : undefined,
         pressing ? styles.itemPressed : undefined,
-        (styles as any)["item_" + (link.style || "normal")],
+        (styles as any)['item_' + (link.style || 'normal')],
       ];
     },
     {
@@ -216,7 +216,7 @@ const SettingLinkComponent = ({
       return [
         styles.text,
         isDisabled ? styles.textDisabled : undefined,
-        (styles as any)["text_" + (link.style || "normal")],
+        (styles as any)['text_' + (link.style || 'normal')],
       ];
     }
   );
@@ -230,7 +230,7 @@ const SettingLinkComponent = ({
 
   const textVWC = useMappedValueWithCallbacks(
     linkVWC,
-    (link) => link?.text || "",
+    (link) => link?.text || '',
     { outputEqualityFn: Object.is }
   );
 
@@ -255,7 +255,7 @@ const SettingLinkComponent = ({
 
   const actionVWC = useMappedValueWithCallbacks(
     linkVWC,
-    (link): "arrow" | "none" => link?.action || "arrow",
+    (link): 'arrow' | 'none' => link?.action || 'arrow',
     { outputEqualityFn: Object.is }
   );
 
@@ -304,7 +304,7 @@ const SettingLinkComponent = ({
                   return;
                 }
 
-                if (typeof handler === "function") {
+                if (typeof handler === 'function') {
                   await handler();
                 } else {
                   await Linking.openURL(handler);
@@ -325,7 +325,7 @@ const SettingLinkComponent = ({
               {args.details !== undefined && (
                 <View style={styles.details}>
                   {args.details.map((detail, index) => (
-                    <Text key={index} style={styles.detail}>
+                    <Text key={`${index}--${detail}`} style={styles.detail}>
                       {detail}
                     </Text>
                   ))}
@@ -336,14 +336,14 @@ const SettingLinkComponent = ({
               {args.spinner ? (
                 <InlineOsehSpinner
                   size={{
-                    type: "react-rerender",
+                    type: 'react-rerender',
                     props: {
                       height: 16,
                     },
                   }}
                 />
               ) : (
-                args.action === "arrow" && <RightCaret />
+                args.action === 'arrow' && <RightCaret />
               )}
             </View>
           </Pressable>

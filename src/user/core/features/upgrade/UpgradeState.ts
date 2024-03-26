@@ -1,3 +1,4 @@
+import { InappNotification } from '../../../../shared/hooks/useInappNotification';
 import { UpgradeContext } from './UpgradeContext';
 
 /**
@@ -13,11 +14,19 @@ export type UpgradeState = {
   context: UpgradeContext | undefined | null;
 
   /**
+   * The currently loaded inapp notification, or null if none is loaded
+   */
+  ian: InappNotification | null;
+
+  /**
    * Can be called to set the context for the upgrade screen if it's
    * not loading.
    * @param context The context to set
    * @param updateWindowHistory true if the window history should be
    *   updated, false otherwise.
    */
-  setContext: (context: UpgradeContext | null, updateWindowHistory: boolean) => void;
+  setContext: (
+    context: UpgradeContext | null,
+    updateWindowHistory: boolean
+  ) => void;
 };

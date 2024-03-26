@@ -2,6 +2,7 @@ import { InappNotificationSession } from '../../../../shared/hooks/useInappNotif
 import { OsehImageStateRequestHandler } from '../../../../shared/images/useOsehImageStateRequestHandler';
 import { UseRevenueCatOfferingsResult } from './hooks/useRevenueCatOfferings';
 import { UseOfferingPriceResult } from './hooks/useOfferingPrice';
+import { PurchasesState } from '../purchases/PurchasesState';
 
 export type UpgradeResources = {
   /**
@@ -25,6 +26,11 @@ export type UpgradeResources = {
    * The price of the offer we are presenting
    */
   offerPrice: UseOfferingPriceResult;
+
+  /**
+   * The purchases state, for actually subscribing
+   */
+  purchases: PurchasesState;
 
   /**
    * The image handler we use for series previews; by storing this here,

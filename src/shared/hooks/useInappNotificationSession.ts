@@ -122,7 +122,9 @@ export const useInappNotificationSessionValueWithCallbacks = (
           const userSub = login.userAttributes.sub;
 
           if (session !== null) {
-            throw new Error('Session already started');
+            // erroring here is very annoying in development as it leads to a popup
+            // on every save
+            return Promise.resolve(session.sessionUid);
           }
 
           if (sessionPromiseRef.current === null) {

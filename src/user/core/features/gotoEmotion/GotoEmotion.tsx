@@ -140,7 +140,7 @@ export const GotoEmotion = ({
               <></>
             ) : (
               <FilledPremiumButton
-                onPress={() => resources.get().onTakeFreeJourney()}
+                onPress={() => resources.get().onTakePremiumJourney()}
                 setTextStyle={(s) => setVWC(premiumClassTextStyleVWC, s)}
                 width={contentWidth}
               >

@@ -38,6 +38,7 @@ import { useWindowSizeValueWithCallbacks } from '../../../../shared/hooks/useWin
 import { useValuesWithCallbacksEffect } from '../../../../shared/hooks/useValuesWithCallbacksEffect';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { useTopBarHeight } from '../../../../shared/hooks/useTopBarHeight';
+import { describeError } from '../../../../shared/lib/describeError';
 
 /**
  * Shows a basic settings screen for the user. Requires a login context and a modal
@@ -99,9 +100,25 @@ export const Settings = ({
     })
   );
 
+  const haveProVWC = useMappedValueWithCallbacks(resources, (r) => r.havePro);
+  const manageMembershipLink = useMappedValueWithCallbacks(
+    haveProVWC,
+    (havePro): SettingLink | null =>
+      havePro
+        ? {
+            text: 'Manage Membership',
+            key: 'manage-membership',
+            onClick: () => {
+              resources.get().gotoManageMembership();
+              return undefined;
+            },
+          }
+        : null
+  );
+
   const accountLinks = useMemo(
-    () => [myLibraryLink, logoutLink],
-    [myLibraryLink, logoutLink]
+    () => [myLibraryLink, manageMembershipLink, logoutLink],
+    [myLibraryLink, manageMembershipLink, logoutLink]
   );
 
   const remindersLink = useWritableValueWithCallbacks(
@@ -152,15 +169,35 @@ export const Settings = ({
     })
   );
 
+  const restorePurchasesErrorVWC =
+    useWritableValueWithCallbacks<ReactElement | null>(() => null);
+  useErrorModal(modals, restorePurchasesErrorVWC, 'restore-purchases');
+  const restorePurchasesLink = useMappedValueWithCallbacks(
+    useMappedValueWithCallbacks(resources, (r) => r.havePro),
+    (havePro: boolean | undefined): SettingLink => ({
+      text: 'Restore Purchases',
+      details: havePro
+        ? ['Currently have Oseh+ access']
+        : ['No Oseh+ access currently'],
+      key: 'restore-purchases',
+      onClick: async () => {
+        await resources.get().onRestorePurchases();
+        return undefined;
+      },
+    })
+  );
+
   const supportLinks = useMemo(
     () => [
       contactSupportLink,
+      restorePurchasesLink,
       privacyPolicyLink,
       termsAndConditionsLink,
       deleteAccountLink,
     ],
     [
       contactSupportLink,
+      restorePurchasesLink,
       privacyPolicyLink,
       termsAndConditionsLink,
       deleteAccountLink,
@@ -300,7 +337,12 @@ export const Settings = ({
         }
 
         return (
-          <View style={styles.container} ref={(r) => setVWC(containerRef, r)}>
+          <View
+            style={Object.assign({}, styles.container, {
+              minHeight: windowSizeVWC.get().height,
+            })}
+            ref={(r) => setVWC(containerRef, r)}
+          >
             <SvgLinearGradientBackground
               state={{
                 type: 'react-rerender',

@@ -29,7 +29,7 @@ export const useUnwrappedValueWithCallbacks = <T>(
   const equalityFnRef = useRef(equalityFn ?? defaultEqualityFn);
   equalityFnRef.current = equalityFn ?? defaultEqualityFn;
 
-  const [value, setValue] = useState<T>(original.get());
+  const [value, setValue] = useState<T>(() => original.get());
   const setRerenderCounter = useState(0)[1];
 
   let currentValue = useRef<T>(notSet as any) as MutableRefObject<T>;
@@ -55,7 +55,7 @@ export const useUnwrappedValueWithCallbacks = <T>(
 
       if (!equalityFnRef.current(newValue, currentValue.current)) {
         if (applyInstantly) {
-          setValue(newValue);
+          setValue(() => newValue);
           setRerenderCounter((c) => c + 1);
           currentValue.current = newValue;
         } else {
@@ -68,7 +68,7 @@ export const useUnwrappedValueWithCallbacks = <T>(
               !equalityFnRef.current(setTo, currentValue.current)
             ) {
               currentValue.current = setTo;
-              setValue(setTo);
+              setValue(() => setTo);
               setRerenderCounter((c) => c + 1);
             }
           });

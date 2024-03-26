@@ -23,6 +23,11 @@ import { UpgradeFeature } from '../features/upgrade/UpgradeFeature';
 import { HomeScreenFeature } from '../features/homeScreen/HomeScreenFeature';
 import { GotoEmotionFeature } from '../features/gotoEmotion/GotoEmotionFeature';
 import { WelcomeVideoFeature } from '../features/welcomeVideo/WelcomeVideoFeature';
+import { GoalCategoriesFeature } from '../features/goalCategories/GoalCategoriesFeature';
+import { AgeFeature } from '../features/age/AgeFeature';
+import { HomeScreenTutorialFeature } from '../features/homeScreenTutorial/HomeScreenTutorialFeature';
+import { PurchasesFeature } from '../features/purchases/PurchasesFeature';
+import { ManageMembershipFeature } from '../features/manageMembership/ManageMembershipFeature';
 
 const features = [
   LoginFeature,
@@ -30,14 +35,18 @@ const features = [
   ConfirmMergeAccountFeature,
   MergeAccountFeature,
   WelcomeVideoFeature,
+  GoalCategoriesFeature,
+  AgeFeature,
   SignupRewardFeature,
   AppNotifsFeature,
   RequestPhoneFeature,
   RequestNotificationTimeFeature,
   GoalDaysPerWeekFeature,
-  SingleJourneyFeature,
-  FavoritesFeature,
   UpgradeFeature,
+  HomeScreenTutorialFeature,
+  SingleJourneyFeature,
+  ManageMembershipFeature,
+  FavoritesFeature,
   SeriesDetailsFeature,
   SeriesPreviewFeature,
   SeriesListFeature,
@@ -45,6 +54,7 @@ const features = [
   GotoEmotionFeature,
   HomeScreenFeature,
   PickEmotionJourneyFeature,
+  PurchasesFeature,
 ];
 
 /**
