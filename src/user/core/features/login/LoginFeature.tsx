@@ -79,11 +79,7 @@ export const LoginFeature: Feature<LoginState, LoginResources> = {
         const windowSize = windowSizeVWC.get();
 
         return {
-          uid: !load
-            ? null
-            : windowSize.width < 450
-            ? 'oseh_if_ds8R1NIo4ch3pD7vBRT2cg'
-            : 'oseh_if_hH68hcmVBYHanoivLMgstg',
+          uid: !load ? null : 'oseh_if_NOA1u2xYanYQlA8rdpPEQQ',
           jwt: null,
           displayWidth: windowSize.width,
           displayHeight: windowSize.height,

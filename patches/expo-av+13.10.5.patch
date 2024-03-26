@@ -1,0 +1,81 @@
+diff --git a/node_modules/expo-av/ios/EXAV/EXAudioRecordingPermissionRequester.m b/node_modules/expo-av/ios/EXAV/EXAudioRecordingPermissionRequester.m
+index 117074c..1ab0fd0 100644
+--- a/node_modules/expo-av/ios/EXAV/EXAudioRecordingPermissionRequester.m
++++ b/node_modules/expo-av/ios/EXAV/EXAudioRecordingPermissionRequester.m
+@@ -3,7 +3,7 @@
+ #import <EXAV/EXAudioRecordingPermissionRequester.h>
+ #import <ExpoModulesCore/EXDefines.h>
+ 
+-#import <AVFoundation/AVFoundation.h>
++// #import <AVFoundation/AVFoundation.h>
+ 
+ @implementation EXAudioRecordingPermissionRequester
+ 
+@@ -14,27 +14,29 @@
+ 
+ - (NSDictionary *)getPermissions
+ {
+-  AVAudioSessionRecordPermission systemStatus;
++  // AVAudioSessionRecordPermission systemStatus;
+   EXPermissionStatus status;
+ 
+-  NSString *microphoneUsageDescription = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"NSMicrophoneUsageDescription"];
+-  if (!microphoneUsageDescription) {
+-    EXFatal(EXErrorWithMessage(@"This app is missing NSMicrophoneUsageDescription, so audio services will fail. Add one of these keys to your bundle's Info.plist."));
+-    systemStatus = AVAudioSessionRecordPermissionDenied;
+-  } else {
+-    systemStatus = [[AVAudioSession sharedInstance] recordPermission];
+-  }
+-  switch (systemStatus) {
+-    case AVAudioSessionRecordPermissionGranted:
+-      status = EXPermissionStatusGranted;
+-      break;
+-    case AVAudioSessionRecordPermissionDenied:
+-      status = EXPermissionStatusDenied;
+-      break;
+-    case AVAudioSessionRecordPermissionUndetermined:
+-      status = EXPermissionStatusUndetermined;
+-      break;
+-  }
++  // NSString *microphoneUsageDescription = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"NSMicrophoneUsageDescription"];
++  // if (!microphoneUsageDescription) {
++  //   EXFatal(EXErrorWithMessage(@"This app is missing NSMicrophoneUsageDescription, so audio services will fail. Add one of these keys to your bundle's Info.plist."));
++  //   systemStatus = AVAudioSessionRecordPermissionDenied;
++  // } else {
++  //   systemStatus = [[AVAudioSession sharedInstance] recordPermission];
++  // }
++  // switch (systemStatus) {
++  //   case AVAudioSessionRecordPermissionGranted:
++  //     status = EXPermissionStatusGranted;
++  //     break;
++  //   case AVAudioSessionRecordPermissionDenied:
++  //     status = EXPermissionStatusDenied;
++  //     break;
++  //   case AVAudioSessionRecordPermissionUndetermined:
++  //     status = EXPermissionStatusUndetermined;
++  //     break;
++  // }
++
++  status = EXPermissionStatusDenied;
+ 
+   return @{
+     @"status": @(status)
+@@ -43,11 +45,12 @@
+ 
+ - (void)requestPermissionsWithResolver:(EXPromiseResolveBlock)resolve rejecter:(EXPromiseRejectBlock)reject
+ {
+-  EX_WEAKIFY(self)
+-  [[AVAudioSession sharedInstance] requestRecordPermission:^(BOOL granted) {
+-    EX_STRONGIFY(self)
+-    resolve([self getPermissions]);
+-  }];
++  // EX_WEAKIFY(self)
++  // [[AVAudioSession sharedInstance] requestRecordPermission:^(BOOL granted) {
++  //   EX_STRONGIFY(self)
++  //   resolve([self getPermissions]);
++  // }];
++  resolve([self getPermissions]);
+ }
+ 
+ @end
+\ No newline at end of file
