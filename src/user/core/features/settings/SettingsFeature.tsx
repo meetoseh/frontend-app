@@ -134,15 +134,12 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
       )
     );
 
-    const navbarVWC = useFeatureFlag('series');
-
     return useMappedValuesWithCallbacks(
       [
         gotoEditTimesVWC,
         identitiesVWC,
         gotoMyLibraryVWC,
         confirmMergePassthroughsVWC,
-        navbarVWC,
         purchasesVWC,
       ],
       (): SettingsResources => {
@@ -153,7 +150,6 @@ export const SettingsFeature: Feature<SettingsState, SettingsResources> = {
             identitiesVWC.get().type === 'loading',
           havePro: purchases.loaded?.havePro,
           loadError: null,
-          navbar: !!navbarVWC.get(),
           identities: identitiesVWC.get(),
           gotoEditReminderTimes: gotoEditTimesVWC.get(),
           gotoMyLibrary: gotoMyLibraryVWC.get(),

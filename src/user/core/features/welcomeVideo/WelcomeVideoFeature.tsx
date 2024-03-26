@@ -27,35 +27,22 @@ export const WelcomeVideoFeature: Feature<
 > = {
   identifier: 'welcomeVideo',
   useWorldState: () => {
-    const enabledVWC = useFeatureFlag('series');
     const ian = useInappNotificationValueWithCallbacks({
-      type: 'callbacks',
-      props: () => ({
+      type: 'react-rerender',
+      props: {
         uid: 'oseh_ian_Ua7cSqwMg3atEEG4sf1R5w',
-        suppress: !enabledVWC.get(),
-      }),
-      callbacks: enabledVWC.callbacks,
+        suppress: false,
+      },
     });
 
-    return useMappedValuesWithCallbacks([enabledVWC, ian], () => {
-      const enabled = enabledVWC.get();
+    return useMappedValuesWithCallbacks([ian], () => {
       return {
-        enabled: enabled === undefined ? false : enabled,
         ian: ian.get(),
       };
     });
   },
   isRequired: (state) => {
-    if (state.enabled === null) {
-      return undefined;
-    }
-    if (!state.enabled) {
-      return false;
-    }
-    if (state.ian === null) {
-      return undefined;
-    }
-    return state.ian.showNow;
+    return state.ian?.showNow;
   },
   useResources: (stateVWC, requiredVWC) => {
     const imageHandler = useOsehImageStateRequestHandler({});

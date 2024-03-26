@@ -15,36 +15,28 @@ export const HomeScreenTutorialFeature: Feature<
 > = {
   identifier: 'homeScreenTutorial',
   useWorldState: () => {
-    const enabledVWC = useFeatureFlag('series');
     const ian = useInappNotificationValueWithCallbacks({
-      type: 'callbacks',
-      props: () => ({ uid: 'oseh_ian_8bGx8_3WK_tF5t-1hmvMzw', suppress: !enabledVWC.get() }),
-      callbacks: enabledVWC.callbacks,
+      type: 'react-rerender',
+      props: { uid: 'oseh_ian_8bGx8_3WK_tF5t-1hmvMzw', suppress: false },
     });
 
-    return useMappedValuesWithCallbacks([enabledVWC, ian], (): HomeScreenTutorialState => {
-      const enabled = enabledVWC.get();
+    return useMappedValuesWithCallbacks([ian], (): HomeScreenTutorialState => {
       return {
-        enabled: enabled === undefined ? false : enabled,
         ian: ian.get(),
       };
     });
   },
   isRequired: (state) => {
-    if (state.enabled === null) {
-      return undefined;
-    }
-
-    if (!state.enabled) {
-      return false;
-    }
-
     return state.ian?.showNow;
   },
   useResources: (stateVWC, requiredVWC, allStatesVWC) => {
-    const homeScreenStateVWC = useMappedValueWithCallbacks(allStatesVWC, (s) => s.homeScreen, {
-      outputEqualityFn: Object.is,
-    });
+    const homeScreenStateVWC = useMappedValueWithCallbacks(
+      allStatesVWC,
+      (s) => s.homeScreen,
+      {
+        outputEqualityFn: Object.is,
+      }
+    );
     const backgroundImageStateVWC = useHomeScreenImage({
       requiredVWC,
       imageHandler: homeScreenStateVWC.get().imageHandler,
@@ -73,5 +65,7 @@ export const HomeScreenTutorialFeature: Feature<
       }
     );
   },
-  component: (state, resources) => <HomeScreenTutorial state={state} resources={resources} />,
+  component: (state, resources) => (
+    <HomeScreenTutorial state={state} resources={resources} />
+  ),
 };

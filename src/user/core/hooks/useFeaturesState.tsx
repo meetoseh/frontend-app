@@ -2,14 +2,12 @@ import { ReactElement, useCallback, useRef } from 'react';
 import { FeatureAllStates } from '../models/FeatureAllStates';
 import { RequestNameFeature } from '../features/requestName/RequestNameFeature';
 import { LoginFeature } from '../features/login/LoginFeature';
-import { PickEmotionJourneyFeature } from '../features/pickEmotionJourney/PickEmotionJourneyFeature';
 import { useMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValueWithCallbacks';
 import { useMappedValuesWithCallbacks } from '../../../shared/hooks/useMappedValuesWithCallbacks';
 import { ValueWithCallbacks } from '../../../shared/lib/Callbacks';
 import { FavoritesFeature } from '../features/favorites/FavoritesFeature';
 import { SettingsFeature } from '../features/settings/SettingsFeature';
 import { AppNotifsFeature } from '../features/appNotifs/AppNotifsFeature';
-import { SignupRewardFeature } from '../features/signupReward/SignupRewardFeature';
 import { GoalDaysPerWeekFeature } from '../features/goalDaysPerWeek/GoalDaysPerWeekFeature';
 import { RequestPhoneFeature } from '../features/requestPhone/RequestPhoneFeature';
 import { RequestNotificationTimeFeature } from '../features/requestNotificationTime/RequestNotificationTimeFeature';
@@ -37,7 +35,6 @@ const features = [
   WelcomeVideoFeature,
   GoalCategoriesFeature,
   AgeFeature,
-  SignupRewardFeature,
   GoalDaysPerWeekFeature,
   AppNotifsFeature,
   RequestPhoneFeature,
@@ -53,7 +50,6 @@ const features = [
   SettingsFeature,
   GotoEmotionFeature,
   HomeScreenFeature,
-  PickEmotionJourneyFeature,
   PurchasesFeature,
 ];
 

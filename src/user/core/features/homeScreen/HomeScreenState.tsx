@@ -14,12 +14,6 @@ export type HomeScreenSessionInfo = {
  */
 export type HomeScreenState = {
   /**
-   * True if the feature flag for the new home screen is enabled, false otherwise.
-   * This will be removed once the new home screen is fully launched.
-   */
-  enabled: boolean;
-
-  /**
    * The image handler, which we expose here for the home screen tutorial
    * since it will essentially load the same assets, and this allows them
    * to be reused here.

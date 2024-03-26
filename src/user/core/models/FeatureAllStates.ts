@@ -10,7 +10,6 @@ import { HomeScreenTutorialState } from '../features/homeScreenTutorial/HomeScre
 import { LoginState } from '../features/login/LoginState';
 import { ManageMembershipState } from '../features/manageMembership/ManageMembershipState';
 import { MergeAccountState } from '../features/mergeAccount/MergeAccountState';
-import { PickEmotionJourneyState } from '../features/pickEmotionJourney/PickEmotionJourneyState';
 import { PurchasesState } from '../features/purchases/PurchasesState';
 import { RequestNameState } from '../features/requestName/RequestNameState';
 import { RequestNotificationTimeState } from '../features/requestNotificationTime/RequestNotificationTimeState';
@@ -19,7 +18,6 @@ import { SeriesDetailsState } from '../features/seriesDetails/SeriesDetailsState
 import { SeriesListState } from '../features/seriesList/SeriesListState';
 import { SeriesPreviewState } from '../features/seriesPreview/SeriesPreviewState';
 import { SettingsState } from '../features/settings/SettingsState';
-import { SignupRewardState } from '../features/signupReward/SignupRewardState';
 import { SingleJourneyState } from '../features/singleJourney/SingleJourneyState';
 import { UpgradeState } from '../features/upgrade/UpgradeState';
 import { WelcomeVideoState } from '../features/welcomeVideo/WelcomeVideoState';
@@ -28,10 +26,8 @@ export type FeatureAllStates = {
   login: LoginState;
   favorites: FavoritesState;
   requestName: RequestNameState;
-  pickEmotionJourney: PickEmotionJourneyState;
   settings: SettingsState;
   appNotifs: AppNotifsState;
-  signupReward: SignupRewardState;
   goalDaysPerWeek: GoalDaysPerWeekState;
   requestPhone: RequestPhoneState;
   requestNotificationTime: RequestNotificationTimeState;

@@ -13,26 +13,22 @@ import { AgeState } from './AgeState';
 export const AgeFeature: Feature<AgeState, AgeResources> = {
   identifier: 'age',
   useWorldState: () => {
-    const enabledVWC = useFeatureFlag('series');
     const forcedVWC = useWritableValueWithCallbacks(() => false);
     const ian = useInappNotificationValueWithCallbacks({
-      type: 'callbacks',
-      props: () => ({ uid: 'oseh_ian_xRWoSM6A_F7moeaYSpcaaQ', suppress: !enabledVWC.get() }),
-      callbacks: enabledVWC.callbacks,
+      type: 'react-rerender',
+      props: { uid: 'oseh_ian_xRWoSM6A_F7moeaYSpcaaQ', suppress: false },
     });
 
     // prevents us from flashing the screen under certain network errors
     useValueWithCallbacksEffect(ian, (ian) => {
-      if (ian !== null && enabledVWC.get() && ian.showNow) {
+      if (ian !== null && ian.showNow) {
         setVWC(forcedVWC, true);
       }
       return undefined;
     });
 
-    return useMappedValuesWithCallbacks([enabledVWC, forcedVWC, ian], (): AgeState => {
-      const enabled = enabledVWC.get();
+    return useMappedValuesWithCallbacks([forcedVWC, ian], (): AgeState => {
       return {
-        enabled: enabled === undefined ? false : enabled,
         forced: forcedVWC.get(),
         ian: ian.get(),
         setForced: (v) => setVWC(forcedVWC, v),
@@ -40,12 +36,6 @@ export const AgeFeature: Feature<AgeState, AgeResources> = {
     });
   },
   isRequired: (state) => {
-    if (state.enabled === null) {
-      return undefined;
-    }
-    if (!state.enabled) {
-      return false;
-    }
     return state.forced || state.ian?.showNow;
   },
   useResources: (stateVWC, requiredVWC, allStatesVWC) => {

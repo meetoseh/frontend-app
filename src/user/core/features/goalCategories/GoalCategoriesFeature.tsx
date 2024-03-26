@@ -10,42 +10,38 @@ import { GoalCategories } from './GoalCategories';
 import { GoalCategoriesResources } from './GoalCategoriesResources';
 import { GoalCategoriesState } from './GoalCategoriesState';
 
-export const GoalCategoriesFeature: Feature<GoalCategoriesState, GoalCategoriesResources> = {
+export const GoalCategoriesFeature: Feature<
+  GoalCategoriesState,
+  GoalCategoriesResources
+> = {
   identifier: 'goalCategories',
   useWorldState: () => {
-    const enabledVWC = useFeatureFlag('series');
     const forcedVWC = useWritableValueWithCallbacks(() => false);
     const ian = useInappNotificationValueWithCallbacks({
-      type: 'callbacks',
-      props: () => ({ uid: 'oseh_ian_8SptGFOfn3GfFOqA_dHsjA', suppress: !enabledVWC.get() }),
-      callbacks: enabledVWC.callbacks,
+      type: 'react-rerender',
+      props: { uid: 'oseh_ian_8SptGFOfn3GfFOqA_dHsjA', suppress: false },
     });
 
     // prevents us from flashing the screen under certain network errors
     useValueWithCallbacksEffect(ian, (ian) => {
-      if (ian !== null && enabledVWC.get() && ian.showNow) {
+      if (ian !== null && ian.showNow) {
         setVWC(forcedVWC, true);
       }
       return undefined;
     });
 
-    return useMappedValuesWithCallbacks([enabledVWC, forcedVWC, ian], (): GoalCategoriesState => {
-      const enabled = enabledVWC.get();
-      return {
-        enabled: enabled === undefined ? false : enabled,
-        forced: forcedVWC.get(),
-        ian: ian.get(),
-        setForced: (v) => setVWC(forcedVWC, v),
-      };
-    });
+    return useMappedValuesWithCallbacks(
+      [forcedVWC, ian],
+      (): GoalCategoriesState => {
+        return {
+          forced: forcedVWC.get(),
+          ian: ian.get(),
+          setForced: (v) => setVWC(forcedVWC, v),
+        };
+      }
+    );
   },
   isRequired: (state) => {
-    if (state.enabled === null) {
-      return undefined;
-    }
-    if (!state.enabled) {
-      return false;
-    }
     return state.forced || state.ian?.showNow;
   },
   useResources: (stateVWC, requiredVWC, allStatesVWC) => {
@@ -64,5 +60,7 @@ export const GoalCategoriesFeature: Feature<GoalCategoriesState, GoalCategoriesR
       },
     }));
   },
-  component: (state, resources) => <GoalCategories state={state} resources={resources} />,
+  component: (state, resources) => (
+    <GoalCategories state={state} resources={resources} />
+  ),
 };

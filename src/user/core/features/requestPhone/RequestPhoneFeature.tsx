@@ -120,7 +120,7 @@ export const RequestPhoneFeature: Feature<
     }
 
     return (
-      allStates.pickEmotionJourney.classesTakenThisSession > 0 &&
+      allStates.homeScreen.sessionInfo.classesTaken > 0 &&
       worldState.onboardingPhoneNumberIAN.showNow
     );
   },

@@ -373,49 +373,27 @@ export const Settings = ({
                       {Constants.expoConfig?.version || 'development'}
                     </Text>
                   </View>
-                  <RenderGuardedComponent
-                    props={useMappedValueWithCallbacks(
-                      resources,
-                      (r) => r.navbar
-                    )}
-                    component={(navbar) =>
-                      !navbar ? (
-                        <></>
-                      ) : (
-                        <View
-                          style={{
-                            height:
-                              bottomNavBarStyles.container.minHeight +
-                              botBarHeight,
-                          }}
-                        />
-                      )
-                    }
+                  <View
+                    style={{
+                      height:
+                        bottomNavBarStyles.container.minHeight + botBarHeight,
+                    }}
                   />
                 </View>
               </FullscreenView>
-              <RenderGuardedComponent
-                props={useMappedValueWithCallbacks(resources, (r) => r.navbar)}
-                component={(navbar) =>
-                  !navbar ? (
-                    <></>
-                  ) : (
-                    <View
-                      style={Object.assign({}, styles.bottomNav, {
-                        bottom: styles.bottomNav.bottom + botBarHeight,
-                      })}
-                    >
-                      <BottomNavBar
-                        active="account"
-                        clickHandlers={{
-                          home: () => state.get().setShow(false, true),
-                          series: () => resources.get().gotoSeries(),
-                        }}
-                      />
-                    </View>
-                  )
-                }
-              />
+              <View
+                style={Object.assign({}, styles.bottomNav, {
+                  bottom: styles.bottomNav.bottom + botBarHeight,
+                })}
+              >
+                <BottomNavBar
+                  active="account"
+                  clickHandlers={{
+                    home: () => state.get().setShow(false, true),
+                    series: () => resources.get().gotoSeries(),
+                  }}
+                />
+              </View>
             </SvgLinearGradientBackground>
             <ModalsOutlet modals={modals} />
             <StatusBar style="light" />

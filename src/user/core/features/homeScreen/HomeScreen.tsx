@@ -5,7 +5,6 @@ import { HomeScreenState } from './HomeScreenState';
 import { View, Text, Platform, Pressable, ScrollView } from 'react-native';
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
 import { setVWC } from '../../../../shared/lib/setVWC';
-import { Emotion } from '../pickEmotionJourney/Emotion';
 import { useAnimationTargetAndRendered } from '../../../../shared/anim/useAnimationTargetAndRendered';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
 import {
@@ -36,6 +35,7 @@ import { BottomNavBar } from '../../../bottomNav/BottomNavBar';
 import { SvgLinearGradientBackground } from '../../../../shared/anim/SvgLinearGradientBackground';
 import { STANDARD_DARK_BLACK_GRAY_GRADIENT_SVG } from '../../../../styling/colors';
 import { styles as bottomNavStyles } from '../../../bottomNav/BottomNavBarStyles';
+import { Emotion } from '../../../../shared/models/Emotion';
 
 /**
  * Displays the home screen for the user

@@ -8,7 +8,6 @@ import { JourneyLobbyScreen } from './screens/JourneyLobbyScreen';
 import { JourneyStartScreen } from './screens/JourneyStartScreen';
 import { Journey } from './screens/Journey';
 import { JourneyFeedbackScreen } from './screens/JourneyFeedbackScreen';
-import { JourneyPostScreen } from './screens/JourneyPostScreen';
 
 type JourneyRouterProps = {
   /**
@@ -43,12 +42,7 @@ type JourneyRouterProps = {
   } | null;
 };
 
-export type JourneyRouterScreenId =
-  | 'lobby'
-  | 'start'
-  | 'journey'
-  | 'feedback'
-  | 'post';
+export type JourneyRouterScreenId = 'lobby' | 'start' | 'journey' | 'feedback';
 
 export const JourneyRouter = ({
   journey,
@@ -127,10 +121,6 @@ export const JourneyRouter = ({
 
   if (screen === 'feedback') {
     return <JourneyFeedbackScreen {...screenProps} />;
-  }
-
-  if (screen === 'post') {
-    return <JourneyPostScreen {...screenProps} />;
   }
 
   return handleUnknownScreen(screen);

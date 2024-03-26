@@ -11,7 +11,6 @@ import { JourneyLobbyScreen } from '../../../journey/screens/JourneyLobbyScreen'
 import { JourneyStartScreen } from '../../../journey/screens/JourneyStartScreen';
 import { Journey } from '../../../journey/screens/Journey';
 import { JourneyFeedbackScreen } from '../../../journey/screens/JourneyFeedbackScreen';
-import { JourneyPostScreen } from '../../../journey/screens/JourneyPostScreen';
 
 export const SingleJourney = ({
   state,
@@ -108,10 +107,6 @@ export const SingleJourney = ({
 
         if (screen === 'feedback') {
           return <JourneyFeedbackScreen {...screenProps} />;
-        }
-
-        if (screen === 'post') {
-          return <JourneyPostScreen {...screenProps} />;
         }
 
         ((s: never) => {

@@ -91,7 +91,7 @@ export const JourneyFeedbackScreen = ({
   journey,
   shared,
   takeAnother,
-  setScreen,
+  onJourneyFinished,
 }: JourneyScreenProps): ReactElement => {
   const modals = useWritableValueWithCallbacks<Modals>(() => []);
   const loginContextRaw = useContext(LoginContext);
@@ -252,8 +252,8 @@ export const JourneyFeedbackScreen = ({
 
   const onContinue = useCallback(() => {
     storeResponse();
-    setScreen('post', true);
-  }, [setScreen, storeResponse]);
+    onJourneyFinished(true);
+  }, [onJourneyFinished, storeResponse]);
 
   const onTakeAnother = useCallback(() => {
     storeResponse();

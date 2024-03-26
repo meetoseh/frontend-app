@@ -12,18 +12,17 @@ import { HomeScreenResources } from './HomeScreenResources';
 import { HomeScreenSessionInfo, HomeScreenState } from './HomeScreenState';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
 import { HomeScreen } from './HomeScreen';
-import { Emotion } from '../pickEmotionJourney/Emotion';
 import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { apiFetch } from '../../../../shared/lib/apiFetch';
 import { convertUsingMapper } from '../../../../shared/lib/CrudFetcher';
 import { useHomeScreenImage } from './hooks/useHomeScreenImage';
+import { Emotion } from '../../../../shared/models/Emotion';
 
 export const HomeScreenFeature: Feature<HomeScreenState, HomeScreenResources> =
   {
     identifier: 'homeScreen',
     useWorldState: () => {
-      const enabledVWC = useFeatureFlag('series');
       const streakInfoVWC = useNetworkResponse<StreakInfo>(
         (active, loginContext) => {
           return adaptActiveVWCToAbortSignal(active, async (signal) => {
@@ -60,9 +59,8 @@ export const HomeScreenFeature: Feature<HomeScreenState, HomeScreenResources> =
       const imageHandler = useOsehImageStateRequestHandler({});
 
       return useMappedValuesWithCallbacks(
-        [enabledVWC, streakInfoVWC, sessionInfoVWC],
+        [streakInfoVWC, sessionInfoVWC],
         () => ({
-          enabled: !!enabledVWC.get(),
           streakInfo: streakInfoVWC.get(),
           sessionInfo: sessionInfoVWC.get(),
           imageHandler,
@@ -76,7 +74,7 @@ export const HomeScreenFeature: Feature<HomeScreenState, HomeScreenResources> =
         })
       );
     },
-    isRequired: (worldState) => worldState.enabled,
+    isRequired: () => true,
     useResources: (stateVWC, requiredVWC, allStatesVWC) => {
       const imageHandler = stateVWC.get().imageHandler;
       const loadPrevented = useMappedValueWithCallbacks(requiredVWC, (r) => !r);

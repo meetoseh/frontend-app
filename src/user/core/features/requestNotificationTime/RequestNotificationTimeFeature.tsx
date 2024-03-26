@@ -380,7 +380,7 @@ export const RequestNotificationTimeFeature: Feature<
       return true;
     }
 
-    if (allStates.pickEmotionJourney.classesTakenThisSession < 1) {
+    if (allStates.homeScreen.sessionInfo.classesTaken < 1) {
       return false;
     }
 
