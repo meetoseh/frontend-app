@@ -112,7 +112,7 @@ const initialize = async (
 
     const apiKey = Platform.select({
       ios: 'appl_iUUQsQeQYmaFsfylOIVhryaoUNa',
-      android: 'appl_iUUQsQeQYmaFsfylOIVhryaoUNa',
+      android: 'goog_ykJYeTeXNtUcUZkeqfTOxGTBicI',
       default: undefined,
     });
     if (apiKey === undefined) {
@@ -308,7 +308,6 @@ const getOfferings = async (
   }
 
   hidden.locked = true;
-  console.trace('getting offerings');
   try {
     return await Purchases.getOfferings();
   } catch (e) {

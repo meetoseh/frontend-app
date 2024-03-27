@@ -147,28 +147,32 @@ export const useOfferingPrice = ({
               continue;
             }
 
-            if (pkg.platformProductIdentifier !== rcPkg.product.identifier) {
-              continue;
-            }
-
             if (Platform.OS === 'android') {
               if (pkg.platformProductPlanIdentifier === null) {
                 throw new Error(
                   'missing platformProductPlanIdentifier on android'
                 );
               }
-              if (rcPkg.product.subscriptionOptions === null) {
+
+              if (rcPkg.product.defaultOption === null) {
+                throw new Error('missing defaultOption on android');
+              }
+
+              if (
+                pkg.platformProductPlanIdentifier !==
+                rcPkg.product.defaultOption.id
+              ) {
                 continue;
               }
 
-              let found = false;
-              for (const opt of rcPkg.product.subscriptionOptions) {
-                if (opt.id === pkg.platformProductPlanIdentifier) {
-                  found = true;
-                  break;
-                }
+              if (
+                pkg.platformProductIdentifier !==
+                rcPkg.product.defaultOption.productId
+              ) {
+                continue;
               }
-              if (!found) {
+            } else {
+              if (pkg.platformProductIdentifier !== rcPkg.product.identifier) {
                 continue;
               }
             }
