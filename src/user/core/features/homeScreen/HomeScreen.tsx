@@ -216,7 +216,6 @@ export const HomeScreen = ({
     }
   );
 
-  const layoutCounterRawRef = useRef(0);
   const emotionRowContentWidthsVWC = useWritableValueWithCallbacks<number[]>(
     () => Array(numberOfEmotionRowsVWC.get()).fill(0)
   );
@@ -653,7 +652,6 @@ export const HomeScreen = ({
                         }
                       }}
                       onContentSizeChange={(w) => {
-                        layoutCounterRawRef.current++;
                         if (numberOfEmotionRowsVWC.get() <= idx) {
                           return;
                         }
@@ -707,7 +705,6 @@ export const HomeScreen = ({
                           setVWC(emotionContentInnerRefs, newRefs, () => false);
                         }}
                         onLayout={(e) => {
-                          layoutCounterRawRef.current++;
                           const width = e.nativeEvent?.layout?.width;
                           if (
                             width === undefined ||
