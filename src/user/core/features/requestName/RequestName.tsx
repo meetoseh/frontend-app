@@ -15,20 +15,29 @@ import { setVWC } from '../../../../shared/lib/setVWC';
 import { Modals, ModalsOutlet } from '../../../../shared/contexts/ModalContext';
 import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
-import { OsehImageBackgroundFromStateValueWithCallbacks } from '../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks';
 import { useKeyboardVisibleValueWithCallbacks } from '../../../../shared/lib/useKeyboardVisibleValueWithCallbacks';
 import { useContentWidth } from '../../../../shared/lib/useContentWidth';
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
+import { STANDARD_DARK_BLACK_GRAY_GRADIENT_SVG } from '../../../../styling/colors';
+import { StatusBar } from 'expo-status-bar';
+import { useWindowSizeValueWithCallbacks } from '../../../../shared/hooks/useWindowSize';
+import { useValuesWithCallbacksEffect } from '../../../../shared/hooks/useValuesWithCallbacksEffect';
+import { SvgLinearGradient } from '../../../../shared/anim/SvgLinearGradient';
+import { useTopBarHeight } from '../../../../shared/hooks/useTopBarHeight';
+import { useBotBarHeight } from '../../../../shared/hooks/useBotBarHeight';
+import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
 
 /**
  * Prompts the user their name.
  */
 export const RequestName = ({
+  state,
   resources,
 }: FeatureComponentProps<
   RequestNameState,
   RequestNameResources
 >): ReactElement => {
+  const windowSizeVWC = useWindowSizeValueWithCallbacks();
   const loginContextRaw = useContext(LoginContext);
   const firstNameVWC = useWritableValueWithCallbacks(() => '');
   const lastNameVWC = useWritableValueWithCallbacks(() => '');
@@ -107,55 +116,123 @@ export const RequestName = ({
 
   const contentWidth = useContentWidth();
 
+  const foregroundRef = useWritableValueWithCallbacks<View | null>(() => null);
+  const foregroundStyleVWC = useMappedValueWithCallbacks(
+    windowSizeVWC,
+    (size) => ({
+      width: size.width,
+      height: size.height,
+    })
+  );
+
+  useValuesWithCallbacksEffect([foregroundRef, foregroundStyleVWC], () => {
+    const ele = foregroundRef.get();
+    const style = foregroundStyleVWC.get();
+    if (ele !== null) {
+      ele.setNativeProps({ style: Object.assign({}, style) });
+    }
+    return undefined;
+  });
+
+  const topBarHeight = useTopBarHeight();
+  const botBarHeight = useBotBarHeight();
+  const continueTextStyleVWC = useWritableValueWithCallbacks<
+    StyleProp<TextStyle>
+  >(() => undefined);
+  const disabledVWC = useMappedValuesWithCallbacks(
+    [firstNameVWC, lastNameVWC, savingVWC],
+    () =>
+      firstNameVWC.get().length === 0 ||
+      lastNameVWC.get().length === 0 ||
+      savingVWC.get()
+  );
+
+  const buttonStateVWC = useMappedValuesWithCallbacks(
+    [disabledVWC, savingVWC],
+    () => ({
+      disabled: disabledVWC.get(),
+      spinner: savingVWC.get(),
+    })
+  );
+
   return (
-    <OsehImageBackgroundFromStateValueWithCallbacks
-      state={useMappedValueWithCallbacks(resources, (r) => r.background)}
-      styleVWC={useMappedValueWithCallbacks(keyboardVisibleVWC, (v) => {
-        if (v) {
-          return { ...styles.containerKeyboardVisible, width: contentWidth };
-        } else {
-          return { ...styles.container, width: contentWidth };
-        }
-      })}
-    >
-      <Text style={styles.title}>What{RSQUO}s Your Name?</Text>
-      <OsehTextInput
-        type="text"
-        label="First Name"
-        onChange={(v) => setVWC(firstNameVWC, v)}
-        bonusTextInputProps={{ autoComplete: 'name-given' }}
-        disabled={false}
-        inputStyle={'white'}
-      />
-      <View style={styles.inputSpacing} />
-      <OsehTextInput
-        type="text"
-        label="Last Name"
-        onChange={(v) => setVWC(lastNameVWC, v)}
-        bonusTextInputProps={{ autoComplete: 'name-family' }}
-        disabled={false}
-        inputStyle={'white'}
-      />
-      <View style={styles.inputSubmitSpacing} />
-      <RenderGuardedComponent
-        props={savingVWC}
-        component={(saving) => (
-          <FilledInvertedButton
-            onPress={onSubmit}
-            disabled={saving}
-            setTextStyle={updateSaveTextStyleVWC}
-            width={contentWidth}
-          >
+    <View style={styles.container}>
+      <View style={styles.background}>
+        <SvgLinearGradient state={STANDARD_DARK_BLACK_GRAY_GRADIENT_SVG} />
+      </View>
+      <View
+        style={Object.assign({}, styles.foreground, foregroundStyleVWC.get())}
+        ref={(r) => setVWC(foregroundRef, r)}
+      >
+        <View style={{ height: topBarHeight }} />
+        <View
+          style={Object.assign({}, styles.content, { width: contentWidth })}
+        >
+          <RenderGuardedComponent
+            props={keyboardVisibleVWC}
+            component={(keyboardVis) => (
+              <View
+                style={
+                  keyboardVis
+                    ? styles.keyboardVisiblePadding
+                    : styles.contentSpacer
+                }
+              />
+            )}
+          />
+          <View style={styles.form}>
+            <Text style={styles.title}>What{RSQUO}s your name?</Text>
+            <OsehTextInput
+              label="First Name"
+              defaultValue={firstNameVWC.get()}
+              onChange={(v) => setVWC(firstNameVWC, v)}
+              disabled={false}
+              inputStyle="white"
+            />
+            <OsehTextInput
+              label="Last Name"
+              defaultValue={lastNameVWC.get()}
+              onChange={(v) => setVWC(lastNameVWC, v)}
+              disabled={false}
+              inputStyle="white"
+            />
+          </View>
+          <RenderGuardedComponent
+            props={keyboardVisibleVWC}
+            component={(keyboardVis) => (
+              <View
+                style={
+                  keyboardVis
+                    ? styles.keyboardVisiblePadding
+                    : styles.contentSpacer
+                }
+              />
+            )}
+          />
+          <View style={styles.footer}>
             <RenderGuardedComponent
-              props={saveTextStyleVWC}
-              component={(saveTextStyle) => (
-                <Text style={saveTextStyle}>Save</Text>
+              props={buttonStateVWC}
+              component={({ disabled, spinner }) => (
+                <FilledInvertedButton
+                  width={contentWidth}
+                  setTextStyle={(s) => setVWC(continueTextStyleVWC, s)}
+                  disabled={disabled}
+                  spinner={spinner}
+                  onPress={onSubmit}
+                >
+                  <RenderGuardedComponent
+                    props={continueTextStyleVWC}
+                    component={(s) => <Text style={s}>Continue</Text>}
+                  />
+                </FilledInvertedButton>
               )}
             />
-          </FilledInvertedButton>
-        )}
-      />
+          </View>
+        </View>
+        <View style={{ height: botBarHeight }} />
+      </View>
       <ModalsOutlet modals={modals} />
-    </OsehImageBackgroundFromStateValueWithCallbacks>
+      <StatusBar style="light" />
+    </View>
   );
 };

@@ -1,7 +1,7 @@
-import { ReactElement, useCallback } from "react";
-import { styles } from "./OsehTextInputStyles";
-import { View, Text, TextInput, TextInputProps } from "react-native";
-import { useReactManagedValueAsValueWithCallbacks } from "../hooks/useReactManagedValueAsValueWithCallbacks";
+import { ReactElement, useCallback } from 'react';
+import { styles } from './OsehTextInputStyles';
+import { View, Text, TextInput, TextInputProps } from 'react-native';
+import { useReactManagedValueAsValueWithCallbacks } from '../hooks/useReactManagedValueAsValueWithCallbacks';
 
 type OsehTextInputProps = {
   /**
@@ -25,7 +25,7 @@ type OsehTextInputProps = {
   /**
    * Ignored when disabled - configures the style of the input
    */
-  inputStyle: "white";
+  inputStyle: 'white';
 
   /**
    * Called when the value of the input changes
@@ -61,7 +61,7 @@ export const OsehTextInput = ({
   inputStyle,
   bonusTextInputProps,
   onChange,
-  type = "text",
+  type = 'text',
   doFocus = null,
 }: OsehTextInputProps): ReactElement => {
   const onChangeVWC = useReactManagedValueAsValueWithCallbacks(onChange);
@@ -80,6 +80,8 @@ export const OsehTextInput = ({
         defaultValue={defaultValue}
         onChangeText={handleChange}
         editable={!disabled}
+        placeholder={label}
+        placeholderTextColor={styles.placeholder.color}
         {...bonusTextInputProps}
       />
     </View>

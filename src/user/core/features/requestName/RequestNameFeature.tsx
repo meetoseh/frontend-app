@@ -4,16 +4,8 @@ import { LoginContext } from '../../../../shared/contexts/LoginContext';
 import { RequestNameState } from './RequestNameState';
 import { RequestNameResources } from './RequestNameResources';
 import { RequestName } from './RequestName';
-import { useOsehImageStateRequestHandler } from '../../../../shared/images/useOsehImageStateRequestHandler';
-import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
-import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
-import { OsehImageProps } from '../../../../shared/images/OsehImageProps';
-import { useWindowSizeValueWithCallbacks } from '../../../../shared/hooks/useWindowSize';
-import { useOsehImageStateValueWithCallbacks } from '../../../../shared/images/useOsehImageStateValueWithCallbacks';
-import { setVWC } from '../../../../shared/lib/setVWC';
-
-const backgroundImageUid = 'oseh_if_hH68hcmVBYHanoivLMgstg';
+import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 
 /**
  * Glue code surrounding requesting a users name if we don't know their name.
@@ -40,34 +32,10 @@ export const RequestNameFeature: Feature<
     });
   },
 
-  useResources: (worldState, required) => {
-    const images = useOsehImageStateRequestHandler({});
-    const windowSize = useWindowSizeValueWithCallbacks();
-    const backgroundProps = useMappedValuesWithCallbacks(
-      [windowSize, required],
-      (): OsehImageProps => ({
-        uid: required.get() ? backgroundImageUid : null,
-        jwt: null,
-        displayWidth: windowSize.get().width,
-        displayHeight: windowSize.get().height,
-        alt: '',
-        isPublic: true,
-      })
-    );
-    const background = useOsehImageStateValueWithCallbacks(
-      {
-        type: 'callbacks',
-        props: () => backgroundProps.get(),
-        callbacks: backgroundProps.callbacks,
-      },
-      images
-    );
-
-    return useMappedValueWithCallbacks(
-      background,
+  useResources: () => {
+    return useWritableValueWithCallbacks(
       (): RequestNameResources => ({
-        background: background.get(),
-        loading: background.get().loading,
+        loading: false,
       })
     );
   },
@@ -82,7 +50,7 @@ export const RequestNameFeature: Feature<
     );
   },
 
-  component: (worldState, resources) => (
-    <RequestName state={worldState} resources={resources} />
+  component: (state, resources) => (
+    <RequestName state={state} resources={resources} />
   ),
 };

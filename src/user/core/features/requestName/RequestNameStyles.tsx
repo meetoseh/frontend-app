@@ -1,31 +1,40 @@
-import { StyleSheet } from "react-native";
-import * as Colors from "../../../../styling/colors";
+import { StyleSheet } from 'react-native';
+import * as Colors from '../../../../styling/colors';
 
 export const styles = StyleSheet.create({
-  container: {
-    alignItems: "center",
-    flexDirection: "column",
-    flex: 1,
-    justifyContent: "center",
+  container: {},
+  background: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
-  containerKeyboardVisible: {
-    flex: 1,
-    alignItems: "center",
-    flexDirection: "column",
-    justifyContent: "flex-start",
-    paddingTop: 100,
+  foreground: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  title: {
-    color: Colors.WHITE,
-    fontFamily: "OpenSans-Regular",
-    fontSize: 24,
-    lineHeight: 32,
-    marginBottom: 60,
+  content: {
+    flexGrow: 1,
+    justifyContent: 'flex-start',
+    alignItems: 'stretch',
   },
-  inputSpacing: {
+  keyboardVisiblePadding: {
     height: 40,
   },
-  inputSubmitSpacing: {
-    height: 60,
+  contentSpacer: { flexGrow: 1, flexBasis: 0 },
+  form: {
+    justifyContent: 'flex-start',
+    alignItems: 'stretch',
+    gap: 16,
+  },
+  title: {
+    fontFamily: 'OpenSans-Regular',
+    fontSize: 20,
+    textAlign: 'center',
+    color: Colors.PRIMARY_LIGHT,
+  },
+  footer: {
+    marginBottom: 24,
   },
 });

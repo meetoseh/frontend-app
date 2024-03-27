@@ -42,8 +42,8 @@ import Email from './icons/Email';
 import { useIsTablet } from '../../../../shared/lib/useIsTablet';
 import { ProvidersList } from './components/ProvidersList';
 
-/* guest -> random guest */
-const DEV_ACCOUNT_USER_IDENTITY_ID: string = 'guest';
+/* guest -> random guest; apple -> random guest no name */
+const DEV_ACCOUNT_USER_IDENTITY_ID: string = 'apple';
 
 const prepareLink = async (
   provider: 'Google' | 'SignInWithApple' | 'Direct'
@@ -277,6 +277,9 @@ export const Login = ({
 
     setVWC(errorVWC, null);
     try {
+      const sub = selectDevAccountSub();
+      console.log('logging in as dev account:', sub);
+
       const response = await apiFetch(
         '/api/1/dev/login',
         {
@@ -285,7 +288,7 @@ export const Login = ({
             'Content-Type': 'application/json; charset=utf-8',
           },
           body: JSON.stringify({
-            sub: selectDevAccountSub(),
+            sub,
             refresh_token_desired: true,
           }),
         },
@@ -381,6 +384,10 @@ export const Login = ({
 function selectDevAccountSub() {
   if (DEV_ACCOUNT_USER_IDENTITY_ID === 'guest') {
     return `guest-${Math.random().toString(36).substring(2)}`;
+  }
+
+  if (DEV_ACCOUNT_USER_IDENTITY_ID === 'apple') {
+    return `apple-${Math.random().toString(36).substring(2)}`;
   }
 
   return DEV_ACCOUNT_USER_IDENTITY_ID;

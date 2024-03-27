@@ -153,9 +153,14 @@ export const styles = StyleSheet.create({
     flexGrow: 0,
   },
   emotionRowContent: {
-    columnGap: 16,
     flexGrow: 0,
     justifyContent: 'center',
+    gap: 0,
+    columnGap: 0,
+  },
+  emotionRowContentInner: {
+    flexDirection: 'row',
+    columnGap: 16,
   },
   emotionButton: {
     borderRadius: 20,

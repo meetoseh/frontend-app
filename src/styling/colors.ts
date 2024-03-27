@@ -46,6 +46,7 @@ export const GRAYSCALE_WHITE = '#F9F9F9';
 
 export const NEW_GRAYSCALE_DARK_GRAY = '#232323';
 export const NEW_GRAYSCALE_BORDER = '#383838';
+export const GRAYSCALE_DISABLED = '#8B8E90';
 
 export const WHITISH_BLUE = '#EAF0FF';
 export const HALF_TRANSPARENT_WHITISH_BLUE = 'rgba(234, 240, 255, 0.5)';

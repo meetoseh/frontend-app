@@ -241,11 +241,19 @@ export const HomeScreen = ({
     if (oldData.length === numRows) {
       return undefined;
     }
-    const arr = [];
-    for (let i = 0; i < numRows; i++) {
-      arr.push(null);
+    setVWC(emotionRowRefs, Array(numRows).fill(null));
+    return undefined;
+  });
+
+  const emotionContentInnerRefs = useWritableValueWithCallbacks<
+    (View | null)[]
+  >(() => Array(numberOfEmotionRowsVWC.get()).fill(null));
+  useValueWithCallbacksEffect(numberOfEmotionRowsVWC, (numRows) => {
+    const oldData = emotionContentInnerRefs.get();
+    if (oldData.length === numRows) {
+      return undefined;
     }
-    setVWC(emotionRowRefs, arr);
+    setVWC(emotionContentInnerRefs, Array(numRows).fill(null));
     return undefined;
   });
 
@@ -335,7 +343,40 @@ export const HomeScreen = ({
 
     await showYesNoModal(modals, {
       title: 'Debug',
-      body: `No more rows to check.`,
+      body: `No more rows to check: going to try actively measuring rows`,
+      cta1: 'Next',
+      emphasize: 1,
+    }).promise;
+
+    const innerRefs = emotionContentInnerRefs.get();
+    for (let i = 0; i < rows.length; i++) {
+      const ref = innerRefs[i];
+      if (ref === null || ref === undefined) {
+        await showYesNoModal(modals, {
+          title: 'Debug',
+          body: `Skipping innerRef index ${i} because it is not available.`,
+          cta1: 'Next',
+          emphasize: 1,
+        }).promise;
+        continue;
+      }
+      const measured = await new Promise<{ width: number }>((resolve) => {
+        ref.measure((x, y, width, height, pageX, pageY) =>
+          resolve({
+            width,
+          })
+        );
+      });
+      await showYesNoModal(modals, {
+        title: 'Debug',
+        body: `InnerRef index ${i} has measured width ${measured.width}.`,
+        cta1: 'Next',
+        emphasize: 1,
+      }).promise;
+    }
+    await showYesNoModal(modals, {
+      title: 'Debug',
+      body: `Done measuring`,
       cta1: 'Done',
       emphasize: 1,
     }).promise;
@@ -716,7 +757,15 @@ export const HomeScreen = ({
                           return;
                         }
 
+                        if (typeof w !== 'number' || isNaN(w) || w <= 0) {
+                          return;
+                        }
+
                         const rows = emotionRowContentWidthsVWC.get();
+                        if (rows.length <= idx) {
+                          return;
+                        }
+
                         if (
                           Math.abs(
                             convertLogicalWidthToPhysicalWidth(rows[idx]) -
@@ -744,19 +793,64 @@ export const HomeScreen = ({
                         setVWC(emotionRowRefs, newRefs, () => false);
                       }}
                     >
-                      {row.map((emotion) => (
-                        <Pressable
-                          onPress={() => {
-                            handleEmotionClick(emotion);
-                          }}
-                          style={styles.emotionButton}
-                          key={emotion.word}
-                        >
-                          <Text style={styles.emotionButtonText}>
-                            {emotion.word}
-                          </Text>
-                        </Pressable>
-                      ))}
+                      <View
+                        style={styles.emotionRowContentInner}
+                        ref={(r) => {
+                          if (numberOfEmotionRowsVWC.get() <= idx) {
+                            return;
+                          }
+
+                          const refs = emotionContentInnerRefs.get();
+                          const newRefs = refs.slice();
+                          newRefs[idx] = r;
+                          setVWC(emotionContentInnerRefs, newRefs, () => false);
+                        }}
+                        onLayout={(e) => {
+                          const width = e.nativeEvent?.layout?.width;
+                          if (
+                            width === undefined ||
+                            width <= 0 ||
+                            isNaN(width)
+                          ) {
+                            return;
+                          }
+
+                          const rows = emotionRowContentWidthsVWC.get();
+                          if (rows.length <= idx) {
+                            return;
+                          }
+                          if (
+                            Math.abs(
+                              convertLogicalWidthToPhysicalWidth(rows[idx]) -
+                                convertLogicalWidthToPhysicalWidth(width)
+                            ) < 1
+                          ) {
+                            return;
+                          }
+
+                          const newRows = rows.slice();
+                          newRows[idx] = width;
+                          setVWC(
+                            emotionRowContentWidthsVWC,
+                            newRows,
+                            () => false
+                          );
+                        }}
+                      >
+                        {row.map((emotion) => (
+                          <Pressable
+                            onPress={() => {
+                              handleEmotionClick(emotion);
+                            }}
+                            style={styles.emotionButton}
+                            key={emotion.word}
+                          >
+                            <Text style={styles.emotionButtonText}>
+                              {emotion.word}
+                            </Text>
+                          </Pressable>
+                        ))}
+                      </View>
                     </ScrollView>
                   ))}
                 </>
