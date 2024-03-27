@@ -50,16 +50,6 @@ export const RequestName = ({
   // When keyboard is visible it'd be nice if they moved to the top of the screen
   // so it's easy to get to the last name field
 
-  const saveTextStyleVWC = useWritableValueWithCallbacks<StyleProp<TextStyle>>(
-    () => ({})
-  );
-  const updateSaveTextStyleVWC = useCallback(
-    (v: StyleProp<TextStyle>) => {
-      setVWC(saveTextStyleVWC, v);
-    },
-    [saveTextStyleVWC]
-  );
-
   const onSubmit = useCallback(async () => {
     if (savingVWC.get()) {
       return;
@@ -112,7 +102,7 @@ export const RequestName = ({
   }, [loginContextRaw, firstNameVWC, lastNameVWC, savingVWC, errorVWC]);
 
   const modals = useWritableValueWithCallbacks<Modals>(() => []);
-  useErrorModal(modals, errorVWC, 'request name');
+  useErrorModal(modals, errorVWC, 'set name');
 
   const contentWidth = useContentWidth();
 
