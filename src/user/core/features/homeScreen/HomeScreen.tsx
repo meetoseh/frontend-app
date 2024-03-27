@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useContext, useMemo } from 'react';
+import { ReactElement, useCallback, useContext, useMemo, useRef } from 'react';
 import { FeatureComponentProps } from '../../models/Feature';
 import { HomeScreenResources } from './HomeScreenResources';
 import { HomeScreenState } from './HomeScreenState';
@@ -218,8 +218,9 @@ export const HomeScreen = ({
     }
   );
 
+  const layoutCounterRawRef = useRef(0);
   const emotionRowContentWidthsVWC = useWritableValueWithCallbacks<number[]>(
-    () => []
+    () => Array(numberOfEmotionRowsVWC.get()).fill(0)
   );
   useValueWithCallbacksEffect(numberOfEmotionRowsVWC, (numRows) => {
     const oldData = emotionRowContentWidthsVWC.get();
@@ -227,7 +228,10 @@ export const HomeScreen = ({
       return undefined;
     }
     const arr = [];
-    for (let i = 0; i < numRows; i++) {
+    for (let i = 0; i < numRows && i < oldData.length; i++) {
+      arr.push(oldData[i]);
+    }
+    for (let i = oldData.length; i < numRows; i++) {
       arr.push(0);
     }
     setVWC(emotionRowContentWidthsVWC, arr);
@@ -292,7 +296,7 @@ export const HomeScreen = ({
 
     await showYesNoModal(modals, {
       title: 'Debug',
-      body: `There are ${rows.length} rows and ${refs.length} refs. The window width is ${width}.`,
+      body: `There are ${rows.length} rows and ${refs.length} refs. The window width is ${width}. There have been ${layoutCounterRawRef.current} related layout events.`,
       cta1: 'Next',
       emphasize: 1,
     }).promise;
@@ -753,6 +757,7 @@ export const HomeScreen = ({
                         }
                       }}
                       onContentSizeChange={(w) => {
+                        layoutCounterRawRef.current++;
                         if (numberOfEmotionRowsVWC.get() <= idx) {
                           return;
                         }
@@ -806,6 +811,7 @@ export const HomeScreen = ({
                           setVWC(emotionContentInnerRefs, newRefs, () => false);
                         }}
                         onLayout={(e) => {
+                          layoutCounterRawRef.current++;
                           const width = e.nativeEvent?.layout?.width;
                           if (
                             width === undefined ||
