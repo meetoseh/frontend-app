@@ -1,28 +1,28 @@
-import { ReactElement, useEffect } from "react";
+import { ReactElement, useEffect } from 'react';
 import {
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../lib/Callbacks";
+} from '../lib/Callbacks';
 import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
-} from "../anim/VariableStrategyProps";
-import { useMappedValueWithCallbacks } from "../hooks/useMappedValueWithCallbacks";
-import { ease } from "../lib/Bezier";
-import { setVWC } from "../lib/setVWC";
-import { View } from "react-native";
-import { colorToCSS, makeSVGNumber } from "../anim/svgUtils";
-import { useAnimationTargetAndRendered } from "../anim/useAnimationTargetAndRendered";
+} from '../anim/VariableStrategyProps';
+import { useMappedValueWithCallbacks } from '../hooks/useMappedValueWithCallbacks';
+import { ease } from '../lib/Bezier';
+import { setVWC } from '../lib/setVWC';
+import { View } from 'react-native';
+import { colorToCSS, makeSVGNumber } from '../anim/svgUtils';
+import { useAnimationTargetAndRendered } from '../anim/useAnimationTargetAndRendered';
 import {
   BezierAnimator,
   BezierColorAnimator,
   TrivialAnimator,
-} from "../anim/AnimationLoop";
-import { useValuesWithCallbacksEffect } from "../hooks/useValuesWithCallbacksEffect";
-import { RenderGuardedComponent } from "./RenderGuardedComponent";
-import * as SVG from "react-native-svg";
+} from '../anim/AnimationLoop';
+import { useValuesWithCallbacksEffect } from '../hooks/useValuesWithCallbacksEffect';
+import { RenderGuardedComponent } from './RenderGuardedComponent';
+import * as SVG from 'react-native-svg';
 
-type InlineOsehSpinnerVariant = "black" | "white" | "white-thin" | "primary";
+type InlineOsehSpinnerVariant = 'black' | 'white' | 'white-thin' | 'primary';
 type InlineOsehSpinnerProps = {
   size: VariableStrategyProps<{ width: number } | { height: number }>;
   variant?: InlineOsehSpinnerVariant;
@@ -45,33 +45,33 @@ const paddingToCompensateForPoorSVGStrokesNearEdge = 4;
  */
 export const InlineOsehSpinner = ({
   size: sizeVariableStrategy,
-  variant = "white",
+  variant = 'white',
 }: InlineOsehSpinnerProps) => {
   const sizeVWC =
     useVariableStrategyPropsAsValueWithCallbacks(sizeVariableStrategy);
-  const state = useWritableValueWithCallbacks<SpinnerState>(() => "dotVisible");
+  const state = useWritableValueWithCallbacks<SpinnerState>(() => 'dotVisible');
 
   useEffect(() => {
-    setVWC(state, "dotVisible");
+    setVWC(state, 'dotVisible');
     let timeout: NodeJS.Timeout = setTimeout(onDotFinished, forwardDotTime);
 
     function onDotFinished() {
-      setVWC(state, "visible");
+      setVWC(state, 'visible');
       timeout = setTimeout(onForwardFinished, forwardTime);
     }
 
     function onForwardFinished() {
-      setVWC(state, "dotVisible");
+      setVWC(state, 'dotVisible');
       timeout = setTimeout(onBackwardFinished, backwardTime);
     }
 
     function onBackwardFinished() {
-      setVWC(state, "hidden");
+      setVWC(state, 'hidden');
       timeout = setTimeout(onBackwardDotFinished, backwardDotTime);
     }
 
     function onBackwardDotFinished() {
-      setVWC(state, "dotVisible");
+      setVWC(state, 'dotVisible');
       timeout = setTimeout(onDotFinished, forwardDotTime);
     }
 
@@ -88,7 +88,7 @@ export const InlineOsehSpinner = ({
 };
 
 // spinner is essentially an FSM
-type SpinnerState = "hidden" | "dotVisible" | "visible";
+type SpinnerState = 'hidden' | 'dotVisible' | 'visible';
 type SpinnerProps = {
   size: ValueWithCallbacks<{ width: number } | { height: number }>;
   variant: InlineOsehSpinnerVariant;
@@ -120,11 +120,11 @@ type ComputedAnimationState = {
 const variantStrokeColor = (
   variant: InlineOsehSpinnerVariant
 ): [number, number, number] => {
-  if (variant === "black") {
+  if (variant === 'black') {
     return [0, 0, 0];
-  } else if (variant === "white" || variant === "white-thin") {
+  } else if (variant === 'white' || variant === 'white-thin') {
     return [1, 1, 1];
-  } else if (variant === "primary") {
+  } else if (variant === 'primary') {
     return [0.2, 0.286, 0.298];
   }
   throw new Error(
@@ -133,7 +133,7 @@ const variantStrokeColor = (
 };
 
 const variantStrokeWidth = (variant: InlineOsehSpinnerVariant): number => {
-  if (variant === "white-thin") {
+  if (variant === 'white-thin') {
     return 3;
   }
   return 5;
@@ -158,7 +158,7 @@ const getComputedState = (
   const viewBox = computeViewboxForStrokeWidth(strokeWidth);
 
   const requestedScale =
-    "width" in state.requestedSize
+    'width' in state.requestedSize
       ? state.requestedSize.width / viewBox.width
       : state.requestedSize.height / viewBox.height;
 
@@ -246,7 +246,7 @@ const shownSpinnerAnimationState = (
 };
 
 type RawSvgPathPart = {
-  operation: "A" | "C" | "M" | "Z";
+  operation: 'A' | 'C' | 'M' | 'Z';
   values: number[];
 };
 
@@ -261,7 +261,7 @@ const renderShiftedScaledPoint = (
   const shiftedX = x + dx;
   const shiftedY = y + dy;
   out.push(makeSVGNumber(shiftedX * s));
-  out.push(" ");
+  out.push(' ');
   out.push(makeSVGNumber(shiftedY * s));
 };
 
@@ -274,15 +274,15 @@ const renderShiftedScaledRawSvgPathPart = (
 ) => {
   out.push(part.operation);
 
-  if (part.operation === "A") {
+  if (part.operation === 'A') {
     // A rx ry x-axis-rotation large-arc-flag sweep-flag x y
     out.push(makeSVGNumber(part.values[0] * s));
-    out.push(" ");
+    out.push(' ');
     out.push(makeSVGNumber(part.values[1] * s));
-    out.push(" ");
+    out.push(' ');
     for (let i = 2; i < part.values.length - 2; i++) {
       out.push(makeSVGNumber(part.values[i]));
-      out.push(" ");
+      out.push(' ');
     }
     renderShiftedScaledPoint(
       part.values[part.values.length - 2],
@@ -297,7 +297,7 @@ const renderShiftedScaledRawSvgPathPart = (
 
   for (let i = 0; i < part.values.length; i += 2) {
     if (i !== 0) {
-      out.push(" ");
+      out.push(' ');
     }
     renderShiftedScaledPoint(
       part.values[i],
@@ -322,7 +322,7 @@ const renderShiftedScaledRawSvgPath = (
   for (const part of path) {
     renderShiftedScaledRawSvgPathPart(part, dx, dy, s, result);
   }
-  return result.join("");
+  return result.join('');
 };
 
 /**
@@ -336,25 +336,25 @@ const computePathLength = (path: RawSvgPath, s: number): number => {
     // used https://codepen.io/DariaIvK/full/gOpWYQE
     return 190.147 * s;
   }
-  throw new Error("unsupported path");
+  throw new Error('unsupported path');
 };
 
 const CIRCLE_PATH: RawSvgPath = [
-  { operation: "M", values: [71.808, 58.453] },
-  { operation: "A", values: [35.904, 35.904, 0, 0, 1, 35.904, 94.357] },
-  { operation: "A", values: [35.904, 35.904, 0, 0, 1, 0, 58.453] },
-  { operation: "A", values: [35.904, 35.904, 0, 0, 1, 35.904, 22.549] },
-  { operation: "A", values: [35.904, 35.904, 0, 0, 1, 71.808, 58.453] },
-  { operation: "Z", values: [] },
+  { operation: 'M', values: [71.808, 58.453] },
+  { operation: 'A', values: [35.904, 35.904, 0, 0, 1, 35.904, 94.357] },
+  { operation: 'A', values: [35.904, 35.904, 0, 0, 1, 0, 58.453] },
+  { operation: 'A', values: [35.904, 35.904, 0, 0, 1, 35.904, 22.549] },
+  { operation: 'A', values: [35.904, 35.904, 0, 0, 1, 71.808, 58.453] },
+  { operation: 'Z', values: [] },
 ];
 
 const ARC_PATH: RawSvgPath = [
-  { operation: "M", values: [35.345, 59.578] },
-  { operation: "C", values: [27.32, 49.625, 24.994, 36.236, 29.193, 24.16] },
-  { operation: "C", values: [33.427, 12.236, 43.958, 3.288, 56.312, 0.755] },
-  { operation: "C", values: [83.775, -4.818, 106.971, 21.429, 98.065, 47.999] },
-  { operation: "C", values: [94.366, 59.036, 85.611, 67.638, 74.51, 71.143] },
-  { operation: "C", values: [73.044, 71.609, 71.55, 71.983, 70.036, 72.262] },
+  { operation: 'M', values: [35.345, 59.578] },
+  { operation: 'C', values: [27.32, 49.625, 24.994, 36.236, 29.193, 24.16] },
+  { operation: 'C', values: [33.427, 12.236, 43.958, 3.288, 56.312, 0.755] },
+  { operation: 'C', values: [83.775, -4.818, 106.971, 21.429, 98.065, 47.999] },
+  { operation: 'C', values: [94.366, 59.036, 85.611, 67.638, 74.51, 71.143] },
+  { operation: 'C', values: [73.044, 71.609, 71.55, 71.983, 70.036, 72.262] },
 ];
 
 const MIN_STROKE_DASH_OFFSET = 0.01;
@@ -367,7 +367,7 @@ const Spinner = ({
   const state = useAnimationTargetAndRendered(
     () => hiddenSpinnerAnimationState(size.get(), variant),
     () => [
-      new TrivialAnimator("requestedSize"),
+      new TrivialAnimator('requestedSize'),
       new BezierAnimator(
         ease,
         350,
@@ -397,9 +397,9 @@ const Spinner = ({
 
   useValuesWithCallbacksEffect([size, fsmState], () => {
     const fsm = fsmState.get();
-    if (fsm === "hidden") {
+    if (fsm === 'hidden') {
       setVWC(state.target, hiddenSpinnerAnimationState(size.get(), variant));
-    } else if (fsm === "dotVisible") {
+    } else if (fsm === 'dotVisible') {
       setVWC(state.target, dotSpinnerAnimationState(size.get(), variant));
     } else {
       setVWC(state.target, shownSpinnerAnimationState(size.get(), variant));
@@ -440,10 +440,10 @@ const Spinner = ({
           style={{
             width: computed.size.width - computed.viewboxPaddingX * 2,
             height: computed.size.height - computed.viewboxPaddingX * 2,
-            position: "relative",
+            position: 'relative',
             // left: -computed.viewboxPaddingX, not necessary on the app for some
             // top: -computed.viewboxPaddingY,  reason
-            overflow: "visible",
+            overflow: 'visible',
           }}
         >
           <SVG.Svg

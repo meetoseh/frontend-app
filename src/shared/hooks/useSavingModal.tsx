@@ -1,20 +1,20 @@
-import { useCallback, useRef } from "react";
-import { Modals, addModalWithCallbackToRemove } from "../contexts/ModalContext";
+import { useCallback, useRef } from 'react';
+import { Modals, addModalWithCallbackToRemove } from '../contexts/ModalContext';
 import {
   ValueWithCallbacks,
   WritableValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../lib/Callbacks";
-import { setVWC } from "../lib/setVWC";
-import { useValueWithCallbacksEffect } from "./useValueWithCallbacksEffect";
-import { useWindowSizeValueWithCallbacks } from "./useWindowSize";
-import { useMappedValueWithCallbacks } from "./useMappedValueWithCallbacks";
-import { useAnimatedValueWithCallbacks } from "../anim/useAnimatedValueWithCallbacks";
-import { BezierAnimator } from "../anim/AnimationLoop";
-import { ease } from "../lib/Bezier";
-import { Pressable, View, Text } from "react-native";
-import { styles } from "./useSavingModalStyles";
-import { InlineOsehSpinner } from "../components/InlineOsehSpinner";
+} from '../lib/Callbacks';
+import { setVWC } from '../lib/setVWC';
+import { useValueWithCallbacksEffect } from './useValueWithCallbacksEffect';
+import { useWindowSizeValueWithCallbacks } from './useWindowSize';
+import { useMappedValueWithCallbacks } from './useMappedValueWithCallbacks';
+import { useAnimatedValueWithCallbacks } from '../anim/useAnimatedValueWithCallbacks';
+import { BezierAnimator } from '../anim/AnimationLoop';
+import { ease } from '../lib/Bezier';
+import { Pressable, View, Text } from 'react-native';
+import { styles } from './useSavingModalStyles';
+import { InlineOsehSpinner } from '../components/InlineOsehSpinner';
 
 type Options = {
   /**
@@ -26,7 +26,7 @@ type Options = {
 };
 
 const DEFAULT_OPTIONS: Required<Options> = {
-  message: "Saving",
+  message: 'Saving',
 };
 
 /**
@@ -192,9 +192,8 @@ const SavingModal = ({
         ref={foregroundRef}
       >
         <InlineOsehSpinner
-          variant="white-thin"
           size={{
-            type: "callbacks",
+            type: 'callbacks',
             props: () => ({ width: iconWidth.get() }),
             callbacks: iconWidth.callbacks,
           }}

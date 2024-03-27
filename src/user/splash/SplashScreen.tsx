@@ -80,7 +80,6 @@ const FastInlineOsehSpinnerSplashScreen = (): ReactElement => {
           props: renderedSize.get,
           callbacks: renderedSize.callbacks,
         }}
-        variant="white-thin"
       />
       <StatusBar style="light" />
     </View>
@@ -173,7 +172,6 @@ const LottieSplashScreen = ({ type }: SplashScreenProps): ReactElement => {
           <AnimatedLottieView
             key={realType}
             autoPlay={false}
-            autoSize={false}
             loop={false}
             ref={setPlayerRef}
             style={playerStyle}
