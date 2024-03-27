@@ -277,6 +277,44 @@ export const Upgrade = ({
     StyleProp<TextStyle>
   >(() => undefined);
 
+  const contentInnerHeightVWC = useWritableValueWithCallbacks<number>(() => 0);
+
+  const backgroundOverlayStyle = useMappedValuesWithCallbacks(
+    [backgroundImageState, contentInnerHeightVWC, windowSizeVWC],
+    () => {
+      const topUsingDisplayHeight =
+        backgroundImageState.get().displayHeight - 100;
+      const topUsingContentHeight =
+        windowSizeVWC.get().height - contentInnerHeightVWC.get() - 20;
+      const top = Math.min(topUsingDisplayHeight, topUsingContentHeight);
+      const height = backgroundImageState.get().displayHeight - top;
+      return {
+        top,
+        height,
+      };
+    },
+    {
+      outputEqualityFn: (a, b) => a.top === b.top && a.height === b.height,
+    }
+  );
+
+  const backgroundOverlayRef = useWritableValueWithCallbacks<View | null>(
+    () => null
+  );
+  useValuesWithCallbacksEffect(
+    [backgroundOverlayRef, backgroundOverlayStyle],
+    () => {
+      const ele = backgroundOverlayRef.get();
+      const style = backgroundOverlayStyle.get();
+      if (ele !== null) {
+        ele.setNativeProps({
+          style: Object.assign({}, style),
+        });
+      }
+      return undefined;
+    }
+  );
+
   return (
     <View style={styles.container}>
       <View style={styles.contentContainer}>
@@ -285,8 +323,35 @@ export const Upgrade = ({
             <OsehImageFromStateValueWithCallbacks
               state={backgroundImageState}
             />
+            <View style={styles.belowImageBackground}>
+              <SvgLinearGradient
+                state={{
+                  stops: [
+                    {
+                      color: [20, 25, 28, 1],
+                      offset: 0,
+                    },
+                    {
+                      color: [1, 1, 1, 1],
+                      offset: 1,
+                    },
+                  ],
+                  x1: 0.5,
+                  y1: 0,
+                  x2: 0.5,
+                  y2: 1,
+                }}
+              />
+            </View>
           </View>
-          <View style={styles.backgroundOverlay}>
+          <View
+            style={Object.assign(
+              {},
+              styles.backgroundOverlay,
+              backgroundOverlayStyle.get()
+            )}
+            ref={(r) => setVWC(backgroundOverlayRef, r)}
+          >
             <SvgLinearGradient
               state={{
                 stops: [
@@ -295,15 +360,11 @@ export const Upgrade = ({
                     offset: 0,
                   },
                   {
-                    color: [20, 25, 28, 0],
-                    offset: 0.15,
+                    color: [20, 25, 28, 0.5],
+                    offset: 0.3,
                   },
                   {
                     color: [20, 25, 28, 1],
-                    offset: 0.2969,
-                  },
-                  {
-                    color: [1, 1, 1, 1],
                     offset: 1,
                   },
                 ],
@@ -337,6 +398,12 @@ export const Upgrade = ({
                 width: contentWidth,
                 paddingBottom: styles.contentInner.paddingBottom + botBarHeight,
               })}
+              onLayout={(e) => {
+                const height = e.nativeEvent?.layout?.height;
+                if (height !== undefined && height > 0 && !isNaN(height)) {
+                  setVWC(contentInnerHeightVWC, height);
+                }
+              }}
             >
               <RenderGuardedComponent
                 props={useMappedValueWithCallbacks(state, (s) => s.context)}
