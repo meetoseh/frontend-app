@@ -36,8 +36,6 @@ import { SvgLinearGradientBackground } from '../../../../shared/anim/SvgLinearGr
 import { STANDARD_DARK_BLACK_GRAY_GRADIENT_SVG } from '../../../../styling/colors';
 import { styles as bottomNavStyles } from '../../../bottomNav/BottomNavBarStyles';
 import { Emotion } from '../../../../shared/models/Emotion';
-import { showYesNoModal } from '../../../../shared/lib/showYesNoModal';
-import { Modals, ModalsOutlet } from '../../../../shared/contexts/ModalContext';
 
 /**
  * Displays the home screen for the user
@@ -287,105 +285,6 @@ export const HomeScreen = ({
     }, [emotionRowContentWidthsVWC, emotionRowRefs, windowSizeVWC])
   );
 
-  const modals = useWritableValueWithCallbacks<Modals>(() => []);
-
-  const debugEmotionRowCentering = useCallback(async () => {
-    const rows = emotionRowContentWidthsVWC.get();
-    const refs = emotionRowRefs.get();
-    const width = windowSizeVWC.get().width;
-
-    await showYesNoModal(modals, {
-      title: 'Debug',
-      body: `There are ${rows.length} rows and ${refs.length} refs. The window width is ${width}. There have been ${layoutCounterRawRef.current} related layout events.`,
-      cta1: 'Next',
-      emphasize: 1,
-    }).promise;
-
-    if (rows.length !== refs.length) {
-      await showYesNoModal(modals, {
-        title: 'Debug',
-        body: 'Rows and refs are not the same length.',
-        cta1: 'OK',
-        emphasize: 1,
-      }).promise;
-      return;
-    }
-
-    for (let i = 0; i < rows.length; i++) {
-      const ele = refs[i];
-      if (ele === null) {
-        await showYesNoModal(modals, {
-          title: 'Debug',
-          body: `Skipping row index ${i} because it has no ref.`,
-          cta1: 'Next',
-          emphasize: 1,
-        }).promise;
-        continue;
-      }
-      const contentWidth = rows[i];
-      if (contentWidth < width) {
-        await showYesNoModal(modals, {
-          title: 'Debug',
-          body: `Row index ${i} has width ${contentWidth}, which is less than the window width ${width}. Scrolling to 0.`,
-          cta1: 'Next',
-          emphasize: 1,
-        }).promise;
-        ele.scrollTo({ x: 0, animated: false });
-        continue;
-      }
-
-      await showYesNoModal(modals, {
-        title: 'Debug',
-        body: `Row index ${i} has width ${contentWidth} > window width ${width}. Scrolling to ${
-          (contentWidth - width) / 2
-        }.`,
-        cta1: 'Next',
-        emphasize: 1,
-      }).promise;
-      ele.scrollTo({ x: (contentWidth - width) / 2, animated: false });
-    }
-
-    await showYesNoModal(modals, {
-      title: 'Debug',
-      body: `No more rows to check: going to try actively measuring rows`,
-      cta1: 'Next',
-      emphasize: 1,
-    }).promise;
-
-    const innerRefs = emotionContentInnerRefs.get();
-    for (let i = 0; i < rows.length; i++) {
-      const ref = innerRefs[i];
-      if (ref === null || ref === undefined) {
-        await showYesNoModal(modals, {
-          title: 'Debug',
-          body: `Skipping innerRef index ${i} because it is not available.`,
-          cta1: 'Next',
-          emphasize: 1,
-        }).promise;
-        continue;
-      }
-      const measured = await new Promise<{ width: number }>((resolve) => {
-        ref.measure((x, y, width, height, pageX, pageY) =>
-          resolve({
-            width,
-          })
-        );
-      });
-      await showYesNoModal(modals, {
-        title: 'Debug',
-        body: `InnerRef index ${i} has measured width ${measured.width}.`,
-        cta1: 'Next',
-        emphasize: 1,
-      }).promise;
-    }
-    await showYesNoModal(modals, {
-      title: 'Debug',
-      body: `Done measuring`,
-      cta1: 'Done',
-      emphasize: 1,
-    }).promise;
-  }, [emotionRowContentWidthsVWC, emotionRowRefs, windowSizeVWC]);
-
   const streakInfoVWC = useMappedValueWithCallbacks(state, (s) => s.streakInfo);
   const visualGoalStateVWC = useAnimationTargetAndRendered<VisualGoalState>(
     () => ({
@@ -568,10 +467,7 @@ export const HomeScreen = ({
                 />
               </Pressable>
             </View>
-            <Text
-              style={styles.headerBody}
-              onLongPress={() => debugEmotionRowCentering()}
-            >
+            <Text style={styles.headerBody}>
               <RenderGuardedComponent
                 props={streakInfoVWC}
                 component={(v) => (
@@ -943,7 +839,6 @@ export const HomeScreen = ({
           </SimpleBlurView>
         </View>
       )}
-      <ModalsOutlet modals={modals} />
       <StatusBar style="light" />
     </View>
   );
