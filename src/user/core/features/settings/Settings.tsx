@@ -351,7 +351,6 @@ export const Settings = ({
             >
               <View style={{ height: topBarHeight }} />
               <FullscreenView style={styles.background} alwaysScroll>
-                <CloseButton onPress={onClickX} bonusStyle={{ top: 8 }} />
                 <View style={{ ...styles.content, width: contentWidth }}>
                   <View style={styles.sections}>
                     <SettingSection title="Account">

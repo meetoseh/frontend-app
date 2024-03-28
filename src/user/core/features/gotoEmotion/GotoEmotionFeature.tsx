@@ -303,11 +303,7 @@ export const GotoEmotionFeature: Feature<
         const socialProofPictures = socialProofPicturesVWC.get();
 
         return {
-          loading:
-            !req ||
-            freeEmotionJourney.type !== 'success' ||
-            havePro.type !== 'success' ||
-            (havePro.result && premiumEmotionJourney.type !== 'success'),
+          loading: !req,
           freeEmotionJourney,
           havePro,
           premiumEmotionJourney,
@@ -355,6 +351,10 @@ export const GotoEmotionFeature: Feature<
           onTakePremiumJourney: () => {
             const show = stateVWC.get().show;
             if (show === null || show === undefined) {
+              return;
+            }
+
+            if (havePro.type !== 'success') {
               return;
             }
 

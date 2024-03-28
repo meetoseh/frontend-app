@@ -19,12 +19,14 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     flexGrow: 1,
   },
+  titleWrapper: {},
   title: {
     fontFamily: 'OpenSans-Regular',
     fontSize: 28,
     textAlign: 'center',
     color: Colors.PRIMARY_LIGHT,
   },
+  emotionWrapper: {},
   emotion: {
     fontFamily: 'OpenSans-SemiBold',
     fontSize: 28,
@@ -56,5 +58,14 @@ export const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     alignItems: 'center',
     gap: 12,
+  },
+  button: {},
+  holdoverEmotionWord: {
+    position: 'absolute',
+  },
+  holdoverEmotionWordText: {
+    fontFamily: 'OpenSans-Regular',
+    color: Colors.PRIMARY_LIGHT,
+    textTransform: 'capitalize',
   },
 });

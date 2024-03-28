@@ -14,6 +14,13 @@ import { StatusBar } from 'expo-status-bar';
 import { useVersionedCache } from './src/shared/hooks/useVersionedCache';
 import { useUnwrappedValueWithCallbacks } from './src/shared/hooks/useUnwrappedValueWithCallbacks';
 import { InterestsAutoProvider } from './src/shared/contexts/InterestsContext';
+import { SvgLinearGradient } from './src/shared/anim/SvgLinearGradient';
+import {
+  DARK_BLACK_GRAY_GRADIENT_SVG,
+  STANDARD_BLACK_GRAY_GRADIENT_SVG,
+  STANDARD_BLACK_GRAY_GRADIENT_WEBGL,
+} from './src/styling/colors';
+import { useWindowSizeValueWithCallbacks } from './src/shared/hooks/useWindowSize';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
@@ -53,6 +60,7 @@ const AppInner = () => {
   });
   const audioConfiguredVWC = useConfigureBackgroundAudio();
   const featureVWC = useFeaturesState();
+  const windowSizeVWC = useWindowSizeValueWithCallbacks();
 
   const featureIfReadyVWC = useMappedValuesWithCallbacks(
     [featureVWC, audioConfiguredVWC],
@@ -118,7 +126,13 @@ const AppInner = () => {
                 }
 
                 return (
-                  <View style={{ flex: 1, backgroundColor: '#253a41' }}>
+                  <View
+                    style={{
+                      width: windowSizeVWC.get().width,
+                      height: windowSizeVWC.get().height,
+                    }}
+                  >
+                    <SvgLinearGradient state={DARK_BLACK_GRAY_GRADIENT_SVG} />
                     <StatusBar style="light" />
                   </View>
                 );

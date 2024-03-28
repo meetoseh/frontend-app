@@ -60,14 +60,6 @@ export const SingleJourney = ({
           setScreen: (screen, privileged) => {
             const setScreen = resources.get().setStep;
             if (screen === 'journey') {
-              if (!privileged) {
-                console.warn(
-                  'setScreen unprivileged to journey, treating as start'
-                );
-                setScreen('start');
-                return;
-              }
-
               const audio = sharedVWC.get().audio;
               if (
                 !audio.loaded ||

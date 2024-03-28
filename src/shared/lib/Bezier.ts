@@ -23,7 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import ease4 from "./assets/ease4";
+import ease4 from './assets/ease4';
 
 // Modified 01/09/2023 Timothy Moore:
 // - convert to typescript

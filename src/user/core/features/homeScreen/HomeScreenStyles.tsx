@@ -14,6 +14,9 @@ export const styles = StyleSheet.create({
     alignItems: 'stretch',
     justifyContent: 'flex-start',
   },
+  backgroundWrapper: {
+    overflow: 'hidden',
+  },
   backgroundOverlay: {
     flexGrow: 1,
   },
@@ -23,7 +26,16 @@ export const styles = StyleSheet.create({
   },
   headerAndGoal: {
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
+  },
+  headerAndGoalOuterWrapper: {
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+  },
+  headerAndGoalWrapper: {
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+    overflow: 'hidden',
   },
   header: {
     paddingTop: 54,
@@ -65,7 +77,6 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 24,
     justifyContent: 'center',
     alignItems: 'flex-start',
-    flexGrow: 1,
   },
   goal: {
     borderRadius: 72,
@@ -172,12 +183,29 @@ export const styles = StyleSheet.create({
     margin: 0,
     minHeight: 60,
   },
+  selectEmotionSwapInWrapper: {
+    position: 'absolute',
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    minHeight: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   emotionButtonText: {
     fontFamily: 'OpenSans-Regular',
     fontSize: 16,
     textAlign: 'center',
     color: Colors.PRIMARY_LIGHT,
     textTransform: 'capitalize',
+  },
+  bottomNavOuterWrapper: {
+    justifyContent: 'flex-end',
+    alignItems: 'flex-start',
+  },
+  bottomNavWrapper: {
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+    overflow: 'hidden',
   },
   overlay: {
     position: 'absolute',

@@ -124,7 +124,6 @@ const AndroidCompatBlurView = ({
   const allowingCapturesVWC = captureAllowedRaw ?? defaultAllowingCapturesVWC;
   useValueWithCallbacksEffect(allowingCapturesVWC, (allowing) => {
     if (!allowing) {
-      console.log('clearing capture');
       setVWC(delayingPopinVWC, true);
       setVWC(captureVWC, null);
     }
