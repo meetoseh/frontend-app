@@ -5,19 +5,27 @@ import {
   useWritableValueWithCallbacks,
 } from '../../../../shared/lib/Callbacks';
 import { SurveyCheckboxGroup } from '../../../../shared/components/SurveyCheckboxGroup';
-import { SurveyScreen } from '../../../../shared/components/SurveyScreen';
+import {
+  SurveyScreen,
+  SurveyScreenTransition,
+} from '../../../../shared/components/SurveyScreen';
 import { useStartSession } from '../../../../shared/hooks/useInappNotificationSession';
 import { GoalDaysPerWeekState } from './GoalDaysPerWeekState';
 import { GoalDaysPerWeekResources } from './GoalDaysPerWeekResources';
 import { LoginContext } from '../../../../shared/contexts/LoginContext';
-import { ModalContext } from '../../../../shared/contexts/ModalContext';
+import { Modals } from '../../../../shared/contexts/ModalContext';
 import { useWorkingModal } from '../../../../shared/hooks/useWorkingModal';
 import { useDelayedValueWithCallbacks } from '../../../../shared/hooks/useDelayedValueWithCallbacks';
 import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
 import { setVWC } from '../../../../shared/lib/setVWC';
+import {
+  playEntranceTransition,
+  playExitTransition,
+  useEntranceTransition,
+  useTransitionProp,
+} from '../../../../shared/lib/TransitionProp';
 import { apiFetch } from '../../../../shared/lib/apiFetch';
 import { describeError } from '../../../../shared/lib/describeError';
-import { Text } from 'react-native';
 
 const _CHOICES = [
   { slug: '1', text: '1 day', element: <>1 day</> },
@@ -43,8 +51,16 @@ export const GoalDaysPerWeek = ({
   state,
   resources,
 }: FeatureComponentProps<GoalDaysPerWeekState, GoalDaysPerWeekResources>) => {
+  const transition = useTransitionProp((): SurveyScreenTransition => {
+    const back = state.get().forced?.back ?? null;
+    if (back === null) {
+      return { type: 'fade', ms: 350 };
+    } else {
+      return { type: 'swipe', direction: 'to-left', ms: 350 };
+    }
+  });
   const loginContextRaw = useContext(LoginContext);
-  const modalContext = useContext(ModalContext);
+  const modals = useWritableValueWithCallbacks<Modals>(() => []);
   const checkedVWC = useWritableValueWithCallbacks<ChoiceSlug[]>(() => [
     resources.get().initialGoal.toString() as ChoiceSlug,
   ]) as WritableValueWithTypedCallbacks<
@@ -56,12 +72,11 @@ export const GoalDaysPerWeek = ({
   );
   const savingVWC = useWritableValueWithCallbacks<boolean>(() => false);
 
-  useErrorModal(modalContext.modals, errorVWC, 'saving goal');
+  useErrorModal(modals, errorVWC, 'saving goal');
 
-  useWorkingModal(
-    modalContext.modals,
-    useDelayedValueWithCallbacks(savingVWC, 200)
-  );
+  useWorkingModal(modals, useDelayedValueWithCallbacks(savingVWC, 500));
+
+  useEntranceTransition(transition);
 
   useStartSession(
     {
@@ -129,11 +144,30 @@ export const GoalDaysPerWeek = ({
       resources.get().session?.storeAction(action, {
         choice,
       });
+      if (action === 'back') {
+        setVWC(transition.animation, {
+          type: 'swipe',
+          direction: 'to-right',
+          ms: 350,
+        });
+      } else {
+        setVWC(transition.animation, { type: 'fade', ms: 350 });
+      }
+      await playExitTransition(transition).promise;
       setVWC(errorVWC, null);
       try {
         await trySave();
       } catch (e) {
+        console.log('catching error:', e);
         setVWC(errorVWC, await describeError(e));
+        if (action === 'back') {
+          setVWC(transition.animation, {
+            type: 'swipe',
+            direction: 'to-left',
+            ms: 350,
+          });
+        }
+        await playEntranceTransition(transition).promise;
         return;
       }
       resources.get().session?.reset();
@@ -147,15 +181,11 @@ export const GoalDaysPerWeek = ({
     <SurveyScreen
       title={{
         type: 'react-rerender',
-        props: (
-          <Text>
-            How many days a week would you like to practice each week?
-          </Text>
-        ),
+        props: <>How many days a week would you like to practice each week?</>,
       }}
       subtitle={{
         type: 'react-rerender',
-        props: <Text>We&rsquo;ll keep you motivated along the way</Text>,
+        props: <>We&rsquo;ll keep you motivated along the way</>,
       }}
       onBack={{
         type: 'callbacks',
@@ -172,6 +202,8 @@ export const GoalDaysPerWeek = ({
         type: 'react-rerender',
         props: () => handleAction('continue'),
       }}
+      transition={transition}
+      modals={modals}
     >
       <SurveyCheckboxGroup
         choices={CHOICES}

@@ -6,12 +6,15 @@ import {
 import { styles } from './SurveyScreenStyles';
 import { RenderGuardedComponent } from './RenderGuardedComponent';
 import { useWindowSizeValueWithCallbacks } from '../hooks/useWindowSize';
-import { useWritableValueWithCallbacks } from '../lib/Callbacks';
+import {
+  WritableValueWithCallbacks,
+  useWritableValueWithCallbacks,
+} from '../lib/Callbacks';
 import { useTopBarHeight } from '../hooks/useTopBarHeight';
 import { useBotBarHeight } from '../hooks/useBotBarHeight';
 import { useMappedValuesWithCallbacks } from '../hooks/useMappedValuesWithCallbacks';
 import { useMappedValueWithCallbacks } from '../hooks/useMappedValueWithCallbacks';
-import { ScrollView, View, Text } from 'react-native';
+import { ScrollView, View, Text, ViewStyle } from 'react-native';
 import { useValuesWithCallbacksEffect } from '../hooks/useValuesWithCallbacksEffect';
 import { setVWC } from '../lib/setVWC';
 import { SvgLinearGradientBackground } from '../anim/SvgLinearGradientBackground';
@@ -20,6 +23,33 @@ import { BackContinue } from './BackContinue';
 import { ModalContext, Modals, ModalsOutlet } from '../contexts/ModalContext';
 import { StatusBar } from 'expo-status-bar';
 import { useContentWidth } from '../lib/useContentWidth';
+import {
+  TransitionProp,
+  useAttachDynamicEngineToTransition,
+  useInitializedTransitionProp,
+  useOsehTransition,
+  useSetTransitionReady,
+} from '../lib/TransitionProp';
+import { useDynamicAnimationEngine } from '../anim/useDynamicAnimation';
+import { ease } from '../lib/Bezier';
+import { convertLogicalWidthToPhysicalWidth } from '../images/DisplayRatioHelper';
+import { useStyleVWC } from '../hooks/useStyleVWC';
+
+export type SurveyScreenTransition =
+  | {
+      type: 'swipe';
+      /** If someone swipes to the left, then we enter from the right and exit to the left */
+      direction: 'to-left' | 'to-right';
+      ms: number;
+    }
+  | {
+      type: 'fade';
+      ms: number;
+    }
+  | {
+      type: 'none';
+      ms: number;
+    };
 
 export type SurveyScreenProps = {
   /** The title, usually the question */
@@ -30,6 +60,13 @@ export type SurveyScreenProps = {
   onBack: VariableStrategyProps<(() => void) | null>;
   /** The handler for when the continue button is pressed */
   onContinue: VariableStrategyProps<() => void>;
+  /** If specified, can be used to setup and trigger entrance/exit animations */
+  transition?: TransitionProp<
+    SurveyScreenTransition['type'],
+    SurveyScreenTransition
+  >;
+  /** Native app only; if specified, we will provide an outlet for them */
+  modals?: WritableValueWithCallbacks<Modals>;
 };
 
 const MIN_ABOVE_CONTENT_PADDING = 16;
@@ -45,6 +82,8 @@ export const SurveyScreen = ({
   subtitle: subtitleVSP,
   onBack: onBackVSP,
   onContinue: onContinueVSP,
+  transition: transitionRaw,
+  modals: modalsRaw,
   children,
 }: PropsWithChildren<SurveyScreenProps>) => {
   /*
@@ -58,11 +97,109 @@ export const SurveyScreen = ({
   const onBackVWC = useVariableStrategyPropsAsValueWithCallbacks(onBackVSP);
   const onContinueVWC =
     useVariableStrategyPropsAsValueWithCallbacks(onContinueVSP);
+  const transition = useInitializedTransitionProp(transitionRaw, () => ({
+    type: 'none',
+    ms: 0,
+  }));
+
+  const engine = useDynamicAnimationEngine();
+  const windowSizeVWC = useWindowSizeValueWithCallbacks();
+  const foregroundLeftVWC = useWritableValueWithCallbacks(() => {
+    const cfg = transition.animation.get();
+    if (cfg.type !== 'swipe') {
+      return 0;
+    }
+    if (cfg.direction === 'to-left') {
+      return windowSizeVWC.get().width;
+    } else {
+      return -windowSizeVWC.get().width;
+    }
+  });
+  const foregroundOpacityVWC = useWritableValueWithCallbacks((): number => {
+    const cfg = transition.animation.get();
+    if (cfg.type !== 'fade') {
+      return 1;
+    }
+    return 0;
+  });
+
+  useOsehTransition(
+    transition,
+    'swipe',
+    (cfg) => {
+      const startX = foregroundLeftVWC.get();
+      const endX = 0;
+      const dx = endX - startX;
+      engine.play([
+        {
+          id: 'swipe-in',
+          duration: cfg.ms,
+          progressEase: { type: 'bezier', bezier: ease },
+          onFrame: (progress) => {
+            setVWC(foregroundLeftVWC, startX + dx * progress);
+          },
+        },
+      ]);
+    },
+    (cfg) => {
+      const startX = foregroundLeftVWC.get();
+      const endX =
+        cfg.direction === 'to-left'
+          ? -windowSizeVWC.get().width
+          : windowSizeVWC.get().width;
+      const dx = endX - startX;
+      engine.play([
+        {
+          id: 'swipe-out',
+          duration: cfg.ms,
+          progressEase: { type: 'bezier', bezier: ease },
+          onFrame: (progress) => {
+            setVWC(foregroundLeftVWC, startX + dx * progress);
+          },
+        },
+      ]);
+    }
+  );
+  useOsehTransition(
+    transition,
+    'fade',
+    (cfg) => {
+      const startOpacity = foregroundOpacityVWC.get();
+      const endOpacity = 1;
+      const dx = endOpacity - startOpacity;
+      engine.play([
+        {
+          id: 'fade-in',
+          duration: cfg.ms,
+          progressEase: { type: 'bezier', bezier: ease },
+          onFrame: (progress) => {
+            setVWC(foregroundOpacityVWC, startOpacity + dx * progress);
+          },
+        },
+      ]);
+    },
+    (cfg) => {
+      const startOpacity = foregroundOpacityVWC.get();
+      const endOpacity = 0;
+      const dx = endOpacity - startOpacity;
+      engine.play([
+        {
+          id: 'fade-out',
+          duration: cfg.ms,
+          progressEase: { type: 'bezier', bezier: ease },
+          onFrame: (progress) => {
+            setVWC(foregroundOpacityVWC, startOpacity + dx * progress);
+          },
+        },
+      ]);
+    }
+  );
+  useAttachDynamicEngineToTransition(transition, engine);
+  useSetTransitionReady(transition);
 
   const modals = useWritableValueWithCallbacks((): Modals => []);
   const modalsValue = useMemo(() => ({ modals }), [modals]);
 
-  const windowSizeVWC = useWindowSizeValueWithCallbacks();
   const contentHeightVWC = useWritableValueWithCallbacks<number | null>(
     () => null
   );
@@ -101,8 +238,43 @@ export const SurveyScreen = ({
     }
   );
 
+  const backgroundContainerRef = useWritableValueWithCallbacks<View | null>(
+    () => null
+  );
+  useValuesWithCallbacksEffect([backgroundContainerRef, windowSizeVWC], () => {
+    const size = windowSizeVWC.get();
+    const ele = backgroundContainerRef.get();
+    if (ele !== null) {
+      ele.setNativeProps({ style: { minHeight: size.height } });
+    }
+    return undefined;
+  });
+
+  const foregroundRef = useWritableValueWithCallbacks<View | null>(() => null);
+  const foregroundStyleVWC = useMappedValuesWithCallbacks(
+    [foregroundLeftVWC, foregroundOpacityVWC, windowSizeVWC],
+    (): ViewStyle => {
+      const left = foregroundLeftVWC.get();
+      const opacity = foregroundOpacityVWC.get();
+      const size = windowSizeVWC.get();
+      const leftIsZero = convertLogicalWidthToPhysicalWidth(Math.abs(left)) < 1;
+      const opacityIsOne = opacity > 0.999;
+      return {
+        position: 'relative',
+        left: leftIsZero ? 0 : left,
+        opacity: opacityIsOne ? 1 : opacity,
+        minHeight: size.height,
+        width: size.width,
+      };
+    }
+  );
+  useStyleVWC(foregroundRef, foregroundStyleVWC);
+
   const content: ReactElement = (
-    <>
+    <View
+      style={Object.assign({}, styles.contentInner, foregroundStyleVWC.get())}
+      ref={(r) => setVWC(foregroundRef, r)}
+    >
       <View style={{ height: topBarHeight }} />
       <View style={styles.contentGrowingPadding} />
       <View
@@ -155,21 +327,8 @@ export const SurveyScreen = ({
           style={{ height: BELOW_BACK_CONTINUE_PADDING + bottomBarHeight }}
         />
       </View>
-    </>
+    </View>
   );
-
-  const backgroundContainerRef = useWritableValueWithCallbacks<View | null>(
-    () => null
-  );
-  useValuesWithCallbacksEffect([backgroundContainerRef, windowSizeVWC], () => {
-    const size = windowSizeVWC.get();
-    const ele = backgroundContainerRef.get();
-    if (ele !== null) {
-      ele.setNativeProps({ style: { minHeight: size.height } });
-    }
-    return undefined;
-  });
-
   return (
     <View>
       <SvgLinearGradientBackground
@@ -201,6 +360,7 @@ export const SurveyScreen = ({
         />
       </SvgLinearGradientBackground>
       <ModalsOutlet modals={modals} />
+      {modalsRaw !== undefined && <ModalsOutlet modals={modalsRaw} />}
       <StatusBar style="light" />
     </View>
   );

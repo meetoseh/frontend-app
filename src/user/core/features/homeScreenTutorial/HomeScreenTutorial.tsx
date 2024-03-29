@@ -25,6 +25,10 @@ export const HomeScreenTutorial = ({
     'explain_top' | 'explain_bottom'
   >(() => 'explain_top');
 
+  useEffect(() => {
+    resources.get().onMount();
+  }, []);
+
   useStartSession(
     {
       type: 'callbacks',
@@ -71,11 +75,12 @@ export const HomeScreenTutorial = ({
   const mappedState = useMappedValuesWithCallbacks(
     [resources],
     (): HomeScreenState => ({
-      enabled: true,
       imageHandler: resources.get().imageHandler,
       streakInfo: resources.get().streakInfo,
       sessionInfo: resources.get().sessionInfo,
+      nextEnterTransition: undefined,
       onClassTaken: () => {},
+      setNextEnterTransition: () => {},
     })
   );
 

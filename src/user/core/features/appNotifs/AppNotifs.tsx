@@ -6,7 +6,14 @@ import { useStartSession } from '../../../../shared/hooks/useInappNotificationSe
 import { adaptValueWithCallbacksAsVariableStrategyProps } from '../../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
 import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
-import { Platform, View, Text, StyleProp, TextStyle } from 'react-native';
+import {
+  Platform,
+  View,
+  Text,
+  StyleProp,
+  TextStyle,
+  ViewStyle,
+} from 'react-native';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
 import { styles } from './AppNotifsStyles';
@@ -32,7 +39,19 @@ import { apiFetch } from '../../../../shared/lib/apiFetch';
 import { LoginContext } from '../../../../shared/contexts/LoginContext';
 import { useTimezone } from '../../../../shared/hooks/useTimezone';
 import { DayOfWeek } from '../../../../shared/models/DayOfWeek';
+import {
+  playExitTransition,
+  useAttachDynamicEngineToTransition,
+  useEntranceTransition,
+  useOsehTransition,
+  useSetTransitionReady,
+  useTransitionProp,
+} from '../../../../shared/lib/TransitionProp';
+import { useDynamicAnimationEngine } from '../../../../shared/anim/useDynamicAnimation';
+import { ease } from '../../../../shared/lib/Bezier';
+import { useStyleVWC } from '../../../../shared/hooks/useStyleVWC';
 
+type AppNotifsTransition = { type: 'fade'; ms: number };
 /**
  * Displays our screen asking the user if they want to receive notifications. We
  * use this screen before the native dialog both to provide context and because
@@ -42,29 +61,29 @@ export const AppNotifs = ({
   state,
   resources,
 }: FeatureComponentProps<AppNotifsState, AppNotifsResources>): ReactElement => {
+  const transition = useTransitionProp<
+    AppNotifsTransition['type'],
+    AppNotifsTransition
+  >(() => ({ type: 'fade', ms: 350 }));
+  useEntranceTransition(transition);
+
   const loginContextRaw = useContext(LoginContext);
   const timezone = useTimezone();
 
   useStartSession(
     adaptValueWithCallbacksAsVariableStrategyProps(
       useMappedValueWithCallbacks(resources, (r) => r.session)
-    )
-  );
-
-  const sentOpen = useWritableValueWithCallbacks(() => false);
-  useValueWithCallbacksEffect(resources, (res) => {
-    const session = res.session;
-    if (sentOpen.get() || session === null) {
-      return undefined;
+    ),
+    {
+      onStart: () => {
+        resources.get().session?.storeAction?.('open', {
+          last_requested_locally:
+            state.get().lastRequestedLocally?.getTime() ?? null,
+          platform: Platform.OS,
+        });
+      },
     }
-    session.storeAction('open', {
-      last_requested_locally:
-        state.get().lastRequestedLocally?.getTime() ?? null,
-      platform: Platform.OS,
-    });
-    setVWC(sentOpen, true);
-    return undefined;
-  });
+  );
 
   const nativePromptIsOpen = useWritableValueWithCallbacks(() => false);
   const isSkipping = useWritableValueWithCallbacks(() => false);
@@ -128,6 +147,8 @@ export const AppNotifs = ({
       });
     } finally {
       try {
+        await playExitTransition(transition).promise.catch(() => {});
+        resources.get().session?.reset();
         await state.get().onDoneRequestingLocally();
       } finally {
         setVWC(nativePromptIsOpen, false);
@@ -155,6 +176,7 @@ export const AppNotifs = ({
       await session?.storeAction('skip', null);
     } finally {
       try {
+        await playExitTransition(transition).promise.catch(() => {});
         await state.get().onDoneRequestingLocally();
       } finally {
         setVWC(isSkipping, false);
@@ -170,6 +192,59 @@ export const AppNotifs = ({
   );
 
   const contentWidth = useContentWidth();
+  const opacityVWC = useWritableValueWithCallbacks<number>(() =>
+    transition.animation.get().type === 'fade' ? 0 : 1
+  );
+
+  const engine = useDynamicAnimationEngine();
+  useOsehTransition(
+    transition,
+    'fade',
+    (cfg) => {
+      const start = opacityVWC.get();
+      const end = 1;
+      const dx = end - start;
+      engine.play([
+        {
+          id: 'fade-in',
+          duration: cfg.ms,
+          progressEase: { type: 'bezier', bezier: ease },
+          onFrame: (progress) => {
+            setVWC(opacityVWC, start + dx * progress);
+          },
+        },
+      ]);
+    },
+    (cfg) => {
+      const start = opacityVWC.get();
+      const end = 0;
+      const dx = end - start;
+      engine.play([
+        {
+          id: 'fade-out',
+          duration: cfg.ms,
+          progressEase: { type: 'bezier', bezier: ease },
+          onFrame: (progress) => {
+            setVWC(opacityVWC, start + dx * progress);
+          },
+        },
+      ]);
+    }
+  );
+  useAttachDynamicEngineToTransition(transition, engine);
+  useSetTransitionReady(transition);
+
+  const contentRef = useWritableValueWithCallbacks<View | null>(() => null);
+  const contentStyleVWC = useMappedValueWithCallbacks(
+    opacityVWC,
+    (opacity): ViewStyle => {
+      const opacityIsOne = opacity >= 0.999;
+      return {
+        opacity: opacityIsOne ? 1 : opacity,
+      };
+    }
+  );
+  useStyleVWC(contentRef, contentStyleVWC);
 
   return (
     <View style={styles.container}>
@@ -181,7 +256,14 @@ export const AppNotifs = ({
       >
         <FullscreenView style={styles.background}>
           <ModalProvider>
-            <View style={{ ...styles.content, width: contentWidth }}>
+            <View
+              style={{
+                ...styles.content,
+                width: contentWidth,
+                ...contentStyleVWC.get(),
+              }}
+              ref={(r) => setVWC(contentRef, r)}
+            >
               <SVG.Svg width="126" height="111" viewBox="-15 0 126 111">
                 <SVG.Rect
                   x="0"

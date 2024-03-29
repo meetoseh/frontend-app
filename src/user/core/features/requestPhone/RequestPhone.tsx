@@ -17,7 +17,14 @@ import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMapped
 import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
 import { describeError } from '../../../../shared/lib/describeError';
 import { apiFetch } from '../../../../shared/lib/apiFetch';
-import { View, Text, TextInput, StyleProp, TextStyle } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleProp,
+  TextStyle,
+  ViewStyle,
+} from 'react-native';
 import { styles } from './RequestPhoneStyles';
 import { Modals, ModalsOutlet } from '../../../../shared/contexts/ModalContext';
 import * as Linking from 'expo-linking';
@@ -30,7 +37,7 @@ import { useKeyboardVisibleValueWithCallbacks } from '../../../../shared/lib/use
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
 import { inferAnimators } from '../../../../shared/anim/AnimationLoop';
 import { useAnimatedValueWithCallbacks } from '../../../../shared/anim/useAnimatedValueWithCallbacks';
-import { easeIn } from '../../../../shared/lib/Bezier';
+import { ease, easeIn } from '../../../../shared/lib/Bezier';
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
 import {
   ErrorBanner,
@@ -39,6 +46,19 @@ import {
 import { LinkButton } from '../../../../shared/components/LinkButton';
 import { useContentWidth } from '../../../../shared/lib/useContentWidth';
 import { SvgLinearGradientBackground } from '../../../../shared/anim/SvgLinearGradientBackground';
+import {
+  playEntranceTransition,
+  playExitTransition,
+  useAttachDynamicEngineToTransition,
+  useEntranceTransition,
+  useOsehTransition,
+  useSetTransitionReady,
+  useTransitionProp,
+} from '../../../../shared/lib/TransitionProp';
+import { useDynamicAnimationEngine } from '../../../../shared/anim/useDynamicAnimation';
+import { useStyleVWC } from '../../../../shared/hooks/useStyleVWC';
+
+type RequestPhoneTransition = { type: 'fade'; ms: number };
 
 /**
  * Prompts the user for their phone number, then verifies it.
@@ -50,6 +70,12 @@ export const RequestPhone = ({
   RequestPhoneState,
   RequestPhoneResources
 >): ReactElement => {
+  const transition = useTransitionProp<
+    RequestPhoneTransition['type'],
+    RequestPhoneTransition
+  >(() => ({ type: 'fade', ms: 350 }));
+  useEntranceTransition(transition);
+
   const loginContextRaw = useContext(LoginContext);
   const interests = useContext(InterestsContext);
   const appNotifsAvailable = useMappedValueWithCallbacks(
@@ -57,7 +83,7 @@ export const RequestPhone = ({
     (r) => r.appNotifsEnabled
   );
 
-  const step = useWritableValueWithCallbacks<'number' | 'verify' | 'done'>(
+  const step = useWritableValueWithCallbacks<'number' | 'verify'>(
     () => 'number'
   );
   const phone = useWritableValueWithCallbacks<string>(() => '');
@@ -274,17 +300,25 @@ export const RequestPhone = ({
         throw response;
       }
 
+      await playExitTransition(transition).promise.catch(() => {});
       await loginContextRaw.setUserAttributes({
         ...login.userAttributes,
         phoneNumber,
       });
-      resources
-        .get()
-        .session?.storeAction?.call(undefined, 'verify_success', null);
-      state.get().onAddedPhoneNumber({
+      const res = resources.get();
+      const st = state.get();
+      if (res.session !== null) {
+        res.session.storeAction('verify_success', null);
+        res.session.reset();
+        if (
+          res.session.inappNotificationUid === st.onboardingPhoneNumberIAN?.uid
+        ) {
+          st.onboardingPhoneNumberIAN.onShown();
+        }
+      }
+      st.onAddedPhoneNumber({
         enabled: !resources.get().appNotifsEnabled,
       });
-      setVWC(step, 'done');
     } catch (e) {
       resources
         .get()
@@ -292,6 +326,7 @@ export const RequestPhone = ({
       console.error(e);
       const err = await describeError(e);
       setVWC(error, err);
+      await playEntranceTransition(transition).promise.catch(() => {});
     } finally {
       setVWC(saving, false);
     }
@@ -310,6 +345,7 @@ export const RequestPhone = ({
     const res = resources.get();
     const st = state.get();
 
+    await playExitTransition(transition).promise.catch(() => {});
     if (res.session !== null) {
       res.session.storeAction('skip', null);
       res.session.reset();
@@ -449,6 +485,59 @@ export const RequestPhone = ({
     [code]
   );
 
+  const opacityVWC = useWritableValueWithCallbacks<number>(() =>
+    transition.animation.get().type === 'fade' ? 0 : 1
+  );
+
+  const engine = useDynamicAnimationEngine();
+  useOsehTransition(
+    transition,
+    'fade',
+    (cfg) => {
+      const start = opacityVWC.get();
+      const end = 1;
+      const dx = end - start;
+      engine.play([
+        {
+          id: 'fade-in',
+          duration: cfg.ms,
+          progressEase: { type: 'bezier', bezier: ease },
+          onFrame: (progress) => {
+            setVWC(opacityVWC, start + dx * progress);
+          },
+        },
+      ]);
+    },
+    (cfg) => {
+      const start = opacityVWC.get();
+      const end = 0;
+      const dx = end - start;
+      engine.play([
+        {
+          id: 'fade-out',
+          duration: cfg.ms,
+          progressEase: { type: 'bezier', bezier: ease },
+          onFrame: (progress) => {
+            setVWC(opacityVWC, start + dx * progress);
+          },
+        },
+      ]);
+    }
+  );
+  useAttachDynamicEngineToTransition(transition, engine);
+  useSetTransitionReady(transition);
+
+  const contentStyleVWC = useMappedValueWithCallbacks(
+    opacityVWC,
+    (opacity): ViewStyle => {
+      const opacityIsOne = opacity >= 0.999;
+      return {
+        opacity: opacityIsOne ? 1 : opacity,
+      };
+    }
+  );
+  useStyleVWC(contentView, contentStyleVWC);
+
   return (
     <View style={styles.container}>
       <SvgLinearGradientBackground
@@ -465,6 +554,7 @@ export const RequestPhone = ({
             style={{
               ...styles.content,
               width: contentWidth,
+              ...contentStyleVWC.get(),
             }}
             ref={(r) => setVWC(contentView, r)}
           >

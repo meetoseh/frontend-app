@@ -1,4 +1,3 @@
-import { useContext } from 'react';
 import { useInappNotificationValueWithCallbacks } from '../../../../shared/hooks/useInappNotification';
 import { Feature } from '../../models/Feature';
 import { GoalDaysPerWeekResources } from './GoalDaysPerWeekResources';
@@ -6,22 +5,13 @@ import {
   GoalDaysPerWeekForced,
   GoalDaysPerWeekState,
 } from './GoalDaysPerWeekState';
-import { useWindowSizeValueWithCallbacks } from '../../../../shared/hooks/useWindowSize';
 import { useInappNotificationSessionValueWithCallbacks } from '../../../../shared/hooks/useInappNotificationSession';
 import { GoalDaysPerWeek } from './GoalDaysPerWeek';
-import { InterestsContext } from '../../../../shared/contexts/InterestsContext';
-import { useOsehImageStateRequestHandler } from '../../../../shared/images/useOsehImageStateRequestHandler';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
-import { useReactManagedValueAsValueWithCallbacks } from '../../../../shared/hooks/useReactManagedValueAsValueWithCallbacks';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
-import { OsehImageProps } from '../../../../shared/images/OsehImageProps';
-import { useOsehImageStateValueWithCallbacks } from '../../../../shared/images/useOsehImageStateValueWithCallbacks';
-import { useStaleOsehImageOnSwap } from '../../../../shared/images/useStaleOsehImageOnSwap';
 import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
-
-const backgroundUid = 'oseh_if_0ykGW_WatP5-mh-0HRsrNw';
 
 export const GoalDaysPerWeekFeature: Feature<
   GoalDaysPerWeekState,
@@ -78,7 +68,7 @@ export const GoalDaysPerWeekFeature: Feature<
           const forced = stateVWC.get().forced;
           if (forced !== null) {
             if (action === 'back' && forced.back === 'age') {
-              allStatesVWC.get().age.setForced(true);
+              allStatesVWC.get().age.setForced({ enter: 'swipe-right' });
             }
             stateVWC.get().setForced(null);
           }

@@ -2,7 +2,6 @@ import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMapped
 import { useNetworkResponse } from '../../../../shared/hooks/useNetworkResponse';
 import { useOsehImageStateRequestHandler } from '../../../../shared/images/useOsehImageStateRequestHandler';
 import { adaptActiveVWCToAbortSignal } from '../../../../shared/lib/adaptActiveVWCToAbortSignal';
-import { useFeatureFlag } from '../../../../shared/lib/useFeatureFlag';
 import {
   StreakInfo,
   streakInfoKeyMap,
@@ -11,7 +10,7 @@ import { Feature } from '../../models/Feature';
 import { HomeScreenResources } from './HomeScreenResources';
 import { HomeScreenSessionInfo, HomeScreenState } from './HomeScreenState';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
-import { HomeScreen } from './HomeScreen';
+import { HomeScreen, HomeScreenTransition } from './HomeScreen';
 import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { apiFetch } from '../../../../shared/lib/apiFetch';
@@ -57,12 +56,16 @@ export const HomeScreenFeature: Feature<HomeScreenState, HomeScreenResources> =
           classesTaken: 0,
         }));
       const imageHandler = useOsehImageStateRequestHandler({});
+      const nextEnterTransitionVWC = useWritableValueWithCallbacks<
+        HomeScreenTransition | undefined
+      >(() => undefined);
 
       return useMappedValuesWithCallbacks(
-        [streakInfoVWC, sessionInfoVWC],
-        () => ({
+        [streakInfoVWC, sessionInfoVWC, nextEnterTransitionVWC],
+        (): HomeScreenState => ({
           streakInfo: streakInfoVWC.get(),
           sessionInfo: sessionInfoVWC.get(),
+          nextEnterTransition: nextEnterTransitionVWC.get(),
           imageHandler,
           onClassTaken: () => {
             const info = sessionInfoVWC.get();
@@ -70,6 +73,9 @@ export const HomeScreenFeature: Feature<HomeScreenState, HomeScreenResources> =
               ...info,
               classesTaken: info.classesTaken + 1,
             });
+          },
+          setNextEnterTransition: (transition) => {
+            setVWC(nextEnterTransitionVWC, transition);
           },
         })
       );

@@ -4,16 +4,17 @@ import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMapped
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
 import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { setVWC } from '../../../../shared/lib/setVWC';
-import { useFeatureFlag } from '../../../../shared/lib/useFeatureFlag';
 import { Feature } from '../../models/Feature';
 import { Age } from './Age';
 import { AgeResources } from './AgeResources';
-import { AgeState } from './AgeState';
+import { AgeForced, AgeState } from './AgeState';
 
 export const AgeFeature: Feature<AgeState, AgeResources> = {
   identifier: 'age',
   useWorldState: () => {
-    const forcedVWC = useWritableValueWithCallbacks(() => false);
+    const forcedVWC = useWritableValueWithCallbacks<AgeForced | null>(
+      () => null
+    );
     const ian = useInappNotificationValueWithCallbacks({
       type: 'react-rerender',
       props: { uid: 'oseh_ian_xRWoSM6A_F7moeaYSpcaaQ', suppress: false },
@@ -22,7 +23,11 @@ export const AgeFeature: Feature<AgeState, AgeResources> = {
     // prevents us from flashing the screen under certain network errors
     useValueWithCallbacksEffect(ian, (ian) => {
       if (ian !== null && ian.showNow) {
-        setVWC(forcedVWC, true);
+        setVWC(
+          forcedVWC,
+          { enter: 'fade' } as const,
+          (a, b) => (a === null) === (b === null)
+        );
       }
       return undefined;
     });
@@ -36,7 +41,7 @@ export const AgeFeature: Feature<AgeState, AgeResources> = {
     });
   },
   isRequired: (state) => {
-    return state.forced || state.ian?.showNow;
+    return state.forced !== null || state.ian?.showNow;
   },
   useResources: (stateVWC, requiredVWC, allStatesVWC) => {
     const sessionVWC = useInappNotificationSessionValueWithCallbacks({
@@ -49,11 +54,12 @@ export const AgeFeature: Feature<AgeState, AgeResources> = {
       loading: sessionVWC.get() === null,
       session: sessionVWC.get(),
       onBack: () => {
-        allStatesVWC.get().goalCategories.setForced(true);
-        stateVWC.get().setForced(false);
+        allStatesVWC.get().goalCategories.setForced({ enter: 'swipe-right' });
+        stateVWC.get().setForced(null);
       },
       onContinue: () => {
-        stateVWC.get().setForced(false);
+        allStatesVWC.get().goalDaysPerWeek.setForced({ back: 'age' });
+        stateVWC.get().setForced(null);
       },
     }));
   },

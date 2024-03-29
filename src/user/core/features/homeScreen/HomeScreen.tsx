@@ -44,6 +44,19 @@ import { styles as bottomNavStyles } from '../../../bottomNav/BottomNavBarStyles
 import { Emotion } from '../../../../shared/models/Emotion';
 import { useStyleVWC } from '../../../../shared/hooks/useStyleVWC';
 import { useDynamicAnimationEngine } from '../../../../shared/anim/useDynamicAnimation';
+import {
+  useAttachDynamicEngineToTransition,
+  useEntranceTransition,
+  useOsehTransition,
+  useSetTransitionReady,
+  useTransitionProp,
+} from '../../../../shared/lib/TransitionProp';
+import { DARK_BLACK_GRAY_GRADIENT_SVG } from '../../../../styling/colors';
+import { createCancelablePromiseFromCallbacks } from '../../../../shared/lib/createCancelablePromiseFromCallbacks';
+
+export type HomeScreenTransition =
+  | { type: 'fade'; ms: number }
+  | { type: 'none'; ms: number };
 
 /**
  * Displays the home screen for the user
@@ -58,6 +71,17 @@ export const HomeScreen = ({
     onNextStep: () => void;
   };
 }): ReactElement => {
+  const transition = useTransitionProp((): HomeScreenTransition => {
+    if (tutorial === undefined) {
+      const req = state.get().nextEnterTransition;
+      if (req !== undefined) {
+        return req;
+      }
+    }
+    return { type: 'fade', ms: 700 };
+  });
+  useEntranceTransition(transition);
+
   const currentDate = useMemo(() => new Date(), []);
   const greeting = useMemo(() => {
     const hour = currentDate.getHours();
@@ -105,27 +129,15 @@ export const HomeScreen = ({
   );
   useStyleVWC(headerAndGoalRef, headerAndGoalStyleVWC);
 
-  const headerDynamicStyle = useMappedValueWithCallbacks(
+  const headerStyleVWC = useMappedValueWithCallbacks(
     backgroundImageVWC,
     (bknd) => ({ width: Math.min(bknd.displayWidth, 438) })
   );
   const headerRef = useWritableValueWithCallbacks<View | null>(() => null);
-  useValuesWithCallbacksEffect([headerRef, headerDynamicStyle], () => {
-    const ele = headerRef.get();
-    if (ele !== null) {
-      ele.setNativeProps({ style: headerDynamicStyle.get() });
-    }
-    return undefined;
-  });
+  useStyleVWC(headerRef, headerStyleVWC);
 
   const goalWrapperRef = useWritableValueWithCallbacks<View | null>(() => null);
-  useValuesWithCallbacksEffect([goalWrapperRef, headerDynamicStyle], () => {
-    const ele = goalWrapperRef.get();
-    if (ele !== null) {
-      ele.setNativeProps({ style: headerDynamicStyle.get() });
-    }
-    return undefined;
-  });
+  useStyleVWC(goalWrapperRef, headerStyleVWC);
 
   const windowSizeVWC = useWindowSizeValueWithCallbacks();
 
@@ -348,45 +360,58 @@ export const HomeScreen = ({
     (v) => v.width
   );
 
-  const foregroundRef = useWritableValueWithCallbacks<View | null>(() => null);
-  useValuesWithCallbacksEffect([windowSizeVWC, foregroundRef], () => {
-    const ele = foregroundRef.get();
-    if (ele !== null) {
-      ele.setNativeProps({ style: { height: windowSizeVWC.get().height } });
-    }
-    return undefined;
-  });
-
   const bottomNavHeightVWC = useWritableValueWithCallbacks<number>(
     () => bottomNavStyles.container.minHeight
   );
   const overlayVWC = useWritableValueWithCallbacks<View | null>(() => null);
+  const foregroundOpacityVWC = useWritableValueWithCallbacks<number>(() => {
+    if (transition.animation.get().type === 'fade') {
+      return 0;
+    }
+    return 1;
+  });
+  const tutorialOpacityVWC = useWritableValueWithCallbacks(() => 1);
   const overlayStyleVWC = useMappedValuesWithCallbacks(
     [
       ...(tutorial === undefined ? [] : [tutorial.step]),
       backgroundImageVWC,
       bottomNavHeightVWC,
+      foregroundOpacityVWC,
+      tutorialOpacityVWC,
     ],
     (): {
       top: number | undefined;
       bottom: number | undefined;
       height: number | undefined;
+      opacity: number;
     } => {
       const step = tutorial?.step?.get();
       if (step === undefined) {
-        return { top: undefined, bottom: undefined, height: undefined };
+        return {
+          top: undefined,
+          bottom: undefined,
+          height: undefined,
+          opacity: 1,
+        };
       }
 
       const imgHeight = backgroundImageVWC.get();
       const botNavHeight = bottomNavHeightVWC.get();
+      const opacity = foregroundOpacityVWC.get() * tutorialOpacityVWC.get();
 
       if (step === 'explain_bottom') {
-        return { top: 0, bottom: undefined, height: imgHeight.displayHeight };
+        return {
+          top: 0,
+          bottom: undefined,
+          height: imgHeight.displayHeight,
+          opacity,
+        };
       } else {
         return {
           top: imgHeight.displayHeight,
           bottom: botNavHeight + botBarHeight,
           height: undefined,
+          opacity,
         };
       }
     }
@@ -414,6 +439,7 @@ export const HomeScreen = ({
     if (engine.playing.get()) {
       return;
     }
+    state.get().setNextEnterTransition(undefined);
     setVWC(selectingEmotionVWC, emotion);
 
     const finish = resources.get().startGotoEmotion(emotion);
@@ -605,6 +631,110 @@ export const HomeScreen = ({
   );
   useStyleVWC(swapInEmotionWrapperRef, swapInEmotionWrapperStyleVWC);
 
+  const standardGradientOverlayOpacityVWC =
+    useWritableValueWithCallbacks<number>(() => {
+      if (transition.animation.get().type === 'fade') {
+        return 1;
+      }
+      return 0;
+    });
+  useOsehTransition(
+    transition,
+    'fade',
+    (cfg) => {
+      const startOverlayOpacity = standardGradientOverlayOpacityVWC.get();
+      const endOverlayOpacity = 0;
+      const dOverlayOpacity = endOverlayOpacity - startOverlayOpacity;
+
+      const startContentOpacity = foregroundOpacityVWC.get();
+      const endContentOpacity = 1;
+      const dContentOpacity = endContentOpacity - startContentOpacity;
+
+      engine.play([
+        {
+          id: 'fade-out-overlay',
+          duration: cfg.ms / 2,
+          progressEase: { type: 'bezier', bezier: ease },
+          onFrame: (progress) => {
+            setVWC(
+              standardGradientOverlayOpacityVWC,
+              startOverlayOpacity + dOverlayOpacity * progress
+            );
+          },
+        },
+        {
+          id: 'fade-in-content',
+          duration: cfg.ms / 2,
+          delayUntil: {
+            type: 'relativeToEnd',
+            id: 'fade-out-overlay',
+            after: 0,
+          },
+          progressEase: { type: 'bezier', bezier: ease },
+          onFrame: (progress) => {
+            setVWC(
+              foregroundOpacityVWC,
+              startContentOpacity + dContentOpacity * progress
+            );
+          },
+        },
+      ]);
+    },
+    (cfg) => {
+      const startOverlayOpacity = standardGradientOverlayOpacityVWC.get();
+      const endOverlayOpacity = 1;
+      const dOverlayOpacity = endOverlayOpacity - startOverlayOpacity;
+
+      engine.play([
+        {
+          id: 'fade-in-overlay',
+          duration: cfg.ms / 2,
+          progressEase: { type: 'bezier', bezier: ease },
+          onFrame: (progress) => {
+            setVWC(
+              standardGradientOverlayOpacityVWC,
+              startOverlayOpacity + dOverlayOpacity * progress
+            );
+          },
+        },
+      ]);
+    }
+  );
+  useAttachDynamicEngineToTransition(transition, engine);
+  useSetTransitionReady(transition);
+
+  const stdGradientOverlayRef = useWritableValueWithCallbacks<View | null>(
+    () => null
+  );
+  const stdGradientOverlayStyleVWC = useMappedValuesWithCallbacks(
+    [standardGradientOverlayOpacityVWC, windowSizeVWC],
+    (): ViewStyle => {
+      const opacity = standardGradientOverlayOpacityVWC.get();
+      const size = windowSizeVWC.get();
+      const isZero = opacity < 1e-3;
+      return {
+        display: isZero ? 'none' : 'flex',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: size.width,
+        height: size.height,
+        opacity,
+      };
+    }
+  );
+  useStyleVWC(stdGradientOverlayRef, stdGradientOverlayStyleVWC);
+
+  const foregroundRef = useWritableValueWithCallbacks<View | null>(() => null);
+  const foregroundStyleVWC = useMappedValuesWithCallbacks(
+    [windowSizeVWC, foregroundOpacityVWC],
+    () => ({
+      height: windowSizeVWC.get().height,
+      opacity: foregroundOpacityVWC.get(),
+    })
+  );
+  useStyleVWC(foregroundRef, foregroundStyleVWC);
+
   return (
     <View style={styles.container}>
       <View style={styles.background}>
@@ -646,9 +776,7 @@ export const HomeScreen = ({
       </View>
       <View
         ref={(r) => setVWC(foregroundRef, r)}
-        style={Object.assign({}, styles.foreground, {
-          height: windowSizeVWC.get().height,
-        })}
+        style={Object.assign({}, styles.foreground, foregroundStyleVWC.get())}
       >
         <View
           style={Object.assign(
@@ -675,11 +803,7 @@ export const HomeScreen = ({
               ref={(r) => setVWC(headerAndGoalRef, r)}
             >
               <View
-                style={Object.assign(
-                  {},
-                  styles.header,
-                  headerDynamicStyle.get()
-                )}
+                style={Object.assign({}, styles.header, headerStyleVWC.get())}
                 ref={(r) => setVWC(headerRef, r)}
               >
                 <View style={styles.headerTitleRow}>
@@ -765,13 +889,21 @@ export const HomeScreen = ({
                 </Text>
               </View>
               <View
-                style={styles.goalWrapper}
+                style={Object.assign(
+                  {},
+                  styles.goalWrapper,
+                  headerStyleVWC.get()
+                )}
                 ref={(r) => setVWC(goalWrapperRef, r)}
               >
                 <SimpleBlurView
                   style={styles.goal}
                   intensity={4}
                   experimentalBlurMethod="dimezisBlurView"
+                  captureAllowed={useMappedValueWithCallbacks(
+                    engine.playing,
+                    (p) => !p
+                  )}
                 >
                   <View style={styles.goalInner}>
                     <View style={styles.goalVisual}>
@@ -1087,8 +1219,38 @@ export const HomeScreen = ({
                       <Text style={styles.tutorialProgress}>1/2</Text>
                       <Pressable
                         style={styles.tutorialButton}
-                        onPress={() => {
+                        onPress={async () => {
+                          engine.play([
+                            {
+                              id: 'fade-out',
+                              duration: 350,
+                              progressEase: { type: 'bezier', bezier: ease },
+                              onFrame: (progress) => {
+                                setVWC(tutorialOpacityVWC, 1 - progress);
+                              },
+                            },
+                          ]);
+                          const playingChanged =
+                            createCancelablePromiseFromCallbacks(
+                              engine.playing.callbacks
+                            );
+                          if (!engine.playing.get()) {
+                            playingChanged.promise.catch(() => {});
+                            playingChanged.cancel();
+                          } else {
+                            await playingChanged.promise.catch(() => {});
+                          }
                           tutorial?.onNextStep();
+                          engine.play([
+                            {
+                              id: 'fade-in',
+                              duration: 350,
+                              progressEase: { type: 'bezier', bezier: ease },
+                              onFrame: (progress) => {
+                                setVWC(tutorialOpacityVWC, progress);
+                              },
+                            },
+                          ]);
                         }}
                       >
                         <Text style={styles.tutorialButtonText}>Next</Text>
@@ -1107,7 +1269,27 @@ export const HomeScreen = ({
                       <Text style={styles.tutorialProgress}>2/2</Text>
                       <Pressable
                         style={styles.tutorialButton}
-                        onPress={() => {
+                        onPress={async () => {
+                          engine.play([
+                            {
+                              id: 'fade-out',
+                              duration: 350,
+                              progressEase: { type: 'bezier', bezier: ease },
+                              onFrame: (progress) => {
+                                setVWC(tutorialOpacityVWC, 1 - progress);
+                              },
+                            },
+                          ]);
+                          const playingChanged =
+                            createCancelablePromiseFromCallbacks(
+                              engine.playing.callbacks
+                            );
+                          if (!engine.playing.get()) {
+                            playingChanged.promise.catch(() => {});
+                            playingChanged.cancel();
+                          } else {
+                            await playingChanged.promise.catch(() => {});
+                          }
                           tutorial?.onNextStep();
                         }}
                       >
@@ -1121,6 +1303,13 @@ export const HomeScreen = ({
           </SimpleBlurView>
         </View>
       )}
+      <View
+        style={stdGradientOverlayStyleVWC.get()}
+        ref={(r) => setVWC(stdGradientOverlayRef, r)}
+        pointerEvents="none"
+      >
+        <SvgLinearGradient state={DARK_BLACK_GRAY_GRADIENT_SVG} />
+      </View>
       <StatusBar style="light" />
     </View>
   );

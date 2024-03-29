@@ -48,6 +48,20 @@ import {
   PurchasesPackage,
   PurchasesStoreProduct,
 } from 'react-native-purchases';
+import {
+  playExitTransition,
+  useAttachDynamicEngineToTransition,
+  useEntranceTransition,
+  useOsehTransition,
+  useSetTransitionReady,
+  useTransitionProp,
+} from '../../../../shared/lib/TransitionProp';
+import { useStyleVWC } from '../../../../shared/hooks/useStyleVWC';
+import { useDynamicAnimationEngine } from '../../../../shared/anim/useDynamicAnimation';
+import { ease } from '../../../../shared/lib/Bezier';
+import { DARK_BLACK_GRAY_GRADIENT_SVG } from '../../../../styling/colors';
+
+type UpgradeTransition = { type: 'fade'; ms: number };
 
 /**
  * Allows the user to upgrade to Oseh+, if they are eligible to do so
@@ -56,6 +70,11 @@ export const Upgrade = ({
   state,
   resources,
 }: FeatureComponentProps<UpgradeState, UpgradeResources>): ReactElement => {
+  const transition = useTransitionProp(
+    (): UpgradeTransition => ({ type: 'fade', ms: 700 })
+  );
+  useEntranceTransition(transition);
+
   const modals = useWritableValueWithCallbacks<Modals>(() => []);
   const loginContextRaw = useContext(LoginContext);
   const windowSizeVWC = useWindowSizeValueWithCallbacks();
@@ -223,6 +242,7 @@ export const Upgrade = ({
       console.log('purchasing package...');
       await purchases.loaded.purchasePackage(loginContext, rcPkg);
       console.log('purchasing package completed successfully, closing');
+      await playExitTransition(transition).promise.catch(() => {});
       resources.get().session?.reset();
       state.get().ian?.onShown();
       state.get().setContext(null, true);
@@ -240,22 +260,6 @@ export const Upgrade = ({
     resources,
     subscribeErrorVWC,
   ]);
-
-  const contentRef = useWritableValueWithCallbacks<View | null>(() => null);
-  useValuesWithCallbacksEffect([contentRef, windowSizeVWC], () => {
-    const content = contentRef.get();
-    const size = windowSizeVWC.get();
-
-    if (content === null) {
-      return;
-    }
-    content.setNativeProps({
-      style: {
-        minHeight: size.height,
-      },
-    });
-    return undefined;
-  });
 
   const topBarHeight = useTopBarHeight();
   const botBarHeight = useBotBarHeight();
@@ -279,7 +283,10 @@ export const Upgrade = ({
 
   const contentInnerHeightVWC = useWritableValueWithCallbacks<number>(() => 0);
 
-  const backgroundOverlayStyle = useMappedValuesWithCallbacks(
+  const backgroundOverlayRef = useWritableValueWithCallbacks<View | null>(
+    () => null
+  );
+  const backgroundOverlayStyleVWC = useMappedValuesWithCallbacks(
     [backgroundImageState, contentInnerHeightVWC, windowSizeVWC],
     () => {
       const topUsingDisplayHeight =
@@ -297,210 +304,309 @@ export const Upgrade = ({
       outputEqualityFn: (a, b) => a.top === b.top && a.height === b.height,
     }
   );
+  useStyleVWC(backgroundOverlayRef, backgroundOverlayStyleVWC);
 
-  const backgroundOverlayRef = useWritableValueWithCallbacks<View | null>(
-    () => null
-  );
-  useValuesWithCallbacksEffect(
-    [backgroundOverlayRef, backgroundOverlayStyle],
-    () => {
-      const ele = backgroundOverlayRef.get();
-      const style = backgroundOverlayStyle.get();
-      if (ele !== null) {
-        ele.setNativeProps({
-          style: Object.assign({}, style),
-        });
+  const standardGradientOverlayOpacityVWC =
+    useWritableValueWithCallbacks<number>(() => {
+      if (transition.animation.get().type === 'fade') {
+        return 1;
       }
-      return undefined;
+      return 0;
+    });
+  const contentOpacityVWC = useWritableValueWithCallbacks<number>(() => {
+    if (transition.animation.get().type === 'fade') {
+      return 0;
+    }
+    return 1;
+  });
+
+  const engine = useDynamicAnimationEngine();
+  useOsehTransition(
+    transition,
+    'fade',
+    (cfg) => {
+      const startOverlayOpacity = standardGradientOverlayOpacityVWC.get();
+      const endOverlayOpacity = 0;
+      const dOverlayOpacity = endOverlayOpacity - startOverlayOpacity;
+
+      const startContentOpacity = contentOpacityVWC.get();
+      const endContentOpacity = 1;
+      const dContentOpacity = endContentOpacity - startContentOpacity;
+
+      engine.play([
+        {
+          id: 'fade-out-overlay',
+          duration: cfg.ms / 2,
+          progressEase: { type: 'bezier', bezier: ease },
+          onFrame: (progress) => {
+            setVWC(
+              standardGradientOverlayOpacityVWC,
+              startOverlayOpacity + dOverlayOpacity * progress
+            );
+          },
+        },
+        {
+          id: 'fade-in-content',
+          duration: cfg.ms / 2,
+          delayUntil: {
+            type: 'relativeToEnd',
+            id: 'fade-out-overlay',
+            after: 0,
+          },
+          progressEase: { type: 'bezier', bezier: ease },
+          onFrame: (progress) => {
+            setVWC(
+              contentOpacityVWC,
+              startContentOpacity + dContentOpacity * progress
+            );
+          },
+        },
+      ]);
+    },
+    (cfg) => {
+      const startOverlayOpacity = standardGradientOverlayOpacityVWC.get();
+      const endOverlayOpacity = 1;
+      const dOverlayOpacity = endOverlayOpacity - startOverlayOpacity;
+
+      engine.play([
+        {
+          id: 'fade-in-overlay',
+          duration: cfg.ms / 2,
+          progressEase: { type: 'bezier', bezier: ease },
+          onFrame: (progress) => {
+            setVWC(
+              standardGradientOverlayOpacityVWC,
+              startOverlayOpacity + dOverlayOpacity * progress
+            );
+          },
+        },
+      ]);
     }
   );
+  useAttachDynamicEngineToTransition(transition, engine);
+  useSetTransitionReady(transition);
+
+  const stdGradientOverlayRef = useWritableValueWithCallbacks<View | null>(
+    () => null
+  );
+  const stdGradientOverlayStyleVWC = useMappedValuesWithCallbacks(
+    [standardGradientOverlayOpacityVWC, windowSizeVWC],
+    (): ViewStyle => {
+      const opacity = standardGradientOverlayOpacityVWC.get();
+      const size = windowSizeVWC.get();
+      const isZero = opacity < 1e-3;
+      return {
+        display: isZero ? 'none' : 'flex',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: size.width,
+        height: size.height,
+        opacity,
+      };
+    }
+  );
+  useStyleVWC(stdGradientOverlayRef, stdGradientOverlayStyleVWC);
+
+  const contentRef = useWritableValueWithCallbacks<View | null>(() => null);
+  const contentStyleVWC = useMappedValuesWithCallbacks(
+    [windowSizeVWC, contentOpacityVWC],
+    () => ({
+      minHeight: windowSizeVWC.get().height,
+      opacity: contentOpacityVWC.get(),
+    })
+  );
+  useStyleVWC(contentRef, contentStyleVWC);
 
   return (
     <View style={styles.container}>
-      <View style={styles.contentContainer}>
-        <View style={styles.content} ref={(r) => setVWC(contentRef, r)}>
-          <View style={styles.imageBackground}>
-            <OsehImageFromStateValueWithCallbacks
-              state={backgroundImageState}
-            />
-            <View style={styles.belowImageBackground}>
-              <SvgLinearGradient
-                state={{
-                  stops: [
-                    {
-                      color: [20, 25, 28, 1],
-                      offset: 0,
-                    },
-                    {
-                      color: [1, 1, 1, 1],
-                      offset: 1,
-                    },
-                  ],
-                  x1: 0.5,
-                  y1: 0,
-                  x2: 0.5,
-                  y2: 1,
-                }}
-              />
-            </View>
-          </View>
-          <View
-            style={Object.assign(
-              {},
-              styles.backgroundOverlay,
-              backgroundOverlayStyle.get()
-            )}
-            ref={(r) => setVWC(backgroundOverlayRef, r)}
+      <View style={styles.imageBackground}>
+        <OsehImageFromStateValueWithCallbacks state={backgroundImageState} />
+        <View style={styles.belowImageBackground}>
+          <SvgLinearGradient
+            state={{
+              stops: [
+                {
+                  color: [20, 25, 28, 1],
+                  offset: 0,
+                },
+                {
+                  color: [1, 1, 1, 1],
+                  offset: 1,
+                },
+              ],
+              x1: 0.5,
+              y1: 0,
+              x2: 0.5,
+              y2: 1,
+            }}
+          />
+        </View>
+      </View>
+      <View
+        style={Object.assign(
+          {},
+          styles.backgroundOverlay,
+          backgroundOverlayStyleVWC.get()
+        )}
+        ref={(r) => setVWC(backgroundOverlayRef, r)}
+      >
+        <SvgLinearGradient
+          state={{
+            stops: [
+              {
+                color: [20, 25, 28, 0],
+                offset: 0,
+              },
+              {
+                color: [20, 25, 28, 0.5],
+                offset: 0.3,
+              },
+              {
+                color: [20, 25, 28, 1],
+                offset: 1,
+              },
+            ],
+            x1: 0.5,
+            y1: 0,
+            x2: 0.5,
+            y2: 1,
+          }}
+        />
+      </View>
+      <View
+        style={Object.assign({}, styles.content, contentStyleVWC.get())}
+        ref={(r) => setVWC(contentRef, r)}
+      >
+        <View
+          style={Object.assign({}, styles.closeContainer, {
+            paddingTop: styles.closeContainer.paddingTop + topBarHeight,
+          })}
+        >
+          <Pressable
+            style={styles.closeButton}
+            onPress={async () => {
+              resources.get().session?.storeAction('close', null);
+              await playExitTransition(transition).promise.catch(() => {});
+              resources.get().session?.reset();
+              state.get().ian?.onShown();
+              state.get().setContext(null, true);
+            }}
           >
-            <SvgLinearGradient
-              state={{
-                stops: [
-                  {
-                    color: [20, 25, 28, 0],
-                    offset: 0,
-                  },
-                  {
-                    color: [20, 25, 28, 0.5],
-                    offset: 0.3,
-                  },
-                  {
-                    color: [20, 25, 28, 1],
-                    offset: 1,
-                  },
-                ],
-                x1: 0.5,
-                y1: 0,
-                x2: 0.5,
-                y2: 1,
-              }}
-            />
-          </View>
+            <Close />
+          </Pressable>
+        </View>
+        <View style={styles.contentInnerContainer}>
           <View
-            style={Object.assign({}, styles.closeContainer, {
-              paddingTop: styles.closeContainer.paddingTop + topBarHeight,
+            style={Object.assign({}, styles.contentInner, {
+              width: contentWidth,
+              paddingBottom: styles.contentInner.paddingBottom + botBarHeight,
             })}
+            onLayout={(e) => {
+              const height = e.nativeEvent?.layout?.height;
+              if (height !== undefined && height > 0 && !isNaN(height)) {
+                setVWC(contentInnerHeightVWC, height);
+              }
+            }}
           >
-            <Pressable
-              style={styles.closeButton}
-              onPress={() => {
-                resources.get().session?.storeAction('close', null);
-                resources.get().session?.reset();
-                state.get().ian?.onShown();
-                state.get().setContext(null, true);
-              }}
-            >
-              <Close />
-            </Pressable>
-          </View>
-          <View style={styles.contentInnerContainer}>
-            <View
-              style={Object.assign({}, styles.contentInner, {
-                width: contentWidth,
-                paddingBottom: styles.contentInner.paddingBottom + botBarHeight,
-              })}
-              onLayout={(e) => {
-                const height = e.nativeEvent?.layout?.height;
-                if (height !== undefined && height > 0 && !isNaN(height)) {
-                  setVWC(contentInnerHeightVWC, height);
-                }
-              }}
-            >
-              <RenderGuardedComponent
-                props={useMappedValueWithCallbacks(state, (s) => s.context)}
-                component={(ctx) => (
-                  <>
-                    <Text style={styles.title}>
-                      {(() => {
-                        if (ctx?.type === 'series') {
-                          return 'Get this series and more with Oseh+';
-                        } else if (ctx?.type === 'longerClasses') {
-                          return 'Extend your practice with longer classes on Oseh+';
-                        } else {
-                          return 'A deeper practice starts with Oseh+';
-                        }
-                      })()}
-                    </Text>
-                    <View style={styles.valueProps}>
-                      {valuePropsByContext(ctx?.type ?? 'generic').map(
-                        (prop, idx) => (
-                          <View key={idx} style={styles.valueProp}>
-                            <View style={styles.valuePropIcon}>
-                              {prop.icon}
-                            </View>
-                            <Text style={styles.valuePropText}>
-                              {prop.text}
-                            </Text>
-                          </View>
-                        )
-                      )}
-                    </View>
-                  </>
-                )}
-              />
-              <RenderGuardedComponent
-                props={offersAndPricesVWC}
-                component={(offersAndPrices) => {
-                  return (
-                    <View
-                      style={
-                        offersAndPrices.length === 2
-                          ? styles.offers2
-                          : styles.offers
+            <RenderGuardedComponent
+              props={useMappedValueWithCallbacks(state, (s) => s.context)}
+              component={(ctx) => (
+                <>
+                  <Text style={styles.title}>
+                    {(() => {
+                      if (ctx?.type === 'series') {
+                        return 'Get this series and more with Oseh+';
+                      } else if (ctx?.type === 'longerClasses') {
+                        return 'Extend your practice with longer classes on Oseh+';
+                      } else {
+                        return 'A deeper practice starts with Oseh+';
                       }
-                    >
-                      {offersAndPrices.map(([pkg, pkgPrice], idx) => (
-                        <Offer
-                          key={idx}
-                          pkg={pkg}
-                          price={pkgPrice}
-                          idx={idx}
-                          activeIdxVWC={activePackageIdxVWC}
-                          offerStyle={
-                            offersAndPrices.length === 2
-                              ? styles.offer2
-                              : undefined
-                          }
-                        />
-                      ))}
-                    </View>
-                  );
-                }}
-              />
-              <View style={styles.subscribeContainer}>
-                <FilledPremiumButton
-                  onPress={handleSubscribe}
-                  setTextStyle={(s) => setVWC(subscribeTextStyleVWC, s)}
-                >
-                  <RenderGuardedComponent
-                    props={subscribeTextStyleVWC}
-                    component={(s) => <Text style={s}>Subscribe</Text>}
-                  />
-                </FilledPremiumButton>
-              </View>
-              <RenderGuardedComponent
-                props={activePriceVWC}
-                component={(activePrice) => {
-                  if (
-                    activePrice === undefined ||
-                    activePrice.productCategory !== 'SUBSCRIPTION'
-                  ) {
-                    return <></>;
-                  }
-                  return (
-                    <View style={styles.disclaimer}>
-                      <Text style={styles.disclaimerTitle}>Cancel anytime</Text>
-                      <Text style={styles.disclaimerBody}>
-                        You will be notified before subscription renewal.
-                      </Text>
-                    </View>
-                  );
-                }}
-              />
+                    })()}
+                  </Text>
+                  <View style={styles.valueProps}>
+                    {valuePropsByContext(ctx?.type ?? 'generic').map(
+                      (prop, idx) => (
+                        <View key={idx} style={styles.valueProp}>
+                          <View style={styles.valuePropIcon}>{prop.icon}</View>
+                          <Text style={styles.valuePropText}>{prop.text}</Text>
+                        </View>
+                      )
+                    )}
+                  </View>
+                </>
+              )}
+            />
+            <RenderGuardedComponent
+              props={offersAndPricesVWC}
+              component={(offersAndPrices) => {
+                return (
+                  <View
+                    style={
+                      offersAndPrices.length === 2
+                        ? styles.offers2
+                        : styles.offers
+                    }
+                  >
+                    {offersAndPrices.map(([pkg, pkgPrice], idx) => (
+                      <Offer
+                        key={idx}
+                        pkg={pkg}
+                        price={pkgPrice}
+                        idx={idx}
+                        activeIdxVWC={activePackageIdxVWC}
+                        offerStyle={
+                          offersAndPrices.length === 2
+                            ? styles.offer2
+                            : undefined
+                        }
+                      />
+                    ))}
+                  </View>
+                );
+              }}
+            />
+            <View style={styles.subscribeContainer}>
+              <FilledPremiumButton
+                onPress={handleSubscribe}
+                setTextStyle={(s) => setVWC(subscribeTextStyleVWC, s)}
+              >
+                <RenderGuardedComponent
+                  props={subscribeTextStyleVWC}
+                  component={(s) => <Text style={s}>Subscribe</Text>}
+                />
+              </FilledPremiumButton>
             </View>
+            <RenderGuardedComponent
+              props={activePriceVWC}
+              component={(activePrice) => {
+                if (
+                  activePrice === undefined ||
+                  activePrice.productCategory !== 'SUBSCRIPTION'
+                ) {
+                  return <></>;
+                }
+                return (
+                  <View style={styles.disclaimer}>
+                    <Text style={styles.disclaimerTitle}>Cancel anytime</Text>
+                    <Text style={styles.disclaimerBody}>
+                      You will be notified before subscription renewal.
+                    </Text>
+                  </View>
+                );
+              }}
+            />
           </View>
         </View>
-        <ModalsOutlet modals={modals} />
       </View>
+      <View
+        style={stdGradientOverlayStyleVWC.get()}
+        ref={(r) => setVWC(stdGradientOverlayRef, r)}
+        pointerEvents="none"
+      >
+        <SvgLinearGradient state={DARK_BLACK_GRAY_GRADIENT_SVG} />
+      </View>
+      <ModalsOutlet modals={modals} />
       <StatusBar style="light" />
     </View>
   );

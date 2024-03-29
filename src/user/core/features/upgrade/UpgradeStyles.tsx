@@ -3,7 +3,6 @@ import * as Colors from '../../../../styling/colors';
 
 export const styles = StyleSheet.create({
   container: {},
-  contentContainer: {},
   content: {
     justifyContent: 'flex-start',
     alignItems: 'stretch',

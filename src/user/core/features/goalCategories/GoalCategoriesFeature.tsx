@@ -4,11 +4,13 @@ import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMapped
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
 import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { setVWC } from '../../../../shared/lib/setVWC';
-import { useFeatureFlag } from '../../../../shared/lib/useFeatureFlag';
 import { Feature } from '../../models/Feature';
 import { GoalCategories } from './GoalCategories';
 import { GoalCategoriesResources } from './GoalCategoriesResources';
-import { GoalCategoriesState } from './GoalCategoriesState';
+import {
+  GoalCategoriesForced,
+  GoalCategoriesState,
+} from './GoalCategoriesState';
 
 export const GoalCategoriesFeature: Feature<
   GoalCategoriesState,
@@ -16,7 +18,8 @@ export const GoalCategoriesFeature: Feature<
 > = {
   identifier: 'goalCategories',
   useWorldState: () => {
-    const forcedVWC = useWritableValueWithCallbacks(() => false);
+    const forcedVWC =
+      useWritableValueWithCallbacks<GoalCategoriesForced | null>(() => null);
     const ian = useInappNotificationValueWithCallbacks({
       type: 'react-rerender',
       props: { uid: 'oseh_ian_8SptGFOfn3GfFOqA_dHsjA', suppress: false },
@@ -25,7 +28,11 @@ export const GoalCategoriesFeature: Feature<
     // prevents us from flashing the screen under certain network errors
     useValueWithCallbacksEffect(ian, (ian) => {
       if (ian !== null && ian.showNow) {
-        setVWC(forcedVWC, true);
+        setVWC(
+          forcedVWC,
+          { enter: 'fade' } as GoalCategoriesForced,
+          (a, b) => (a !== null) === (b !== null)
+        );
       }
       return undefined;
     });
@@ -42,7 +49,7 @@ export const GoalCategoriesFeature: Feature<
     );
   },
   isRequired: (state) => {
-    return state.forced || state.ian?.showNow;
+    return state.forced !== null || state.ian?.showNow;
   },
   useResources: (stateVWC, requiredVWC, allStatesVWC) => {
     const sessionVWC = useInappNotificationSessionValueWithCallbacks({
@@ -55,8 +62,8 @@ export const GoalCategoriesFeature: Feature<
       loading: sessionVWC.get() === null,
       session: sessionVWC.get(),
       onContinue: () => {
-        allStatesVWC.get().age.setForced(true);
-        stateVWC.get().setForced(false);
+        allStatesVWC.get().age.setForced({ enter: 'swipe-left' });
+        stateVWC.get().setForced(null);
       },
     }));
   },
