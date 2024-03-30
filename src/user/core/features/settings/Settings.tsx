@@ -16,7 +16,7 @@ import {
   Modals,
   ModalsOutlet,
 } from '../../../../shared/contexts/ModalContext';
-import { View, Text } from 'react-native';
+import { View, Text, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { CloseButton } from '../../../../shared/components/CloseButton';
 import { STANDARD_BLACK_GRAY_GRADIENT_SVG } from '../../../../styling/colors';
@@ -154,7 +154,10 @@ export const Settings = ({
     (): SettingLink => ({
       text: 'Terms & Conditions',
       key: 'terms-and-conditions',
-      onClick: 'https://www.oseh.com/terms',
+      onClick: Platform.select({
+        ios: 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/',
+        default: 'https://www.oseh.com/terms',
+      }),
     })
   );
 

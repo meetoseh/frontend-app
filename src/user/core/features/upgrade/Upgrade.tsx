@@ -31,6 +31,8 @@ import {
   ViewStyle,
   TextStyle,
   StyleProp,
+  Platform,
+  Linking,
 } from 'react-native';
 import Clock from './assets/Clock';
 import Sheet from './assets/Sheet';
@@ -587,12 +589,25 @@ export const Upgrade = ({
                   return <></>;
                 }
                 return (
-                  <View style={styles.disclaimer}>
+                  <Pressable
+                    style={styles.disclaimer}
+                    onPress={() => {
+                      Linking.openURL(
+                        Platform.select({
+                          ios: 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/',
+                          default: 'https://www.oseh.com/terms',
+                        })
+                      );
+                    }}
+                  >
                     <Text style={styles.disclaimerTitle}>Cancel anytime</Text>
                     <Text style={styles.disclaimerBody}>
                       You will be notified before subscription renewal.
                     </Text>
-                  </View>
+                    <Text style={styles.disclaimerBody}>
+                      Terms & Conditions
+                    </Text>
+                  </Pressable>
                 );
               }}
             />
