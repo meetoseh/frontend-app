@@ -143,7 +143,9 @@ export const VisualGoal = ({
     }
     return paths;
   });
-  const filledVWC = useMappedValueWithCallbacks(stateVWC, (s) => s.filled);
+  const filledVWC = useMappedValueWithCallbacks(stateVWC, (s) =>
+    Math.min(s.goal, s.filled)
+  );
 
   return (
     <Svg viewBox={`0 0 ${viewBox.w} ${viewBox.h}`} width="64" height="64">
