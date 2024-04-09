@@ -17,6 +17,10 @@ import { apiFetch } from '../../../../shared/lib/apiFetch';
 import { convertUsingMapper } from '../../../../shared/lib/CrudFetcher';
 import { useHomeScreenImage } from './hooks/useHomeScreenImage';
 import { Emotion } from '../../../../shared/models/Emotion';
+import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
+import { ReactElement, useContext } from 'react';
+import { deleteJourneyFeedbackRequestReviewStoredState } from '../../../journey/lib/JourneyFeedbackRequestReviewStore';
+import { LoginContext } from '../../../../shared/contexts/LoginContext';
 
 export const HomeScreenFeature: Feature<HomeScreenState, HomeScreenResources> =
   {
@@ -82,11 +86,15 @@ export const HomeScreenFeature: Feature<HomeScreenState, HomeScreenResources> =
     },
     isRequired: () => true,
     useResources: (stateVWC, requiredVWC, allStatesVWC) => {
+      const loginContextRaw = useContext(LoginContext);
       const imageHandler = stateVWC.get().imageHandler;
       const loadPrevented = useMappedValueWithCallbacks(requiredVWC, (r) => !r);
+      const backgroundImageErrorVWC =
+        useWritableValueWithCallbacks<ReactElement | null>(() => null);
       const backgroundImageStateVWC = useHomeScreenImage({
         requiredVWC,
         imageHandler,
+        errorVWC: backgroundImageErrorVWC,
       });
 
       const emotionsNR = useNetworkResponse(
@@ -120,6 +128,14 @@ export const HomeScreenFeature: Feature<HomeScreenState, HomeScreenResources> =
           }),
         { loadPrevented }
       );
+
+      useValueWithCallbacksEffect(backgroundImageErrorVWC, (e) => {
+        if (e !== null) {
+          deleteJourneyFeedbackRequestReviewStoredState();
+          loginContextRaw.setAuthTokens(null);
+        }
+        return undefined;
+      });
 
       return useMappedValuesWithCallbacks(
         [backgroundImageStateVWC, emotionsNR],

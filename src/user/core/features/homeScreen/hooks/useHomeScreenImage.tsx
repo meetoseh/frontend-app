@@ -1,9 +1,12 @@
-import { useCallback } from 'react';
+import { ReactElement, useCallback } from 'react';
 import { useNetworkResponse } from '../../../../../shared/hooks/useNetworkResponse';
 import { useWindowSizeValueWithCallbacks } from '../../../../../shared/hooks/useWindowSize';
 import { adaptActiveVWCToAbortSignal } from '../../../../../shared/lib/adaptActiveVWCToAbortSignal';
 import { homeScreenImageMapper } from '../HomeScreenImage';
-import { ValueWithCallbacks } from '../../../../../shared/lib/Callbacks';
+import {
+  ValueWithCallbacks,
+  WritableValueWithCallbacks,
+} from '../../../../../shared/lib/Callbacks';
 import { useMappedValueWithCallbacks } from '../../../../../shared/hooks/useMappedValueWithCallbacks';
 import { useMappedValuesWithCallbacks } from '../../../../../shared/hooks/useMappedValuesWithCallbacks';
 import { useTimezone } from '../../../../../shared/hooks/useTimezone';
@@ -18,6 +21,9 @@ import {
 } from '../../../../../shared/images/OsehImageState';
 import { apiFetch } from '../../../../../shared/lib/apiFetch';
 import { convertUsingMapper } from '../../../../../shared/lib/CrudFetcher';
+import { useValuesWithCallbacksEffect } from '../../../../../shared/hooks/useValuesWithCallbacksEffect';
+import { useValueWithCallbacksEffect } from '../../../../../shared/hooks/useValueWithCallbacksEffect';
+import { setVWC } from '../../../../../shared/lib/setVWC';
 
 /**
  * Determines and fetches the correct image for the top of the home screen.
@@ -25,11 +31,14 @@ import { convertUsingMapper } from '../../../../../shared/lib/CrudFetcher';
 export const useHomeScreenImage = ({
   requiredVWC,
   imageHandler,
+  errorVWC,
 }: {
   /** True if the image is required, false for a perpetually loading image */
   requiredVWC: ValueWithCallbacks<boolean>;
   /** The image handler for loading the image */
   imageHandler: OsehImageStateRequestHandler;
+  /** Where to store the error loading the image, if any */
+  errorVWC?: WritableValueWithCallbacks<ReactElement | null>;
 }): ValueWithCallbacks<OsehImageState> => {
   const timezone = useTimezone();
   const loadPrevented = useMappedValueWithCallbacks(requiredVWC, (r) => !r);
@@ -61,6 +70,12 @@ export const useHomeScreenImage = ({
     ),
     { loadPrevented }
   );
+  useValueWithCallbacksEffect(backgroundImageNR, (nr) => {
+    if (errorVWC !== undefined) {
+      setVWC(errorVWC, nr.error);
+    }
+    return undefined;
+  });
   const backgroundImageDisplaySizeVWC = useMappedValueWithCallbacks(
     windowSizeVWC,
     () => ({

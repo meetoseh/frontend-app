@@ -32,6 +32,9 @@ export const BackContinue = ({
   const backTextStyleVWC = useWritableValueWithCallbacks<StyleProp<TextStyle>>(
     () => undefined
   );
+  const textScale = useFontScale();
+  const buttonWidth = contentWidth / 2 - 8;
+
   if (onBack === null) {
     return (
       <FilledInvertedButton
@@ -46,9 +49,6 @@ export const BackContinue = ({
       </FilledInvertedButton>
     );
   }
-
-  const textScale = useFontScale();
-  const buttonWidth = contentWidth / 2 - 8;
 
   return (
     <View style={Object.assign({}, styles.container, { width: contentWidth })}>

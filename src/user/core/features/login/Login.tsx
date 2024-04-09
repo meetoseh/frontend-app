@@ -352,7 +352,7 @@ export const Login = ({
       >
         <OsehWordmarkWhite width={163} height={40} style={styles.logo} />
         <Text style={styles.message} onLongPress={onLongPressMessage}>
-          Make mindfulness a daily part of your life in 60 seconds.
+          Reclaim your Calm
         </Text>
         <ProvidersList
           items={[

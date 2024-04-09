@@ -20,7 +20,6 @@ import { StatusBar } from 'expo-status-bar';
 import { Modals, ModalsOutlet } from '../../../../shared/contexts/ModalContext';
 import Back from '../gotoEmotion/assets/Back';
 import { useTopBarHeight } from '../../../../shared/hooks/useTopBarHeight';
-import { debugView } from '../../../../shared/lib/debugView';
 import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
@@ -28,7 +27,6 @@ import { setVWC } from '../../../../shared/lib/setVWC';
 import { FilledPremiumButton } from '../../../../shared/components/FilledPremiumButton';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { valuePropsByContext } from '../upgrade/Upgrade';
-import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
 import { useContentWidth } from '../../../../shared/lib/useContentWidth';
 
 /**
@@ -263,7 +261,9 @@ export const ManageMembership = ({
                               <Text
                                 style={styles.storeInfoDetailsListItemLinkText}
                                 onPress={() => {
-                                  Linking.openURL('https://oseh.io');
+                                  Linking.openURL(
+                                    'https://oseh.io/#no_universal_links'
+                                  );
                                 }}
                               >
                                 https://oseh.io
