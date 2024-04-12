@@ -238,7 +238,8 @@ export const onJourneyRated = async (
     return (
       rating === 1 &&
       ogRecentRatings.some((r) => r.rating === 1) &&
-      state.lastRequestedReviewAtMS === null // repeat every 2 months
+      (state.lastRequestedReviewAtMS === null ||
+        Date.now() - state.lastRequestedReviewAtMS > 1000 * 60 * 60 * 24 * 60)
     );
   });
 };
