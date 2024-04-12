@@ -2,7 +2,6 @@ import { useInappNotificationValueWithCallbacks } from '../../../../shared/hooks
 import { useInappNotificationSessionValueWithCallbacks } from '../../../../shared/hooks/useInappNotificationSession';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
-import { useFeatureFlag } from '../../../../shared/lib/useFeatureFlag';
 import { Feature } from '../../models/Feature';
 import { useHomeScreenImage } from '../homeScreen/hooks/useHomeScreenImage';
 import { HomeScreenTutorial } from './HomeScreenTutorial';

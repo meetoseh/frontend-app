@@ -21,6 +21,8 @@ import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWi
 import { ReactElement, useContext } from 'react';
 import { deleteJourneyFeedbackRequestReviewStoredState } from '../../../journey/lib/JourneyFeedbackRequestReviewStore';
 import { LoginContext } from '../../../../shared/contexts/LoginContext';
+import { useTimezone } from '../../../../shared/hooks/useTimezone';
+import { HomeScreenCopy } from './HomeScreenCopy';
 
 export const HomeScreenFeature: Feature<HomeScreenState, HomeScreenResources> =
   {
@@ -129,6 +131,40 @@ export const HomeScreenFeature: Feature<HomeScreenState, HomeScreenResources> =
         { loadPrevented }
       );
 
+      const copyVariantVWC = useMappedValueWithCallbacks(stateVWC, (s) =>
+        s.sessionInfo.classesTaken === 0 ? 'session_start' : 'session_end'
+      );
+      const timezone = useTimezone();
+      const copyNR = useNetworkResponse(
+        (active, loginContext) =>
+          adaptActiveVWCToAbortSignal(active, async (signal) => {
+            const now = new Date();
+            const response = await apiFetch(
+              '/api/1/users/me/home_copy?variant=' +
+                encodeURIComponent(copyVariantVWC.get()) +
+                '&tz=' +
+                encodeURIComponent(timezone.timeZone) +
+                '&tzt=' +
+                encodeURIComponent(timezone.guessed ? 'app-guessed' : 'app'),
+              {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json; charset=utf-8' },
+                signal,
+              },
+              loginContext
+            );
+            if (!response.ok) {
+              throw response;
+            }
+            const data = await response.json();
+            if (!active.get()) {
+              return null;
+            }
+            return data as HomeScreenCopy;
+          }),
+        { loadPrevented, dependsOn: [copyVariantVWC] }
+      );
+
       useValueWithCallbacksEffect(backgroundImageErrorVWC, (e) => {
         if (e !== null) {
           deleteJourneyFeedbackRequestReviewStoredState();
@@ -138,14 +174,16 @@ export const HomeScreenFeature: Feature<HomeScreenState, HomeScreenResources> =
       });
 
       return useMappedValuesWithCallbacks(
-        [backgroundImageStateVWC, emotionsNR],
+        [backgroundImageStateVWC, emotionsNR, copyNR],
         (): HomeScreenResources => {
           const bknd = backgroundImageStateVWC.get();
           const emotions = emotionsNR.get();
+          const copy = copyNR.get();
           return {
             loading: bknd.loading,
             backgroundImage: bknd,
             emotions,
+            copy,
             startGotoEmotion: (emotion) => {
               allStatesVWC
                 .get()

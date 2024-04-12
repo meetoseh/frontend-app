@@ -116,6 +116,126 @@ export const HomeScreen = ({
     }
   );
 
+  const streakInfoVWC = useMappedValueWithCallbacks(state, (s) => s.streakInfo);
+  const copyRawVWC = useMappedValuesWithCallbacks(
+    [resources, nameVWC, streakInfoVWC],
+    () => {
+      const name = nameVWC.get();
+      const r = resources.get();
+      if (r.copy.type === 'success') {
+        return r.copy.result;
+      }
+
+      if (r.copy.type === 'loading') {
+        return {
+          headline: '',
+          subheadline: '',
+        };
+      }
+
+      const currentDate = new Date();
+      const greeting = (() => {
+        const hour = currentDate.getHours();
+        if (hour >= 3 && hour < 12) {
+          return <>Good Morning</>;
+        } else if (hour >= 12 && hour < 17) {
+          return <>Good Afternoon</>;
+        } else {
+          return <>Good Evening</>;
+        }
+      })();
+
+      const v = streakInfoVWC.get();
+
+      return {
+        headline: `${greeting}${name}! 👋`,
+        subheadline:
+          `You’ve meditated <strong>${
+            v.type === 'success'
+              ? numberToWord[v.result.daysOfWeek.length]
+              : '?'
+          }</strong> ` +
+          `time${v.result?.daysOfWeek.length === 1 ? '' : 's'} this week. ` +
+          (() => {
+            if (v.type !== 'success') {
+              return '';
+            }
+            const goal = v.result.goalDaysPerWeek;
+            if (goal === null) {
+              return '';
+            }
+
+            if (v.result.daysOfWeek.length >= goal) {
+              return (
+                ` You’ve met your goal of {goal.toLocaleString()} day` +
+                `${goal === 1 ? '' : 's'} for this week!`
+              );
+            }
+
+            const currentDayOfWeek = new Date().getDay(); // 0 = Sunday, 1 = Monday, ...
+            let daysRemainingInWeek = 7 - currentDayOfWeek;
+            const currentDayOfWeekName =
+              DAYS_OF_WEEK[(currentDayOfWeek + 6) % 7];
+            if (v.result.daysOfWeek.includes(currentDayOfWeekName)) {
+              daysRemainingInWeek--;
+            }
+            const requiredDays = goal - v.result.daysOfWeek.length;
+            if (requiredDays > daysRemainingInWeek) {
+              return '';
+            }
+
+            return ` You can still make your goal of ${goal.toLocaleString()} days this week.`;
+          })(),
+      };
+    }
+  );
+  const copyFmtdVWC = useMappedValueWithCallbacks(copyRawVWC, (copy) => ({
+    headline: <>{copy.headline}</>,
+    subheadline: (() => {
+      // non-nested strong tags only
+
+      const parts: ReactElement[] = [];
+      const strong = Object.assign(
+        {},
+        styles.headerBody,
+        styles.headerBodyStrong
+      );
+      const normal = styles.headerBody;
+
+      let handled = 0;
+      while (true) {
+        let openAt = copy.subheadline.indexOf('<strong>', handled);
+        if (openAt === -1) {
+          break;
+        }
+
+        let closeAt = copy.subheadline.indexOf('</strong>', openAt + 7);
+        if (closeAt === -1) {
+          console.warn('failed to parse copy subheadline; no closing strong');
+          break;
+        }
+
+        parts.push(
+          <Text key={parts.length}>
+            {copy.subheadline.slice(handled, openAt)}
+          </Text>
+        );
+        parts.push(
+          <Text style={strong} key={parts.length}>
+            {copy.subheadline.slice(openAt + 8, closeAt)}
+          </Text>
+        );
+        handled = closeAt + 9;
+      }
+      if (handled < copy.subheadline.length) {
+        parts.push(
+          <Text key={parts.length}>{copy.subheadline.slice(handled)}</Text>
+        );
+      }
+      return <Text style={normal}>{parts}</Text>;
+    })(),
+  }));
+
   const backgroundImageVWC = useMappedValueWithCallbacks(
     resources,
     (r) => r.backgroundImage
@@ -294,7 +414,6 @@ export const HomeScreen = ({
     }, [emotionRowContentWidthsVWC, emotionRowRefs, windowSizeVWC])
   );
 
-  const streakInfoVWC = useMappedValueWithCallbacks(state, (s) => s.streakInfo);
   const visualGoalStateVWC = useAnimationTargetAndRendered<VisualGoalState>(
     () => ({
       filled: 0,
@@ -808,12 +927,13 @@ export const HomeScreen = ({
               >
                 <View style={styles.headerTitleRow}>
                   <Text style={styles.headerTitle}>
-                    {greeting}
                     <RenderGuardedComponent
-                      props={nameVWC}
+                      props={useMappedValueWithCallbacks(
+                        copyFmtdVWC,
+                        (c) => c.headline
+                      )}
                       component={(v) => v}
                     />
-                    ! 👋
                   </Text>
                   <Pressable
                     style={styles.headerProfilePicture}
@@ -827,66 +947,13 @@ export const HomeScreen = ({
                     />
                   </Pressable>
                 </View>
-                <Text style={styles.headerBody}>
-                  <RenderGuardedComponent
-                    props={streakInfoVWC}
-                    component={(v) => (
-                      <>
-                        You’ve meditated{' '}
-                        <Text style={styles.headerBodyStrong}>
-                          {v.type === 'success'
-                            ? numberToWord[v.result.daysOfWeek.length]
-                            : '?'}
-                        </Text>{' '}
-                        time{v.result?.daysOfWeek.length === 1 ? '' : 's'} this
-                        week.
-                        {(() => {
-                          if (v.type !== 'success') {
-                            return;
-                          }
-                          const goal = v.result.goalDaysPerWeek;
-                          if (goal === null) {
-                            return;
-                          }
-
-                          if (v.result.daysOfWeek.length >= goal) {
-                            return (
-                              <>
-                                {' '}
-                                You’ve met your goal of {goal.toLocaleString()}{' '}
-                                day
-                                {goal === 1 ? '' : 's'} for this week!
-                              </>
-                            );
-                          }
-
-                          const currentDayOfWeek = new Date().getDay(); // 0 = Sunday, 1 = Monday, ...
-                          let daysRemainingInWeek = 7 - currentDayOfWeek;
-                          const currentDayOfWeekName =
-                            DAYS_OF_WEEK[(currentDayOfWeek + 6) % 7];
-                          if (
-                            v.result.daysOfWeek.includes(currentDayOfWeekName)
-                          ) {
-                            daysRemainingInWeek--;
-                          }
-                          const requiredDays =
-                            goal - v.result.daysOfWeek.length;
-                          if (requiredDays > daysRemainingInWeek) {
-                            return;
-                          }
-
-                          return (
-                            <>
-                              {' '}
-                              You can still make your goal of{' '}
-                              {goal.toLocaleString()} days this week.
-                            </>
-                          );
-                        })()}
-                      </>
-                    )}
-                  />
-                </Text>
+                <RenderGuardedComponent
+                  props={useMappedValueWithCallbacks(
+                    copyFmtdVWC,
+                    (c) => c.subheadline
+                  )}
+                  component={(v) => v}
+                />
               </View>
               <View
                 style={Object.assign(

@@ -3,6 +3,7 @@ import { OsehImageState } from '../../../../shared/images/OsehImageState';
 import { OsehImageStateRequestHandler } from '../../../../shared/images/useOsehImageStateRequestHandler';
 import { Emotion } from '../../../../shared/models/Emotion';
 import { ShowEmotion } from '../gotoEmotion/GotoEmotionState';
+import { HomeScreenCopy } from './HomeScreenCopy';
 
 /**
  * Contains the resources required to display the home screen, as well as an
@@ -23,6 +24,9 @@ export type HomeScreenResources = {
 
   /** The emotions that the user can choose from */
   emotions: NetworkResponse<Emotion[]>;
+
+  /** The copy to show; on error, a fallback should be used */
+  copy: NetworkResponse<HomeScreenCopy>;
 
   /**
    * Starts preparing to go to the given emotion and returns a callback
