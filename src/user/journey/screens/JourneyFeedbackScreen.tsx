@@ -24,7 +24,7 @@ import { areOsehImageStatesEqual } from '../../../shared/images/OsehImageState';
 import { useReactManagedValueAsValueWithCallbacks } from '../../../shared/hooks/useReactManagedValueAsValueWithCallbacks';
 import { Modals, ModalsOutlet } from '../../../shared/contexts/ModalContext';
 import { OsehImageBackgroundFromStateValueWithCallbacks } from '../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks';
-import { StyleProp, Text, TextStyle, View } from 'react-native';
+import { Platform, StyleProp, Text, TextStyle, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useStaleOsehImageOnSwap } from '../../../shared/images/useStaleOsehImageOnSwap';
 import { apiFetch } from '../../../shared/lib/apiFetch';
@@ -40,6 +40,11 @@ import Share from '../icons/Share';
 import { IconButtonWithLabel } from '../../../shared/forms/IconButtonWithLabel';
 import FullHeartIcon from '../icons/FullHeartIcon';
 import EmptyHeartIcon from '../icons/EmptyHeartIcon';
+import {
+  onJourneyRated,
+  onReviewRequested,
+} from '../lib/JourneyFeedbackRequestReviewStore';
+import StoreReview from 'expo-store-review';
 
 type VLKey =
   | 'topPadding'
@@ -219,7 +224,7 @@ export const JourneyFeedbackScreen = ({
   );
 
   const storeResponse = useCallback(async () => {
-    const response = responseVWC.get();
+    const response = responseVWC.get() as 1 | 2 | 3 | 4;
     const loginContextUnch = loginContextRaw.value.get();
     if (response === null || loginContextUnch.state !== 'logged-in') {
       return;
@@ -250,13 +255,41 @@ export const JourneyFeedbackScreen = ({
     }
   }, [loginContextRaw, responseVWC, journey.uid, journey.jwt]);
 
-  const onContinue = useCallback(() => {
+  const handleRequestReview = useCallback(async () => {
+    const loginContextUnch = loginContextRaw.value.get();
+    if (loginContextUnch.state !== 'logged-in') {
+      return;
+    }
+    const loginContext = loginContextUnch;
+
+    const response = responseVWC.get() as 1 | 2 | 3 | 4;
+    if (await onJourneyRated(journey.uid, response)) {
+      apiFetch(
+        '/api/1/notifications/inapp/start',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          body: JSON.stringify({
+            inapp_notification_uid: 'oseh_ian_P1LDF0FIWtqnU4D0FsOZgg',
+            platform: Platform.OS,
+          }),
+        },
+        loginContext
+      );
+      await StoreReview.requestReview();
+      await onReviewRequested();
+    }
+  }, [responseVWC, journey.uid]);
+
+  const onContinue = useCallback(async () => {
     storeResponse();
-    onJourneyFinished(true);
+    await handleRequestReview();
+    onJourneyFinished(false);
   }, [onJourneyFinished, storeResponse]);
 
-  const onTakeAnother = useCallback(() => {
+  const onTakeAnother = useCallback(async () => {
     storeResponse();
+    await handleRequestReview();
     takeAnother?.onTakeAnother();
   }, [storeResponse, takeAnother]);
 

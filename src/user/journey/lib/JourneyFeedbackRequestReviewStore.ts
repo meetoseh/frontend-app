@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
  * The information that we store for deciding whether or not to request
@@ -62,7 +62,7 @@ const initializeJourneyFeedbackRequestReviewStoredState =
   });
 
 const JOURNEY_FEEDBACK_REQUEST_REVIEW_STORED_STATE_KEY =
-  "journeyFeedbackRequestReviewStoredState";
+  'journeyFeedbackRequestReviewStoredState';
 
 /**
  * Reads the stored journey feedback request review state from AsyncStorage,
@@ -76,7 +76,7 @@ export const readJourneyFeedbackRequestReviewStoredState =
         JOURNEY_FEEDBACK_REQUEST_REVIEW_STORED_STATE_KEY
       );
     } catch (e) {
-      console.error("error loading feedback from AsyncStorage", e);
+      console.error('error loading feedback from AsyncStorage', e);
     }
 
     if (stored === null) {
@@ -85,53 +85,53 @@ export const readJourneyFeedbackRequestReviewStoredState =
 
     try {
       const parsed = JSON.parse(stored);
-      if (typeof parsed !== "object" || parsed === null) {
-        throw new Error("stored state is not an object");
+      if (typeof parsed !== 'object' || parsed === null) {
+        throw new Error('stored state is not an object');
       }
       if (
         parsed.firstJourneyAtMS !== null &&
-        typeof parsed.firstJourneyAtMS !== "number"
+        typeof parsed.firstJourneyAtMS !== 'number'
       ) {
-        throw new Error("firstJourneyAtMS is not a number");
+        throw new Error('firstJourneyAtMS is not a number');
       }
-      if (typeof parsed.journeys !== "number") {
-        throw new Error("journeys is not a number");
+      if (typeof parsed.journeys !== 'number') {
+        throw new Error('journeys is not a number');
       }
-      if (typeof parsed.ratings !== "number") {
-        throw new Error("ratings is not a number");
+      if (typeof parsed.ratings !== 'number') {
+        throw new Error('ratings is not a number');
       }
       if (!Array.isArray(parsed.recentRatings)) {
-        throw new Error("recentRatings is not an array");
+        throw new Error('recentRatings is not an array');
       }
       if (parsed.recentRatings.length > 10) {
         parsed.recentRatings = parsed.recentRatings.slice(0, 10);
       }
       for (const rating of parsed.recentRatings) {
-        if (typeof rating !== "object" || rating === null) {
-          throw new Error("rating is not an object");
+        if (typeof rating !== 'object' || rating === null) {
+          throw new Error('rating is not an object');
         }
-        if (typeof rating.journeyUid !== "string") {
-          throw new Error("journeyUid is not a string");
+        if (typeof rating.journeyUid !== 'string') {
+          throw new Error('journeyUid is not a string');
         }
         if (
-          typeof rating.rating !== "number" ||
+          typeof rating.rating !== 'number' ||
           ![1, 2, 3, 4].includes(rating.rating)
         ) {
-          throw new Error("rating is not a valid rating");
+          throw new Error('rating is not a valid rating');
         }
-        if (typeof rating.ratedAt !== "number") {
-          throw new Error("ratedAt is not a number");
+        if (typeof rating.ratedAt !== 'number') {
+          throw new Error('ratedAt is not a number');
         }
       }
       if (
         parsed.lastRequestedReviewAtMS !== null &&
-        typeof parsed.lastRequestedReviewAtMS !== "number"
+        typeof parsed.lastRequestedReviewAtMS !== 'number'
       ) {
-        throw new Error("lastRequestedReviewAtMS is not a number");
+        throw new Error('lastRequestedReviewAtMS is not a number');
       }
       return parsed;
     } catch (e) {
-      console.error("error parsing feedback from AsyncStorage", e);
+      console.error('error parsing feedback from AsyncStorage', e);
       return initializeJourneyFeedbackRequestReviewStoredState();
     }
   };
@@ -148,7 +148,7 @@ export const writeJourneyFeedbackRequestReviewStoredState = async (
       JSON.stringify(state)
     );
   } catch (e) {
-    console.error("error writing feedback to AsyncStorage", e);
+    console.error('error writing feedback to AsyncStorage', e);
   }
 };
 
@@ -163,7 +163,7 @@ export const deleteJourneyFeedbackRequestReviewStoredState =
         JOURNEY_FEEDBACK_REQUEST_REVIEW_STORED_STATE_KEY
       );
     } catch (e) {
-      console.error("error deleting feedback from AsyncStorage", e);
+      console.error('error deleting feedback from AsyncStorage', e);
     }
   };
 
@@ -188,10 +188,10 @@ const withLock = async <T>(fn: () => Promise<T>): Promise<T> => {
     try {
       await tryingLock;
     } catch (e) {
-      console.error("error waiting for lock", e);
+      console.error('error waiting for lock', e);
     }
     if (__lock === tryingLock) {
-      throw new Error("lock was released but not set to null");
+      throw new Error('lock was released but not set to null');
     }
   }
   __lock = promise;
@@ -238,7 +238,7 @@ export const onJourneyRated = async (
     return (
       rating === 1 &&
       ogRecentRatings.some((r) => r.rating === 1) &&
-      state.lastRequestedReviewAtMS === null
+      state.lastRequestedReviewAtMS === null // repeat every 2 months
     );
   });
 };
