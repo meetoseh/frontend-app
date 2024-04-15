@@ -1,5 +1,7 @@
 import Svg, { SvgProps, Path } from 'react-native-svg';
 
+export const WordmarkViewBox = { width: 941.22, height: 219.64 };
+
 const SvgComponent = (props: SvgProps) => (
   <Svg viewBox="0 0 941.22 219.64" {...props}>
     <Path

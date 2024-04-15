@@ -1,10 +1,11 @@
-import { ReactElement, useCallback, useMemo } from "react";
-import { useStateCompat as useState } from "../hooks/useStateCompat";
-import { Platform, Pressable, View, ViewStyle } from "react-native";
-import { useTopBarHeight } from "../hooks/useTopBarHeight";
-import { styles } from "./CloseButtonStyles";
-import Close from "../icons/Close";
-import * as Colors from "../../styling/colors";
+import { ReactElement, useCallback, useMemo } from 'react';
+import { useStateCompat as useState } from '../hooks/useStateCompat';
+import { Platform, Pressable, View, ViewStyle } from 'react-native';
+import { useTopBarHeight } from '../hooks/useTopBarHeight';
+import { styles } from './CloseButtonStyles';
+import Close from '../icons/Close';
+import * as Colors from '../../styling/colors';
+import { useWritableValueWithCallbacks } from '../lib/Callbacks';
 
 type CloseButtonProps = {
   /**
@@ -27,7 +28,7 @@ type CloseButtonProps = {
    * The icon variant to use.
    * @default 'light'
    */
-  variant?: "light" | "dark";
+  variant?: 'light' | 'dark';
 };
 
 /**
@@ -40,51 +41,25 @@ export const CloseButton = ({
   bonusStyle,
 }: CloseButtonProps): ReactElement => {
   const topBarHeight = useTopBarHeight();
-  const [pressing, setPressing] = useState(false);
-
   const handlePress = useCallback(() => {
     if (!disabled) {
       onPress?.();
     }
   }, [onPress, disabled]);
 
-  const handlePressIn = useCallback(() => {
-    setPressing(true);
-  }, []);
-
-  const handlePressOut = useCallback(() => {
-    setPressing(false);
-  }, []);
-
-  const containerStyle = useMemo(() => {
-    return Object.assign(
-      {},
-      styles.container,
-      {
-        top: topBarHeight + 8,
-      },
-      ...(pressing ? [styles.containerPressed] : []),
-      ...(disabled ? [styles.containerDisabled] : []),
-      bonusStyle
-    );
-  }, [topBarHeight, pressing, disabled, bonusStyle]);
-
   return (
-    <View style={containerStyle}>
+    <View style={styles.container}>
       <Pressable
         onPress={handlePress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
+        style={Object.assign({}, styles.pressable, {
+          paddingTop: styles.pressable.paddingTop + topBarHeight,
+        })}
       >
-        <View style={styles.paddingStyle}>
-          <Close
-            width={14}
-            height={14}
-            fill={
-              variant === "dark" ? Colors.GRAYSCALE_DARK_GRAY : Colors.WHITE
-            }
-          />
-        </View>
+        <Close
+          width={14}
+          height={14}
+          fill={variant === 'dark' ? Colors.GRAYSCALE_DARK_GRAY : Colors.WHITE}
+        />
       </Pressable>
     </View>
   );

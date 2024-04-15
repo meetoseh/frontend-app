@@ -44,6 +44,8 @@ export const GRAYSCALE_LINE = '#DBD7D7';
 export const GRAYSCALE_BLACK = '#191c1d';
 export const GRAYSCALE_WHITE = '#F9F9F9';
 
+export const GRAYSCALE_BLACK_BACKGROUND = '#191c1d80';
+
 export const NEW_GRAYSCALE_DARK_GRAY = '#232323';
 export const NEW_GRAYSCALE_BORDER = '#383838';
 export const GRAYSCALE_DISABLED = '#8B8E90';

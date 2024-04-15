@@ -3,17 +3,14 @@ import { StyleSheet } from 'react-native';
 export const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    right: 17,
+    top: 0,
+    right: 0,
     zIndex: 100,
   },
-
-  containerDisabled: {},
-  containerPressed: {},
-  // used to ensure at least 48x48 touchable area
-  paddingStyle: {
-    paddingBottom: 21,
-    paddingLeft: 17,
-    paddingRight: 17,
-    paddingTop: 13,
+  pressable: {
+    paddingTop: 16,
+    paddingRight: 24,
+    paddingLeft: 19,
+    paddingBottom: 8,
   },
 });

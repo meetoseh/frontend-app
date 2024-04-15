@@ -6,14 +6,13 @@ import {
 } from '../lib/Callbacks';
 import { OsehTranscriptPhrase } from '../transcripts/OsehTranscript';
 import { UseCurrentTranscriptPhrasesResult } from '../transcripts/useCurrentTranscriptPhrases';
-import { useMappedValueWithCallbacks } from './useMappedValueWithCallbacks';
-import { useValueWithCallbacksEffect } from './useValueWithCallbacksEffect';
+import { useMappedValueWithCallbacks } from '../hooks/useMappedValueWithCallbacks';
+import { useValueWithCallbacksEffect } from '../hooks/useValueWithCallbacksEffect';
 import { setVWC } from '../lib/setVWC';
-import { useMappedValuesWithCallbacks } from './useMappedValuesWithCallbacks';
+import { useMappedValuesWithCallbacks } from '../hooks/useMappedValuesWithCallbacks';
 import { useMemo } from 'react';
-import { OsehContentTarget } from '../content/OsehContentTarget';
 
-export type VideoInfo = {
+export type MediaInfo = {
   /** Should be written with the current playback status */
   playbackStatus: WritableValueWithCallbacks<AVPlaybackStatus | null>;
   /** True if the video is ready to play, false otherwise */
@@ -26,8 +25,12 @@ export type VideoInfo = {
   muted: ValueWithCallbacks<boolean>;
   /** The current playback time in seconds */
   currentTime: ValueWithCallbacks<number>;
+  /** The video progress, which is the current time over the total time in seconds, or 0 if duration is not loaded */
+  progress: ValueWithCallbacks<number>;
   /** The combination of loaded and playing as a string enum, usually for the play button */
-  playPauseState: ValueWithCallbacks<'playing' | 'paused' | 'loading'>;
+  playPauseState: ValueWithCallbacks<
+    'playing' | 'paused' | 'errored' | 'loading'
+  >;
   /** If the video is at the end and hasn't started again */
   ended: ValueWithCallbacks<boolean>;
   /** Closed captioning information */
@@ -43,24 +46,35 @@ export type VideoInfo = {
   };
   /** The total duration of the video in seconds, and formatted for display */
   totalTime: ValueWithCallbacks<{ seconds?: number; formatted: string }>;
-  /** native only: if the `shouldPlay` property on the video should be set */
+  /** native only: if we want the video to be playing (as opposed to paused) */
   shouldPlay: WritableValueWithCallbacks<boolean>;
-  /** native only: if the `muted` property on the video should be set */
+  /** native only: if we want the video to be muted (as opposed to unmuted) */
   shouldBeMuted: WritableValueWithCallbacks<boolean>;
-  /** native only: if the first frame of the video has been extracted */
+  /**
+   * native only: set by the MediaInfoVideo component; if the first frame
+   * has been extracted. always true for audio
+   */
   readyForDisplay: WritableValueWithCallbacks<boolean>;
+  /** native only: can be called to seek to the given time in seconds */
+  seekTo: WritableValueWithCallbacks<((seconds: number) => void) | null>;
 };
 
 /**
- * Convenience hook for extracting all the common information about a video
+ * Convenience hook for extracting all the common information about media
  * into the most consumable form.
  *
  * This will handle setting the current time for the current transcript
  * phrases.
+ *
+ * On native, since there isn't an equivalent to HTMLMediaElement, the
+ * caller must write to the returned playbackStatus whenever the playback
+ * status changes. The most convenient way to do this is to use either
+ * the MediaInfoAudio component or the MediaInfoVideo component.
  */
-export const useVideoInfo = ({
+export const useMediaInfo = ({
   currentTranscriptPhrasesVWC,
   autoplay,
+  durationSeconds,
 }: {
   currentTranscriptPhrasesVWC: ValueWithCallbacks<UseCurrentTranscriptPhrasesResult>;
   /**
@@ -68,7 +82,12 @@ export const useVideoInfo = ({
    * only considered when this hook is first mounted.
    */
   autoplay?: boolean;
-}): VideoInfo => {
+  /**
+   * If the duration of the media is known out of band, it can be provided
+   * and will be used when the medias metadata is not available.
+   */
+  durationSeconds?: number;
+}): MediaInfo => {
   const videoReadyForDisplayVWC = useWritableValueWithCallbacks(() => false);
   const playbackStatusVWC =
     useWritableValueWithCallbacks<AVPlaybackStatus | null>(() => null);
@@ -93,6 +112,10 @@ export const useVideoInfo = ({
     videoPlayingVWC,
     (v) => !v
   );
+  const videoErroredVWC = useMappedValueWithCallbacks(
+    playbackStatusVWC,
+    (v) => v !== null && !v.isLoaded && v.error !== undefined
+  );
   const videoMutedVWC = useMappedValueWithCallbacks(
     playbackStatusVWC,
     (status) => !!status?.isLoaded && status.isMuted
@@ -104,13 +127,16 @@ export const useVideoInfo = ({
   const videoTotalTimeVWC = useMappedValueWithCallbacks(
     playbackStatusVWC,
     (status) => {
-      if (!status?.isLoaded || status.durationMillis === undefined) {
+      const seconds =
+        !status?.isLoaded || status.durationMillis === undefined
+          ? durationSeconds
+          : status.durationMillis / 1000;
+      if (seconds === undefined) {
         return { formatted: '?:??' };
       }
-      const durationSeconds = status.durationMillis / 1000;
       return {
-        seconds: durationSeconds,
-        formatted: formatSeconds(durationSeconds),
+        seconds: seconds,
+        formatted: formatSeconds(seconds),
       };
     }
   );
@@ -127,13 +153,16 @@ export const useVideoInfo = ({
     return undefined;
   });
   const videoPlayPauseStateVWC = useMappedValuesWithCallbacks(
-    [videoLoadedVWC, videoPlayingVWC],
-    (): 'loading' | 'playing' | 'paused' => {
-      if (!videoLoadedVWC.get()) {
-        return 'loading';
-      }
+    [videoErroredVWC, videoLoadedVWC, videoPlayingVWC],
+    (): 'loading' | 'playing' | 'paused' | 'errored' => {
       if (videoPlayingVWC.get()) {
         return 'playing';
+      }
+      if (videoErroredVWC.get()) {
+        return 'errored';
+      }
+      if (!videoLoadedVWC.get()) {
+        return 'loading';
       }
       return 'paused';
     }
@@ -168,14 +197,31 @@ export const useVideoInfo = ({
     return undefined;
   });
 
+  const progressVWC = useMappedValuesWithCallbacks(
+    [videoCurrentTimeVWC, videoTotalTimeVWC],
+    () => {
+      const currentTime = videoCurrentTimeVWC.get();
+      const totalTime = videoTotalTimeVWC.get();
+      if (totalTime.seconds === undefined || totalTime.seconds <= 0) {
+        return 0;
+      }
+      return currentTime / totalTime.seconds;
+    }
+  );
+
+  const seekToVWC = useWritableValueWithCallbacks<
+    ((seconds: number) => void) | null
+  >(() => null);
+
   return useMemo(
-    (): VideoInfo => ({
+    (): MediaInfo => ({
       playbackStatus: playbackStatusVWC,
       loaded: videoLoadedVWC,
       playing: videoPlayingVWC,
       paused: videoPausedVWC,
       muted: videoMutedVWC,
       currentTime: videoCurrentTimeVWC,
+      progress: progressVWC,
       playPauseState: videoPlayPauseStateVWC,
       ended: videoEndedVWC,
       closedCaptioning: {
@@ -188,6 +234,7 @@ export const useVideoInfo = ({
       shouldPlay: vidShouldPlayVWC,
       readyForDisplay: videoReadyForDisplayVWC,
       shouldBeMuted: vidShouldBeMutedVWC,
+      seekTo: seekToVWC,
     }),
     [
       playbackStatusVWC,
@@ -196,6 +243,7 @@ export const useVideoInfo = ({
       videoPausedVWC,
       videoMutedVWC,
       videoCurrentTimeVWC,
+      progressVWC,
       videoPlayPauseStateVWC,
       videoEndedVWC,
       currentTranscriptPhrasesVWC,
@@ -207,6 +255,7 @@ export const useVideoInfo = ({
       vidShouldPlayVWC,
       videoReadyForDisplayVWC,
       vidShouldBeMutedVWC,
+      seekToVWC,
     ]
   );
 };

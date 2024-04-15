@@ -117,7 +117,9 @@ export const readJourneyFeedbackRequestReviewStoredState =
           typeof rating.rating !== 'number' ||
           ![1, 2, 3, 4].includes(rating.rating)
         ) {
-          throw new Error('rating is not a valid rating');
+          throw new Error(
+            `rating is not a valid rating (got ${rating.rating}, expected 1, 2, 3, or 4)`
+          );
         }
         if (typeof rating.ratedAt !== 'number') {
           throw new Error('ratedAt is not a number');
@@ -221,6 +223,12 @@ export const onJourneyRated = async (
   journeyUid: string,
   rating: 1 | 2 | 3 | 4
 ): Promise<boolean> => {
+  if (typeof rating !== 'number' || ![1, 2, 3, 4].includes(rating)) {
+    throw new Error(
+      `rating is not a valid rating (got ${rating}, expected 1, 2, 3, or 4)`
+    );
+  }
+
   return await withLock(async (): Promise<boolean> => {
     const state = await readJourneyFeedbackRequestReviewStoredState();
     state.ratings++;

@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { OsehContentProps } from './OsehContentProps';
 import {
   ContentFileNativeExport,
   OsehContentTarget,

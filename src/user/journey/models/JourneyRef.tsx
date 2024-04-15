@@ -1,6 +1,7 @@
-import { OsehContentRef } from "../../../shared/content/OsehContentRef";
-import { OsehImageRef } from "../../../shared/images/OsehImageRef";
-import { CrudFetcherKeyMap } from "../../../shared/lib/CrudFetcher";
+import { OsehContentRef } from '../../../shared/content/OsehContentRef';
+import { OsehImageRef } from '../../../shared/images/OsehImageRef';
+import { CrudFetcherKeyMap } from '../../../shared/lib/CrudFetcher';
+import { OsehTranscriptRef } from '../../../shared/transcripts/OsehTranscriptRef';
 
 export type JourneyRef = {
   /**
@@ -82,19 +83,24 @@ export type JourneyRef = {
    * a 1080x1920 15s vertical video), this is the content ref for that video.
    */
   sample: OsehContentRef | null;
+
+  /**
+   * If a transcript is available for this journey, the transcript
+   */
+  transcript: OsehTranscriptRef | null;
 };
 
 /**
  * The key map for parsing journey refs
  */
 export const journeyRefKeyMap: CrudFetcherKeyMap<JourneyRef> = {
-  duration_seconds: "durationSeconds",
-  background_image: "backgroundImage",
-  darkened_background_image: "darkenedBackgroundImage",
-  blurred_background_image: "blurredBackgroundImage",
-  audio_content: "audioContent",
+  duration_seconds: 'durationSeconds',
+  background_image: 'backgroundImage',
+  darkened_background_image: 'darkenedBackgroundImage',
+  blurred_background_image: 'blurredBackgroundImage',
+  audio_content: 'audioContent',
   category: (_, val) => ({
-    key: "category",
+    key: 'category',
     value: {
       externalName: val.external_name,
     },

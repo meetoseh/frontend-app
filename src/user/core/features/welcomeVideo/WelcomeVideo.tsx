@@ -4,27 +4,23 @@ import { WelcomeVideoResources } from './WelcomeVideoResources';
 import { WelcomeVideoState } from './WelcomeVideoState';
 import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { useWindowSizeValueWithCallbacks } from '../../../../shared/hooks/useWindowSize';
-import { useValuesWithCallbacksEffect } from '../../../../shared/hooks/useValuesWithCallbacksEffect';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
-import { useVideoInfo } from '../../../../shared/hooks/useVideoInfo';
+import { useMediaInfo } from '../../../../shared/content/useMediaInfo';
 import { useCurrentTranscriptPhrases } from '../../../../shared/transcripts/useCurrentTranscriptPhrases';
-import { setVWC } from '../../../../shared/lib/setVWC';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { OsehImageFromStateValueWithCallbacks } from '../../../../shared/images/OsehImageFromStateValueWithCallbacks';
-import { useAnimationTargetAndRendered } from '../../../../shared/anim/useAnimationTargetAndRendered';
-import { BezierAnimator } from '../../../../shared/anim/AnimationLoop';
-import { ease } from '../../../../shared/lib/Bezier';
-import { InlineOsehSpinner } from '../../../../shared/components/InlineOsehSpinner';
-import { TranscriptContainer } from '../../../../shared/transcripts/TranscriptContainer';
 import { useStartSession } from '../../../../shared/hooks/useInappNotificationSession';
 import { adaptValueWithCallbacksAsVariableStrategyProps } from '../../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps';
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
 import { styles } from './WelcomeVideoStyles';
-import { useBotBarHeight } from '../../../../shared/hooks/useBotBarHeight';
-import { ResizeMode, Video } from 'expo-av';
-import { Pressable, View, Text } from 'react-native';
+import { View } from 'react-native';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
-import { useContentWidth } from '../../../../shared/lib/useContentWidth';
+import { MediaInfoVideo } from '../../../../shared/content/MediaInfoVideo';
+import { StatusBar } from 'expo-status-bar';
+import {
+  PlayerCTA,
+  PlayerForeground,
+} from '../../../../shared/content/player/PlayerForeground';
 
 /**
  * Displays the full screen welcome video
@@ -59,15 +55,16 @@ export const WelcomeVideo = ({
   );
 
   const videoVWC = useMappedValueWithCallbacks(resources, (r) => r.video);
-  const videoInfo = useVideoInfo({
-    currentTranscriptPhrasesVWC: useCurrentTranscriptPhrases({
-      transcriptRef: useMappedValueWithCallbacks(resources, (r) => {
-        if (r.onboardingVideo.type !== 'success') {
-          return null;
-        }
-        return r.onboardingVideo.result.transcript;
-      }),
+  const transcript = useCurrentTranscriptPhrases({
+    transcriptRef: useMappedValueWithCallbacks(resources, (r) => {
+      if (r.onboardingVideo.type !== 'success') {
+        return null;
+      }
+      return r.onboardingVideo.result.transcript;
     }),
+  });
+  const mediaInfo = useMediaInfo({
+    currentTranscriptPhrasesVWC: transcript,
     autoplay: true,
   });
 
@@ -75,25 +72,9 @@ export const WelcomeVideo = ({
     resources,
     (r) => r.coverImage
   );
-  const overlayVWC = useAnimationTargetAndRendered<{ opacity: number }>(
-    () => ({ opacity: 1 }),
-    () => [
-      new BezierAnimator(
-        ease,
-        350,
-        (p) => p.opacity,
-        (p, v) => (p.opacity = v)
-      ),
-    ]
-  );
-
-  useMappedValueWithCallbacks(videoInfo.playing, (playing) => {
-    setVWC(overlayVWC.target, { opacity: playing ? 0 : 1 });
-    return undefined;
-  });
 
   const reportedPlayingRef = useRef<boolean>(false);
-  useValueWithCallbacksEffect(videoInfo.playing, (playing) => {
+  useValueWithCallbacksEffect(mediaInfo.playing, (playing) => {
     if (playing === reportedPlayingRef.current) {
       return undefined;
     }
@@ -101,17 +82,17 @@ export const WelcomeVideo = ({
     if (playing) {
       resources.get().session?.storeAction('play', null);
     } else {
-      if (!videoInfo.ended.get()) {
+      if (!mediaInfo.ended.get()) {
         resources
           .get()
-          .session?.storeAction('pause', { time: videoInfo.currentTime.get() });
+          .session?.storeAction('pause', { time: mediaInfo.currentTime.get() });
       }
     }
     return undefined;
   });
 
   useValueWithCallbacksEffect(
-    videoInfo.ended,
+    mediaInfo.ended,
     useCallback(
       (ended) => {
         if (ended) {
@@ -125,9 +106,6 @@ export const WelcomeVideo = ({
     )
   );
 
-  const bottomBarHeight = useBotBarHeight();
-  const contentWidth = useContentWidth();
-  const videoRefVWC = useWritableValueWithCallbacks<Video | null>(() => null);
   const videoStyleVWC = useMappedValuesWithCallbacks(
     [windowSizeVWC],
     () => {
@@ -140,102 +118,35 @@ export const WelcomeVideo = ({
     }
   );
 
-  const overlayRef = useWritableValueWithCallbacks<View | null>(() => null);
-  useValuesWithCallbacksEffect([overlayRef, overlayVWC.rendered], () => {
-    const ele = overlayRef.get();
-    const { opacity } = overlayVWC.rendered.get();
-    if (ele !== null) {
-      ele.setNativeProps({
-        style: {
-          backgroundColor: `rgba(0, 0, 0, ${opacity * 0.5})`,
-          opacity,
-        },
-      });
-    }
-    return undefined;
-  });
+  const cta = useWritableValueWithCallbacks(
+    (): PlayerCTA => ({
+      title: 'Skip',
+      action: async () => {
+        resources.get().session?.storeAction('close', null);
+        resources.get().session?.reset();
+        state.get().ian?.onShown();
+      },
+    })
+  );
 
-  const contentRef = useWritableValueWithCallbacks<View | null>(() => null);
-  useValuesWithCallbacksEffect([contentRef, overlayVWC.rendered], () => {
-    const ele = contentRef.get();
-    const { opacity } = overlayVWC.rendered.get();
-    if (ele !== null) {
-      ele.setNativeProps({
-        style: {
-          opacity: 1 - opacity,
-        },
-      });
-    }
-    return undefined;
-  });
-  useValuesWithCallbacksEffect([contentRef, windowSizeVWC], () => {
-    const ele = contentRef.get();
-    const size = windowSizeVWC.get();
-    if (ele !== null) {
-      ele.setNativeProps({
-        style: {
-          width: size.width,
-          minHeight: size.height,
-          flexBasis: size.height,
-        },
-      });
-    }
-    return undefined;
-  });
+  const title = useWritableValueWithCallbacks(() => 'Welcome to Oseh');
 
   return (
     <View style={styles.container}>
       <View style={styles.background}>
-        <RenderGuardedComponent
-          props={useMappedValuesWithCallbacks(
-            [
-              videoVWC,
-              videoStyleVWC,
-              videoInfo.shouldPlay,
-              videoInfo.shouldBeMuted,
-            ],
-            () => ({
-              target: videoVWC.get(),
-              shouldPlay: videoInfo.shouldPlay.get(),
-              muted: videoInfo.shouldBeMuted.get(),
-              videoStyle: videoStyleVWC.get(),
-            })
-          )}
-          component={({ target, shouldPlay, muted, videoStyle }) =>
-            target.state !== 'loaded' ? (
-              <></>
-            ) : (
-              <Video
-                source={{
-                  uri: target.nativeExport.url,
-                  headers: { Authorization: `bearer ${target.jwt}` },
-                }}
-                ref={(r) => setVWC(videoRefVWC, r)}
-                resizeMode={ResizeMode.COVER}
-                shouldPlay={shouldPlay}
-                isLooping={false}
-                onLoadStart={() => setVWC(videoInfo.readyForDisplay, false)}
-                onReadyForDisplay={() =>
-                  setVWC(videoInfo.readyForDisplay, true)
-                }
-                onLoad={(status) => setVWC(videoInfo.playbackStatus, status)}
-                onPlaybackStatusUpdate={(status) =>
-                  setVWC(videoInfo.playbackStatus, status)
-                }
-                isMuted={muted}
-                style={videoStyle}
-              />
-            )
-          }
+        <MediaInfoVideo
+          mediaInfo={mediaInfo}
+          video={videoVWC}
+          styleVWC={videoStyleVWC}
         />
       </View>
       <View style={styles.background}>
         <RenderGuardedComponent
           props={useMappedValuesWithCallbacks(
-            [videoInfo.loaded, videoInfo.playing, videoInfo.currentTime],
+            [mediaInfo.loaded, mediaInfo.playing, mediaInfo.currentTime],
             () =>
-              !videoInfo.loaded.get() ||
-              (!videoInfo.playing.get() && videoInfo.currentTime.get() === 0)
+              !mediaInfo.loaded.get() ||
+              (!mediaInfo.playing.get() && mediaInfo.currentTime.get() === 0)
           )}
           component={(showCoverImage) =>
             showCoverImage ? (
@@ -248,79 +159,14 @@ export const WelcomeVideo = ({
           }
         />
       </View>
-      <View
-        ref={(v) => setVWC(contentRef, v)}
-        style={Object.assign({}, styles.content, {
-          opacity: 1 - overlayVWC.rendered.get().opacity,
-          width: windowSizeVWC.get().width,
-          minHeight: windowSizeVWC.get().height,
-          flexBasis: windowSizeVWC.get().height,
-        })}
-      >
-        <RenderGuardedComponent
-          props={videoInfo.closedCaptioning.state}
-          component={(state) =>
-            !state.enabled || !state.available ? (
-              <></>
-            ) : (
-              <View
-                style={Object.assign({}, styles.transcript, {
-                  width: contentWidth + 3,
-                  paddingBottom:
-                    styles.transcript.paddingBottom + bottomBarHeight,
-                })}
-              >
-                <TranscriptContainer
-                  currentTime={videoInfo.currentTime}
-                  currentTranscriptPhrases={videoInfo.closedCaptioning.phrases}
-                />
-              </View>
-            )
-          }
-        />
-      </View>
-      <Pressable
-        style={Object.assign({}, styles.overlay, {
-          backgroundColor: `rgba(0, 0, 0, ${
-            overlayVWC.rendered.get().opacity * 0.5
-          })`,
-          opacity: overlayVWC.rendered.get().opacity,
-        })}
-        ref={(r) => setVWC(overlayRef, r)}
-        onPress={() => {
-          const vid = videoRefVWC.get();
-          if (videoInfo.loaded.get() && vid !== null) {
-            const wasPlaying = videoInfo.playing.get();
-            if (wasPlaying) {
-              vid.pauseAsync().then((s) => setVWC(videoInfo.playbackStatus, s));
-            } else {
-              vid.playAsync().then((s) => setVWC(videoInfo.playbackStatus, s));
-            }
-          }
-        }}
-      >
-        <RenderGuardedComponent
-          props={videoInfo.loaded}
-          component={(loaded) => (
-            <View style={styles.overlayContent}>
-              {loaded ? (
-                <Text style={styles.overlayContentText}>
-                  Press anywhere to play
-                </Text>
-              ) : (
-                <InlineOsehSpinner
-                  size={{
-                    type: 'react-rerender',
-                    props: {
-                      width: 60,
-                    },
-                  }}
-                />
-              )}
-            </View>
-          )}
-        />
-      </Pressable>
+      <PlayerForeground
+        size={windowSizeVWC}
+        mediaInfo={mediaInfo}
+        transcript={transcript}
+        title={title}
+        cta={cta}
+      />
+      <StatusBar style="dark" />
     </View>
   );
 };

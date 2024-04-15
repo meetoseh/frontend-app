@@ -262,8 +262,12 @@ export const JourneyFeedbackScreen = ({
     }
     const loginContext = loginContextUnch;
 
-    const response = responseVWC.get() as 1 | 2 | 3 | 4;
-    if (await onJourneyRated(journey.uid, response)) {
+    const response = responseVWC.get() as null | 1 | 2 | 3 | 4;
+    if (
+      response !== null &&
+      (await onJourneyRated(journey.uid, response)) &&
+      StoreReview?.requestReview !== undefined
+    ) {
       apiFetch(
         '/api/1/notifications/inapp/start',
         {
