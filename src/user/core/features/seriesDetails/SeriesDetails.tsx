@@ -722,7 +722,13 @@ export const SeriesDetails = ({
                       ref={(r) => setVWC(upgradeContainerRef, r)}
                     >
                       <FilledPremiumButton
-                        onPress={() => {
+                        onPress={async () => {
+                          setVWC(transition.animation, {
+                            type: 'fade',
+                            ms: 350,
+                            individualFadeMS: 350,
+                          });
+                          await playExitTransition(transition).promise;
                           resources.get().gotoUpgrade();
                         }}
                         setTextStyle={(s) => setVWC(premiumButtonTextStyle, s)}
