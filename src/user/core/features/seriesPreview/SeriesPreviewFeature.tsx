@@ -6,14 +6,17 @@ import {
 import { Feature } from '../../models/Feature';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
-import { SeriesPreviewState } from './SeriesPreviewState';
+import { SeriesPreviewShow, SeriesPreviewState } from './SeriesPreviewState';
 import { SeriesPreviewResources } from './SeriesPreviewResources';
 import {
   ExternalCoursePreviewable,
   externalCourseKeyMap,
   getPreviewableCourse,
 } from '../../../series/lib/ExternalCourse';
-import { defaultEqualityFn } from '../../../../shared/hooks/useMappedValueWithCallbacks';
+import {
+  defaultEqualityFn,
+  useMappedValueWithCallbacks,
+} from '../../../../shared/hooks/useMappedValueWithCallbacks';
 import { LoginContext } from '../../../../shared/contexts/LoginContext';
 import { SeriesPreview } from './SeriesPreview';
 import { useValuesWithCallbacksEffect } from '../../../../shared/hooks/useValuesWithCallbacksEffect';
@@ -33,15 +36,12 @@ export const SeriesPreviewFeature: Feature<
       (): string | null => null
     );
     const showVWC = useWritableValueWithCallbacks<
-      ExternalCoursePreviewable | null | undefined
+      SeriesPreviewShow | null | undefined
     >(() => (tryingSeriesSlugVWC.get() === null ? null : undefined));
 
     const setShow = useCallback(
-      (
-        series: ExternalCoursePreviewable | null,
-        updateWindowHistory: boolean
-      ) => {
-        if (defaultEqualityFn(series, showVWC.get())) {
+      (show: SeriesPreviewShow | null, updateWindowHistory: boolean) => {
+        if (defaultEqualityFn(show, showVWC.get())) {
           return;
         }
 
@@ -49,17 +49,24 @@ export const SeriesPreviewFeature: Feature<
           throw new Error('Cannot set show when loading');
         }
 
-        setVWC(showVWC, series);
+        setVWC(showVWC, show);
       },
       [showVWC]
     );
 
     useRefreshedExternalCourse(
-      showVWC,
+      useMappedValueWithCallbacks(showVWC, (s) => s?.course ?? null),
       useCallback(
         (newItm) => {
           const previewable = getPreviewableCourse(newItm);
-          setShow(previewable, newItm === null);
+          if (previewable === null) {
+            setShow(null, false);
+            return;
+          }
+          setShow(
+            { enter: showVWC.get()?.enter ?? 'fade', course: previewable },
+            false
+          );
         },
         [setShow]
       ),
@@ -139,7 +146,10 @@ export const SeriesPreviewFeature: Feature<
             return;
           }
 
-          setVWC(showVWC, coursePreviewable);
+          setVWC(showVWC, {
+            enter: 'fade',
+            course: coursePreviewable,
+          } as const);
         }
 
         async function fetchSeriesBySlug() {
@@ -191,7 +201,7 @@ export const SeriesPreviewFeature: Feature<
       loading: false,
       imageHandler,
       goBack() {
-        allStates.get().seriesList.setShow(true, true);
+        allStates.get().seriesList.setForced({ enter: 'fade' }, true);
         state.get().setShow(null, false);
       },
       gotoDetails(series) {

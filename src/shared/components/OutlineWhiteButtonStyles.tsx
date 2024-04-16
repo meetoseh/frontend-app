@@ -52,7 +52,15 @@ export const styles = StyleSheet.create({
 export const thinStyles = StyleSheet.create({
   container: { ...styles.container, minHeight: 36, paddingHorizontal: 14 },
   containerWithSpinner: styles.containerWithSpinner,
-  spinnerContainer: styles.spinnerContainer,
+  spinnerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   disabled: styles.disabled,
   disabledText: styles.disabledText,
   pressed: styles.pressed,

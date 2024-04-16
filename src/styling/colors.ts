@@ -126,3 +126,23 @@ export const STANDARD_DARK_BLACK_GRAY_GRADIENT_SVG: SvgLinearGradientBackgroundS
     x2: 0.5,
     y2: 0,
   };
+
+export const STANDARD_DARK_BLACK_GRAY_SOFT_WIPE_DOWN_GRADIENT_SVG: SvgLinearGradientBackgroundState =
+  {
+    stop1: { color: [20, 25, 28, 0], offset: 0 },
+    stop2: { color: [20, 25, 28, 1], offset: 1 },
+    x1: 0.5,
+    y1: 1,
+    x2: 0.5,
+    y2: 0,
+  };
+
+export const STANDARD_DARK_BLACK_GRAY_SOFT_WIPE_UP_GRADIENT_SVG: SvgLinearGradientBackgroundState =
+  {
+    stop1: { color: [20, 25, 28, 1], offset: 0 },
+    stop2: { color: [20, 25, 28, 0], offset: 1 },
+    x1: 0.5,
+    y1: 1,
+    x2: 0.5,
+    y2: 0,
+  };

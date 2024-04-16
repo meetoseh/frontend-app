@@ -7,10 +7,7 @@ import {
   useWritableValueWithCallbacks,
 } from '../../../../shared/lib/Callbacks';
 import { SurveyCheckboxGroup } from '../../../../shared/components/SurveyCheckboxGroup';
-import {
-  SurveyScreen,
-  SurveyScreenTransition,
-} from '../../../../shared/components/SurveyScreen';
+import { SurveyScreen } from '../../../../shared/components/SurveyScreen';
 import { useStartSession } from '../../../../shared/hooks/useInappNotificationSession';
 import {
   playExitTransition,
@@ -18,6 +15,7 @@ import {
   useTransitionProp,
 } from '../../../../shared/lib/TransitionProp';
 import { setVWC } from '../../../../shared/lib/setVWC';
+import { StandardScreenTransition } from '../../../../shared/hooks/useStandardTransitions';
 
 const _CHOICES = [
   { slug: 'sleep_better', text: 'Sleep Better', element: <>Sleep Better</> },
@@ -48,7 +46,7 @@ export const GoalCategories = ({
   state,
   resources,
 }: FeatureComponentProps<GoalCategoriesState, GoalCategoriesResources>) => {
-  const transition = useTransitionProp((): SurveyScreenTransition => {
+  const transition = useTransitionProp((): StandardScreenTransition => {
     const enter = state.get().forced?.enter ?? 'fade';
     if (enter === 'fade') {
       return { type: 'fade', ms: 350 };

@@ -5,6 +5,20 @@ export const styles = StyleSheet.create({
   container: {
     position: 'relative',
   },
+  background: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  backgroundGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'red',
+  },
+  foreground: {},
   contentContainer: {},
   content: {
     justifyContent: 'flex-start',
@@ -19,7 +33,7 @@ export const styles = StyleSheet.create({
   },
   closeButton: {
     paddingTop: 8,
-    paddingLeft: 24,
+    paddingLeft: 0,
     paddingRight: 32,
     paddingBottom: 16,
   },
@@ -95,6 +109,11 @@ export const styles = StyleSheet.create({
     color: Colors.GRAYSCALE_MID_GRAY,
   },
   classButton: {
+    alignItems: 'stretch',
+    justifyContent: 'center',
+  },
+  footer: {
+    marginTop: 40,
     alignItems: 'stretch',
     justifyContent: 'center',
   },

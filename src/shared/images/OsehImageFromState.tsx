@@ -67,6 +67,15 @@ export const OsehImageFromState = ({
       </View>
     )
   ) : (
-    <View style={fullStyle} pointerEvents={pointerEvents} />
+    <View
+      style={Object.assign(
+        {},
+        fullStyle,
+        state.placeholderColor !== null
+          ? { backgroundColor: state.placeholderColor }
+          : undefined
+      )}
+      pointerEvents={pointerEvents}
+    />
   );
 };

@@ -5,10 +5,7 @@ import {
   useWritableValueWithCallbacks,
 } from '../../../../shared/lib/Callbacks';
 import { SurveyCheckboxGroup } from '../../../../shared/components/SurveyCheckboxGroup';
-import {
-  SurveyScreen,
-  SurveyScreenTransition,
-} from '../../../../shared/components/SurveyScreen';
+import { SurveyScreen } from '../../../../shared/components/SurveyScreen';
 import { useStartSession } from '../../../../shared/hooks/useInappNotificationSession';
 import { GoalDaysPerWeekState } from './GoalDaysPerWeekState';
 import { GoalDaysPerWeekResources } from './GoalDaysPerWeekResources';
@@ -26,6 +23,7 @@ import {
 } from '../../../../shared/lib/TransitionProp';
 import { apiFetch } from '../../../../shared/lib/apiFetch';
 import { describeError } from '../../../../shared/lib/describeError';
+import { StandardScreenTransition } from '../../../../shared/hooks/useStandardTransitions';
 
 const _CHOICES = [
   { slug: '1', text: '1 day', element: <>1 day</> },
@@ -51,7 +49,7 @@ export const GoalDaysPerWeek = ({
   state,
   resources,
 }: FeatureComponentProps<GoalDaysPerWeekState, GoalDaysPerWeekResources>) => {
-  const transition = useTransitionProp((): SurveyScreenTransition => {
+  const transition = useTransitionProp((): StandardScreenTransition => {
     const back = state.get().forced?.back ?? null;
     if (back === null) {
       return { type: 'fade', ms: 350 };

@@ -351,15 +351,20 @@ export const SeriesDetailsFeature: Feature<
           backgroundImage,
           modals,
           goBack() {
-            allStates.get().seriesList.setShow(true, true);
+            allStates.get().seriesList.setForced({ enter: 'swipe-left' }, true);
             state.get().setShow(null, false);
           },
           gotoJourney(journey, course) {
-            console.log('going to journey', journey);
             allStates
               .get()
               .singleJourney.setShow({ type: 'generic', ref: journey });
             state.get().setShow(null, true);
+          },
+          gotoCoursePreview: (course) => {
+            allStates
+              .get()
+              .seriesPreview.setShow({ enter: 'wipe-up', course }, true);
+            state.get().setShow(null, false);
           },
           gotoUpgrade() {
             const course = courseVWC.get();

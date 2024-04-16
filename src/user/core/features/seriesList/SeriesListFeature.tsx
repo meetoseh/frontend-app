@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { Feature } from '../../models/Feature';
 import { SeriesListResources } from './SeriesListResources';
-import { SeriesListState } from './SeriesListState';
+import { SeriesListForced, SeriesListState } from './SeriesListState';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
 import { SeriesList } from './SeriesList';
@@ -12,28 +12,30 @@ export const SeriesListFeature: Feature<SeriesListState, SeriesListResources> =
   {
     identifier: 'seriesList',
     useWorldState() {
-      const showVWC = useWritableValueWithCallbacks(() => false);
+      const forcedVWC = useWritableValueWithCallbacks<SeriesListForced | null>(
+        () => null
+      );
 
-      const setShow = useCallback(
-        (wantsSeries: boolean, updateWindowHistory: boolean) => {
-          setVWC(showVWC, wantsSeries);
+      const setForced = useCallback(
+        (forced: SeriesListForced | null, updateWindowHistory: boolean) => {
+          setVWC(forcedVWC, forced);
         },
-        [showVWC]
+        [forcedVWC]
       );
 
       return useMappedValuesWithCallbacks(
-        [showVWC],
+        [forcedVWC],
         useCallback(
           () => ({
-            show: showVWC.get(),
-            setShow,
+            forced: forcedVWC.get(),
+            setForced,
           }),
-          [showVWC, setShow]
+          [forcedVWC, setForced]
         )
       );
     },
     isRequired(state) {
-      return state.show;
+      return state.forced !== null;
     },
     useResources(state, required, allStates) {
       const imageHandler = useOsehImageStateRequestHandler({});
@@ -43,11 +45,17 @@ export const SeriesListFeature: Feature<SeriesListState, SeriesListResources> =
         imageHandler,
         gotoSettings: () => {
           allStates.get().settings.setShow(true, true);
-          state.get().setShow(false, false);
+          state.get().setForced(null, false);
         },
         gotoCoursePreview: (course) => {
-          allStates.get().seriesPreview.setShow(course, true);
-          state.get().setShow(false, false);
+          allStates
+            .get()
+            .seriesPreview.setShow({ course, enter: 'fade' }, true);
+          state.get().setForced(null, false);
+        },
+        gotoCourseDetails: (course) => {
+          allStates.get().seriesDetails.setShow(course, true);
+          state.get().setForced(null, false);
         },
       }));
     },

@@ -198,7 +198,7 @@ export const HomeScreenFeature: Feature<HomeScreenState, HomeScreenResources> =
               };
             },
             gotoSeries: () => {
-              allStatesVWC.get().seriesList.setShow(true, true);
+              allStatesVWC.get().seriesList.setForced({ enter: 'fade' }, true);
             },
             gotoAccount: () => {
               allStatesVWC.get().settings.setShow(true, true);

@@ -7,17 +7,27 @@ import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedV
 import { View } from 'react-native';
 import { styles } from './SeriesListStyles';
 import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
-import { useValuesWithCallbacksEffect } from '../../../../shared/hooks/useValuesWithCallbacksEffect';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { BottomNavBar } from '../../../bottomNav/BottomNavBar';
-import { useTopBarHeight } from '../../../../shared/hooks/useTopBarHeight';
 import { StatusBar } from 'expo-status-bar';
 import { useBotBarHeight } from '../../../../shared/hooks/useBotBarHeight';
 import { styles as bottomNavStyles } from '../../../bottomNav/BottomNavBarStyles';
-import { SvgLinearGradientBackground } from '../../../../shared/anim/SvgLinearGradientBackground';
-import { STANDARD_BLACK_GRAY_GRADIENT_SVG } from '../../../../styling/colors';
+import { STANDARD_DARK_BLACK_GRAY_GRADIENT_SVG } from '../../../../styling/colors';
 import { CourseCoverItemsList } from '../../../series/components/CourseCoverItemsList';
 import { getPreviewableCourse } from '../../../series/lib/ExternalCourse';
+import { SvgLinearGradient } from '../../../../shared/anim/SvgLinearGradient';
+import { useStyleVWC } from '../../../../shared/hooks/useStyleVWC';
+import {
+  playExitTransition,
+  useEntranceTransition,
+  useTransitionProp,
+} from '../../../../shared/lib/TransitionProp';
+import {
+  StandardScreenTransition,
+  useStandardTransitionsState,
+} from '../../../../shared/hooks/useStandardTransitions';
+import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
+import { WipeTransitionOverlay } from '../../../../shared/components/WipeTransitionOverlay';
 
 /**
  * The top-level component to show the series list screen, which
@@ -31,68 +41,89 @@ export const SeriesList = ({
   SeriesListState,
   SeriesListResources
 >): ReactElement => {
+  const transition = useTransitionProp((): StandardScreenTransition => {
+    const forced = stateVWC.get().forced;
+    if (forced !== null && forced.enter === 'swipe-left') {
+      return { type: 'swipe', direction: 'to-right', ms: 350 };
+    }
+    if (forced !== null && forced.enter === 'swipe-right') {
+      return { type: 'swipe', direction: 'to-left', ms: 350 };
+    }
+    return { type: 'fade', ms: 350 };
+  });
+  useEntranceTransition(transition);
+
+  const transitionState = useStandardTransitionsState(transition);
+
   const windowSizeVWC = useWindowSizeValueWithCallbacks();
   const botBarHeight = useBotBarHeight();
   const expectedBottomNavHeight = bottomNavStyles.container.minHeight;
-  const topBarHeight = useTopBarHeight();
 
   const listHeight = useMappedValueWithCallbacks(
     windowSizeVWC,
     (size) => size.height - botBarHeight - expectedBottomNavHeight
   );
-  const containerRef = useWritableValueWithCallbacks<View | null>(() => null);
-
-  useValuesWithCallbacksEffect([windowSizeVWC, containerRef], () => {
-    const size = windowSizeVWC.get();
-    const container = containerRef.get();
-    if (container === null) {
-      return undefined;
-    }
-    container.setNativeProps({
-      style: {
+  const foregroundRef = useWritableValueWithCallbacks<View | null>(() => null);
+  const foregroundStyleVWC = useMappedValuesWithCallbacks(
+    [windowSizeVWC, transitionState.left, transitionState.opacity],
+    () => {
+      const size = windowSizeVWC.get();
+      const opacity = transitionState.opacity.get();
+      const left = transitionState.left.get();
+      return {
+        left,
+        opacity,
         minWidth: size.width,
         minHeight: size.height,
-      },
-    });
-    return undefined;
-  });
+      };
+    }
+  );
+  useStyleVWC(foregroundRef, foregroundStyleVWC);
 
   return (
-    <View>
-      <SvgLinearGradientBackground
-        state={{
-          type: 'react-rerender',
-          props: STANDARD_BLACK_GRAY_GRADIENT_SVG,
-        }}
-      >
-        <View style={styles.container} ref={(r) => setVWC(containerRef, r)}>
-          <View style={styles.contentContainer}>
-            <View style={styles.items}>
-              <CourseCoverItemsList
-                showCourse={(course) => {
-                  const previewable = getPreviewableCourse(course);
-                  if (previewable !== null) {
-                    resourcesVWC.get().gotoCoursePreview(previewable);
-                  } else {
-                    console.log('not previewable');
-                  }
-                }}
-                listHeight={listHeight}
-                imageHandler={resourcesVWC.get().imageHandler}
-              />
-            </View>
-          </View>
-          <View style={styles.bottomNav}>
-            <BottomNavBar
-              active="series"
-              clickHandlers={{
-                home: () => stateVWC.get().setShow(false, true),
-                account: () => resourcesVWC.get().gotoSettings(),
+    <View style={styles.container}>
+      <View style={styles.background}>
+        <SvgLinearGradient state={STANDARD_DARK_BLACK_GRAY_GRADIENT_SVG} />
+      </View>
+      <View style={styles.foreground} ref={(r) => setVWC(foregroundRef, r)}>
+        <View style={styles.contentContainer}>
+          <View style={styles.items}>
+            <CourseCoverItemsList
+              showCourse={async (course) => {
+                if (course.hasEntitlement) {
+                  setVWC(transition.animation, {
+                    type: 'wipe',
+                    direction: 'up',
+                    ms: 350,
+                  });
+                  await playExitTransition(transition).promise;
+                  resourcesVWC.get().gotoCourseDetails(course);
+                  return;
+                }
+
+                const previewable = getPreviewableCourse(course);
+                if (previewable !== null) {
+                  setVWC(transition.animation, { type: 'fade', ms: 350 });
+                  await playExitTransition(transition).promise;
+                  resourcesVWC.get().gotoCoursePreview(previewable);
+                }
               }}
+              listHeight={listHeight}
+              imageHandler={resourcesVWC.get().imageHandler}
             />
           </View>
         </View>
-      </SvgLinearGradientBackground>
+        <View style={styles.bottomNav}>
+          <BottomNavBar
+            active="series"
+            clickHandlers={{
+              home: () => stateVWC.get().setForced(null, true),
+              account: () => resourcesVWC.get().gotoSettings(),
+            }}
+          />
+        </View>
+      </View>
+      <WipeTransitionOverlay wipe={transitionState.wipe} />
       <StatusBar style="light" />
     </View>
   );

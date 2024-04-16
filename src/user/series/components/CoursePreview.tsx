@@ -23,12 +23,26 @@ import {
   PlayerForeground,
 } from '../../../shared/content/player/PlayerForeground';
 import { MediaInfoVideo } from '../../../shared/content/MediaInfoVideo';
+import {
+  playExitTransition,
+  useEntranceTransition,
+  useInitializedTransitionProp,
+  useTransitionProp,
+} from '../../../shared/lib/TransitionProp';
+import {
+  StandardScreenTransition,
+  StandardScreenTransitionProp,
+  useStandardTransitionsState,
+} from '../../../shared/hooks/useStandardTransitions';
+import { OpacityTransitionOverlay } from '../../../shared/components/OpacityTransitionOverlay';
+import { WipeTransitionOverlay } from '../../../shared/components/WipeTransitionOverlay';
 
 export type CoursePreviewProps = {
   course: ExternalCoursePreviewable;
-  onViewDetails: () => void;
-  onBack: () => void;
+  onViewDetails: () => Promise<void>;
+  onBack: () => Promise<void>;
   imageHandler: OsehImageStateRequestHandler;
+  transition?: StandardScreenTransitionProp;
 };
 
 /**
@@ -40,7 +54,14 @@ export const CoursePreview = ({
   onViewDetails,
   onBack,
   imageHandler,
+  transition: transitionRaw,
 }: CoursePreviewProps) => {
+  const transition = useInitializedTransitionProp(transitionRaw, () => ({
+    type: 'none',
+    ms: 0,
+  }));
+  const transitionState = useStandardTransitionsState(transition);
+
   const windowSizeVWC = useWindowSizeValueWithCallbacks();
   const coverImageProps = useMappedValueWithCallbacks(
     windowSizeVWC,
@@ -108,12 +129,10 @@ export const CoursePreview = ({
   const tag = useReactManagedValueAsValueWithCallbacks(
     `${course.numJourneys.toLocaleString()} Classes`
   );
-  const onClose = useReactManagedValueAsValueWithCallbacks(async () =>
-    onBack()
-  );
+  const onClose = useReactManagedValueAsValueWithCallbacks(onBack);
   const cta = useReactManagedValueAsValueWithCallbacks<PlayerCTA>({
     title: 'View Series',
-    action: async () => onViewDetails(),
+    action: onViewDetails,
   });
 
   return (
@@ -176,6 +195,8 @@ export const CoursePreview = ({
         onClose={onClose}
         cta={cta}
       />
+      <OpacityTransitionOverlay opacity={transitionState.opacity} />
+      <WipeTransitionOverlay wipe={transitionState.wipe} />
       <StatusBar style="dark" />
     </View>
   );
