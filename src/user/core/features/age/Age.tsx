@@ -114,7 +114,7 @@ export const Age = ({
     resources.get().session?.reset();
     state.get().ian?.onShown();
     resources.get().onBack();
-  }, [resources, state]);
+  }, [resources, state, checkedVWC, transition]);
 
   const handleContinue = useCallback(async () => {
     resources.get().session?.storeAction('continue', {
@@ -129,7 +129,7 @@ export const Age = ({
     resources.get().session?.reset();
     state.get().ian?.onShown();
     resources.get().onContinue();
-  }, [resources, state]);
+  }, [resources, state, checkedVWC, transition]);
 
   return (
     <SurveyScreen

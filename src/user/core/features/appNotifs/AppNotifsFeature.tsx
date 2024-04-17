@@ -1,5 +1,6 @@
 import {
   AndroidImportance,
+  IosAuthorizationStatus,
   dismissAllNotificationsAsync,
   getExpoPushTokenAsync,
   getPermissionsAsync,

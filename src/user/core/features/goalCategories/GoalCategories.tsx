@@ -120,7 +120,7 @@ export const GoalCategories = ({
     resources.get().session?.reset();
     state.get().ian?.onShown();
     resources.get().onContinue();
-  }, [resources, state]);
+  }, [resources, state, checkedVWC, transition]);
 
   return (
     <SurveyScreen

@@ -110,7 +110,7 @@ export const SeriesDetails = ({
     });
     await playExitTransition(transition).promise;
     resources.get().goBack();
-  }, [resources]);
+  }, [resources, transition]);
 
   const hasEntitlementVWC = useMappedValueWithCallbacks(
     state,
@@ -209,7 +209,14 @@ export const SeriesDetails = ({
         setVWC(goingToJourney, false);
       }
     },
-    [goingToJourney, gotoJourneyError, loginContextRaw.value, resources, state]
+    [
+      goingToJourney,
+      gotoJourneyError,
+      loginContextRaw.value,
+      resources,
+      state,
+      transition,
+    ]
   );
 
   const contentRef = useWritableValueWithCallbacks<View | null>(() => null);

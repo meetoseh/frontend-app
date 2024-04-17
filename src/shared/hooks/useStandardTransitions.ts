@@ -1,8 +1,5 @@
 import { useMemo } from 'react';
-import {
-  DynamicAnimationEngineItemArg,
-  useDynamicAnimationEngine,
-} from '../anim/useDynamicAnimation';
+import { useDynamicAnimationEngine } from '../anim/useDynamicAnimation';
 import { ease } from '../lib/Bezier';
 import {
   ValueWithCallbacks,

@@ -10,15 +10,10 @@ import {
   SvgLinearGradient,
   SvgLinearGradientState,
 } from '../anim/SvgLinearGradient';
-import {
-  STANDARD_DARK_BLACK_GRAY_GRADIENT_SVG,
-  STANDARD_DARK_BLACK_GRAY_SOFT_WIPE_DOWN_GRADIENT_SVG,
-  STANDARD_DARK_BLACK_GRAY_SOFT_WIPE_UP_GRADIENT_SVG,
-} from '../../styling/colors';
+import { STANDARD_DARK_BLACK_GRAY_GRADIENT_SVG } from '../../styling/colors';
 import { styles } from './WipeTransitionOverlayStyles';
 import { setVWC } from '../lib/setVWC';
 import { useStyleVWC } from '../hooks/useStyleVWC';
-import { debugView } from '../lib/debugView';
 import { interpolateColor } from '../lib/BezierAnimation';
 
 export type WipeTransitionOverlayProps = Pick<

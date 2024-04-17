@@ -68,7 +68,7 @@ export const SeriesPreviewFeature: Feature<
             false
           );
         },
-        [setShow]
+        [setShow, showVWC]
       ),
       'list'
     );

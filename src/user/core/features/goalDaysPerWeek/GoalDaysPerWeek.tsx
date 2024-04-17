@@ -134,7 +134,7 @@ export const GoalDaysPerWeek = ({
     if (response.ok) {
       resources.get().session?.storeAction('stored', { choice: value });
     }
-  }, []);
+  }, [checkedVWC, loginContextRaw.value, resources]);
 
   const handleAction = useCallback(
     async (action: 'continue' | 'back') => {
@@ -172,7 +172,7 @@ export const GoalDaysPerWeek = ({
       state.get().ian?.onShown();
       resources.get().onGoalSet(choice, action);
     },
-    [resources, state]
+    [resources, state, checkedVWC, errorVWC, transition, trySave]
   );
 
   return (
