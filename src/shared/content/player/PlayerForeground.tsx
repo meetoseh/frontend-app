@@ -497,7 +497,7 @@ export const PlayerForeground = ({
           <View style={styles.progressDot} />
           <View style={styles.progressEmpty} />
         </Pressable>
-        <View style={styles.durationContainer}>
+        <View style={styles.durationContainer} pointerEvents="none">
           <RenderGuardedComponent
             props={mediaInfo.currentTime}
             component={(inSeconds) => {

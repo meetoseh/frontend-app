@@ -160,13 +160,15 @@ export const styles = StyleSheet.create({
     gap: 8,
   },
   progressContainer: {
-    marginTop: 16,
+    paddingTop: 16,
     flexDirection: 'row',
     flexWrap: 'nowrap',
     justifyContent: 'center',
     alignItems: 'center',
     paddingLeft: 3,
     paddingRight: 8,
+    paddingBottom: 16,
+    marginBottom: -16,
   },
   progressFull: {
     height: 3,
