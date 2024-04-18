@@ -9,18 +9,14 @@ export const styles = StyleSheet.create({
     backgroundColor: Colors.TRANSPARENT,
   },
   buttonPressed: {},
-  emoji: {
+  emojiBackground: {
     borderRadius: 10,
     overflow: 'hidden',
     minHeight: 48,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  emojiGrayscalerWrapper: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emojiGrayscaler: {
+  emoji: {
     justifyContent: 'center',
     alignItems: 'center',
   },

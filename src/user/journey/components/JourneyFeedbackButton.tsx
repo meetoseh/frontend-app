@@ -26,7 +26,6 @@ import {
   SvgLinearGradientBackgroundState,
 } from '../../../shared/anim/SvgLinearGradientBackground';
 import { VariableStrategyProps } from '../../../shared/anim/VariableStrategyProps';
-import { GrayscaledView } from '../../../shared/components/GrayscaledView';
 import { useMappedValuesWithCallbacks } from '../../../shared/hooks/useMappedValuesWithCallbacks';
 
 export type JourneyFeedbackButtonProps = {
@@ -448,33 +447,21 @@ export const JourneyFeedbackButton = ({
     [emojiBackgroundState]
   );
 
-  const emojiGrayscaleStrength = useMappedValueWithCallbacks(
-    animationState.emoji,
-    (emoji) => emoji.grayscale
-  );
-  const emojiGrayscaleStrengthVSP = useMemo(
-    (): VariableStrategyProps<number> => ({
-      type: 'callbacks',
-      props: emojiGrayscaleStrength.get,
-      callbacks: emojiGrayscaleStrength.callbacks,
-    }),
-    [emojiGrayscaleStrength]
-  );
-
-  const emojiGrayscalerWrapperStyle = useMappedValueWithCallbacks(
+  const emojiStyle = useMappedValueWithCallbacks(
     animationState.emoji,
     (emoji) =>
-      Object.assign({}, styles.emojiGrayscaler, {
+      Object.assign({}, styles.emoji, {
         transform: [
           ...(emoji.rotation !== 0 ? [{ rotate: `${emoji.rotation}deg` }] : []),
           ...(emoji.scale !== 1 ? [{ scale: emoji.scale }] : []),
         ],
+        opacity: 0.35 + (1 - emoji.grayscale) * 0.65,
       })
   );
-  const emojiGrayscalerWrapperRef = useRef<View>(null);
-  useValueWithCallbacksEffect(emojiGrayscalerWrapperStyle, (style) => {
-    if (emojiGrayscalerWrapperRef.current !== null) {
-      emojiGrayscalerWrapperRef.current.setNativeProps({ style });
+  const emojiRef = useRef<View>(null);
+  useValueWithCallbacksEffect(emojiStyle, (style) => {
+    if (emojiRef.current !== null) {
+      emojiRef.current.setNativeProps({ style });
     }
     return undefined;
   });
@@ -556,20 +543,10 @@ export const JourneyFeedbackButton = ({
     >
       <SvgLinearGradientBackground
         state={emojiBackgroundVSP}
-        containerStyle={Object.assign({}, styles.emoji, { width })}
+        containerStyle={Object.assign({}, styles.emojiBackground, { width })}
       >
-        <View
-          style={emojiGrayscalerWrapperStyle.get()}
-          ref={emojiGrayscalerWrapperRef}
-        >
-          <GrayscaledView
-            strength={emojiGrayscaleStrengthVSP}
-            style={{ type: 'react-rerender', props: styles.emojiGrayscaler }}
-            child={{
-              type: 'react-rerender',
-              props: <Text style={styles.emojiInner}>{emoji}</Text>,
-            }}
-          />
+        <View style={emojiStyle.get()} ref={emojiRef}>
+          <Text style={styles.emojiInner}>{emoji}</Text>
         </View>
       </SvgLinearGradientBackground>
       <View ref={labelContainerRef} style={labelContainerStyle.get()}>

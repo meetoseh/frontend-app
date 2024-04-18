@@ -43,7 +43,7 @@ import { useIsTablet } from '../../../../shared/lib/useIsTablet';
 import { ProvidersList } from './components/ProvidersList';
 
 /* guest -> random guest; apple -> random guest no name */
-const DEV_ACCOUNT_USER_IDENTITY_ID: string = 'guest';
+const DEV_ACCOUNT_USER_IDENTITY_ID: string = 'timothy';
 
 const prepareLink = async (
   provider: 'Google' | 'SignInWithApple' | 'Direct'

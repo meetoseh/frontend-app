@@ -450,7 +450,7 @@ export const JourneyFeedbackScreen = ({
             >
               <RenderGuardedComponent
                 props={continueTextStyleVWC}
-                component={(s) => <Text style={s}>Continue</Text>}
+                component={(s) => <Text style={s}>Finish</Text>}
               />
             </FilledInvertedButton>
             <View
