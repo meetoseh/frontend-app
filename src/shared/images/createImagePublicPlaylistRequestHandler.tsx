@@ -23,13 +23,15 @@ export const createImagePublicPlaylistRequestHandler = ({
     getDataFromRef,
     compareRefs,
     logConfig: { logging },
-    cacheConfig: { maxStale },
+    cacheConfig: { maxStale, keepActiveRequestsIntoStale: true },
     retryConfig: { maxRetries },
   });
 };
 
 const getRefUid = (ref: OsehPublicImageRef): string => ref.uid;
-const getDataFromRef: (ref: OsehPublicImageRef) => CancelablePromise<Result<PlaylistWithJWT>> =
+const getDataFromRef: (
+  ref: OsehPublicImageRef
+) => CancelablePromise<Result<PlaylistWithJWT>> =
   createGetDataFromRefUsingSignal({
     inner: (ref, signal) => fetchPublicPlaylist(ref.uid, signal),
   });

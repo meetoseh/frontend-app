@@ -295,6 +295,14 @@ type RequestHandlerLogConfig = {
 type RequestHandlerCacheConfig = {
   /** The maximum number of stale items to keep around in a least-recently-used fashion */
   maxStale: number;
+
+  /**
+   * Determines when active requests for data that is no longer necessary are canceled.
+   *
+   * If true, we cancel active requests upon being evicted from the stale cache
+   * If false, we cancel active requests upon entering the stale cache
+   */
+  keepActiveRequestsIntoStale: boolean;
 };
 
 type RequestHandlerRetryConfig = {
@@ -363,6 +371,13 @@ export class RequestHandler<RefT extends object, DataT extends object> {
   private readonly logConfig: RequestHandlerLogConfig;
   /** How retries are configured */
   private readonly retryConfig: RequestHandlerRetryConfig;
+  /**
+   * If true, any requests we start we don't cancel unless they don't complete
+   * by the time they are bumped from the stale list. If false, we cancel any
+   * requests we start if they don't complete by the time all locks on them are
+   * released (i.e., they enter the stale list).
+   */
+  private readonly keepActiveRequestsIntoStale: boolean;
 
   /**
    * All the requests that we are currently tracking, keyed by the internalUid
@@ -419,6 +434,7 @@ export class RequestHandler<RefT extends object, DataT extends object> {
     this.requestsByInternalUid = new Map();
     this.lockedDataByRefUid = new Map();
     this.staleDataByRefUid = new LeastRecentlyUsedCache(cacheConfig.maxStale);
+    this.keepActiveRequestsIntoStale = cacheConfig.keepActiveRequestsIntoStale;
     this.logBuffer =
       logConfig.logging === 'buffer'
         ? {
@@ -532,16 +548,39 @@ export class RequestHandler<RefT extends object, DataT extends object> {
       }
 
       this.log(`moving to stale`);
+      if (data.activeRequest !== null) {
+        if (this.keepActiveRequestsIntoStale) {
+          this.log('has an active request which allowing to continue');
+        } else {
+          this.log('canceling active data request');
+          data.activeRequest.cancelable.cancel();
+          data.activeRequest = null;
+        }
+      }
+
       if (!this.lockedDataByRefUid.delete(refUid)) {
         throw new Error('integrity error: changed while releasing lock');
       }
       const evicted = this.staleDataByRefUid.add(refUid, data);
       if (evicted !== null) {
-        if (evicted[0] === refUid) {
+        const [evictedRefUid, evictedData] = evicted;
+        if (evictedRefUid === refUid) {
           throw new Error('integrity error: already in stale');
         }
 
-        this.log(`evicted ${evicted[0]} from stale`);
+        this.log(
+          () =>
+            `evicted ${evictedRefUid} from stale; has an active request? ${
+              evictedData.activeRequest !== null
+            }`
+        );
+        if (evictedData.activeRequest !== null) {
+          this.log(
+            `canceling active request during eviction from stale; expected to be possible? ${this.keepActiveRequestsIntoStale}`
+          );
+          evictedData.activeRequest.cancelable.cancel();
+          evictedData.activeRequest = null;
+        }
       }
     } finally {
       this.logPop();
@@ -593,8 +632,9 @@ export class RequestHandler<RefT extends object, DataT extends object> {
       }
 
       if (internal.ref.activeRequest !== null) {
-        this.log('canceling active request');
+        this.log('canceling active ref request');
         internal.ref.activeRequest.cancelable.cancel();
+        internal.ref.activeRequest = null;
       }
 
       this.releaseLatestLock(internalUid);
@@ -633,13 +673,26 @@ export class RequestHandler<RefT extends object, DataT extends object> {
 
       const cached = this.staleDataByRefUid.get(refUid, undefined, true);
       if (cached !== undefined) {
-        this.log('in cached, resurrecting');
+        this.log(
+          () =>
+            `in cached, resurrecting. latest is null: ${
+              cached.latest === null
+            }; latest data type: ${
+              cached.latest?.data.type
+            }. active request is null? ${cached.activeRequest === null}`
+        );
         this.staleDataByRefUid.remove(refUid);
         if (cached.locks.size !== 0) {
           this.log('WARNING! locks on cached data');
         }
         cached.locks.add(internalUid);
         this.lockedDataByRefUid.set(refUid, cached);
+
+        if (cached.activeRequest !== null) {
+          this.log('attaching listeners to resurrected active data request');
+          this.addDataPromiseHandlers(refUid, cached.activeRequest);
+        }
+
         return cached;
       }
 
@@ -773,6 +826,7 @@ export class RequestHandler<RefT extends object, DataT extends object> {
   ) {
     this.logNest('notifyLockHolders');
     try {
+      this.log(() => `called with type ${newData.type}`);
       const iter = data.locks.values();
       let next = iter.next();
       let numNotified = 0;
