@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback } from 'react';
 import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
@@ -8,10 +8,9 @@ import {
   useWritableValueWithCallbacks,
 } from '../lib/Callbacks';
 import { OsehImageProps, OsehImagePropsLoadable } from './OsehImageProps';
-import { OsehImageState, areOsehImageStatesEqual } from './OsehImageState';
+import { OsehImageState } from './OsehImageState';
 import { OsehImageStateRequestHandler } from './useOsehImageStateRequestHandler';
 import { useValueWithCallbacksEffect } from '../hooks/useValueWithCallbacksEffect';
-import { setVWC } from '../lib/setVWC';
 
 const createLoadingState = (props: OsehImageProps): OsehImageState => ({
   localUrl: null,
@@ -45,56 +44,52 @@ export const useOsehImageStateValueWithCallbacks = (
   props: VariableStrategyProps<OsehImageProps>,
   handler: OsehImageStateRequestHandler
 ): ValueWithCallbacks<OsehImageState> => {
-  const propsVWC = useVariableStrategyPropsAsValueWithCallbacks(props);
+  const propsAsValueWithCallbacks =
+    useVariableStrategyPropsAsValueWithCallbacks(props, {
+      equalityFn: (a, b) =>
+        a.uid === b.uid &&
+        a.jwt === b.jwt &&
+        a.displayWidth === b.displayWidth &&
+        a.displayHeight === b.displayHeight &&
+        (a.displayWidth === null || a.displayHeight === null
+          ? a.compareAspectRatio
+          : undefined) ===
+          (b.displayWidth === null || b.displayHeight === null
+            ? b.compareAspectRatio
+            : undefined) &&
+        a.alt === b.alt &&
+        a.isPublic === b.isPublic &&
+        a.placeholderColor === b.placeholderColor,
+    });
+
   const result = useWritableValueWithCallbacks<OsehImageState>(() =>
-    createLoadingState(propsVWC.get())
+    createLoadingState(propsAsValueWithCallbacks.get())
   );
 
-  useValueWithCallbacksEffect(propsVWC, (props) => {
-    const cpDisplaySize =
-      props.displayWidth === null
-        ? {
-            displayWidth: null,
-            displayHeight: props.displayHeight,
-            compareAspectRatio: props.compareAspectRatio,
-          }
-        : props.displayHeight === null
-        ? {
-            displayWidth: props.displayWidth,
-            displayHeight: null,
-            compareAspectRatio: props.compareAspectRatio,
-          }
-        : {
-            displayWidth: props.displayWidth,
-            displayHeight: props.displayHeight,
-          };
+  useValueWithCallbacksEffect(
+    propsAsValueWithCallbacks,
+    useCallback(
+      (props: OsehImageProps) => {
+        if (props.uid === null) {
+          return undefined;
+        }
 
-    const cpProps: OsehImageProps = {
-      uid: props.uid,
-      jwt: props.jwt,
-      ...cpDisplaySize,
-      alt: props.alt,
-      isPublic: props.isPublic,
-      placeholderColor: props.placeholderColor,
-    };
+        const stateRef = handler.request(props as OsehImagePropsLoadable);
+        stateRef.stateChanged.add(updateState);
+        updateState();
+        return () => {
+          stateRef.stateChanged.remove(updateState);
+          stateRef.release();
+        };
 
-    if (cpProps.uid === null) {
-      setVWC(result, createLoadingState(cpProps), areOsehImageStatesEqual);
-      return () => {};
-    }
-
-    const stateRef = handler.request(cpProps as OsehImagePropsLoadable);
-    stateRef.stateChanged.add(updateState);
-    updateState(stateRef.state);
-    return () => {
-      stateRef.stateChanged.remove(updateState);
-      stateRef.release();
-    };
-
-    function updateState(newState: OsehImageState) {
-      setVWC(result, newState, areOsehImageStatesEqual);
-    }
-  });
+        function updateState() {
+          result.set(stateRef.state);
+          result.callbacks.call(undefined);
+        }
+      },
+      [handler, result]
+    )
+  );
 
   return result;
 };

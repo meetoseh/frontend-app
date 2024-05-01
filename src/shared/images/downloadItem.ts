@@ -17,6 +17,23 @@ export const downloadItem = async (
   jwt: string,
   opts?: { abortSignal?: AbortSignal }
 ): Promise<DownloadedItem> => {
+  const targetFolder = FileSystem.cacheDirectory + 'images/';
+  const dirInfo = await FileSystem.getInfoAsync(targetFolder);
+  if (!dirInfo.exists) {
+    await FileSystem.makeDirectoryAsync(targetFolder, { intermediates: true });
+  }
+  const uidWithExt = item.uid + '.' + item.format;
+
+  const targetFile = targetFolder + uidWithExt;
+  const fileInfo = await FileSystem.getInfoAsync(targetFile);
+  if (fileInfo.exists) {
+    return {
+      remoteUrl: item.url,
+      originalLocalUrl: targetFile,
+      localUrl: targetFile,
+    };
+  }
+
   const response = await fetch(item.url, {
     headers: { Authorization: `bearer ${jwt}` },
     ...(opts?.abortSignal === undefined ? {} : { signal: opts.abortSignal }),
@@ -25,24 +42,15 @@ export const downloadItem = async (
     throw response;
   }
 
-  const targetFolder = FileSystem.cacheDirectory + 'images/';
-  const dirInfo = await FileSystem.getInfoAsync(targetFolder);
-  if (!dirInfo.exists) {
-    await FileSystem.makeDirectoryAsync(targetFolder, { intermediates: true });
-  }
-
-  const uidWithExt = item.url.split('/').pop();
-  const targetFile = targetFolder + uidWithExt;
-  const fileInfo = await FileSystem.getInfoAsync(targetFile);
-  if (!fileInfo.exists) {
-    try {
-      await FileSystem.downloadAsync(item.url, targetFile, {
-        headers: { Authorization: `bearer ${jwt}` },
-      });
-    } catch (e) {
-      await FileSystem.deleteAsync(targetFile, { idempotent: true });
-      throw e;
-    }
+  const tmpFilePath = targetFile + '.tmp';
+  try {
+    await FileSystem.downloadAsync(item.url, tmpFilePath, {
+      headers: { Authorization: `bearer ${jwt}` },
+    });
+    await FileSystem.moveAsync({ from: tmpFilePath, to: targetFile });
+  } catch (e) {
+    await FileSystem.deleteAsync(tmpFilePath, { idempotent: true });
+    throw e;
   }
 
   return {

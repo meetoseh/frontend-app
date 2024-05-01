@@ -15,16 +15,12 @@ import { useVersionedCache } from './src/shared/hooks/useVersionedCache';
 import { useUnwrappedValueWithCallbacks } from './src/shared/hooks/useUnwrappedValueWithCallbacks';
 import { InterestsAutoProvider } from './src/shared/contexts/InterestsContext';
 import { SvgLinearGradient } from './src/shared/anim/SvgLinearGradient';
-import {
-  DARK_BLACK_GRAY_GRADIENT_SVG,
-  STANDARD_BLACK_GRAY_GRADIENT_SVG,
-  STANDARD_BLACK_GRAY_GRADIENT_WEBGL,
-} from './src/styling/colors';
+import { DARK_BLACK_GRAY_GRADIENT_SVG } from './src/styling/colors';
 import { useWindowSizeValueWithCallbacks } from './src/shared/hooks/useWindowSize';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
-  const cacheReadyVWC = useVersionedCache('1.0.6');
+  const cacheReadyVWC = useVersionedCache('1.1.0');
   const cacheReady = useUnwrappedValueWithCallbacks(cacheReadyVWC);
 
   if (!cacheReady) {

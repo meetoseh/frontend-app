@@ -2,7 +2,7 @@
   "expo": {
     "name": "frontend-app",
     "slug": "frontend-app",
-    "version": "1.5.1",
+    "version": "1.5.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -14,7 +14,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "1.5.1"
+      "buildNumber": "1.5.3"
     },
     "android": {
       "adaptiveIcon": {

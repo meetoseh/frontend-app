@@ -16,6 +16,10 @@ export type PlaylistItem = {
    */
   url: string;
   /**
+   * A stable identifier for the content that is downloaded from the URL
+   */
+  uid: string;
+  /**
    * The format of the item, e.g., 'jpeg'
    */
   format: string;
@@ -56,6 +60,7 @@ export const playlistItemsEqual = (
 
   return (
     a.url === b.url &&
+    a.uid === b.uid &&
     a.format === b.format &&
     a.width === b.width &&
     a.height === b.height &&
@@ -241,8 +246,7 @@ export const fetchPublicPlaylist = async (
 /**
  * Selects the format available in the given playlist by preference
  * based on the actual width and height we want to display the final
- * exported image at. This only selects from raster formats as raster
- * formats require a different signature.
+ * exported image at.
  *
  * @param playlist The playlist to select from
  * @param usesWebp Whether the device supports webp

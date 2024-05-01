@@ -23,7 +23,7 @@ import { Pressable, View, Text } from 'react-native';
 import { useContentWidth } from '../../../shared/lib/useContentWidth';
 import { useValuesWithCallbacksEffect } from '../../../shared/hooks/useValuesWithCallbacksEffect';
 import { setVWC } from '../../../shared/lib/setVWC';
-import { useValueWithCallbacksEffect } from '../../../shared/hooks/useValueWithCallbacksEffect';
+import { AspectRatioComparer } from '../../../shared/images/LogicalSize';
 
 export type CourseCoverItemProps = {
   /**
@@ -61,6 +61,9 @@ export type CourseCoverItemProps = {
    */
   onClick?: () => void;
 };
+
+const compareAspectRatio: AspectRatioComparer = (a, b) =>
+  a.height / a.width - b.height / b.width;
 
 /**
  * Renders the given external course in the cover card representation, which
@@ -124,7 +127,7 @@ export const CourseCoverItem = ({
         jwt: itm.logo.jwt,
         displayWidth: width,
         displayHeight: null,
-        compareAspectRatio: (a, b) => a.height / a.width - b.height / b.width,
+        compareAspectRatio,
         alt: itm.title,
       };
     }

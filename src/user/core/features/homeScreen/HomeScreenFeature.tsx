@@ -18,7 +18,7 @@ import { convertUsingMapper } from '../../../../shared/lib/CrudFetcher';
 import { useHomeScreenImage } from './hooks/useHomeScreenImage';
 import { Emotion } from '../../../../shared/models/Emotion';
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
-import { ReactElement, useContext } from 'react';
+import { ReactElement, useCallback, useContext } from 'react';
 import { deleteJourneyFeedbackRequestReviewStoredState } from '../../../journey/lib/JourneyFeedbackRequestReviewStore';
 import { LoginContext } from '../../../../shared/contexts/LoginContext';
 import { useTimezone } from '../../../../shared/hooks/useTimezone';
@@ -60,11 +60,34 @@ export const HomeScreenFeature: Feature<HomeScreenState, HomeScreenResources> =
       const sessionInfoVWC =
         useWritableValueWithCallbacks<HomeScreenSessionInfo>(() => ({
           classesTaken: 0,
+          lastClassTakenAt: null,
         }));
       const imageHandler = useOsehImageStateRequestHandler({});
       const nextEnterTransitionVWC = useWritableValueWithCallbacks<
         HomeScreenTransition | undefined
       >(() => undefined);
+
+      const resetSession = useCallback(() => {
+        setVWC(sessionInfoVWC, { classesTaken: 0, lastClassTakenAt: null });
+        streakInfoVWC.get().refresh?.();
+      }, [sessionInfoVWC, streakInfoVWC]);
+
+      useValueWithCallbacksEffect(sessionInfoVWC, (info) => {
+        if (info.lastClassTakenAt === null) {
+          return undefined;
+        }
+
+        let timeout: NodeJS.Timeout | null = setTimeout(() => {
+          timeout = null;
+          resetSession();
+        }, 1000 * 60 * 60 * 4);
+        return () => {
+          if (timeout !== null) {
+            clearTimeout(timeout);
+            timeout = null;
+          }
+        };
+      });
 
       return useMappedValuesWithCallbacks(
         [streakInfoVWC, sessionInfoVWC, nextEnterTransitionVWC],
@@ -78,6 +101,7 @@ export const HomeScreenFeature: Feature<HomeScreenState, HomeScreenResources> =
             setVWC(sessionInfoVWC, {
               ...info,
               classesTaken: info.classesTaken + 1,
+              lastClassTakenAt: new Date(),
             });
           },
           setNextEnterTransition: (transition) => {
