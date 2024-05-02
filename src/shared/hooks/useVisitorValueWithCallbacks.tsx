@@ -893,14 +893,12 @@ export const useVisitorValueWithCallbacks = (
     };
 
     function onChanged() {
-      stateMachine
-        .get()
-        .result.onEvent.utmChanged({
-          type: 'utmChanged',
-          utm: vwc.get() ?? utmFromUrl,
-        });
+      stateMachine.get().result.onEvent.utmChanged({
+        type: 'utmChanged',
+        utm: vwc.get() ?? utmFromUrl,
+      });
     }
-  }, [stateMachine, forcedUtm]);
+  }, [stateMachine, forcedUtm, utmFromUrl]);
 
   const setVisitor = useCallback(
     (uid: string) => {
