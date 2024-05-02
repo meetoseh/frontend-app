@@ -1,13 +1,13 @@
-import { useMemo, useRef } from "react";
-import { VariableStrategyProps } from "../../../shared/anim/VariableStrategyProps";
-import { LoginContextValue } from "../../../shared/contexts/LoginContext";
+import { useMemo, useRef } from 'react';
+import { VariableStrategyProps } from '../../../shared/anim/VariableStrategyProps';
+import { LoginContextValue } from '../../../shared/contexts/LoginContext';
 import {
   InfiniteListing,
   ProceduralInfiniteListing,
-} from "../../../shared/lib/InfiniteListing";
-import { MinimalJourney } from "../lib/MinimalJourney";
+} from '../../../shared/lib/InfiniteListing';
+import { MinimalJourney } from '../lib/MinimalJourney';
 
-export const chooseRandomly = Symbol("chooseRandomly");
+export const chooseRandomly = Symbol('chooseRandomly');
 
 export type DebugHistoryListOptions = {
   /**
@@ -41,7 +41,7 @@ export const useDebugHistoryList = (
 ): InfiniteListing<MinimalJourney> => {
   const numVisibleRef = useRef(
     Math.ceil(
-      (visibleHeight.type === "react-rerender"
+      (visibleHeight.type === 'react-rerender'
         ? visibleHeight.props
         : visibleHeight.props()) / 85
     ) * 25
@@ -61,7 +61,7 @@ export const useDebugHistoryList = (
   return useMemo<InfiniteListing<MinimalJourney>>(() => {
     const numVisible = numVisibleRef.current;
     const result = new ProceduralInfiniteListing<MinimalJourney>(
-      (index: number) => {
+      (index: number): MinimalJourney => {
         const gen = createGenerator(index);
         const favorited = chooseBoolean(reqOpts.favorited, gen);
         const taken = chooseBoolean(reqOpts.taken, gen);
@@ -69,12 +69,18 @@ export const useDebugHistoryList = (
           uid: `uid-${index}`,
           title: `Title ${index}`,
           instructor: {
-            name: "Instructor",
+            name: 'Instructor',
             image: {
-              uid: "oseh_if_y2J1TPz5VhUUsk8I0ofPwg",
+              uid: 'oseh_if_y2J1TPz5VhUUsk8I0ofPwg',
               jwt: null,
             },
           },
+          darkenedBackground: {
+            uid: 'oseh_if_y2J1TPz5VhUUsk8I0ofPwg',
+            jwt: null,
+          },
+          description: `Description ${index}`,
+          durationSeconds: 72,
           lastTakenAt: taken
             ? new Date(
                 baseDate -

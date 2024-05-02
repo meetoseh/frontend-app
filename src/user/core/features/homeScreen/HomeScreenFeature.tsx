@@ -63,7 +63,7 @@ export const HomeScreenFeature: Feature<HomeScreenState, HomeScreenResources> =
           lastClassTakenAt: null,
         }));
       const imageHandler = useOsehImageStateRequestHandler({
-        logging: 'direct',
+        logging: 'none',
       });
       const nextEnterTransitionVWC = useWritableValueWithCallbacks<
         HomeScreenTransition | undefined

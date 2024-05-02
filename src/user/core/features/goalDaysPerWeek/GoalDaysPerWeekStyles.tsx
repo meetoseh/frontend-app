@@ -1,46 +1,46 @@
-import { StyleSheet } from "react-native";
-import * as Colors from "../../../../styling/colors";
-import { styles as filledPrimaryButtonStyles } from "../../../../shared/components/FilledPrimaryButtonStyles";
-import { LinearGradientState } from "../../../../shared/anim/LinearGradientBackground";
+import { StyleSheet } from 'react-native';
+import * as Colors from '../../../../styling/colors';
+import { styles as filledPrimaryButtonStyles } from '../../../../shared/components/FilledPrimaryButtonStyles';
+import { LinearGradientState } from '../../../../shared/anim/LinearGradientBackground';
 
 export const styles = StyleSheet.create({
   container: {
-    flexDirection: "column",
-    justifyContent: "flex-start",
-    alignItems: "center",
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
     backgroundColor: Colors.GRAYSCALE_BLACK,
   },
   innerContainer: {
-    flexDirection: "column",
-    justifyContent: "flex-start",
-    alignItems: "center",
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
   },
   background: {
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
     flexGrow: 1,
     paddingTop: 0,
   },
   title: {
-    fontFamily: "OpenSans-Regular",
+    fontFamily: 'OpenSans-Regular',
     fontSize: 24,
     lineHeight: 32,
-    textAlign: "center",
+    textAlign: 'center',
     paddingHorizontal: 32,
     color: Colors.GRAYSCALE_WHITE,
   },
   days: {
     marginTop: 50,
     marginBottom: 50,
-    paddingHorzontal: 8,
-    flexDirection: "row",
-    flexWrap: "wrap",
+    paddingHorizontal: 8,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     columnGap: 8,
     rowGap: 12,
   },
@@ -74,8 +74,9 @@ export const activeButtonStyles = StyleSheet.create({
   ...buttonStyles,
   container: {
     ...buttonStyles.container,
-    backgroundColor: "rgba(0,0,0,0)",
+    backgroundColor: 'rgba(0,0,0,0)',
     borderRadius: undefined,
+    // @ts-ignore
     gradient: {
       stops: [
         {

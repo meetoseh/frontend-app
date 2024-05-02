@@ -91,16 +91,15 @@ export const RequestPhoneFeature: Feature<
       callbacks: ianUID.callbacks,
     });
     const interestsRaw = useContext(InterestsContext);
-    const interestsVWC = useReactManagedValueAsValueWithCallbacks(interestsRaw);
 
     return useMappedValuesWithCallbacks(
-      [session, appNotifsAvailable, interestsVWC],
+      [session, appNotifsAvailable, interestsRaw.value],
       () => ({
         session: session.get(),
         appNotifsEnabled: appNotifsAvailable.get(),
         loading:
           session.get() === null ||
-          interestsVWC.get().state === 'loading' ||
+          interestsRaw.value.get().state === 'loading' ||
           appNotifsAvailable.get() === null,
       })
     );

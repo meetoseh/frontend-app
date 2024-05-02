@@ -1,9 +1,9 @@
 import { ReactElement } from 'react';
 import { OsehImageProps } from './OsehImageProps';
 import { OsehImageStateRequestHandler } from './useOsehImageStateRequestHandler';
-import { useOsehImageState } from './useOsehImageState';
-import { OsehImageFromState } from './OsehImageFromState';
 import { ImageStyle, StyleProp } from 'react-native';
+import { useOsehImageStateValueWithCallbacks } from './useOsehImageStateValueWithCallbacks';
+import { OsehImageFromStateValueWithCallbacks } from './OsehImageFromStateValueWithCallbacks';
 
 /**
  * Creates a component which renders an Image for the given image file on oseh.
@@ -21,8 +21,16 @@ import { ImageStyle, StyleProp } from 'react-native';
  * @returns The element to render
  */
 export const OsehImage = (
-  props: OsehImageProps & { handler: OsehImageStateRequestHandler; style?: StyleProp<ImageStyle> }
+  props: OsehImageProps & {
+    handler: OsehImageStateRequestHandler;
+    style?: StyleProp<ImageStyle>;
+  }
 ): ReactElement => {
-  const state = useOsehImageState(props, props.handler);
-  return <OsehImageFromState state={state} style={props.style} />;
+  const state = useOsehImageStateValueWithCallbacks(
+    { type: 'react-rerender', props },
+    props.handler
+  );
+  return (
+    <OsehImageFromStateValueWithCallbacks state={state} style={props.style} />
+  );
 };

@@ -82,6 +82,13 @@ export const RequestPhone = ({
     resources,
     (r) => r.appNotifsEnabled
   );
+  const copyInfoVWC = useMappedValuesWithCallbacks(
+    [interests.value, appNotifsAvailable],
+    () => ({
+      interests: interests.value.get(),
+      appNotifsAvailable: appNotifsAvailable.get(),
+    })
+  );
 
   const step = useWritableValueWithCallbacks<'number' | 'verify'>(
     () => 'number'
@@ -571,8 +578,8 @@ export const RequestPhone = ({
                   <>
                     <Messages width={111} height={111} />
                     <RenderGuardedComponent
-                      props={appNotifsAvailable}
-                      component={(appNotifsAvailable) => (
+                      props={copyInfoVWC}
+                      component={({ interests, appNotifsAvailable }) => (
                         <>
                           {phoneStepTitle(
                             interests,
@@ -648,8 +655,8 @@ export const RequestPhone = ({
                     />
 
                     <RenderGuardedComponent
-                      props={appNotifsAvailable}
-                      component={(appNotifsAvailable) =>
+                      props={copyInfoVWC}
+                      component={({ interests, appNotifsAvailable }) =>
                         phoneStepDisclaimer(
                           interests,
                           appNotifsAvailable ?? false

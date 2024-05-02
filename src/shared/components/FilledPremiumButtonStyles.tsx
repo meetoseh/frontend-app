@@ -5,6 +5,7 @@ import { LinearGradientState } from '../anim/LinearGradientBackground';
 export const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
+    // @ts-ignore
     gradient: {
       stops: [
         { color: [90, 214, 173, 1], offset: 0 },

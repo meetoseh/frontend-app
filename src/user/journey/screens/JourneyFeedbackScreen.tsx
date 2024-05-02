@@ -44,7 +44,7 @@ import {
   onJourneyRated,
   onReviewRequested,
 } from '../lib/JourneyFeedbackRequestReviewStore';
-import StoreReview from 'expo-store-review';
+import { requestReview } from 'expo-store-review';
 
 type VLKey =
   | 'topPadding'
@@ -266,7 +266,7 @@ export const JourneyFeedbackScreen = ({
     if (
       response !== null &&
       (await onJourneyRated(journey.uid, response)) &&
-      StoreReview?.requestReview !== undefined
+      requestReview !== undefined
     ) {
       apiFetch(
         '/api/1/notifications/inapp/start',
@@ -280,7 +280,7 @@ export const JourneyFeedbackScreen = ({
         },
         loginContext
       );
-      await StoreReview.requestReview();
+      await requestReview();
       await onReviewRequested();
     }
   }, [responseVWC, journey.uid]);

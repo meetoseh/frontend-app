@@ -69,7 +69,6 @@ export const styles = StyleSheet.create({
   title: {
     fontFamily: 'OpenSans-SemiBold',
     fontSize: 16,
-    lineHieght: 22,
     marginLeft: 24,
     marginRight: 24,
     marginTop: 28,

@@ -31,7 +31,7 @@ export const useSingletonEffect = (
   const effectMemod = useMemo(
     () => effect,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    deps
+    deps as any
   );
   const runningLock = useRef<Promise<void> | null>(null);
 
@@ -55,7 +55,8 @@ export const useSingletonEffect = (
       const destructor = effectMemod(() => {
         innerResolve();
       });
-      const destructorFn = typeof destructor === 'function' ? destructor : () => {};
+      const destructorFn =
+        typeof destructor === 'function' ? destructor : () => {};
 
       return new Promise((resolve) => {
         if (resolvedInstantly) {
@@ -79,7 +80,9 @@ export const useSingletonEffect = (
      */
     async function acquireLockAndRunEffect() {
       while (active && runningLock.current) {
-        const activeChanged = createCancelablePromiseFromCallbacks(activeChangedCallback);
+        const activeChanged = createCancelablePromiseFromCallbacks(
+          activeChangedCallback
+        );
         await Promise.race([runningLock.current, activeChanged.promise]);
         activeChanged.cancel();
       }
