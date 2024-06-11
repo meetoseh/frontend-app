@@ -23,19 +23,14 @@ import {
   PlayerForeground,
 } from '../../../shared/content/player/PlayerForeground';
 import { MediaInfoVideo } from '../../../shared/content/MediaInfoVideo';
+import { useInitializedTransitionProp } from '../../../shared/lib/TransitionProp';
 import {
-  playExitTransition,
-  useEntranceTransition,
-  useInitializedTransitionProp,
-  useTransitionProp,
-} from '../../../shared/lib/TransitionProp';
-import {
-  StandardScreenTransition,
   StandardScreenTransitionProp,
   useStandardTransitionsState,
 } from '../../../shared/hooks/useStandardTransitions';
 import { OpacityTransitionOverlay } from '../../../shared/components/OpacityTransitionOverlay';
 import { WipeTransitionOverlay } from '../../../shared/components/WipeTransitionOverlay';
+import { useOsehTranscriptValueWithCallbacks } from '../../../shared/transcripts/useOsehTranscriptValueWithCallbacks';
 
 export type CoursePreviewProps = {
   course: ExternalCoursePreviewable;
@@ -111,9 +106,17 @@ export const CoursePreview = ({
     }
   );
 
+  const rawTranscriptVWC = useOsehTranscriptValueWithCallbacks({
+    type: 'react-rerender',
+    props: course.introVideoTranscript,
+  });
   const transcript = useCurrentTranscriptPhrases({
-    transcriptRef: useReactManagedValueAsValueWithCallbacks(
-      course.introVideoTranscript
+    transcript: useMappedValueWithCallbacks(rawTranscriptVWC, (v) =>
+      v.type === 'loading'
+        ? null
+        : v.type === 'success'
+        ? v.transcript
+        : undefined
     ),
   });
 

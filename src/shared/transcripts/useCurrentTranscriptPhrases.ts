@@ -1,21 +1,20 @@
-import { ReactElement, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import {
   ValueWithCallbacks,
   WritableValueWithCallbacks,
   useWritableValueWithCallbacks,
 } from '../lib/Callbacks';
-import { OsehTranscriptRef } from './OsehTranscriptRef';
 import { useMappedValuesWithCallbacks } from '../hooks/useMappedValuesWithCallbacks';
-import { useOsehTranscriptValueWithCallbacks } from './useOsehTranscriptValueWithCallbacks';
-import { adaptValueWithCallbacksAsVariableStrategyProps } from '../lib/adaptValueWithCallbacksAsVariableStrategyProps';
 import { useMappedValueWithCallbacks } from '../hooks/useMappedValueWithCallbacks';
-import { OsehTranscriptPhrase } from './OsehTranscript';
+import { OsehTranscript, OsehTranscriptPhrase } from './OsehTranscript';
+import { setVWC } from '../lib/setVWC';
+import { createValueWithCallbacksEffect } from '../hooks/createValueWithCallbacksEffect';
 
 export type UseCurrentTranscriptPhrasesProps = {
   /**
-   * The transcript ref to load, or null to provide unavailable
+   * The transcript, null if loading and undefined if unavailable
    */
-  transcriptRef: ValueWithCallbacks<OsehTranscriptRef | null>;
+  transcript?: ValueWithCallbacks<OsehTranscript | null | undefined>;
 };
 
 export type UseCurrentTranscriptPhrasesUnavailable = {
@@ -33,16 +32,6 @@ export type UseCurrentTranscriptPhrasesLoading = {
   currentTime: WritableValueWithCallbacks<number>;
 };
 
-export type UseCurrentTranscriptPhrasesError = {
-  type: 'error';
-  phrases: never[];
-  /**
-   * The error that is preventing us from loading further phrases
-   */
-  error: ReactElement;
-  currentTime: WritableValueWithCallbacks<number>;
-};
-
 export type UseCurrentTranscriptPhrasesLoaded = {
   type: 'loaded';
   /**
@@ -56,7 +45,6 @@ export type UseCurrentTranscriptPhrasesLoaded = {
 export type UseCurrentTranscriptPhrasesResult =
   | UseCurrentTranscriptPhrasesUnavailable
   | UseCurrentTranscriptPhrasesLoading
-  | UseCurrentTranscriptPhrasesError
   | UseCurrentTranscriptPhrasesLoaded;
 
 export const fadeTimeSeconds = 0.5;
@@ -75,28 +63,37 @@ const maximumAdjustmentToAvoidMultipleOnScreen = holdLateSeconds + 1;
  * phrases.
  */
 export const useCurrentTranscriptPhrases = ({
-  transcriptRef: transcriptRefVWC,
+  transcript: transcriptRawVWC,
 }: UseCurrentTranscriptPhrasesProps): ValueWithCallbacks<UseCurrentTranscriptPhrasesResult> => {
   const currentTimeVWC = useWritableValueWithCallbacks(() => 0);
-  const transcriptVWC = useOsehTranscriptValueWithCallbacks(
-    adaptValueWithCallbacksAsVariableStrategyProps(transcriptRefVWC)
-  );
-  const loading = useMappedValueWithCallbacks(
-    transcriptVWC,
-    (t) => t.type === 'loading'
-  );
-  const error = useMappedValueWithCallbacks(transcriptVWC, (t) =>
-    t.type === 'error' ? t.error : null
-  );
+
+  const transcriptVWC = useWritableValueWithCallbacks<
+    OsehTranscript | null | undefined
+  >(() => transcriptRawVWC?.get() ?? null);
+  useEffect(() => {
+    if (transcriptRawVWC === undefined) {
+      setVWC(transcriptVWC, undefined);
+      return undefined;
+    }
+
+    return createValueWithCallbacksEffect(transcriptRawVWC, (v) => {
+      setVWC(transcriptVWC, v);
+      return undefined;
+    });
+  }, [transcriptRawVWC, transcriptVWC]);
 
   const adjustedTranscriptVWC = useMappedValueWithCallbacks(
     transcriptVWC,
-    (t) => {
-      if (t.type !== 'success' || t.transcript.phrases.length < 1) {
-        return t;
+    (transcript): OsehTranscript | null | undefined => {
+      if (
+        transcript === null ||
+        transcript === undefined ||
+        transcript.phrases.length < 1
+      ) {
+        return transcript;
       }
 
-      const phrases = t.transcript.phrases;
+      const phrases = transcript.phrases;
       const adjustedPhrases = [];
 
       for (let i = 0; i < phrases.length - 1; i++) {
@@ -118,11 +115,8 @@ export const useCurrentTranscriptPhrases = ({
       adjustedPhrases.push(phrases[phrases.length - 1]);
 
       return {
-        ...t,
-        transcript: {
-          ...t.transcript,
-          phrases: adjustedPhrases,
-        },
+        ...transcript,
+        phrases: adjustedPhrases,
       };
     }
   );
@@ -139,11 +133,11 @@ export const useCurrentTranscriptPhrases = ({
     [adjustedTranscriptVWC, currentTimeVWC],
     (): { phrase: OsehTranscriptPhrase; id: number }[] => {
       const transcriptRaw = adjustedTranscriptVWC.get();
-      if (transcriptRaw.type !== 'success') {
+      if (transcriptRaw === null || transcriptRaw === undefined) {
         return [];
       }
 
-      const phrases = transcriptRaw.transcript.phrases;
+      const phrases = transcriptRaw.phrases;
       const progressSeconds = currentTimeVWC.get();
       const hint = transcriptSearchIndexHint.current;
 
@@ -186,10 +180,10 @@ export const useCurrentTranscriptPhrases = ({
   );
 
   return useMappedValuesWithCallbacks(
-    [transcriptRefVWC, loading, phrasesVWC, error],
+    [transcriptVWC, phrasesVWC],
     useCallback(() => {
-      const transcriptRef = transcriptRefVWC.get();
-      if (transcriptRef === null) {
+      const transcript = transcriptVWC.get();
+      if (transcript === undefined) {
         return {
           type: 'unavailable',
           phrases: [],
@@ -198,17 +192,7 @@ export const useCurrentTranscriptPhrases = ({
         };
       }
 
-      const err = error.get();
-      if (err !== null) {
-        return {
-          type: 'error',
-          phrases: [],
-          error: err,
-          currentTime: currentTimeVWC,
-        };
-      }
-
-      if (loading.get()) {
+      if (transcript === null) {
         return {
           type: 'loading',
           phrases: [],
@@ -224,6 +208,6 @@ export const useCurrentTranscriptPhrases = ({
         error: null,
         currentTime: currentTimeVWC,
       };
-    }, [loading, phrasesVWC, error, currentTimeVWC])
+    }, [phrasesVWC, currentTimeVWC, transcriptVWC])
   );
 };

@@ -217,10 +217,23 @@ const makeLoading = (
 const manageRequest = async (
   props: OsehImagePropsLoadable,
   result: OsehImageRequestedState,
-  privatePlaylistHandler: RequestHandler<OsehImageRef, PlaylistWithJWT>,
-  publicPlaylistHandler: RequestHandler<OsehPublicImageRef, PlaylistWithJWT>,
-  imageDataHandler: RequestHandler<OsehImageExportRef, OsehImageExport>,
+  privatePlaylistHandler: RequestHandler<
+    { uid: string },
+    OsehImageRef,
+    PlaylistWithJWT
+  >,
+  publicPlaylistHandler: RequestHandler<
+    { uid: string },
+    OsehPublicImageRef,
+    PlaylistWithJWT
+  >,
+  imageDataHandler: RequestHandler<
+    { item: { uid: string } },
+    OsehImageExportRef,
+    OsehImageExport
+  >,
   imageCropHandler: RequestHandler<
+    { export: { item: { uid: string } }; cropTo: DisplaySize },
     OsehImageExportCroppedRef,
     OsehImageExportCropped
   >,
@@ -335,8 +348,16 @@ const manageRequest = async (
 
 const getPlaylist = (
   props: OsehImagePropsLoadable,
-  privatePlaylistHandler: RequestHandler<OsehImageRef, PlaylistWithJWT>,
-  publicPlaylistHandler: RequestHandler<OsehPublicImageRef, PlaylistWithJWT>
+  privatePlaylistHandler: RequestHandler<
+    { uid: string },
+    OsehImageRef,
+    PlaylistWithJWT
+  >,
+  publicPlaylistHandler: RequestHandler<
+    { uid: string },
+    OsehPublicImageRef,
+    PlaylistWithJWT
+  >
 ): RequestResult<PlaylistWithJWT> => {
   // TODO -> OsehImagePropsLoadable should include refreshRef
   return props.isPublic
@@ -357,7 +378,11 @@ const getPlaylist = (
 const getExport = (
   props: OsehImagePropsLoadable,
   getPlaylist: () => RequestResult<PlaylistWithJWT>,
-  imageDataHandler: RequestHandler<OsehImageExportRef, OsehImageExport>,
+  imageDataHandler: RequestHandler<
+    { item: { uid: string } },
+    OsehImageExportRef,
+    OsehImageExport
+  >,
   usesWebp: boolean,
   usesSvg: boolean,
   onExportRefChanged: (ref: OsehImageExportRef | null) => void
@@ -380,6 +405,7 @@ const getExportCropped = (
   props: OsehImagePropsLoadable,
   getExport: () => RequestResult<OsehImageExport>,
   imageCropHandler: RequestHandler<
+    OsehImageExportCroppedRef,
     OsehImageExportCroppedRef,
     OsehImageExportCropped
   >

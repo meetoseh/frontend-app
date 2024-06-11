@@ -346,10 +346,20 @@ type InternalWithRef<
  * needs it to be active. For example, a stale reference to an image export
  * might be fine if we already have the image export on disk. Hence, we need to
  * be informed of expired data via the reportExpired callback on a RequestResult
+ *
+ * For some operations we may not need to be able to actually fetch data, only determine
+ * the uid for the reference. To avoid the need to pass malformed objects to these if only
+ * that information is available (e.g., `{"uid": uid, "jwt": ""}`) or going around the
+ * type system, RefTForUID is allowed to be a subset of RefT which is accepted if we will
+ * not attempt to call getDataFromRef directly on the value.
  */
-export class RequestHandler<RefT extends object, DataT extends object> {
+export class RequestHandler<
+  RefTForUID extends object,
+  RefT extends RefTForUID,
+  DataT extends object
+> {
   /** Extracts the uid from a given reference */
-  private readonly getRefUid: (ref: RefT) => string;
+  private readonly getRefUid: (ref: RefTForUID) => string;
   /**
    * Converts a reference to the corresponding data. Should reject with
    * `new Error('canceled')` on cancellation
@@ -419,7 +429,7 @@ export class RequestHandler<RefT extends object, DataT extends object> {
     cacheConfig,
     retryConfig,
   }: {
-    getRefUid: (ref: RefT) => string;
+    getRefUid: (ref: RefTForUID) => string;
     getDataFromRef: (ref: RefT) => CancelablePromise<Result<DataT>>;
     compareRefs: (a: RefT, b: RefT) => number;
     logConfig: RequestHandlerLogConfig;
@@ -1574,6 +1584,102 @@ export class RequestHandler<RefT extends object, DataT extends object> {
       });
       this.progress(internalUid);
       return result;
+    } finally {
+      this.logPop();
+    }
+  }
+
+  /**
+   * Given a reference to something, this will ensure that either we do not have
+   * any values corresponding to that ref, or how to handle it if we do.
+   *
+   * If the data for the given ref is in the stale list, it is removed from it.
+   *
+   * If the data for the given ref is in the active list, meaning there is an active
+   * request for it:
+   * - if we are getting the data to that ref, that is canceled
+   * - we use the data() function to potentially synchronously get the new data. If
+   *   it returns `{ type: 'make-request' }`, then we start a new active request
+   *   instead.
+   */
+  evictOrReplace(
+    ref: RefTForUID,
+    data?: (
+      old: DataT | undefined
+    ) =>
+      | { type: 'data'; data: DataT }
+      | { type: 'make-request'; data: undefined }
+  ) {
+    const refUid = this.getRefUid(ref);
+    this.logNest('evictOrReplace', refUid);
+    try {
+      const stale = this.staleDataByRefUid.get(refUid);
+      if (stale !== undefined) {
+        this.log('found in stale list, removing and done.');
+        this.staleDataByRefUid.remove(refUid);
+        if (stale.activeRequest !== null) {
+          stale.activeRequest.cancelable.cancel();
+          stale.activeRequest = null;
+        }
+        return;
+      }
+
+      const locked = this.lockedDataByRefUid.get(refUid);
+      if (locked === undefined) {
+        this.log('not in stale or locked; nothing to do');
+        return;
+      }
+
+      this.log('found in locked');
+      if (locked.activeRequest !== null) {
+        this.log('active request exists, canceling');
+        const active = locked.activeRequest;
+        locked.activeRequest = null;
+        active.cancelable.cancel();
+      }
+
+      const oldData =
+        locked.latest !== null && locked.latest.data.type === 'success'
+          ? locked.latest.data.data
+          : undefined;
+      const newData =
+        data === undefined
+          ? { type: 'make-request' as const, data: undefined }
+          : data(oldData);
+      if (newData.type === 'data') {
+        this.log(
+          'synchronous data update available, updating and notifying lock holders'
+        );
+        const now = new Date();
+        locked.latest = {
+          requestInfo: {
+            uid: 'oseh_client_rqdatareq_' + createUID(),
+            startedAtOverall: now,
+            startedAtThisAttempt: now,
+            retry: 0,
+          },
+          finishedAt: now,
+          data: {
+            type: 'success',
+            data: newData.data,
+            error: undefined,
+            retryAt: undefined,
+          },
+        };
+        this.notifyLockHolders(locked, {
+          type: 'success',
+          data: newData.data,
+          error: undefined,
+          reportExpired: () => this.reportExpired(refUid),
+        });
+        return;
+      }
+
+      this.log(
+        'no synchronous data update available, resetting and progressing'
+      );
+      locked.latest = null;
+      this.progressData(refUid);
     } finally {
       this.logPop();
     }

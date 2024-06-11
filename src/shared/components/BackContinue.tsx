@@ -14,6 +14,12 @@ export type BackContinueProps = {
   onBack: (() => void) | null;
   /** Handler for when the continue button is pressed */
   onContinue: () => void;
+
+  /** Overrides the text for the back button */
+  backText?: string;
+
+  /** Overrides the text for the continue button */
+  continueText?: string;
 };
 
 /**
@@ -24,6 +30,8 @@ export type BackContinueProps = {
 export const BackContinue = ({
   onBack,
   onContinue,
+  backText,
+  continueText,
 }: BackContinueProps): ReactElement => {
   const contentWidth = useContentWidth();
   const continueTextStyleVWC = useWritableValueWithCallbacks<
@@ -44,7 +52,7 @@ export const BackContinue = ({
       >
         <RenderGuardedComponent
           props={continueTextStyleVWC}
-          component={(s) => <Text style={s}>Continue</Text>}
+          component={(s) => <Text style={s}>{continueText ?? 'Continue'}</Text>}
         />
       </FilledInvertedButton>
     );
@@ -59,7 +67,7 @@ export const BackContinue = ({
       >
         <RenderGuardedComponent
           props={backTextStyleVWC}
-          component={(s) => <Text style={s}>Back</Text>}
+          component={(s) => <Text style={s}>{backText ?? 'Back'}</Text>}
         />
       </OutlineWhiteButton>
       <FilledInvertedButton
@@ -71,7 +79,8 @@ export const BackContinue = ({
           props={continueTextStyleVWC}
           component={(s) => (
             <Text style={s}>
-              {contentWidth < 375 * textScale ? 'Next' : 'Continue'}
+              {continueText ??
+                (contentWidth < 375 * textScale ? 'Next' : 'Continue')}
             </Text>
           )}
         />

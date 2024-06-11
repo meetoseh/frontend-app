@@ -5,6 +5,7 @@ import {
   useWritableValueWithCallbacks,
 } from '../lib/Callbacks';
 import { defaultEqualityFn } from '../hooks/useMappedValueWithCallbacks';
+import { setVWC } from '../lib/setVWC';
 
 /**
  * For components which can be used both using standard react state or
@@ -101,6 +102,12 @@ export const useVariableStrategyPropsAsValueWithCallbacks = <P>(
   const result = useWritableValueWithCallbacks<P>(() =>
     props.type === 'react-rerender' ? props.props : props.props()
   );
+
+  useEffect(() => {
+    if (props.type === 'react-rerender') {
+      setVWC(result, props.props, optsRef.current.equalityFn);
+    }
+  }, [props, result]);
 
   // we don't need to remount when the getter changes as its still required to
   // invoke or change the callbacks

@@ -1,22 +1,34 @@
 import { useFonts } from 'expo-font';
-import { LoginProvider } from './src/shared/contexts/LoginContext';
+import {
+  LoginContext,
+  LoginProvider,
+} from './src/shared/contexts/LoginContext';
 import { SplashScreen } from './src/user/splash/SplashScreen';
-import { useFeaturesState } from './src/user/core/hooks/useFeaturesState';
 import { RenderGuardedComponent } from './src/shared/components/RenderGuardedComponent';
 import { useConfigureBackgroundAudio } from './src/shared/hooks/useConfigureBackgroundAudio';
 import { useMappedValuesWithCallbacks } from './src/shared/hooks/useMappedValuesWithCallbacks';
 import { useWritableValueWithCallbacks } from './src/shared/lib/Callbacks';
-import { useValueWithCallbacksEffect } from './src/shared/hooks/useValueWithCallbacksEffect';
-import { useCallback } from 'react';
+import { useCallback, useContext } from 'react';
 import { setVWC } from './src/shared/lib/setVWC';
-import { View } from 'react-native';
+import { Dimensions, View, Text } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useVersionedCache } from './src/shared/hooks/useVersionedCache';
 import { useUnwrappedValueWithCallbacks } from './src/shared/hooks/useUnwrappedValueWithCallbacks';
 import { InterestsAutoProvider } from './src/shared/contexts/InterestsContext';
 import { SvgLinearGradient } from './src/shared/anim/SvgLinearGradient';
 import { DARK_BLACK_GRAY_GRADIENT_SVG } from './src/styling/colors';
-import { useWindowSizeValueWithCallbacks } from './src/shared/hooks/useWindowSize';
+import { ConfirmationScreen } from './src/user/core/screens/confirmation/ConfirmationScreen';
+import { OsehScreen, ScreenResources } from './src/user/core/models/Screen';
+import { useScreenQueueState } from './src/user/core/hooks/useScreenQueueState';
+import { USES_WEBP_STATIC } from './src/shared/images/usesWebp';
+import { USES_SVG_STATIC } from './src/shared/images/usesSvg';
+import { useScreenContext } from './src/user/core/hooks/useScreenContext';
+import { useScreenQueue } from './src/user/core/hooks/useScreenQueue';
+import Constants from 'expo-constants';
+import { useTimedValueWithCallbacks } from './src/shared/hooks/useTimedValue';
+import { useMappedValueWithCallbacks } from './src/shared/hooks/useMappedValueWithCallbacks';
+import { useValuesWithCallbacksEffect } from './src/shared/hooks/useValuesWithCallbacksEffect';
+import { Login } from './src/user/core/screens/login/Login';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
@@ -35,11 +47,20 @@ export default function App() {
     </LoginProvider>
   );
 }
+
+const screens = [ConfirmationScreen] as any[] as readonly OsehScreen<
+  string,
+  ScreenResources,
+  object,
+  { __mapped?: true }
+>[];
+
 /**
  * Entry point into the application. Selects a screen to render, providing it
  * with the ability to switch screens.
  */
 const AppInner = () => {
+  const loginContextRaw = useContext(LoginContext);
   const [fontsLoaded] = useFonts({
     'OpenSans-Bold': require('./assets/fonts/OpenSans-Bold.ttf'),
     'OpenSans-BoldItalic': require('./assets/fonts/OpenSans-BoldItalic.ttf'),
@@ -55,89 +76,182 @@ const AppInner = () => {
     'OpenSans-SemiBoldItalic': require('./assets/fonts/OpenSans-SemiBoldItalic.ttf'),
   });
   const audioConfiguredVWC = useConfigureBackgroundAudio();
-  const featureVWC = useFeaturesState();
-  const windowSizeVWC = useWindowSizeValueWithCallbacks();
 
-  const featureIfReadyVWC = useMappedValuesWithCallbacks(
-    [featureVWC, audioConfiguredVWC],
-    () => {
-      const feature = featureVWC.get();
-      const audioConfigured = audioConfiguredVWC.get();
+  const screenQueueState = useScreenQueueState();
+  const screenContext = useScreenContext(USES_WEBP_STATIC, USES_SVG_STATIC);
+  const screenQueue = useScreenQueue({
+    screenQueueState,
+    screenContext,
+    screens,
+    logging:
+      Constants.expoConfig?.extra?.environment === 'dev'
+        ? {
+            log: console.log,
+            info: console.info,
+            warn: console.warn,
+            error: console.error,
+          }
+        : {
+            log: () => {},
+            info: () => {},
+            warn: () => {},
+            error: () => {},
+          },
+  });
 
+  const stateVWC = useWritableValueWithCallbacks<
+    'loading' | 'error' | 'features'
+  >(() => 'loading');
+  // Since on first load the user likely sees the splash anyway, it's better to leave
+  // it similar and then go straight to the content if we can do so rapidly, rather
+  // than going splash -> flicker no logo -> start logo animation -> content. Of course,
+  // if loading takes a while, we'll show the splash screen.
+  const flashGradientInsteadOfSplashVWC = useTimedValueWithCallbacks(
+    true,
+    false,
+    250
+  );
+  const beenLoadedVWC = useWritableValueWithCallbacks<boolean>(() => false);
+
+  const screenQueueTypeVWC = useMappedValueWithCallbacks(
+    screenQueue.value,
+    (v) => v.type
+  );
+  useValuesWithCallbacksEffect(
+    [loginContextRaw.value, screenQueueTypeVWC, audioConfiguredVWC],
+    useCallback((): undefined => {
+      const loginContextUnch = loginContextRaw.value.get();
       if (
-        feature === null ||
-        feature === undefined ||
-        !audioConfigured ||
-        !fontsLoaded
+        loginContextUnch.state === 'loading' ||
+        !fontsLoaded ||
+        !audioConfiguredVWC.get()
       ) {
-        return null;
+        setVWC(stateVWC, 'loading');
+        return;
       }
 
-      return feature;
+      const sqType = screenQueueTypeVWC.get();
+      if (sqType === 'spinner') {
+        setVWC(stateVWC, 'loading');
+        return;
+      }
+
+      if (sqType === 'error') {
+        setVWC(stateVWC, 'error');
+        return;
+      }
+
+      setVWC(beenLoadedVWC, true);
+      setVWC(stateVWC, 'features');
+    }, [
+      loginContextRaw.value,
+      fontsLoaded,
+      screenQueueTypeVWC,
+      beenLoadedVWC,
+      stateVWC,
+      audioConfiguredVWC,
+    ])
+  );
+
+  const splashTypeVWC = useMappedValuesWithCallbacks(
+    [flashGradientInsteadOfSplashVWC, beenLoadedVWC],
+    (): 'gradient' | 'word' | 'brand' => {
+      if (beenLoadedVWC.get()) {
+        return 'brand';
+      }
+      if (flashGradientInsteadOfSplashVWC.get()) {
+        return 'gradient';
+      }
+      return 'word';
     }
   );
 
-  const flashGreenVWC = useWritableValueWithCallbacks<boolean>(() => false);
-  useValueWithCallbacksEffect(
-    featureIfReadyVWC,
-    useCallback((feature) => {
-      if (feature !== null) {
-        setVWC(flashGreenVWC, true);
-        return undefined;
-      }
+  const overlaySpinnerOnFeatures = useMappedValueWithCallbacks(
+    screenQueue.value,
+    (v) => v.type === 'finishing-pop'
+  );
 
-      if (!flashGreenVWC.get()) {
-        return undefined;
-      }
-
-      let active = true;
-      let timeout: NodeJS.Timeout | null = setTimeout(() => {
-        if (!active) {
-          return;
-        }
-        timeout = null;
-        setVWC(flashGreenVWC, false);
-      }, 1000);
-      return () => {
-        active = false;
-        if (timeout !== null) {
-          clearTimeout(timeout);
-          timeout = null;
-        }
-      };
-    }, [])
+  const needLoginScreen = useMappedValueWithCallbacks(
+    loginContextRaw.value,
+    (v) => v.state === 'logged-out'
   );
 
   return (
     <RenderGuardedComponent
-      props={featureIfReadyVWC}
-      component={(feature) => {
-        if (feature === null) {
-          return (
+      props={needLoginScreen}
+      component={(needLogin) => {
+        if (needLogin) {
+          return <Login />;
+        }
+
+        return (
+          <>
             <RenderGuardedComponent
-              props={flashGreenVWC}
-              component={(flashGreen) => {
-                if (!flashGreen) {
-                  return <SplashScreen />;
+              props={stateVWC}
+              component={(state) => {
+                if (state === 'features') {
+                  return (
+                    <>
+                      <RenderGuardedComponent
+                        props={screenQueue.value}
+                        component={(sq) => sq.component ?? <></>}
+                      />
+                      <RenderGuardedComponent
+                        props={overlaySpinnerOnFeatures}
+                        component={(overlay) =>
+                          overlay ? <SplashScreen type="brandmark" /> : <></>
+                        }
+                      />
+                    </>
+                  );
+                }
+
+                if (state === 'error') {
+                  return (
+                    <RenderGuardedComponent
+                      props={screenQueue.value}
+                      component={(sq) =>
+                        sq.error ?? (
+                          <Text>
+                            An error has occurred. Try restarting the app.
+                          </Text>
+                        )
+                      }
+                    />
+                  );
                 }
 
                 return (
-                  <View
-                    style={{
-                      width: windowSizeVWC.get().width,
-                      height: windowSizeVWC.get().height,
+                  <RenderGuardedComponent
+                    props={splashTypeVWC}
+                    component={(splashType) => {
+                      if (splashType === 'brand') {
+                        return <SplashScreen type="brandmark" />;
+                      }
+                      if (splashType === 'word') {
+                        return <SplashScreen type="wordmark" />;
+                      }
+                      const windowSize = Dimensions.get('screen');
+                      return (
+                        <View
+                          style={{
+                            width: windowSize.width,
+                            height: windowSize.height,
+                          }}
+                        >
+                          <SvgLinearGradient
+                            state={DARK_BLACK_GRAY_GRADIENT_SVG}
+                          />
+                          <StatusBar style="light" />
+                        </View>
+                      );
                     }}
-                  >
-                    <SvgLinearGradient state={DARK_BLACK_GRAY_GRADIENT_SVG} />
-                    <StatusBar style="light" />
-                  </View>
+                  />
                 );
               }}
             />
-          );
-        }
-
-        return feature;
+          </>
+        );
       }}
     />
   );

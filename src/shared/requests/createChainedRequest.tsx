@@ -3,7 +3,30 @@ import { CancelablePromise } from '../lib/CancelablePromise';
 import { constructCancelablePromise } from '../lib/CancelablePromiseConstructor';
 import { createCancelablePromiseFromCallbacks } from '../lib/createCancelablePromiseFromCallbacks';
 import { setVWC } from '../lib/setVWC';
-import { RequestHandler, RequestResult } from './RequestHandler';
+import { RequestHandler, RequestResult, Result } from './RequestHandler';
+
+export type ChainedRequestMapperSync<PrevDataT, RefT> = {
+  sync: (prevData: PrevDataT) => RefT;
+  async: undefined;
+  cancelable: undefined;
+};
+
+export type ChainedRequestMapperAsync<PrevDataT, RefT> = {
+  sync: undefined;
+  async: (prevData: PrevDataT) => Promise<RefT>;
+  cancelable: undefined;
+};
+
+export type ChainedRequestMapperCancelable<PrevDataT, RefT> = {
+  sync: undefined;
+  async: undefined;
+  cancelable: (prevData: PrevDataT) => CancelablePromise<RefT>;
+};
+
+export type ChainedRequestMapper<PrevDataT, RefT> =
+  | ChainedRequestMapperSync<PrevDataT, RefT>
+  | ChainedRequestMapperAsync<PrevDataT, RefT>
+  | ChainedRequestMapperCancelable<PrevDataT, RefT>;
 
 /**
  * Produces a new request, where the reference for this request is a mapped
@@ -18,43 +41,32 @@ import { RequestHandler, RequestResult } from './RequestHandler';
  */
 export const createChainedRequest = <
   PrevDataT extends object,
-  RefT extends object,
+  RefForUIDT extends object,
+  RefT extends RefForUIDT,
   DataT extends object
 >(
   createPrevious: () => RequestResult<PrevDataT>,
-  handler: RequestHandler<RefT, DataT>,
-  mapper:
-    | {
-        sync: (prevData: PrevDataT) => RefT;
-        async: undefined;
-        cancelable: undefined;
-      }
-    | {
-        sync: undefined;
-        async: (prevData: PrevDataT) => Promise<RefT>;
-        cancelable: undefined;
-      }
-    | {
-        sync: undefined;
-        async: undefined;
-        cancelable: (prevData: PrevDataT) => CancelablePromise<RefT>;
-      },
+  handler: RequestHandler<RefForUIDT, RefT, DataT>,
+  mapper: ChainedRequestMapper<PrevDataT, RefT | null>,
   opts?: {
-    onRefChanged?: (newRef: RefT | null) => void;
+    onRefChanged?: (newRef: RefT | null, prevData: PrevDataT | null) => void;
   }
 ): RequestResult<DataT> => {
   const releasedVWC = createWritableValueWithCallbacks(false);
-  let previous: RequestResult<PrevDataT> | null = null as RequestResult<PrevDataT> | null;
+  let previous: RequestResult<PrevDataT> | null =
+    null as RequestResult<PrevDataT> | null;
 
   const onRefChanged = opts?.onRefChanged ?? (() => {});
-  onRefChanged(null);
+  onRefChanged(null, null);
 
   const rawResult = handler.request({
     ref: null,
     refreshRef: () => {
       return constructCancelablePromise({
         body: async (state, resolve, reject) => {
-          const canceled = createCancelablePromiseFromCallbacks(state.cancelers);
+          const canceled = createCancelablePromiseFromCallbacks(
+            state.cancelers
+          );
           canceled.promise.catch(() => {});
           if (state.finishing) {
             canceled.cancel();
@@ -63,7 +75,9 @@ export const createChainedRequest = <
             return;
           }
 
-          const released = createCancelablePromiseFromCallbacks(releasedVWC.callbacks);
+          const released = createCancelablePromiseFromCallbacks(
+            releasedVWC.callbacks
+          );
           released.promise.catch(() => {});
           if (releasedVWC.get()) {
             canceled.cancel();
@@ -84,6 +98,21 @@ export const createChainedRequest = <
             previous = createPrevious();
             shouldRefresh = false;
           }
+
+          const makeResult = (mapped: RefT | null): Result<RefT> =>
+            mapped === null
+              ? {
+                  type: 'error',
+                  data: undefined,
+                  error: <>This reference cannot chain</>,
+                  retryAt: undefined,
+                }
+              : {
+                  type: 'success',
+                  data: mapped,
+                  error: undefined,
+                  retryAt: undefined,
+                };
 
           while (true) {
             const prev = previous;
@@ -118,13 +147,19 @@ export const createChainedRequest = <
               throw new Error('impossible state');
             }
 
-            const changed = createCancelablePromiseFromCallbacks(prev.data.callbacks);
+            const changed = createCancelablePromiseFromCallbacks(
+              prev.data.callbacks
+            );
             changed.promise.catch(() => {});
 
             const data = prev.data.get();
             if (data.type === 'loading') {
               shouldRefresh = false;
-              await Promise.race([changed.promise, canceled.promise, released.promise]);
+              await Promise.race([
+                changed.promise,
+                canceled.promise,
+                released.promise,
+              ]);
               changed.cancel();
               continue;
             } else if (data.type === 'released') {
@@ -132,7 +167,9 @@ export const createChainedRequest = <
                 changed.cancel();
                 continue;
               }
-              throw new Error('impossible: previous should not be released from underneath us');
+              throw new Error(
+                'impossible: previous should not be released from underneath us'
+              );
             } else if (data.type === 'error') {
               changed.cancel();
 
@@ -158,9 +195,13 @@ export const createChainedRequest = <
             } else if (data.type === 'success') {
               if (shouldRefresh) {
                 shouldRefresh = false;
-                onRefChanged(null);
+                onRefChanged(null, null);
                 data.reportExpired();
-                await Promise.race([changed.promise, canceled.promise, released.promise]);
+                await Promise.race([
+                  changed.promise,
+                  canceled.promise,
+                  released.promise,
+                ]);
                 changed.cancel();
                 continue;
               }
@@ -168,15 +209,10 @@ export const createChainedRequest = <
               if (mapper.sync !== undefined) {
                 changed.cancel();
                 const mapped = mapper.sync(data.data);
-                onRefChanged(mapped);
+                onRefChanged(mapped, data.data);
                 state.finishing = true;
                 state.done = true;
-                resolve({
-                  type: 'success',
-                  data: mapped,
-                  error: undefined,
-                  retryAt: undefined,
-                });
+                resolve(makeResult(mapped));
                 return;
               }
 
@@ -186,15 +222,10 @@ export const createChainedRequest = <
                   continue;
                 }
 
-                onRefChanged(mapped);
+                onRefChanged(mapped, data.data);
                 state.finishing = true;
                 state.done = true;
-                resolve({
-                  type: 'success',
-                  data: mapped,
-                  error: undefined,
-                  retryAt: undefined,
-                });
+                resolve(makeResult(mapped));
                 return;
               }
 
@@ -218,15 +249,10 @@ export const createChainedRequest = <
 
               changed.cancel();
 
-              onRefChanged(mappedData);
+              onRefChanged(mappedData, data.data);
               state.finishing = true;
               state.done = true;
-              resolve({
-                type: 'success',
-                data: mappedData,
-                error: undefined,
-                retryAt: undefined,
-              });
+              resolve(makeResult(mappedData));
             } else {
               ((d: never) => {
                 throw new Error(`unknown data: ${d}`);
@@ -248,7 +274,7 @@ export const createChainedRequest = <
       if (previous !== null) {
         previous.release();
         previous = null;
-        onRefChanged(null);
+        onRefChanged(null, null);
       }
     },
   };

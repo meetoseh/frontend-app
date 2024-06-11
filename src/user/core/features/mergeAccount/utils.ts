@@ -1,7 +1,4 @@
-import {
-  LoginContextValue,
-  LoginContextValueLoggedIn,
-} from '../../../../shared/contexts/LoginContext';
+import { LoginContextValueLoggedIn } from '../../../../shared/contexts/LoginContext';
 import { HTTP_FRONTEND_URL, apiFetch } from '../../../../shared/lib/apiFetch';
 import { MergeProvider } from './MergeAccountState';
 import Constants from 'expo-constants';

@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useContext, useMemo } from 'react';
+import { ReactElement, useContext, useEffect } from 'react';
 import {
   Callbacks,
   ValueWithCallbacks,
@@ -6,12 +6,13 @@ import {
   useWritableValueWithCallbacks,
 } from '../lib/Callbacks';
 import { setVWC } from '../lib/setVWC';
-import { useValueWithCallbacksEffect } from './useValueWithCallbacksEffect';
 import {
   LoginContext,
+  LoginContextValue,
   LoginContextValueLoggedIn,
 } from '../contexts/LoginContext';
-import { useValuesWithCallbacksEffect } from './useValuesWithCallbacksEffect';
+import { createValuesWithCallbacksEffect } from './createValuesWithCallbacksEffect';
+import { createValueWithCallbacksEffect } from './createValueWithCallbacksEffect';
 import { describeError } from '../lib/describeError';
 
 export type NetworkResponseError<T> = {
@@ -117,10 +118,54 @@ export const useNetworkResponse = <T>(
     refresh: null,
     replace: null,
   }));
+  useEffect(() => {
+    const [subresult, cleanup] = createNetworkResponse(
+      loginContextRaw,
+      fetcher,
+      opts
+    );
+    const cleanupAttacher = createValueWithCallbacksEffect(subresult, (v) => {
+      setVWC(result, v);
+      return undefined;
+    });
+    return () => {
+      cleanup();
+      cleanupAttacher();
+    };
+  }, [loginContextRaw, fetcher, opts, result]);
+  return result;
+};
 
+/**
+ * Similar to useNetworkResponse, except instead of a hook, returns a cleanup function
+ *
+ * Fetches data from the network using the given fetcher, returning both the
+ * result (if successful) and the error (if unsuccessful). The fetcher must
+ * be memoized, or this hook will re-fetch on every render. Only calls the
+ * fetcher when the user is logged in, and provides the logged-in login context
+ *
+ * @param fetcher A memoized function that fetches data from the network.
+ * @param opts Additional options for configuring the hook
+ * @returns The current result and error
+ */
+export const createNetworkResponse = <T>(
+  loginContextRaw: LoginContextValue,
+  fetcher: (
+    active: ValueWithCallbacks<boolean>,
+    loginContext: LoginContextValueLoggedIn
+  ) => Promise<T | null>,
+  opts?: UseNetworkResponseOpts
+): [ValueWithCallbacks<NetworkResponse<T>>, () => void] => {
+  const result = createWritableValueWithCallbacks<NetworkResponse<T>>({
+    type: 'loading',
+    result: undefined,
+    error: null,
+    refresh: null,
+    replace: null,
+  });
   const minRefreshTimeMS = opts?.minRefreshTimeMS ?? 500;
   const rawLoadPrevented = opts?.loadPrevented;
-  const loadPrevented = useMemo(() => {
+  const loadPrevented = (() => {
     if (rawLoadPrevented === undefined) {
       return {
         get: () => false,
@@ -128,9 +173,8 @@ export const useNetworkResponse = <T>(
       };
     }
     return rawLoadPrevented;
-  }, [rawLoadPrevented]);
-
-  const refresh = useCallback(async () => {
+  })();
+  const refresh = async () => {
     if (loadPrevented.get() || result.get().type === 'loading') {
       return;
     }
@@ -190,9 +234,8 @@ export const useNetworkResponse = <T>(
         replace,
       });
     }
-  }, [result, fetcher, minRefreshTimeMS, loadPrevented, loginContextRaw]);
-
-  const replace = useCallback((value: T) => {
+  };
+  const replace = (value: T) => {
     if (loadPrevented.get() || result.get().type === 'loading') {
       return;
     }
@@ -204,11 +247,10 @@ export const useNetworkResponse = <T>(
       refresh,
       replace,
     });
-  }, []);
-
-  useValuesWithCallbacksEffect(
-    [loginContextRaw.value, ...(opts?.dependsOn ?? [])],
-    useCallback(() => {
+  };
+  const cleanupFetcher = createValuesWithCallbacksEffect(
+    [loginContextRaw.value, loadPrevented, ...(opts?.dependsOn ?? [])],
+    () => {
       if (loadPrevented.get()) {
         setVWC(
           result,
@@ -275,32 +317,7 @@ export const useNetworkResponse = <T>(
           }
         }
       }
-    }, [result, fetcher, loadPrevented, refresh])
+    }
   );
-  useValueWithCallbacksEffect(
-    loadPrevented,
-    useCallback(
-      (value) => {
-        if (value) {
-          setVWC(
-            result,
-            {
-              type: 'load-prevented',
-              result: undefined,
-              error: null,
-              refresh: null,
-              replace: null,
-            },
-            (a, b) => a.type === b.type
-          );
-        } else {
-          refresh();
-        }
-        return undefined;
-      },
-      [result, refresh]
-    )
-  );
-
-  return result;
+  return [result, cleanupFetcher];
 };

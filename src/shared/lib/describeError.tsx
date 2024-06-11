@@ -1,6 +1,15 @@
 import { ReactElement } from 'react';
 import { ErrorBanner, ErrorBannerText } from '../components/ErrorBanner';
 
+export const describeFetchError = (): ReactElement => {
+  return (
+    <ErrorBanner>
+      <ErrorBannerText>
+        Failed to connect to server. Check your internet connection.
+      </ErrorBannerText>
+    </ErrorBanner>
+  );
+};
 /**
  * Guesses the best description for the given error. This works best
  * on errors that are from a fetch request.
@@ -11,13 +20,7 @@ import { ErrorBanner, ErrorBannerText } from '../components/ErrorBanner';
 export const describeError = async (e: any): Promise<ReactElement> => {
   if (e instanceof TypeError) {
     console.error('describing error:', e);
-    return (
-      <ErrorBanner>
-        <ErrorBannerText>
-          Failed to connect to server. Check your internet connection.
-        </ErrorBannerText>
-      </ErrorBanner>
-    );
+    return describeFetchError();
   } else if (e instanceof Response) {
     console.error('describing error:', e);
     e.text()

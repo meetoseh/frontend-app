@@ -1,5 +1,6 @@
 import {
   ValueWithCallbacks,
+  createWritableValueWithCallbacks,
   useWritableValueWithCallbacks,
 } from '../lib/Callbacks';
 import { setVWC } from '../lib/setVWC';
@@ -11,10 +12,9 @@ import { useValueWithCallbacksEffect } from './useValueWithCallbacksEffect';
  */
 export const useDelayedValueWithCallbacks = <T>(
   vwc: ValueWithCallbacks<T>,
-  delayMs: number,
-  initial?: T
+  delayMs: number
 ): ValueWithCallbacks<T> => {
-  const result = useWritableValueWithCallbacks(() => initial ?? vwc.get());
+  const result = useWritableValueWithCallbacks(() => vwc.get());
 
   useValueWithCallbacksEffect(vwc, (newValue) => {
     let timeout: NodeJS.Timeout | null = setTimeout(() => {
@@ -31,4 +31,38 @@ export const useDelayedValueWithCallbacks = <T>(
   });
 
   return result;
+};
+
+/**
+ * Same thing as useDelayedValueWithCallbacks, but not within a react hook
+ * context.
+ */
+export const createDelayedValueWithCallbacks = <T>(
+  vwc: ValueWithCallbacks<T>,
+  delayMs: number
+): [ValueWithCallbacks<T>, () => void] => {
+  const result = createWritableValueWithCallbacks(vwc.get());
+  let timeout: NodeJS.Timeout | null = null;
+  vwc.callbacks.add(update);
+  return [
+    result,
+    () => {
+      vwc.callbacks.remove(update);
+      if (timeout !== null) {
+        clearTimeout(timeout);
+        timeout = null;
+      }
+    },
+  ];
+
+  function update() {
+    if (timeout !== null) {
+      clearTimeout(timeout);
+      timeout = null;
+    }
+    timeout = setTimeout(() => {
+      timeout = null;
+      setVWC(result, vwc.get());
+    }, delayMs);
+  }
 };

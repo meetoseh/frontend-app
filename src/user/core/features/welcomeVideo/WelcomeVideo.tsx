@@ -21,6 +21,7 @@ import {
   PlayerCTA,
   PlayerForeground,
 } from '../../../../shared/content/player/PlayerForeground';
+import { useOsehTranscriptValueWithCallbacks } from '../../../../shared/transcripts/useOsehTranscriptValueWithCallbacks';
 
 /**
  * Displays the full screen welcome video
@@ -55,13 +56,26 @@ export const WelcomeVideo = ({
   );
 
   const videoVWC = useMappedValueWithCallbacks(resources, (r) => r.video);
+  const transcriptRefVWC = useMappedValueWithCallbacks(
+    resources,
+    (r) => r.onboardingVideo.result?.transcript ?? null,
+    {
+      outputEqualityFn: (a, b) =>
+        a === null || b === null ? a === b : a.uid === b.uid && a.jwt === b.jwt,
+    }
+  );
+  const rawTranscriptVWC = useOsehTranscriptValueWithCallbacks(
+    adaptValueWithCallbacksAsVariableStrategyProps(transcriptRefVWC)
+  );
+
   const transcript = useCurrentTranscriptPhrases({
-    transcriptRef: useMappedValueWithCallbacks(resources, (r) => {
-      if (r.onboardingVideo.type !== 'success') {
-        return null;
-      }
-      return r.onboardingVideo.result.transcript;
-    }),
+    transcript: useMappedValueWithCallbacks(rawTranscriptVWC, (v) =>
+      v.type === 'loading'
+        ? null
+        : v.type === 'success'
+        ? v.transcript
+        : undefined
+    ),
   });
   const mediaInfo = useMediaInfo({
     currentTranscriptPhrasesVWC: transcript,

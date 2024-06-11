@@ -169,9 +169,11 @@ export type CancelablePromiseState = {
  */
 export type CancelablePromiseBodyArgs<T> = {
   state: CancelablePromiseState;
-  resolve: (value: T | PromiseLike<T>) => void;
+  resolve: (value: T | Promise<T>) => void;
   reject: (reason?: any) => void;
 };
+
+const isDevelopment = Constants.expoConfig?.extra?.environment === 'dev';
 
 /**
  * Constructs a cancelable promise from a cancelable promise constructor.
@@ -191,6 +193,8 @@ export const constructCancelablePromise = <T>(
 
   constructor.preamble?.(state);
 
+  let stackInfo = isDevelopment ? new Error().stack : undefined;
+
   return {
     done: () => state.done,
     cancel: () => {
@@ -206,7 +210,7 @@ export const constructCancelablePromise = <T>(
         return;
       }
 
-      rejectCanceled = () => reject(new Error('canceled'));
+      rejectCanceled = () => reject(new Error(`canceled: ${stackInfo}`));
 
       let bodyResolvedOrRejected = false;
       const ensureDone = () => {
@@ -214,7 +218,7 @@ export const constructCancelablePromise = <T>(
           console.trace('body called resolve() without setting state.done');
 
           state.done = true;
-          if (Constants.expoConfig!.extra!.environment! === 'dev') {
+          if (isDevelopment) {
             reject(
               new Error(
                 'body called resolve() or reject() without setting state.done'
@@ -238,7 +242,7 @@ export const constructCancelablePromise = <T>(
       };
 
       let handledCleanup = false;
-      const cleanup = () => {
+      const cleanup = (hint: 'returned' | 'errored', underlying?: any) => {
         if (handledCleanup) {
           return;
         }
@@ -250,32 +254,43 @@ export const constructCancelablePromise = <T>(
 
         if (constructor.guardBody) {
           wrappedReject(
-            new Error('body returned without resolving or rejecting')
+            new Error(
+              `body ${hint} without resolving or rejecting ${stackInfo} (underlying: ${underlying})`
+            )
           );
         } else {
-          console.trace('body returned without resolving or rejecting');
+          console.trace(
+            `body ${hint} without resolving or rejecting`,
+            stackInfo,
+            underlying
+          );
 
-          if (Constants.expoConfig!.extra!.environment! === 'dev') {
-            throw new Error('body returned without resolving or rejecting');
+          if (isDevelopment) {
+            throw new Error(
+              `body ${hint} without resolving or rejecting ${stackInfo} (underlying: ${underlying})`
+            );
           } else {
             wrappedReject(
-              new Error('body returned without resolving or rejecting')
+              new Error(
+                `body ${hint} without resolving or rejecting ${stackInfo} (underlying: ${underlying})`
+              )
             );
           }
         }
       };
 
-      let hadPromise = false;
       try {
         const result = constructor.body(state, wrappedResolve, wrappedReject);
         if (result !== undefined) {
-          hadPromise = true;
-          result.finally(cleanup);
+          (result as Promise<any>).then(
+            (v) => cleanup('returned', v),
+            (e) => cleanup('errored', e)
+          );
+        } else {
+          cleanup('returned', result);
         }
-      } finally {
-        if (!hadPromise) {
-          cleanup();
-        }
+      } catch (e) {
+        cleanup('errored', e);
       }
     }),
   };
