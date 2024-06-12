@@ -1,14 +1,10 @@
 import { ReactElement } from 'react';
 import { styles } from './BottomNavBarStyles';
 import { Pressable, View, Text, Platform, ViewStyle } from 'react-native';
-import {
-  useWindowSize,
-  useWindowSizeValueWithCallbacks,
-} from '../../shared/hooks/useWindowSize';
+import { useWindowSizeValueWithCallbacks } from '../../shared/hooks/useWindowSize';
 import Home from './assets/Home';
 import Account from './assets/Account';
 import Series from './assets/Series';
-import { useBotBarHeight } from '../../shared/hooks/useBotBarHeight';
 import {
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
@@ -17,7 +13,6 @@ import { RenderGuardedComponent } from '../../shared/components/RenderGuardedCom
 import { useMappedValueWithCallbacks } from '../../shared/hooks/useMappedValueWithCallbacks';
 import { useStyleVWC } from '../../shared/hooks/useStyleVWC';
 import { setVWC } from '../../shared/lib/setVWC';
-import { useMappedValuesWithCallbacks } from '../../shared/hooks/useMappedValuesWithCallbacks';
 import { VerticalSpacer } from '../../shared/components/VerticalSpacer';
 
 export type BottomNavItem = 'home' | 'series' | 'account';

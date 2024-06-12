@@ -32,6 +32,7 @@ import { Login } from './src/user/core/screens/login/Login';
 import { AddPhoneScreen } from './src/user/core/screens/add_phone/AddPhoneScreen';
 import { AudioInterstitialScreen } from './src/user/core/screens/audio_interstitial/AudioInterstitialScreen';
 import { ChoicesScreen } from './src/user/core/screens/choices/ChoicesScreen';
+import { ChooseAFeelingScreen } from './src/user/core/screens/choose_a_feeling/ChooseAFeelingScreen';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
@@ -56,6 +57,7 @@ const screens = [
   AddPhoneScreen,
   AudioInterstitialScreen,
   ChoicesScreen,
+  ChooseAFeelingScreen,
 ] as any[] as readonly OsehScreen<
   string,
   ScreenResources,

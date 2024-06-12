@@ -480,7 +480,7 @@ export const HomeScreen = ({
   );
 
   const bottomNavHeightVWC = useWritableValueWithCallbacks<number>(
-    () => bottomNavStyles.container.minHeight
+    () => bottomNavStyles.items.minHeight + 12
   );
   const overlayVWC = useWritableValueWithCallbacks<View | null>(() => null);
   const foregroundOpacityVWC = useWritableValueWithCallbacks<number>(() => {
