@@ -260,7 +260,7 @@ export const useForwardBackwardEffect = ({
       }
 
       const player = playerVWC.get();
-      if (player === undefined) {
+      if (player === undefined || player === null) {
         return;
       }
 
