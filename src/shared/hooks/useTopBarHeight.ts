@@ -18,6 +18,8 @@ import Constants from 'expo-constants';
  *   the top-level view.
  *
  *   If things are not laying out as you expect, this is the first thing to check.
+ *
+ * @deprecated prefer ScreenContext#topBarHeight
  */
 export const useTopBarHeight = (): number => {
   const [sizes, setSizes] = useState<{
@@ -62,6 +64,7 @@ export const useTopBarHeight = (): number => {
 
 /**
  * Same calculation as useTopBarHeight, but as a function instead of a hook.
+ * @deprecated prefer ScreenContext#topBarHeight
  */
 export const getTopBarHeight = (): number =>
   StatusBar.currentHeight ??

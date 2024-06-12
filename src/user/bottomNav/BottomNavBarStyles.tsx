@@ -1,18 +1,17 @@
-import { Platform, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import * as Colors from '../../styling/colors';
-
-const partiallyObscuredBottomHeight = Platform.select({
-  ios: 12, // notch on iphone x
-  default: 0,
-});
 
 export const styles = StyleSheet.create({
   container: {
     backgroundColor: '#191c1d',
-    minHeight: 67 + partiallyObscuredBottomHeight,
-    paddingBottom: partiallyObscuredBottomHeight,
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    alignItems: 'stretch',
+  },
+  items: {
     flexDirection: 'row',
     alignItems: 'stretch',
+    minHeight: 67,
   },
   itemWrapper: {
     flexGrow: 1,

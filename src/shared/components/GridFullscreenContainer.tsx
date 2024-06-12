@@ -9,7 +9,6 @@ import { useStyleVWC } from '../hooks/useStyleVWC';
 import { View, ViewStyle } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { ModalContext, Modals, ModalsOutlet } from '../contexts/ModalContext';
-import { createValueWithCallbacksEffect } from '../hooks/createValueWithCallbacksEffect';
 import { setVWC } from '../lib/setVWC';
 
 /**
@@ -51,6 +50,7 @@ export const GridFullscreenContainer = ({
 
   return (
     <View ref={(r) => containerRef.set(r)} style={containerStyleVWC.get()}>
+      {!!statusBar && <StatusBar style="light" />}
       {modals === false ? (
         children
       ) : (
@@ -63,7 +63,6 @@ export const GridFullscreenContainer = ({
       {modals !== false && (
         <ModalsOutlet modals={modals === true ? fallbackModalsVWC : modals} />
       )}
-      {!!statusBar && <StatusBar style="light" />}
     </View>
   );
 };

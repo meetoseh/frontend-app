@@ -1,7 +1,7 @@
-import { useEffect } from "react";
-import { ValueWithCallbacks, useWritableValueWithCallbacks } from "./Callbacks";
-import { Keyboard } from "react-native";
-import { setVWC } from "./setVWC";
+import { useEffect } from 'react';
+import { ValueWithCallbacks, useWritableValueWithCallbacks } from './Callbacks';
+import { Keyboard } from 'react-native';
+import { setVWC } from './setVWC';
 
 /**
  * A hook-like function to determine if the keyboard is visible
@@ -16,10 +16,10 @@ export const useKeyboardVisibleValueWithCallbacks =
     const result = useWritableValueWithCallbacks(() => false);
 
     useEffect(() => {
-      const didShowListener = Keyboard.addListener("keyboardDidShow", () => {
+      const didShowListener = Keyboard.addListener('keyboardWillShow', () => {
         setVWC(result, true);
       });
-      const didHideListener = Keyboard.addListener("keyboardDidHide", () => {
+      const didHideListener = Keyboard.addListener('keyboardWillHide', () => {
         setVWC(result, false);
       });
       setVWC(result, Keyboard.isVisible());

@@ -20,7 +20,6 @@ import { createImagePublicPlaylistRequestHandler } from '../../../shared/images/
 import { createImageDataRequestHandler } from '../../../shared/images/createImageDataRequestHandler';
 import { createImageCropRequestHandler } from '../../../shared/images/createImageCropRequestHandler';
 import { createContentPlaylistRequestHandler } from '../../../shared/content/createContentPlaylistRequestHandler';
-import { createVideoDataRequestHandler } from '../../../shared/content/createVideoDataHandler';
 import { createSeriesListRequestHandler } from '../../series/lib/createSeriesListRequestHandler';
 import { createSeriesLikeStateRequestHandler } from '../../series/lib/createSeriesLikeStateRequestHandler';
 import { createSeriesJourneysRequestHandler } from '../../series/lib/createSeriesJourneysRequestHandler';
@@ -46,7 +45,10 @@ import { createReminderSettingsRequestHandler } from '../screens/reminder_times/
 import { createOnboardingVideoRequestHandler } from '../screens/video_interstitial_onboarding/lib/createOnboardingVideoRequestHandler';
 import { createTranscriptRequestHandler } from '../screens/video_interstitial/lib/createTranscriptRequestHandler';
 import { createPurchasesOfferingsRequestHandler } from '../screens/upgrade/lib/createPurchasesOfferingsRequestHandler';
-import { Dimensions, ScaledSize } from 'react-native';
+import { Dimensions, Platform, ScaledSize, StatusBar } from 'react-native';
+import { useMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValueWithCallbacks';
+import Constants from 'expo-constants';
+import { useMappedValuesWithCallbacks } from '../../../shared/hooks/useMappedValuesWithCallbacks';
 
 type WindowSize = {
   width: number;
@@ -94,6 +96,12 @@ export type ScreenContext = {
    */
   contentWidth: ValueWithCallbacks<number>;
 
+  /** The height at the top of the screen which is not clickable and _might_ not be visible */
+  topBarHeight: ValueWithCallbacks<number>;
+
+  /** The height at the bottom of the screen which is not clickable and _might_ not be visible */
+  botBarHeight: ValueWithCallbacks<number>;
+
   /**
    * The visitor and how they signed up with oseh (i.e, their interests)
    */
@@ -120,16 +128,18 @@ export const useScreenContext = (
   const loginContext = useContext(LoginContext);
   const interestsContext = useContext(InterestsContext);
 
-  const windowSizeImmediate = useWritableValueWithCallbacks<{
-    width: number;
-    height: number;
-  }>(() => {
-    const size = Dimensions.get('screen');
-    return {
-      width: size.width,
-      height: size.height,
-    };
-  });
+  const sizesVWC = useWritableValueWithCallbacks<{
+    window: ScaledSize;
+    screen: ScaledSize;
+  }>(() => ({
+    window: Dimensions.get('window'),
+    screen: Dimensions.get('screen'),
+  }));
+
+  const windowSizeImmediate = useMappedValueWithCallbacks(
+    sizesVWC,
+    (sizes) => ({ width: sizes.screen.width, height: sizes.screen.height })
+  );
 
   useEffect(() => {
     let active = true;
@@ -147,16 +157,13 @@ export const useScreenContext = (
         return;
       }
 
-      const size = args?.screen ?? Dimensions.get('screen');
+      const screen = args?.screen ?? Dimensions.get('screen');
+      const window = args?.window ?? Dimensions.get('window');
 
-      setVWC(
-        windowSizeImmediate,
-        {
-          width: size.width,
-          height: size.height,
-        },
-        areWindowSizesEqual
-      );
+      setVWC(sizesVWC, {
+        screen,
+        window,
+      });
     }
   }, [windowSizeImmediate]);
 
@@ -164,6 +171,30 @@ export const useScreenContext = (
     windowSizeImmediate,
     100
   );
+
+  const [botBarHeight, topBarHeight] = Platform.select({
+    android: [
+      useWritableValueWithCallbacks(() =>
+        Math.max(
+          sizesVWC.get().screen.height - sizesVWC.get().window.height - 48,
+          48
+        )
+      ),
+      useWritableValueWithCallbacks(() => 48),
+    ],
+    default: [
+      useWritableValueWithCallbacks(() =>
+        Math.max(
+          sizesVWC.get().screen.height -
+            sizesVWC.get().window.height -
+            (Constants.statusBarHeight ?? 44),
+          12
+        )
+      ),
+      useWritableValueWithCallbacks(() => Constants.statusBarHeight ?? 44),
+    ],
+  });
+
   const logging = 'none';
   const cacheSize = 100;
   const privatePlaylistHandler = useWritableValueWithCallbacks(() =>
@@ -367,6 +398,8 @@ export const useScreenContext = (
       resources,
       windowSizeImmediate,
       windowSizeDebounced,
+      topBarHeight,
+      botBarHeight,
       contentWidth,
       interests: interestsContext,
       usesWebp,
@@ -378,6 +411,8 @@ export const useScreenContext = (
       interestsContext,
       windowSizeImmediate,
       windowSizeDebounced,
+      topBarHeight,
+      botBarHeight,
       contentWidth,
       usesWebp,
       usesSvg,

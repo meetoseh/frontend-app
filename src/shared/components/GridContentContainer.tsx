@@ -87,11 +87,7 @@ export const GridContentContainer = ({
   }, [left, opacity, containerTransitionState]);
 
   const containerStyleVWC = useMappedValuesWithCallbacks(
-    [
-      containerTransitionState,
-      gridSizeVWC,
-      useReactManagedValueAsValueWithCallbacks(noPointerEvents),
-    ],
+    [containerTransitionState, gridSizeVWC],
     (): ViewStyle => {
       const transitionState = containerTransitionState.get();
       const leftValue = transitionState.left;
@@ -102,14 +98,11 @@ export const GridContentContainer = ({
       const opacityIsOne = opacityValue > 0.999;
 
       return {
-        position: 'relative',
+        position: 'absolute',
         left: leftIsZero ? 0 : leftValue,
         opacity: opacityIsOne ? 1 : opacityValue,
         width: gridSizeVWC.get().width,
         height: gridSizeVWC.get().height,
-        display: 'flex',
-        justifyContent: 'flex-start',
-        alignItems: 'center',
       };
     }
   );
@@ -118,25 +111,32 @@ export const GridContentContainer = ({
   const contentStyleVWC = useMappedValuesWithCallbacks(
     [gridSizeVWC, contentWidthVWC],
     (): ViewStyle => ({
-      width: contentWidthVWC.get(),
+      width: gridSizeVWC.get().width,
       minHeight: gridSizeVWC.get().height,
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'stretch',
       justifyContent: 'flex-start',
+      paddingLeft: (gridSizeVWC.get().width - contentWidthVWC.get()) / 2,
+      paddingRight: (gridSizeVWC.get().width - contentWidthVWC.get()) / 2,
     })
   );
   const contentRef = useWritableValueWithCallbacks<View | null>(() => null);
   useStyleVWC(contentRef, contentStyleVWC);
 
+  const containerAndContentStyleVWC = useMappedValuesWithCallbacks(
+    [containerStyleVWC, contentStyleVWC],
+    () => ({
+      container: containerStyleVWC.get(),
+      content: contentStyleVWC.get(),
+    })
+  );
+
   return scrollable ? (
     <RenderGuardedComponent
-      props={contentStyleVWC}
-      component={(style) => (
-        <ScrollView
-          style={{ width: style.width, height: style.height }}
-          contentContainerStyle={style}
-        >
+      props={containerAndContentStyleVWC}
+      component={({ container, content }) => (
+        <ScrollView style={container} contentContainerStyle={content}>
           {children}
         </ScrollView>
       )}
@@ -145,12 +145,12 @@ export const GridContentContainer = ({
     <View
       style={containerStyleVWC.get()}
       ref={(r) => setVWC(containerRef, r)}
-      pointerEvents={noPointerEvents ? 'none' : 'auto'}
+      pointerEvents={noPointerEvents ? 'box-none' : 'auto'}
     >
       <View
         style={contentStyleVWC.get()}
         ref={(r) => setVWC(contentRef, r)}
-        pointerEvents={noPointerEvents ? 'none' : 'auto'}
+        pointerEvents={noPointerEvents ? 'box-none' : 'auto'}
       >
         {children}
       </View>

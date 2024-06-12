@@ -9,10 +9,14 @@ export const VerticalSpacer = ({
   height,
   flexBasis,
   flexGrow,
+  color,
+  noPointerEvents,
 }: {
   height: number;
   flexBasis?: number;
   flexGrow?: number;
+  color?: string;
+  noPointerEvents?: boolean;
 }): ReactElement =>
   height === 0 && flexGrow === undefined ? (
     <></>
@@ -23,6 +27,8 @@ export const VerticalSpacer = ({
         paddingTop: height,
         ...(flexGrow !== undefined ? { flexGrow } : {}),
         ...(flexBasis !== undefined ? { flexBasis } : {}),
+        ...(color !== undefined ? { backgroundColor: color } : {}),
       }}
+      pointerEvents={noPointerEvents ? 'none' : 'auto'}
     />
   );
