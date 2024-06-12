@@ -57,6 +57,7 @@ import {
 } from '../screens/settings/lib/createEntitlementRequestHandler';
 import { OfferingPriceRef } from '../screens/upgrade/lib/createOfferingPriceRequestHandler';
 import { RevenueCatOffering } from '../features/upgrade/models/RevenueCatOffering';
+import { AudioFileData } from '../../../shared/content/createAudioDataHandler';
 
 /**
  * Contains everything that any screen might want to eagerly preload. Generally,
@@ -108,6 +109,14 @@ export type Resources = {
     OsehContentNativeMinimalRef,
     OsehContentNativeRef,
     ContentFileNativeExport
+  >;
+  /**
+   * Prepares the m3u8 file for playing by downloading the first few segments
+   */
+  audioDataHandler: RequestHandler<
+    ContentFileNativeExport,
+    ContentFileNativeExport,
+    AudioFileData
   >;
   /**
    * Manages creating objects that can paginate through the list of series

@@ -49,6 +49,7 @@ import { Dimensions, Platform, ScaledSize, StatusBar } from 'react-native';
 import { useMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValueWithCallbacks';
 import Constants from 'expo-constants';
 import { useMappedValuesWithCallbacks } from '../../../shared/hooks/useMappedValuesWithCallbacks';
+import { createAudioDataRequestHandler } from '../../../shared/content/createAudioDataHandler';
 
 type WindowSize = {
   width: number;
@@ -212,6 +213,9 @@ export const useScreenContext = (
   const contentPlaylistHandler = useWritableValueWithCallbacks(() =>
     createContentPlaylistRequestHandler({ logging, maxStale: cacheSize })
   );
+  const audioDataHandler = useWritableValueWithCallbacks(() =>
+    createAudioDataRequestHandler({ logging, maxStale: 5 })
+  );
   const seriesListHandler = useWritableValueWithCallbacks(() =>
     createSeriesListRequestHandler({
       logging,
@@ -331,6 +335,7 @@ export const useScreenContext = (
       imageDataHandler: imageDataHandler.get(),
       imageCropHandler: imageCropHandler.get(),
       contentPlaylistHandler: contentPlaylistHandler.get(),
+      audioDataHandler: audioDataHandler.get(),
       seriesListHandler: seriesListHandler.get(),
       seriesLikeStateHandler: seriesLikeStateHandler.get(),
       seriesJourneysHandler: seriesJourneysHandler.get(),
@@ -363,6 +368,7 @@ export const useScreenContext = (
       imageDataHandler,
       imageCropHandler,
       contentPlaylistHandler,
+      audioDataHandler,
       seriesListHandler,
       seriesLikeStateHandler,
       seriesJourneysHandler,

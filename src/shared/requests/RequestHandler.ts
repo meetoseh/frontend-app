@@ -377,6 +377,11 @@ export class RequestHandler<
    * from `getDataFromRef`)
    */
   private readonly compareRefs: (a: RefT, b: RefT) => number;
+  /**
+   * Should be called to dispose of any resources associated with the given
+   * data when it is no longer needed.
+   */
+  private readonly cleanupData: (data: DataT) => void;
   /** How logging is configured */
   private readonly logConfig: RequestHandlerLogConfig;
   /** How retries are configured */
@@ -428,6 +433,7 @@ export class RequestHandler<
     logConfig,
     cacheConfig,
     retryConfig,
+    cleanupData,
   }: {
     getRefUid: (ref: RefTForUID) => string;
     getDataFromRef: (ref: RefT) => CancelablePromise<Result<DataT>>;
@@ -435,10 +441,12 @@ export class RequestHandler<
     logConfig: RequestHandlerLogConfig;
     cacheConfig: RequestHandlerCacheConfig;
     retryConfig: RequestHandlerRetryConfig;
+    cleanupData?: (data: DataT) => void;
   }) {
     this.getRefUid = getRefUid;
     this.getDataFromRef = getDataFromRef;
     this.compareRefs = compareRefs;
+    this.cleanupData = cleanupData ?? (() => {});
     this.logConfig = logConfig;
     this.retryConfig = retryConfig;
     this.requestsByInternalUid = new Map();
@@ -590,6 +598,13 @@ export class RequestHandler<
           );
           evictedData.activeRequest.cancelable.cancel();
           evictedData.activeRequest = null;
+        }
+        if (
+          evictedData.latest !== null &&
+          evictedData.latest.data.type === 'success'
+        ) {
+          this.log('cleaning up evicted data');
+          this.cleanupData(evictedData.latest.data.data);
         }
       }
     } finally {
@@ -1014,6 +1029,7 @@ export class RequestHandler<
         return;
       }
 
+      const oldLatest = data.latest;
       data.latest = null;
       this.notifyLockHolders(data, {
         type: 'loading',
@@ -1021,6 +1037,7 @@ export class RequestHandler<
         error: undefined,
       });
       this.progressData(refUid);
+      this.cleanupOldLatest(oldLatest?.data);
     } finally {
       this.log('done');
       this.logPop();
@@ -1112,6 +1129,7 @@ export class RequestHandler<
             error: promiseResult.error,
             retryAt: undefined,
           };
+          const oldLatest = data.latest;
           data.latest = {
             requestInfo: data.activeRequest.info,
             finishedAt,
@@ -1123,6 +1141,7 @@ export class RequestHandler<
             data: undefined,
             error: res.error,
           });
+          this.cleanupOldLatest(oldLatest?.data);
           return;
         }
 
@@ -1132,6 +1151,7 @@ export class RequestHandler<
           if (oldRequestInfo.retry >= this.retryConfig.maxRetries) {
             this.log('maximum retries exceeded, failing');
             const res: Result<DataT> = promiseResult.result;
+            const oldLatest = data.latest;
             data.latest = {
               requestInfo: oldRequestInfo,
               finishedAt,
@@ -1143,6 +1163,7 @@ export class RequestHandler<
               data: undefined,
               error: res.error,
             });
+            this.cleanupOldLatest(oldLatest?.data);
             return;
           }
 
@@ -1161,6 +1182,7 @@ export class RequestHandler<
               error: promiseResult.result.error,
               retryAt: undefined,
             };
+            const oldLatest = data.latest;
             data.latest = {
               requestInfo: oldRequestInfo,
               finishedAt,
@@ -1172,6 +1194,7 @@ export class RequestHandler<
               data: undefined,
               error: res.error,
             });
+            this.cleanupOldLatest(oldLatest?.data);
             return;
           }
           const bestRef =
@@ -1272,6 +1295,7 @@ export class RequestHandler<
           } else {
             this.log('WARNING! no best ref found, treating as unrecoverable');
           }
+          const oldLatest = data.latest;
           data.latest = {
             requestInfo: data.activeRequest.info,
             finishedAt,
@@ -1283,6 +1307,7 @@ export class RequestHandler<
             data: undefined,
             error: promiseResult.result.error,
           });
+          this.cleanupOldLatest(oldLatest?.data);
           return;
         }
 
@@ -1291,6 +1316,7 @@ export class RequestHandler<
             `active request failed (non-retryable non-success: ${promiseResult.result.type})`
           );
           const res: Result<DataT> = promiseResult.result;
+          const oldLatest = data.latest;
           data.latest = {
             requestInfo: data.activeRequest.info,
             finishedAt,
@@ -1302,10 +1328,12 @@ export class RequestHandler<
             data: undefined,
             error: res.error,
           });
+          this.cleanupOldLatest(oldLatest?.data);
           return;
         }
 
         this.log('active request succeeded, moving to latest');
+        const oldLatest = data.latest;
         data.latest = {
           requestInfo: data.activeRequest.info,
           finishedAt,
@@ -1320,6 +1348,7 @@ export class RequestHandler<
           error: undefined,
           reportExpired: () => this.reportExpired(boundRefUid),
         });
+        this.cleanupOldLatest(oldLatest?.data);
         return;
       } // NEVER FALLTHROUGH
 
@@ -1363,6 +1392,23 @@ export class RequestHandler<
     } finally {
       this.log('done');
       this.logPop();
+    }
+  }
+
+  /**
+   * Called when replacing the latest value in progressData to ensure the old
+   * value is cleaned up. This is intended to be called _after_ notifying lock
+   * holders of the new value, to avoid temporarily having a disposed value
+   * set
+   */
+  private cleanupOldLatest(oldLatest: Result<DataT> | null | undefined) {
+    if (
+      oldLatest !== null &&
+      oldLatest !== undefined &&
+      oldLatest.type === 'success'
+    ) {
+      this.log('cleaning up old latest data');
+      this.cleanupData(oldLatest.data);
     }
   }
 
@@ -1651,6 +1697,7 @@ export class RequestHandler<
           'synchronous data update available, updating and notifying lock holders'
         );
         const now = new Date();
+        const oldLatest = locked.latest;
         locked.latest = {
           requestInfo: {
             uid: 'oseh_client_rqdatareq_' + createUID(),
@@ -1672,14 +1719,17 @@ export class RequestHandler<
           error: undefined,
           reportExpired: () => this.reportExpired(refUid),
         });
+        this.cleanupOldLatest(oldLatest?.data);
         return;
       }
 
       this.log(
         'no synchronous data update available, resetting and progressing'
       );
+      const oldLatest = locked.latest;
       locked.latest = null;
       this.progressData(refUid);
+      this.cleanupOldLatest(oldLatest?.data);
     } finally {
       this.logPop();
     }

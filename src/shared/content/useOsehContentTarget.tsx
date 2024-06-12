@@ -105,5 +105,7 @@ export const getNativeExport = (
     url:
       `${HTTP_API_URL}${path}?` +
       qargs.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&'),
+    presigned: presign,
+    jwt,
   };
 };

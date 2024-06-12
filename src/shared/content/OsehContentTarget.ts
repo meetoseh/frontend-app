@@ -4,10 +4,12 @@ import { ReactElement } from 'react';
  * Describes the meta-information on a native export of a content file.
  */
 export type ContentFileNativeExport = {
-  /**
-   * The url where the m3u8 can be downloaded
-   */
+  /** The url where the m3u8 can be downloaded */
   url: string;
+  /** True if the url is already presigned, false otherwise */
+  presigned: boolean;
+  /** The jwt for authorizing the download if the url is not presigned */
+  jwt: string;
 };
 
 /**
@@ -54,4 +56,10 @@ export type OsehContentTarget =
       presigned: boolean;
       jwt: string;
     }
-  | { state: 'failed'; error: ReactElement; nativeExport: null; presigned: null; jwt: null };
+  | {
+      state: 'failed';
+      error: ReactElement;
+      nativeExport: null;
+      presigned: null;
+      jwt: null;
+    };

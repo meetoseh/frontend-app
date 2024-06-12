@@ -6,6 +6,7 @@ import { OsehContentTarget } from './OsehContentTarget';
  * The default Audio.Sound is a little less powerful than the HTMLAudioElement
  * used on the web. This wraps the Audio.Sound with a few extra properties to
  * make their behavior more similar.
+ * @deprecated
  */
 export type WrappedAudioSound = {
   /**
@@ -33,13 +34,15 @@ export type WrappedAudioSound = {
    * and requests are unloaded. This is a no-op if the audio is already canceled.
    */
   cancel: () => void;
-}
+};
 
 /**
  * Describes a loading or loaded audio content file. This can be played or stopped.
  * On the web, playing or stopping requires a privileged context.
+ * @deprecated
  */
-export type OsehAudioContentState = {
+export type OldOsehAudioContentState = {
+  type?: undefined;
   /**
    * A function that can be used to play the audio, if the audio is ready to
    * be played, otherwise null. Note that play() is privileged, meaning that

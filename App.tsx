@@ -30,6 +30,7 @@ import { useMappedValueWithCallbacks } from './src/shared/hooks/useMappedValueWi
 import { useValuesWithCallbacksEffect } from './src/shared/hooks/useValuesWithCallbacksEffect';
 import { Login } from './src/user/core/screens/login/Login';
 import { AddPhoneScreen } from './src/user/core/screens/add_phone/AddPhoneScreen';
+import { AudioInterstitialScreen } from './src/user/core/screens/audio_interstitial/AudioInterstitialScreen';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
@@ -52,6 +53,7 @@ export default function App() {
 const screens = [
   ConfirmationScreen,
   AddPhoneScreen,
+  AudioInterstitialScreen,
 ] as any[] as readonly OsehScreen<
   string,
   ScreenResources,

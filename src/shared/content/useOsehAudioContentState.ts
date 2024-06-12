@@ -1,30 +1,32 @@
-import { MutableRefObject, useEffect, useRef } from "react";
+import { MutableRefObject, useEffect, useRef } from 'react';
 import {
-  OsehAudioContentState,
+  OldOsehAudioContentState,
   WrappedAudioSound,
-} from "./OsehAudioContentState";
-import { OsehContentTarget } from "./OsehContentTarget";
-import { Audio } from "expo-av";
+} from './OldOsehAudioContentState';
+import { OsehContentTarget } from './OsehContentTarget';
+import { Audio } from 'expo-av';
 import {
   Callbacks,
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../lib/Callbacks";
+} from '../lib/Callbacks';
 import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
-} from "../anim/VariableStrategyProps";
-import { InteractionManager } from "react-native";
+} from '../anim/VariableStrategyProps';
+import { InteractionManager } from 'react-native';
 
 /**
  * Loads the specified audio target and returns a state object which can be used
  * to play or stop the audio. A loading or failed target will result in a perpetual
  * loading state.
+ *
+ * @deprecated prefer createOsehAudioContentState
  */
 export const useOsehAudioContentState = (
   targetVariableStrategy: VariableStrategyProps<OsehContentTarget>
-): ValueWithCallbacks<OsehAudioContentState> => {
-  const state = useWritableValueWithCallbacks<OsehAudioContentState>(() => ({
+): ValueWithCallbacks<OldOsehAudioContentState> => {
+  const state = useWritableValueWithCallbacks<OldOsehAudioContentState>(() => ({
     play: null,
     stop: null,
     loaded: false,
@@ -73,7 +75,7 @@ export const useOsehAudioContentState = (
     function handleTarget(
       outerTarget: OsehContentTarget
     ): (() => void) | undefined {
-      if (outerTarget.state !== "loaded") {
+      if (outerTarget.state !== 'loaded') {
         state.set({
           play: null,
           stop: null,
@@ -88,7 +90,7 @@ export const useOsehAudioContentState = (
 
       if (
         audioVWC.current !== null &&
-        (audioVWC.current.get().target.state !== "loaded" ||
+        (audioVWC.current.get().target.state !== 'loaded' ||
           audioVWC.current.get().target.jwt !== target.jwt ||
           audioVWC.current.get().target.nativeExport?.url !==
             target.nativeExport.url)
@@ -102,7 +104,7 @@ export const useOsehAudioContentState = (
       let aud: ValueWithCallbacks<WrappedAudioSound> | null = null;
 
       const afterInteractionHandler = InteractionManager.runAfterInteractions({
-        name: "useOsehAudioContentState loadAudio",
+        name: 'useOsehAudioContentState loadAudio',
         gen: async () => {
           if (!active) {
             return;
@@ -194,7 +196,7 @@ export const useOsehAudioContentState = (
 const loadNewAudio = (
   target: OsehContentTarget
 ): ValueWithCallbacks<WrappedAudioSound> => {
-  if (target.state !== "loaded") {
+  if (target.state !== 'loaded') {
     const val: WrappedAudioSound = {
       target,
       sound: null,

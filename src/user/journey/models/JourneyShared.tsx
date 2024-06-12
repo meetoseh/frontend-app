@@ -1,4 +1,4 @@
-import { OsehAudioContentState } from '../../../shared/content/OsehAudioContentState';
+import { OldOsehAudioContentState } from '../../../shared/content/OldOsehAudioContentState';
 import { OsehImageState } from '../../../shared/images/OsehImageState';
 
 /**
@@ -16,7 +16,7 @@ export type JourneyShared = {
    * The audio for the journey; has loaded state inside
    * (audio.loaded).
    */
-  audio: OsehAudioContentState;
+  audio: OldOsehAudioContentState;
   /**
    * True if the user has favorited this journey, false if they have
    * not, null if we don't know yet. Setting this value only changes
