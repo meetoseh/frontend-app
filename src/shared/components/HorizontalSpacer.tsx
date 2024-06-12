@@ -1,5 +1,6 @@
 import { ReactElement } from 'react';
 import { View } from 'react-native';
+import { debugView } from '../lib/debugView';
 
 /**
  * A basic horizontal spacer. Uses padding instead of just width to
@@ -9,10 +10,12 @@ export const HorizontalSpacer = ({
   width,
   flexBasis,
   flexGrow,
+  debug,
 }: {
   width: number;
   flexBasis?: number;
   flexGrow?: number;
+  debug?: string;
 }): ReactElement =>
   width === 0 && flexGrow === undefined ? (
     <></>
@@ -24,5 +27,6 @@ export const HorizontalSpacer = ({
         ...(flexGrow !== undefined ? { flexGrow } : {}),
         ...(flexBasis !== undefined ? { flexBasis } : {}),
       }}
+      onLayout={debug === undefined ? undefined : debugView(debug, false)}
     />
   );

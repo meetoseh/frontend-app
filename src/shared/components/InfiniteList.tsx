@@ -103,6 +103,11 @@ type InfiniteListProps<T extends object> = {
    * The element to show if the list is empty
    */
   emptyElement?: ReactElement;
+
+  /**
+   * If true, hides the scrollbar
+   */
+  noScrollBar?: boolean;
 };
 
 /**
@@ -123,6 +128,7 @@ export function InfiniteList<T extends object>({
   initialComponentHeight,
   loadingElement,
   emptyElement,
+  noScrollBar,
 }: InfiniteListProps<T>): ReactElement {
   const listingVWC = useListingItemsAsVWC(listingUntrackable);
   const itemsUnloadedAboveVWC = useWritableValueWithCallbacks<number>(() => 0);
@@ -300,6 +306,7 @@ export function InfiniteList<T extends object>({
                     }}
                     onRefresh={() => listingUntrackable.reset()}
                     onViewableItemsChanged={handleRangeChanged}
+                    showsVerticalScrollIndicator={!noScrollBar}
                   />
                 );
               }}
