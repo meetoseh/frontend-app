@@ -15,4 +15,8 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     color: Colors.WHITE,
   },
+  tabsWrapper: {
+    alignItems: 'stretch',
+    justifyContent: 'flex-start',
+  },
 });

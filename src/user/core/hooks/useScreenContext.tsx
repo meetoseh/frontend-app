@@ -103,6 +103,9 @@ export type ScreenContext = {
   /** The height at the bottom of the screen which is not clickable and _might_ not be visible */
   botBarHeight: ValueWithCallbacks<number>;
 
+  /** The font scaling applied via Dynamic Text Scaling on ios */
+  fontScale: ValueWithCallbacks<number>;
+
   /**
    * The visitor and how they signed up with oseh (i.e, their interests)
    */
@@ -140,6 +143,10 @@ export const useScreenContext = (
   const windowSizeImmediate = useMappedValueWithCallbacks(
     sizesVWC,
     (sizes) => ({ width: sizes.screen.width, height: sizes.screen.height })
+  );
+  const fontScale = useMappedValueWithCallbacks(
+    sizesVWC,
+    (s) => s.window.fontScale
   );
 
   useEffect(() => {
@@ -406,6 +413,7 @@ export const useScreenContext = (
       windowSizeDebounced,
       topBarHeight,
       botBarHeight,
+      fontScale,
       contentWidth,
       interests: interestsContext,
       usesWebp,
@@ -419,6 +427,7 @@ export const useScreenContext = (
       windowSizeDebounced,
       topBarHeight,
       botBarHeight,
+      fontScale,
       contentWidth,
       usesWebp,
       usesSvg,

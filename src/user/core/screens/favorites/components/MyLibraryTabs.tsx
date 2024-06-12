@@ -71,7 +71,11 @@ const Btn = ({
 }>): ReactElement => {
   if (onClick === undefined) {
     return (
-      <Text style={active ? styles.active : styles.inactive}>{children}</Text>
+      <View style={active ? styles.active : styles.inactive}>
+        <Text style={active ? styles.activeText : styles.inactiveText}>
+          {children}
+        </Text>
+      </View>
     );
   }
 
@@ -80,8 +84,11 @@ const Btn = ({
       onPress={() => {
         onClick?.();
       }}
+      style={active ? styles.active : styles.inactive}
     >
-      <Text style={active ? styles.active : styles.inactive}>{children}</Text>
+      <Text style={active ? styles.activeText : styles.inactiveText}>
+        {children}
+      </Text>
     </Pressable>
   );
 };

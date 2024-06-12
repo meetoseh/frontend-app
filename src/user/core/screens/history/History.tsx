@@ -3,7 +3,7 @@ import { PeekedScreen, ScreenComponentProps } from '../../models/Screen';
 import { GridDarkGrayBackground } from '../../../../shared/components/GridDarkGrayBackground';
 import { GridFullscreenContainer } from '../../../../shared/components/GridFullscreenContainer';
 import { GridContentContainer } from '../../../../shared/components/GridContentContainer';
-import { styles } from './FavoritesStyles';
+import { styles } from '../favorites/FavoritesStyles';
 import {
   useEntranceTransition,
   useTransitionProp,
@@ -18,10 +18,8 @@ import {
   useWritableValueWithCallbacks,
 } from '../../../../shared/lib/Callbacks';
 import { screenOut } from '../../lib/screenOut';
-import { FavoritesResources } from './FavoritesResources';
-import { FavoritesMappedParams } from './FavoritesParams';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
-import { MyLibraryTabs } from './components/MyLibraryTabs';
+import { MyLibraryTabs } from '../favorites/components/MyLibraryTabs';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
 import { InfiniteList } from '../../../../shared/components/InfiniteList';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
@@ -33,30 +31,32 @@ import { trackFavoritesChanged } from '../home/lib/trackFavoritesChanged';
 import { InfiniteListing } from '../../../../shared/lib/InfiniteListing';
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
 import { setVWC } from '../../../../shared/lib/setVWC';
+import { HistoryResources } from './HistoryResources';
+import { HistoryMappedParams } from './HistoryParams';
 import { trackClassTaken } from '../home/lib/trackClassTaken';
 import {
   GRID_SIMPLE_NAVIGATION_FOREGROUND_BOTTOM_HEIGHT,
   GRID_SIMPLE_NAVIGATION_FOREGROUND_TOP_HEIGHT,
   GridSimpleNavigationForeground,
 } from '../../../../shared/components/GridSimpleNavigationForeground';
-import { Dimensions, Text, View } from 'react-native';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
+import { View, Text } from 'react-native';
 
 /**
  * Allows the user to see their list of favorites, go to their history or owned
  * content, or use the bottom nav to navigate to home or series, or the back button
  * at the top left to, usually, go back to the main settings screen.
  */
-export const Favorites = ({
+export const History = ({
   ctx,
   screen,
   resources,
   trace,
   startPop,
 }: ScreenComponentProps<
-  'favorites',
-  FavoritesResources,
-  FavoritesMappedParams
+  'history',
+  HistoryResources,
+  HistoryMappedParams
 >): ReactElement => {
   const transition = useTransitionProp(
     (): StandardScreenTransition => screen.parameters.entrance
@@ -91,24 +91,23 @@ export const Favorites = ({
             trace({ type: 'journey', uid: journey.uid, title: journey.title });
           },
           afterDone: () => {
-            resetList();
+            // this will handle resetting the list
             trackClassTaken(ctx);
           },
         }
       );
     },
-    [workingVWC, screen, transition, startPop, trace, resetList, ctx]
+    [workingVWC, screen, transition, startPop, trace, ctx]
   );
 
   const boundComponent = useMemo<
     (
       item: ValueWithCallbacks<MinimalJourney>,
-      replaceItem: (item: MinimalJourney) => void,
-      previous: ValueWithCallbacks<MinimalJourney | null>,
-      next: ValueWithCallbacks<MinimalJourney | null>
+      setItem: (newItem: MinimalJourney) => void,
+      previous: ValueWithCallbacks<MinimalJourney | null>
     ) => ReactElement
   >(() => {
-    return (item, setItem) => (
+    return (item, setItem, previous) => (
       <HistoryItemComponent
         gotoJourney={showJourney}
         item={item}
@@ -120,6 +119,8 @@ export const Favorites = ({
         ctx={ctx}
         screen={screen}
         list={resources.list}
+        previous={previous}
+        width={ctx.contentWidth}
       />
     );
   }, [showJourney, resources.imageHandler, resources.list, ctx, screen]);
@@ -164,19 +165,18 @@ export const Favorites = ({
           }
         >
           <MyLibraryTabs
-            active="favorites"
+            active="history"
             contentWidth={ctx.contentWidth}
-            onHistory={() => {
+            onFavorites={() => {
               screenOut(
                 workingVWC,
                 startPop,
                 transition,
-                screen.parameters.history.exit,
-                screen.parameters.history.trigger,
+                screen.parameters.favorites.exit,
+                screen.parameters.favorites.trigger,
                 {
                   beforeDone: async () => {
-                    trace({ type: 'my-library-tabs', key: 'history' });
-                    trackClassTaken(ctx);
+                    trace({ type: 'my-library-tabs', key: 'favorites' });
                   },
                   afterDone: () => {
                     resetList();
@@ -242,15 +242,15 @@ export const Favorites = ({
                 listing={list}
                 component={boundComponent}
                 itemComparer={compareJourneys}
-                width={listWidth}
                 height={listHeight}
                 gap={10}
                 initialComponentHeight={75}
                 emptyElement={
                   <Text style={styles.empty}>
-                    You haven&rsquo;t favorited any classes yet.
+                    You haven&rsquo;t taken any classes yet
                   </Text>
                 }
+                width={listWidth}
                 noScrollBar
               />
             )
@@ -296,6 +296,8 @@ const HistoryItemComponent = ({
   ctx,
   screen,
   list: listVWC,
+  previous,
+  width,
 }: {
   gotoJourney: (journey: MinimalJourney) => void;
   item: ValueWithCallbacks<MinimalJourney>;
@@ -306,10 +308,22 @@ const HistoryItemComponent = ({
   ) => void;
   imageHandler: OsehImageStateRequestHandler;
   ctx: ScreenContext;
-  screen: PeekedScreen<string, FavoritesMappedParams>;
+  screen: PeekedScreen<string, HistoryMappedParams>;
   list: ValueWithCallbacks<InfiniteListing<MinimalJourney> | null>;
+  previous: ValueWithCallbacks<MinimalJourney | null>;
+  width: ValueWithCallbacks<number>;
 }): ReactElement => {
-  const separator = useWritableValueWithCallbacks(() => false);
+  const separator = useMappedValuesWithCallbacks([itemVWC, previous], () => {
+    const prev = previous.get();
+    const itm = itemVWC.get();
+
+    return (
+      prev === null ||
+      prev.lastTakenAt?.toLocaleDateString() !==
+        itm.lastTakenAt?.toLocaleDateString()
+    );
+  });
+
   const padBottomVWC = useWritableValueWithCallbacks(() => 0);
   useValueWithCallbacksEffect(itemVWC, (item) => {
     const listRaw = listVWC.get();
@@ -341,10 +355,10 @@ const HistoryItemComponent = ({
       item={itemVWC}
       setItem={setItem}
       separator={separator}
-      onClick={() => gotoJourneyOuter(itemVWC.get())}
       instructorImages={imageHandler}
+      onClick={() => gotoJourneyOuter(itemVWC.get())}
       toggledFavorited={() => {
-        trackFavoritesChanged(ctx, { skipFavoritesList: true });
+        trackFavoritesChanged(ctx, { skipHistoryList: true });
 
         const item = itemVWC.get();
         ctx.resources.journeyLikeStateHandler.evictOrReplace(
@@ -353,7 +367,7 @@ const HistoryItemComponent = ({
         );
       }}
       padBottom={padBottomVWC}
-      width={ctx.contentWidth}
+      width={width}
     />
   );
 };

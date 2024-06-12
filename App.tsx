@@ -37,6 +37,7 @@ import { CompletionScreen } from './src/user/core/screens/completion/CompletionS
 import { EmotionScreen } from './src/user/core/screens/emotion/EmotionScreen';
 import { FavoritesScreen } from './src/user/core/screens/favorites/FavoritesScreen';
 import { ForkScreen } from './src/user/core/screens/fork/ForkScreen';
+import { HistoryScreen } from './src/user/core/screens/history/HistoryScreen';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
@@ -66,6 +67,7 @@ const screens = [
   EmotionScreen,
   FavoritesScreen,
   ForkScreen,
+  HistoryScreen,
 ] as any[] as readonly OsehScreen<
   string,
   ScreenResources,
