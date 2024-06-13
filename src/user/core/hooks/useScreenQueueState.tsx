@@ -5,7 +5,7 @@ import {
   useEffect,
   useMemo,
 } from 'react';
-import { PeekedScreen } from '../models/Screen';
+import { CustomPop, PeekedScreen } from '../models/Screen';
 import {
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
@@ -92,14 +92,17 @@ export type ScreenQueueState = {
    * Other peek or pop operations should be canceled before calling this.
    *
    * @param from The current state
-   * @param trigger The trigger to execute
+   * @param trigger The trigger to execute. If the slug is CUSTOM, the parameters are provided directly
    * @param endpoint usually /api/1/users/me/screens/pop
    * @param onError If specified, instead of transitioning to the error state if the pop
    *   fails, we call this function with the error and keep the current state.
    */
   pop: (
     from: UseScreenQueueStateState & { type: 'success' },
-    trigger: { slug: string; parameters: any } | null,
+    trigger:
+      | { slug: string; parameters: any }
+      | { slug: typeof CustomPop; parameters: any }
+      | null,
     endpoint: string,
     onError?: (error: unknown) => void
   ) => CancelablePromise<Result<UseScreenQueueStateState>>;
@@ -464,7 +467,10 @@ export const useScreenQueueState = (): ScreenQueueState => {
   const pop = useCallback(
     (
       from: UseScreenQueueStateState & { type: 'success' },
-      trigger: { slug: string; parameters: any } | null,
+      trigger:
+        | { slug: string; parameters: any }
+        | { slug: typeof CustomPop; parameters: any }
+        | null,
       endpoint: string,
       onError?: (error: unknown) => void
     ) =>
@@ -473,10 +479,14 @@ export const useScreenQueueState = (): ScreenQueueState => {
         headers: new Headers({
           'Content-Type': 'application/json; charset=utf-8',
         }),
-        body: JSON.stringify({
-          screen_jwt: from.result.activeJwt,
-          ...(trigger === null ? {} : { trigger }),
-        }),
+        body: JSON.stringify(
+          trigger === null || typeof trigger.slug === 'string'
+            ? {
+                screen_jwt: from.result.activeJwt,
+                ...(trigger === null ? {} : { trigger }),
+              }
+            : trigger.parameters
+        ),
         onError,
       }),
     [peekLike]

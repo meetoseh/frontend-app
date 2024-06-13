@@ -1,5 +1,5 @@
-import { apiFetch } from '../../../../../shared/ApiConstants';
 import { LoginContextValueLoggedIn } from '../../../../../shared/contexts/LoginContext';
+import { apiFetch } from '../../../../../shared/lib/apiFetch';
 import { OauthProvider } from '../../../../login/lib/OauthProvider';
 
 const isDevelopment = process.env.REACT_APP_ENVIRONMENT === 'dev';

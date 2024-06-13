@@ -377,8 +377,7 @@ export const Settings = ({
                   </View>
                   <View
                     style={{
-                      height:
-                        bottomNavBarStyles.container.minHeight + botBarHeight,
+                      height: bottomNavBarStyles.items.minHeight + botBarHeight,
                     }}
                   />
                 </View>

@@ -45,6 +45,17 @@ export type ScreenResources = {
 };
 
 /**
+ * Can be used to indicate that rather than using a screen jwt and trigger,
+ * like most pops, the trigger parameters should be provided directly as the
+ * body of the http request (still undergoing json-encoding).
+ *
+ * This is mostly used for special types of pops that, on the web, would
+ * happen due to query parameters present during load time prior to peeking
+ * the front screen.
+ */
+export const CustomPop = Symbol();
+
+/**
  * The function that a screen can use to start popping off the current screen.
  *
  * @param trigger The trigger to execute
@@ -55,7 +66,7 @@ export type ScreenResources = {
  *   If not provided, the error is displayed in a generic way.
  */
 export type ScreenStartPop = (
-  trigger: { slug: string; parameters: any } | null,
+  trigger: { slug: string | typeof CustomPop; parameters: any } | null,
   endpoint?: string,
   onError?: (err: unknown) => void
 ) => () => void;
@@ -126,7 +137,9 @@ export type OsehScreen<
   initInstanceResources: (
     ctx: ScreenContext,
     screen: PeekedScreen<SlugT, MappedParamT>,
-    refreshScreen: () => CancelablePromise<Result<PeekedScreen<SlugT, MappedParamT>>>
+    refreshScreen: () => CancelablePromise<
+      Result<PeekedScreen<SlugT, MappedParamT>>
+    >
   ) => InstanceResourcesT;
 
   /**
@@ -136,6 +149,8 @@ export type OsehScreen<
    * @returns The react element to render
    */
   component: (
-    params: ScreenComponentProps<SlugT, InstanceResourcesT, MappedParamT> & { key: string }
+    params: ScreenComponentProps<SlugT, InstanceResourcesT, MappedParamT> & {
+      key: string;
+    }
   ) => ReactElement;
 };

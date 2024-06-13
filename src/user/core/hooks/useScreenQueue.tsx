@@ -1,5 +1,10 @@
 import { ReactElement, useEffect, useMemo } from 'react';
-import { OsehScreen, PeekedScreen, ScreenResources } from '../models/Screen';
+import {
+  CustomPop,
+  OsehScreen,
+  PeekedScreen,
+  ScreenResources,
+} from '../models/Screen';
 import {
   Callbacks,
   ValueWithCallbacks,
@@ -560,7 +565,7 @@ export const useScreenQueue = ({
 
         const startPopRequestedCallbacks = new Callbacks<{
           trigger: {
-            slug: string;
+            slug: string | typeof CustomPop;
             parameters: any;
           } | null;
           endpoint: string | undefined;

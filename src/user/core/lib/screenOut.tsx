@@ -6,7 +6,7 @@ import {
 } from '../../../shared/lib/TransitionProp';
 import { setVWC } from '../../../shared/lib/setVWC';
 import { screenWithWorking } from './screenWithWorking';
-import { ScreenStartPop } from '../models/Screen';
+import { CustomPop, ScreenStartPop } from '../models/Screen';
 
 /**
  * The standard screen out handler which plays the given exit transition and
@@ -15,12 +15,15 @@ import { ScreenStartPop } from '../models/Screen';
  * Can use null for workingVWC to skip that logic (usually when adding additional
  * logic and composing this function)
  */
-export const screenOut = async <T extends string, C extends { type: T; ms: number }>(
+export const screenOut = async <
+  T extends string,
+  C extends { type: T; ms: number }
+>(
   workingVWC: WritableValueWithCallbacks<boolean> | null,
   startPop: ScreenStartPop,
   transition: TransitionPropAsOwner<T, C>,
   exit: C,
-  trigger: string | null,
+  trigger: string | typeof CustomPop | null,
   opts?: {
     endpoint?: string;
     parameters?: any;
