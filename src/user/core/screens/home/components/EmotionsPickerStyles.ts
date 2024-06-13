@@ -6,6 +6,8 @@ export const styles = StyleSheet.create({
     flexGrow: 1,
     flexShrink: 1,
     flexBasis: 324,
+    alignItems: 'stretch',
+    justifyContent: 'flex-start',
   },
   row: {
     flexGrow: 0,

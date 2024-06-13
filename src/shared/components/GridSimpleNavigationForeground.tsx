@@ -150,12 +150,7 @@ export const GridSimpleNavigationForeground = ({
         </View>
       </View>
     ) : null}
-    <VerticalSpacer
-      height={0}
-      flexGrow={1}
-      debug="grid simple navigation center"
-      noPointerEvents
-    />
+    <VerticalSpacer height={0} flexGrow={1} noPointerEvents />
     <BottomNavBarMinimal
       widthVWC={useMappedValueWithCallbacks(gridSize, (s) => s.width)}
       paddingBottomVWC={botBarHeight}

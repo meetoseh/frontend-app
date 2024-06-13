@@ -140,6 +140,7 @@ export const EmotionsPicker = ({
         );
       }}
     >
+      <VerticalSpacer height={0} flexGrow={1} />
       {question !== null && (
         <>
           <Text
@@ -170,6 +171,7 @@ export const EmotionsPicker = ({
           </>
         )}
       />
+      <VerticalSpacer height={0} flexGrow={1} />
     </View>
   );
 };

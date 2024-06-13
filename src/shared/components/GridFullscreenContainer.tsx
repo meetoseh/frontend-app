@@ -32,7 +32,7 @@ export const GridFullscreenContainer = ({
   const containerStyleVWC = useMappedValueWithCallbacks(
     windowSizeImmediate,
     (ws): ViewStyle => ({
-      position: 'absolute',
+      position: 'relative',
       top: 0,
       left: 0,
       height: ws.height,
