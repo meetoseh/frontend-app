@@ -49,6 +49,7 @@ import { ReminderTimesScreen } from './src/user/core/screens/reminder_times/Remi
 import { ResolveMergeConflictScreen } from './src/user/core/screens/resolve_merge_conflict/ResolveMergeConflictScreen';
 import { SeriesDetailsScreen } from './src/user/core/screens/series_details/SeriesDetailsScreen';
 import { SeriesListScreen } from './src/user/core/screens/series_list/SeriesListScreen';
+import { SetGoalScreen } from './src/user/core/screens/set_goal/SetGoalScreen';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
@@ -90,6 +91,7 @@ const screens = [
   ResolveMergeConflictScreen,
   SeriesDetailsScreen,
   SeriesListScreen,
+  SetGoalScreen,
 ] as any[] as readonly OsehScreen<
   string,
   ScreenResources,
