@@ -45,6 +45,7 @@ import { JourneyFeedbackScreen } from './src/user/core/screens/journey_feedback/
 import { MembershipScreen } from './src/user/core/screens/membership/MembershipScreen';
 import { OwnedScreen } from './src/user/core/screens/owned/OwnedScreen';
 import { RateClassScreen } from './src/user/core/screens/rate_class/RateClassScreen';
+import { ReminderTimesScreen } from './src/user/core/screens/reminder_times/ReminderTimesScreen';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
@@ -82,6 +83,7 @@ const screens = [
   MembershipScreen,
   OwnedScreen,
   RateClassScreen,
+  ReminderTimesScreen,
 ] as any[] as readonly OsehScreen<
   string,
   ScreenResources,

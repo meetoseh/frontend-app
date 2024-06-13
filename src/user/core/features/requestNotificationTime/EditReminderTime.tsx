@@ -284,10 +284,8 @@ export const EditReminderTime = ({
     )
   );
 
-  const contentWidth = useContentWidth();
-
   return (
-    <View style={{ ...styles.container, width: contentWidth }}>
+    <View style={styles.container}>
       <Text style={styles.title}>We&rsquo;ll remind you:</Text>
       <View style={styles.options}>
         <Option
