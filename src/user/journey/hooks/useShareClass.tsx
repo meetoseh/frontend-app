@@ -66,7 +66,6 @@ export const useShareClass = ({
   journey,
 }: UseShareClassProps): UseShareClassResult => {
   const loginContextRaw = useContext(LoginContext);
-  const modalContext = useContext(ModalContext);
   const journeyVWC = useVariableStrategyPropsAsValueWithCallbacks(journey);
   const error = useWritableValueWithCallbacks<ReactElement | null>(() => null);
   const shareable = useWritableValueWithCallbacks<boolean | undefined>(
