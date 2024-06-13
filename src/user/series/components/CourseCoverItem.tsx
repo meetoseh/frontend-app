@@ -19,11 +19,12 @@ import { areOsehImageStatesEqual } from '../../../shared/images/OsehImageState';
 import { OsehImageFromState } from '../../../shared/images/OsehImageFromState';
 import { useMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValueWithCallbacks';
 import { largestPhysicalPerLogical } from '../../../shared/images/DisplayRatioHelper';
-import { Pressable, View, Text } from 'react-native';
+import { Pressable, View, Text, ViewStyle } from 'react-native';
 import { useContentWidth } from '../../../shared/lib/useContentWidth';
 import { useValuesWithCallbacksEffect } from '../../../shared/hooks/useValuesWithCallbacksEffect';
 import { setVWC } from '../../../shared/lib/setVWC';
 import { AspectRatioComparer } from '../../../shared/images/LogicalSize';
+import { useStyleVWC } from '../../../shared/hooks/useStyleVWC';
 
 export type CourseCoverItemProps = {
   /**
@@ -60,6 +61,9 @@ export type CourseCoverItemProps = {
    * areas.
    */
   onClick?: () => void;
+
+  /** The size of the image to show */
+  size: ValueWithCallbacks<{ width: number; height: number }>;
 };
 
 const compareAspectRatio: AspectRatioComparer = (a, b) =>
@@ -75,23 +79,18 @@ export const CourseCoverItem = ({
   mapItems,
   imageHandler,
   onClick,
+  size,
 }: CourseCoverItemProps): ReactElement => {
-  const windowSizeVWC = useWindowSizeValueWithCallbacks();
-  const contentWidth = useContentWidth();
   const backgroundProps = useMappedValuesWithCallbacks(
-    [item],
+    [item, size],
     (): OsehImagePropsLoadable => {
       const itm = item.get();
-
-      const height =
-        Math.floor(contentWidth * (427 / 342) * largestPhysicalPerLogical) /
-        largestPhysicalPerLogical;
-
+      const s = size.get();
       return {
         uid: itm.backgroundImage.uid,
         jwt: itm.backgroundImage.jwt,
-        displayWidth: contentWidth,
-        displayHeight: height,
+        displayWidth: s.width,
+        displayHeight: s.height,
         alt: '',
       };
     }
@@ -157,25 +156,19 @@ export const CourseCoverItem = ({
     () => null
   );
 
-  useValuesWithCallbacksEffect([outerContainerRef, windowSizeVWC], () => {
-    const ref = outerContainerRef.get();
-    if (ref === null) {
-      return undefined;
-    }
-
-    ref.setNativeProps({
-      style: {
-        width: windowSizeVWC.get().width,
-      },
-    });
-    return undefined;
-  });
+  const windowSizeVWC = useWindowSizeValueWithCallbacks();
+  const outerContainerStyleVWC = useMappedValueWithCallbacks(
+    windowSizeVWC,
+    ({ width }): ViewStyle => ({
+      ...styles.outerContainer,
+      width,
+    })
+  );
+  useStyleVWC(outerContainerRef, outerContainerStyleVWC);
 
   return (
     <View
-      style={Object.assign({}, styles.outerContainer, {
-        width: windowSizeVWC.get().width,
-      })}
+      style={outerContainerStyleVWC.get()}
       ref={(r) => setVWC(outerContainerRef, r)}
     >
       <Pressable
