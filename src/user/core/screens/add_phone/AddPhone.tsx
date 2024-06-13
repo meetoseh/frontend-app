@@ -68,7 +68,6 @@ export const AddPhone = ({
   const errorPhoneVWC = useWritableValueWithCallbacks<boolean>(() => false);
   const formatAndSetPhone = useCallback(
     async (newValue: string) => {
-      console.log('formatAndSetPhone with', newValue);
       setVWC(errorPhoneVWC, false);
 
       if (newValue === '+') {
@@ -238,8 +237,8 @@ export const AddPhone = ({
                 parameters: {
                   phone_number: phoneVWC.get(),
                   receive_notifications: screen.parameters.reminders,
-                  timezone,
-                  timezone_technique: 'browser',
+                  timezone: timezone.timeZone,
+                  timezone_technique: timezone.timeZoneTechnique,
                 },
                 onError: async (err) => {
                   const described = await describeError(err);
