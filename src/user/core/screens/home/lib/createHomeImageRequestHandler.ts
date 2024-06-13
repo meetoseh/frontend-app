@@ -4,6 +4,7 @@ import { SessionStateSnapshot } from './createSessionStateRequestHandler';
 import { createGetDataFromRefUsingSignal } from '../../../../../shared/images/createGetDataFromRefUsingSignal';
 import { OsehImageRef } from '../../../../../shared/images/OsehImageRef';
 import { apiFetch } from '../../../../../shared/lib/apiFetch';
+import { getTimezone } from '../../../../../shared/hooks/useTimezone';
 
 export type HomeImage = {
   /** The image to show */
@@ -39,15 +40,14 @@ const getRefUid = (ref: SessionStateSnapshot): string =>
   `${ref.loginContext.userAttributes.sub}:${ref.takenAClass}`;
 const getDataFromRef = createGetDataFromRefUsingSignal({
   inner: async (ref: SessionStateSnapshot, signal): Promise<HomeImage> => {
-    const tz =
-      Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'America/Los_Angeles';
+    const tz = getTimezone();
     const resp = await apiFetch(
       '/api/1/users/me/home_image?variant=' +
         encodeURIComponent(ref.takenAClass ? 'session_end' : 'session_start') +
         '&tz=' +
-        encodeURIComponent(tz) +
+        encodeURIComponent(tz.timeZone) +
         '&tzt=' +
-        encodeURIComponent('browser'),
+        encodeURIComponent(tz.timeZoneTechnique),
       {
         method: 'GET',
         signal,
