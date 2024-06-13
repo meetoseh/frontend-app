@@ -1,27 +1,30 @@
-import { useContext } from "react";
-import { styles } from "./CourseJourneyItemStyles";
-import { textOverflowEllipses } from "../../../shared/lib/calculateKerningLength";
-import { OsehImageStateRequestHandler } from "../../../shared/images/useOsehImageStateRequestHandler";
-import { MinimalCourseJourney } from "../lib/MinimalCourseJourney";
-import { useOsehImageStateValueWithCallbacks } from "../../../shared/images/useOsehImageStateValueWithCallbacks";
-import { useToggleFavorited } from "../../journey/hooks/useToggleFavorited";
-import { useMappedValueWithCallbacks } from "../../../shared/hooks/useMappedValueWithCallbacks";
+import { useCallback, useContext, useEffect } from 'react';
+import { styles } from './CourseJourneyItemStyles';
+import { textOverflowEllipses } from '../../../shared/lib/calculateKerningLength';
+import { OsehImageStateRequestHandler } from '../../../shared/images/useOsehImageStateRequestHandler';
+import { MinimalCourseJourney } from '../lib/MinimalCourseJourney';
+import { useOsehImageStateValueWithCallbacks } from '../../../shared/images/useOsehImageStateValueWithCallbacks';
+import { useToggleFavorited } from '../../journey/hooks/useToggleFavorited';
+import { useMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValueWithCallbacks';
 import {
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../../../shared/lib/Callbacks";
-import { OsehImageFromStateValueWithCallbacks } from "../../../shared/images/OsehImageFromStateValueWithCallbacks";
-import { RenderGuardedComponent } from "../../../shared/components/RenderGuardedComponent";
-import { ModalContext } from "../../../shared/contexts/ModalContext";
-import { adaptValueWithCallbacksAsVariableStrategyProps } from "../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps";
-import { Pressable, View, Text } from "react-native";
-import CourseJourneyItemCheck from "../icons/CourseJourneyItemCheck";
-import { InlineOsehSpinner } from "../../../shared/components/InlineOsehSpinner";
-import FullHeartIcon from "../../journey/icons/FullHeartIcon";
-import EmptyHeartIcon from "../../journey/icons/EmptyHeartIcon";
-import { useIsTablet } from "../../../shared/lib/useIsTablet";
+} from '../../../shared/lib/Callbacks';
+import { OsehImageFromStateValueWithCallbacks } from '../../../shared/images/OsehImageFromStateValueWithCallbacks';
+import { RenderGuardedComponent } from '../../../shared/components/RenderGuardedComponent';
+import { ModalContext } from '../../../shared/contexts/ModalContext';
+import { adaptValueWithCallbacksAsVariableStrategyProps } from '../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps';
+import { Pressable, View, Text } from 'react-native';
+import CourseJourneyItemCheck from '../icons/CourseJourneyItemCheck';
+import { InlineOsehSpinner } from '../../../shared/components/InlineOsehSpinner';
+import FullHeartIcon from '../../journey/icons/FullHeartIcon';
+import EmptyHeartIcon from '../../journey/icons/EmptyHeartIcon';
+import { useIsTablet } from '../../../shared/lib/useIsTablet';
+import { setVWC } from '../../../shared/lib/setVWC';
+import { createValueWithCallbacksEffect } from '../../../shared/hooks/createValueWithCallbacksEffect';
+import { VerticalSpacer } from '../../../shared/components/VerticalSpacer';
 
-type HistoryItemProps = {
+type CourseJourneyItemProps = {
   /**
    * The item to render
    */
@@ -62,6 +65,17 @@ type HistoryItemProps = {
    * The request handler to use for instructor images
    */
   instructorImages: OsehImageStateRequestHandler;
+
+  /**
+   * Called for tracking purposes if they start a download for this journey
+   */
+  onDownload?: () => void;
+
+  /** If specified, called if we change the favorited state of the item */
+  toggledFavorited?: () => void;
+
+  /** The amount to pad the bottom of this item with empty space, 0 not to. Intended for the last item in the list */
+  padBottom?: ValueWithCallbacks<number>;
 };
 
 /**
@@ -74,7 +88,10 @@ export const CourseJourneyItem = ({
   separator: separatorVWC,
   onClick,
   instructorImages,
-}: HistoryItemProps) => {
+  onDownload: onDownloadCallback,
+  toggledFavorited: onToggledFavoritedCallback,
+  padBottom: padBottomVWC,
+}: CourseJourneyItemProps) => {
   const modalContext = useContext(ModalContext);
   const instructorImageVWC = useOsehImageStateValueWithCallbacks(
     adaptValueWithCallbacksAsVariableStrategyProps(
@@ -84,7 +101,7 @@ export const CourseJourneyItem = ({
           ...item.journey.instructor.image,
           displayWidth: 14,
           displayHeight: 14,
-          alt: "profile",
+          alt: 'profile',
         }),
         {
           outputEqualityFn: (a, b) => a.uid === b.uid && a.jwt === b.jwt,
@@ -95,7 +112,7 @@ export const CourseJourneyItem = ({
   );
 
   const likingVWC = useWritableValueWithCallbacks<boolean>(() => false);
-  const onToggleFavorited = useToggleFavorited({
+  const toggleFavorited = useToggleFavorited({
     modals: modalContext.modals,
     journey: adaptValueWithCallbacksAsVariableStrategyProps(
       useMappedValueWithCallbacks(itemVWC, (item) => item.journey)
@@ -120,6 +137,10 @@ export const CourseJourneyItem = ({
     ),
     working: likingVWC,
   });
+  const onToggleFavorited = useCallback(() => {
+    toggleFavorited();
+    onToggledFavoritedCallback?.();
+  }, [toggleFavorited, onToggledFavoritedCallback]);
 
   const isTablet = useIsTablet();
   const ellipsedTitle = useMappedValueWithCallbacks(itemVWC, (item) =>
@@ -138,82 +159,105 @@ export const CourseJourneyItem = ({
     (item) => item.journey.likedAt !== null
   );
 
-  return (
-    <Pressable onPress={onClick} style={styles.outerContainer}>
-      <RenderGuardedComponent
-        props={separatorVWC}
-        component={(separator) => {
-          if (!separator) {
-            return <></>;
-          }
+  const padBottomAlwaysAvailableVWC = useWritableValueWithCallbacks<number>(
+    () => 0
+  );
+  useEffect(() => {
+    if (padBottomVWC === undefined) {
+      setVWC(padBottomAlwaysAvailableVWC, 0);
+      return undefined;
+    }
 
-          return (
-            <RenderGuardedComponent
-              props={itemVWC}
-              component={(item) => {
-                return (
-                  <Text style={styles.separator}>{item.course.title}</Text>
-                );
-              }}
-            />
-          );
-        }}
-      />
-      <View style={styles.container}>
+    return createValueWithCallbacksEffect(padBottomVWC, (padBottom) => {
+      setVWC(padBottomAlwaysAvailableVWC, padBottom);
+      return undefined;
+    });
+  }, [padBottomVWC, padBottomAlwaysAvailableVWC]);
+
+  return (
+    <>
+      <Pressable onPress={onClick} style={styles.outerContainer}>
         <RenderGuardedComponent
-          props={takenVWC}
-          component={(taken) =>
-            taken ? (
-              <View style={styles.checkContainer}>
-                <CourseJourneyItemCheck />
-              </View>
-            ) : (
-              <></>
-            )
-          }
+          props={separatorVWC}
+          component={(separator) => {
+            if (!separator) {
+              return <></>;
+            }
+
+            return (
+              <RenderGuardedComponent
+                props={itemVWC}
+                component={(item) => {
+                  return (
+                    <Text style={styles.separator}>{item.course.title}</Text>
+                  );
+                }}
+              />
+            );
+          }}
         />
-        <View style={styles.titleAndInstructor}>
+        <View style={styles.container}>
           <RenderGuardedComponent
-            props={ellipsedTitle}
-            component={(t) => <Text style={styles.title}>{t}</Text>}
+            props={takenVWC}
+            component={(taken) =>
+              taken ? (
+                <View style={styles.checkContainer}>
+                  <CourseJourneyItemCheck />
+                </View>
+              ) : (
+                <></>
+              )
+            }
           />
-          <View style={styles.instructor}>
-            <View style={styles.instructorPictureContainer}>
-              <OsehImageFromStateValueWithCallbacks
-                state={instructorImageVWC}
+          <View style={styles.titleAndInstructor}>
+            <RenderGuardedComponent
+              props={ellipsedTitle}
+              component={(t) => <Text style={styles.title}>{t}</Text>}
+            />
+            <View style={styles.instructor}>
+              <View style={styles.instructorPictureContainer}>
+                <OsehImageFromStateValueWithCallbacks
+                  state={instructorImageVWC}
+                />
+              </View>
+              <RenderGuardedComponent
+                props={instructorName}
+                component={(n) => (
+                  <Text style={styles.instructorName}>{n}</Text>
+                )}
               />
             </View>
-            <RenderGuardedComponent
-              props={instructorName}
-              component={(n) => <Text style={styles.instructorName}>{n}</Text>}
-            />
+          </View>
+          <View style={styles.favoriteAndDownloadContainer}>
+            <View style={styles.favoritedContainer}>
+              <RenderGuardedComponent
+                props={likingVWC}
+                component={(liking) =>
+                  liking ? (
+                    <InlineOsehSpinner
+                      size={{ type: 'react-rerender', props: { height: 24 } }}
+                      variant="white"
+                    />
+                  ) : (
+                    <RenderGuardedComponent
+                      props={favorited}
+                      component={(favorited) => (
+                        <Pressable onPress={onToggleFavorited}>
+                          {favorited ? <FullHeartIcon /> : <EmptyHeartIcon />}
+                        </Pressable>
+                      )}
+                    />
+                  )
+                }
+              />
+            </View>
           </View>
         </View>
-        <View style={styles.favoriteAndDownloadContainer}>
-          <View style={styles.favoritedContainer}>
-            <RenderGuardedComponent
-              props={likingVWC}
-              component={(liking) =>
-                liking ? (
-                  <InlineOsehSpinner
-                    size={{ type: "react-rerender", props: { height: 24 } }}
-                    variant="white"
-                  />
-                ) : (
-                  <RenderGuardedComponent
-                    props={favorited}
-                    component={(favorited) => (
-                      <Pressable onPress={onToggleFavorited}>
-                        {favorited ? <FullHeartIcon /> : <EmptyHeartIcon />}
-                      </Pressable>
-                    )}
-                  />
-                )
-              }
-            />
-          </View>
-        </View>
-      </View>
-    </Pressable>
+      </Pressable>
+      <RenderGuardedComponent
+        props={padBottomAlwaysAvailableVWC}
+        component={(height) => <VerticalSpacer height={height} />}
+      />
+    </>
   );
 };
