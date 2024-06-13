@@ -39,6 +39,7 @@ import { FavoritesScreen } from './src/user/core/screens/favorites/FavoritesScre
 import { ForkScreen } from './src/user/core/screens/fork/ForkScreen';
 import { HistoryScreen } from './src/user/core/screens/history/HistoryScreen';
 import { HomeScreen } from './src/user/core/screens/home/HomeScreen';
+import { ImageInterstitialScreen } from './src/user/core/screens/image_interstitial/ImageInterstitialScreen';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
@@ -70,6 +71,7 @@ const screens = [
   ForkScreen,
   HistoryScreen,
   HomeScreen,
+  ImageInterstitialScreen,
 ] as any[] as readonly OsehScreen<
   string,
   ScreenResources,
