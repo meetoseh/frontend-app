@@ -68,6 +68,7 @@ export const AddPhone = ({
   const errorPhoneVWC = useWritableValueWithCallbacks<boolean>(() => false);
   const formatAndSetPhone = useCallback(
     async (newValue: string) => {
+      console.log('formatAndSetPhone with', newValue);
       setVWC(errorPhoneVWC, false);
 
       if (newValue === '+') {
@@ -194,17 +195,21 @@ export const AddPhone = ({
           )}
         />
         <RenderGuardedComponent
-          props={useMappedValuesWithCallbacks([workingVWC], () => ({
+          props={useMappedValuesWithCallbacks([workingVWC, phoneVWC], () => ({
             disabled: workingVWC.get(),
+            text: phoneVWC.get(),
           }))}
-          component={({ disabled }) => (
+          component={({ disabled, text }) => (
             <OsehTextInput
               type="tel"
               label="Phone Number"
-              defaultValue={phoneVWC.get()}
+              defaultValue={text}
               inputStyle="white"
-              onChange={formatAndSetPhone}
+              onChange={(v) => formatAndSetPhone(v)}
               disabled={disabled}
+              bonusTextInputProps={{
+                value: text,
+              }}
             />
           )}
           applyInstantly
