@@ -47,7 +47,7 @@ export const GridImageBackground = ({
                   base64URLToByteArray(thumbhash)
                 );
                 return (
-                  <WithSrc
+                  <GridImageWithSrc
                     src={thumbhashUrl}
                     size={size}
                     borderRadius={borderRadius}
@@ -60,7 +60,7 @@ export const GridImageBackground = ({
         }
 
         return (
-          <WithSrc
+          <GridImageWithSrc
             src={image.croppedUrl}
             size={size}
             borderRadius={borderRadius}
@@ -75,7 +75,12 @@ export const GridImageBackground = ({
   );
 };
 
-const WithSrc = ({
+/**
+ * Displays the image with the given src in a container of the given size,
+ * cutting off the image if it is larger than the container. The image itself
+ * is rendered at the given display size.
+ */
+export const GridImageWithSrc = ({
   src,
   size,
   imgDisplaySize,

@@ -47,6 +47,7 @@ import { OwnedScreen } from './src/user/core/screens/owned/OwnedScreen';
 import { RateClassScreen } from './src/user/core/screens/rate_class/RateClassScreen';
 import { ReminderTimesScreen } from './src/user/core/screens/reminder_times/ReminderTimesScreen';
 import { ResolveMergeConflictScreen } from './src/user/core/screens/resolve_merge_conflict/ResolveMergeConflictScreen';
+import { SeriesDetailsScreen } from './src/user/core/screens/series_details/SeriesDetailsScreen';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
@@ -86,6 +87,7 @@ const screens = [
   RateClassScreen,
   ReminderTimesScreen,
   ResolveMergeConflictScreen,
+  SeriesDetailsScreen,
 ] as any[] as readonly OsehScreen<
   string,
   ScreenResources,
