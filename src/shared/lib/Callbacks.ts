@@ -1,4 +1,8 @@
 import { MutableRefObject, useCallback, useMemo, useRef } from 'react';
+import Constants from 'expo-constants';
+import { fixStack } from './fixStack';
+
+const isDevelopment = Constants.expoConfig?.extra?.environment === 'dev';
 
 /**
  * An abstraction for a list of functions to call when an event occurs,
@@ -45,6 +49,8 @@ export class Callbacks<T> {
    * "old" event is the "old" event.
    */
   private calling: boolean;
+  /** The stack trace calling call() right now, if in development */
+  private callingStack?: string;
   /**
    * Should always be null unless calling; if specified, it means the call
    * has been replaced and the old call should call this function with
@@ -161,6 +167,21 @@ export class Callbacks<T> {
    */
   call(event: T): void {
     if (this.calling) {
+      if (isDevelopment) {
+        console.log(
+          'Nested Callbacks call() in development detected, fetching stacks...'
+        );
+        const firstStack = this.callingStack;
+        const secondStack = new Error().stack;
+        Promise.all([fixStack(firstStack), fixStack(secondStack)]).then(
+          ([a, b]) => {
+            console.log(
+              `Nested call additional information:\n\nfirst caller:\n${a}\n\nsecond caller:\n${b}`
+            );
+          }
+        );
+      }
+
       throw new Error(
         'Cannot call call() while call() is already executing. Use replaceCall()'
       );
@@ -174,11 +195,15 @@ export class Callbacks<T> {
     }
 
     this.calling = true;
+    if (isDevelopment) {
+      this.callingStack = new Error().stack ?? 'unknown';
+    }
     let i = 0;
     while (i < callbacks.length && this.callReplacedBy === null) {
       callbacks[i](event);
       i++;
     }
+    this.callingStack = undefined;
     this.calling = false;
 
     if (this.callReplacedBy !== null) {
@@ -233,6 +258,9 @@ export class Callbacks<T> {
     }
 
     this.calling = true;
+    if (isDevelopment) {
+      this.callingStack = new Error().stack ?? 'unknown';
+    }
     this.callReplacedBy = null as
       | ((alreadyCalled: ((event: T) => void)[]) => void)
       | null;
@@ -248,6 +276,7 @@ export class Callbacks<T> {
     }
     if (this.callReplacedBy !== null) {
       /* We can't support this without a very complicated replaceCall signature */
+      this.callingStack = undefined;
       this.calling = false;
       this.callReplacedBy = null;
       throw new Error(
@@ -260,6 +289,7 @@ export class Callbacks<T> {
       nextCallbacks[i](forLaterCallbacksEvent);
       i++;
     }
+    this.callingStack = undefined;
     this.calling = false;
 
     if (
@@ -282,6 +312,34 @@ export class Callbacks<T> {
     this.head = null;
     this.tail = null;
     this.lookup.clear();
+  }
+
+  /**
+   * Only for development
+   * @deprecated
+   */
+  async debug(evt: T): Promise<void> {
+    console.log('Callbacks - debug()');
+    let node = this.head;
+    let idx = 0;
+    while (node !== null) {
+      console.log(` ${idx}: ${node.callback}`);
+      try {
+        const res = node.callback(evt) as any;
+        if (res instanceof Promise || (res as any)?.then instanceof Function) {
+          console.log('  has a potentially awaitable return value');
+          await res;
+        }
+      } catch (e) {
+        console.log(`callback ${idx} failed with error: ${e}`);
+        if (e instanceof Error) {
+          console.log(await fixStack(e.stack));
+        }
+      }
+      node = node.next;
+      idx = idx + 1;
+    }
+    console.log('Callbacks - debug() end');
   }
 }
 

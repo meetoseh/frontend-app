@@ -9,7 +9,6 @@ import {
   Modals,
   addModalWithCallbackToRemove,
 } from '../../../../../shared/contexts/ModalContext';
-import { SettingsResources } from '../SettingsResources';
 import { LoginContext } from '../../../../../shared/contexts/LoginContext';
 import { YesNoModal } from '../../../../../shared/components/YesNoModal';
 import { describeError } from '../../../../../shared/lib/describeError';
@@ -23,15 +22,15 @@ import { usePromptMergeUsingModal } from '../../../features/mergeAccount/hooks/u
 import { getMergeProviderUrl } from '../lib/mergeUtils';
 
 export const useManageConnectWithProvider = ({
-  resources,
   mergeError,
   modals,
   onSecureLoginCompleted,
+  links,
 }: {
-  resources: SettingsResources;
   mergeError: WritableValueWithCallbacks<ReactElement | null>;
   modals: WritableValueWithCallbacks<Modals>;
   onSecureLoginCompleted: (token: string | null) => void;
+  links?: { [provider in MergeProvider]?: () => string | undefined };
 }): ((provider: MergeProvider, name: string) => Promise<void>) => {
   const loginContextRaw = useContext(LoginContext);
 
@@ -75,7 +74,7 @@ export const useManageConnectWithProvider = ({
         }
       }
     },
-    [mergeError, resources]
+    [mergeError]
   );
 
   const promptMergeUsingModal = usePromptMergeUsingModal(
@@ -90,18 +89,28 @@ export const useManageConnectWithProvider = ({
         return;
       }
       const login = loginRaw;
-      const identities = resources.identities.get();
-      const providerIdentities =
-        identities !== null
-          ? identities.filter((f) => f.provider === provider)
-          : [];
-      const isFirstForProvider = providerIdentities.length === 0;
 
       setVWC(mergeError, null);
 
-      let mergeLink: string;
+      console.log(`Determining merge link for ${provider}...`);
+      let mergeLink: string | undefined = undefined;
       try {
-        mergeLink = await getMergeProviderUrl(login, provider);
+        if (links !== undefined) {
+          console.log(`There are suggested links available...`);
+          const suggester = links[provider];
+          if (suggester !== undefined) {
+            console.log(`Suggester for ${provider} found...`);
+            mergeLink = suggester();
+            if (mergeLink !== undefined) {
+              console.log(`Suggested link found for ${provider}: ${mergeLink}`);
+            }
+          }
+        }
+        if (mergeLink === undefined) {
+          console.log(`Fetching fresh url for ${provider}..`);
+          mergeLink = await getMergeProviderUrl(login, provider);
+          console.log(`Link created for ${provider}: ${mergeLink}`);
+        }
       } catch (e) {
         setVWC(mergeError, await describeError(e));
         return;
@@ -114,15 +123,9 @@ export const useManageConnectWithProvider = ({
         <YesNoModal
           title={`Connect with ${name}`}
           body={
-            `You will be redirected to connect a new login identity. ` +
-            (isFirstForProvider
-              ? `Doing so will allow you to login using ${name} in the future.`
-              : `If you select a different ${name} account than the one${
-                  providerIdentities.length === 1 ? '' : 's'
-                } you already ` +
-                `have connected, you will be able to login with ` +
-                (providerIdentities.length === 1 ? 'either' : 'any of them') +
-                ` in the future.`)
+            `You will be redirected to ${name}. After successfully signing in, your history ` +
+            'and purchases on Oseh will be combined. This will enable you ' +
+            `to login with either method in the future.`
           }
           cta1="Cancel"
           cta2="Connect"
@@ -140,7 +143,7 @@ export const useManageConnectWithProvider = ({
       const closeModal = addModalWithCallbackToRemove(modals, modal);
       closeModalCallbacks.add(() => closeModal());
     },
-    [loginContextRaw, mergeError, modals, resources, promptMergeUsingModal]
+    [loginContextRaw, mergeError, modals, promptMergeUsingModal]
   );
 
   return manageConnectWithProvider;

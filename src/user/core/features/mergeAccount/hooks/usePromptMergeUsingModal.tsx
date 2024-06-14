@@ -1,25 +1,27 @@
-import { useCallback, useEffect } from "react";
-import { Modals } from "../../../../../shared/contexts/ModalContext";
+import { useCallback, useEffect } from 'react';
+import { Modals } from '../../../../../shared/contexts/ModalContext';
 import {
   Callbacks,
   WritableValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../../../../../shared/lib/Callbacks";
+} from '../../../../../shared/lib/Callbacks';
 import {
   PromptMergeResult,
   ReadableMergeMessagePipe,
   createReadPipeIfAvailable,
   createWritePipe,
-} from "../lib/MergeMessagePipe";
-import * as WebBrowser from "expo-web-browser";
-import { URLSearchParams } from "react-native-url-polyfill";
-import { MergeProvider } from "../MergeAccountState";
-import { Platform } from "react-native";
-import { useIsMounted } from "../../../../../shared/hooks/useIsMounted";
-import { setVWC } from "../../../../../shared/lib/setVWC";
-import * as Linking from "expo-linking";
+} from '../lib/MergeMessagePipe';
+import * as WebBrowser from 'expo-web-browser';
+import { URLSearchParams } from 'react-native-url-polyfill';
+import { MergeProvider } from '../MergeAccountState';
+import { Platform } from 'react-native';
+import { useIsMounted } from '../../../../../shared/hooks/useIsMounted';
+import { setVWC } from '../../../../../shared/lib/setVWC';
+import * as Linking from 'expo-linking';
 
-export const mergeRedirectUrl = Linking.createURL("login_callback");
+export const mergeRedirectUrl = Linking.createURL('login_callback');
+
+let failedLogin = false;
 
 /**
  * Returns a function which can be used to open a secure authentication browser
@@ -37,10 +39,20 @@ export const mergeRedirectUrl = Linking.createURL("login_callback");
  */
 export const usePromptMergeUsingModal = (
   modals: WritableValueWithCallbacks<Modals>,
-  onResult: (result: PromptMergeResult) => void
+  onResultRaw: (result: PromptMergeResult) => void
 ): ((provider: MergeProvider, url: string) => Promise<void>) => {
   const mountedVWC = useIsMounted();
   const checkedMessagePipeVWC = useWritableValueWithCallbacks(() => false);
+
+  const onResult = useCallback(
+    (result: PromptMergeResult) => {
+      if (result.type !== 'success') {
+        failedLogin = true;
+      }
+      onResultRaw(result);
+    },
+    [onResultRaw]
+  );
 
   useEffect(() => {
     if (checkedMessagePipeVWC.get()) {
@@ -64,7 +76,7 @@ export const usePromptMergeUsingModal = (
       try {
         reader = await createReadPipeIfAvailable();
       } catch (e) {
-        console.log("merge failed to create read pipe: ", e);
+        console.log('merge failed to create read pipe: ', e);
         setVWC(checkedMessagePipeVWC, true);
         return;
       }
@@ -102,7 +114,10 @@ export const usePromptMergeUsingModal = (
   return useCallback(
     async (provider: MergeProvider, url: string): Promise<void> => {
       const options: WebBrowser.AuthSessionOpenOptions = {};
-      if (Platform.OS === "ios" && provider === "Google") {
+      if (
+        (Platform.OS === 'ios' && provider === 'Google' && failedLogin) ||
+        provider === 'Dev'
+      ) {
         options.preferEphemeralSession = true;
       }
 
@@ -121,42 +136,42 @@ export const usePromptMergeUsingModal = (
           mergeRedirectUrl,
           options
         );
-        if (result.type === "cancel") {
-          sendPipeMessageOrApplyImmediately({ type: "cancel" });
+        if (result.type === 'cancel') {
+          sendPipeMessageOrApplyImmediately({ type: 'cancel' });
           return;
-        } else if (result.type === "dismiss") {
-          sendPipeMessageOrApplyImmediately({ type: "dismiss" });
+        } else if (result.type === 'dismiss') {
+          sendPipeMessageOrApplyImmediately({ type: 'dismiss' });
           return;
-        } else if (result.type !== "success") {
+        } else if (result.type !== 'success') {
           sendPipeMessageOrApplyImmediately({
-            type: "unknown",
+            type: 'unknown',
             rawType: result.type,
           });
           return;
         }
         const params = new URLSearchParams(
-          result.url.substring(result.url.indexOf("#") + 1)
+          result.url.substring(result.url.indexOf('#') + 1)
         );
-        if (params.get("auth_error") === "1") {
-          const errorMessage = params.get("auth_error_message");
+        if (params.get('auth_error') === '1') {
+          const errorMessage = params.get('auth_error_message');
           sendPipeMessageOrApplyImmediately({
-            type: "error",
-            error: errorMessage ?? "",
+            type: 'error',
+            error: errorMessage ?? '',
           });
           return;
         }
 
-        const mergeToken = params.get("merge_token");
+        const mergeToken = params.get('merge_token');
         if (!mergeToken) {
           sendPipeMessageOrApplyImmediately({
-            type: "error",
-            error: "no merge token",
+            type: 'error',
+            error: 'no merge token',
           });
           return;
         }
 
         sendPipeMessageOrApplyImmediately({
-          type: "success",
+          type: 'success',
           mergeToken,
         });
       } finally {

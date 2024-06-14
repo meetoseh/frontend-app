@@ -1,10 +1,4 @@
-import {
-  ReactElement,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-} from 'react';
+import { ReactElement, useCallback, useContext, useMemo } from 'react';
 import { CustomPop, PeekedScreen } from '../models/Screen';
 import {
   ValueWithCallbacks,
@@ -532,6 +526,9 @@ export const useScreenQueueState = (): ScreenQueueState => {
     useCallback(
       (loggedIn) => {
         if (!loggedIn) {
+          setVWC(valueVWC, {
+            type: 'loading',
+          });
           return undefined;
         }
 
@@ -548,7 +545,7 @@ export const useScreenQueueState = (): ScreenQueueState => {
         });
         return peeker.cancel;
       },
-      [peek]
+      [peek, valueVWC]
     )
   );
 

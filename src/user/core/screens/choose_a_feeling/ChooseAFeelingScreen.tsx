@@ -7,7 +7,10 @@ import { unwrapRequestResult } from '../../../../shared/requests/unwrapRequestRe
 import { createLoginContextRequest } from '../../lib/createLoginContextRequest';
 import { OsehScreen } from '../../models/Screen';
 import { ChooseAFeeling } from './ChooseAFeeling';
-import { ChooseAFeelingAPIParams, ChooseAFeelingMappedParams } from './ChooseAFeelingParams';
+import {
+  ChooseAFeelingAPIParams,
+  ChooseAFeelingMappedParams,
+} from './ChooseAFeelingParams';
 import { ChooseAFeelingResources } from './ChooseAFeelingResources';
 
 /**
@@ -26,19 +29,27 @@ export const ChooseAFeelingScreen: OsehScreen<
   }),
   initInstanceResources: (ctx, screen, refreshScreen) => {
     const getEmotions = () =>
-      createLoginContextRequest({ ctx, handler: ctx.resources.emotionsHandler });
+      createLoginContextRequest({
+        ctx,
+        handler: ctx.resources.emotionsHandler,
+      });
 
-    const emotionsRequest = createWritableValueWithCallbacks<RequestResult<Emotion[]> | null>(null);
-    const cleanupEmotionsRequest = createValueWithCallbacksEffect(ctx.login.value, () => {
-      const req = getEmotions();
-      setVWC(emotionsRequest, req);
-      return () => {
-        req.release();
-        if (Object.is(emotionsRequest.get(), req)) {
-          setVWC(emotionsRequest, null);
-        }
-      };
-    });
+    const emotionsRequest = createWritableValueWithCallbacks<RequestResult<
+      Emotion[]
+    > | null>(null);
+    const cleanupEmotionsRequest = createValueWithCallbacksEffect(
+      ctx.login.value,
+      () => {
+        const req = getEmotions();
+        setVWC(emotionsRequest, req);
+        return () => {
+          req.release();
+          if (Object.is(emotionsRequest.get(), req)) {
+            setVWC(emotionsRequest, null);
+          }
+        };
+      }
+    );
     const [emotionsUnwrapped, cleanupUnwrapEmotions] = unwrapRequestResult(
       emotionsRequest,
       (d) => d.data,

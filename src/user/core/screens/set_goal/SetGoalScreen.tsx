@@ -28,17 +28,21 @@ export const SetGoalScreen: OsehScreen<
     const getStreak = () =>
       createLoginContextRequest({ ctx, handler: ctx.resources.streakHandler });
 
-    const streakRequest = createWritableValueWithCallbacks<RequestResult<StreakInfo> | null>(null);
-    const cleanupStreakRequest = createValueWithCallbacksEffect(ctx.login.value, () => {
-      const req = getStreak();
-      setVWC(streakRequest, req);
-      return () => {
-        req.release();
-        if (Object.is(streakRequest.get(), req)) {
-          setVWC(streakRequest, null);
-        }
-      };
-    });
+    const streakRequest =
+      createWritableValueWithCallbacks<RequestResult<StreakInfo> | null>(null);
+    const cleanupStreakRequest = createValueWithCallbacksEffect(
+      ctx.login.value,
+      () => {
+        const req = getStreak();
+        setVWC(streakRequest, req);
+        return () => {
+          req.release();
+          if (Object.is(streakRequest.get(), req)) {
+            setVWC(streakRequest, null);
+          }
+        };
+      }
+    );
     const [streakUnwrapped, cleanupUnwrapStreak] = unwrapRequestResult(
       streakRequest,
       (d) => d.data,

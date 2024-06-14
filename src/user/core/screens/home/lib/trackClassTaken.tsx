@@ -88,7 +88,9 @@ export const trackClassTaken = (ctx: ScreenContext): void => {
         type: 'data',
         data: {
           streak: old.streak + (streakIncreased ? 1 : 0),
-          daysOfWeek: old.daysOfWeek.concat(...(streakIncreased ? [nowDayOfWeekName] : [])),
+          daysOfWeek: old.daysOfWeek.concat(
+            ...(streakIncreased ? [nowDayOfWeekName] : [])
+          ),
           goalDaysPerWeek: old.goalDaysPerWeek,
           journeys: old.journeys + 1,
           prevBestAllTimeStreak: old.prevBestAllTimeStreak,
@@ -124,21 +126,27 @@ export const trackClassTaken = (ctx: ScreenContext): void => {
       return;
     }
 
-    ctx.resources.historyListHandler.evictOrReplace(createHistoryListRequest(), (old) => {
-      if (old === undefined) {
-        return { type: 'make-request', data: undefined };
+    ctx.resources.historyListHandler.evictOrReplace(
+      createHistoryListRequest(),
+      (old) => {
+        if (old === undefined) {
+          return { type: 'make-request', data: undefined };
+        }
+        old.reset();
+        return { type: 'data', data: old };
       }
-      old.reset();
-      return { type: 'data', data: old };
-    });
+    );
 
-    ctx.resources.ownedListHandler.evictOrReplace(createOwnedListRequest(), (old) => {
-      if (old === undefined) {
-        return { type: 'make-request', data: undefined };
+    ctx.resources.ownedListHandler.evictOrReplace(
+      createOwnedListRequest(),
+      (old) => {
+        if (old === undefined) {
+          return { type: 'make-request', data: undefined };
+        }
+        old.reset();
+        return { type: 'data', data: old };
       }
-      old.reset();
-      return { type: 'data', data: old };
-    });
+    );
   })().catch((e) => {
     console.error('error tracking class taken (history & owned lists)', e);
   });

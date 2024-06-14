@@ -1,8 +1,13 @@
 import { LoginContextValueLoggedIn } from '../../../../../shared/contexts/LoginContext';
-import { apiFetch } from '../../../../../shared/lib/apiFetch';
+import {
+  HTTP_FRONTEND_URL,
+  apiFetch,
+} from '../../../../../shared/lib/apiFetch';
 import { OauthProvider } from '../../../../login/lib/OauthProvider';
+import Constants from 'expo-constants';
+import { mergeRedirectUrl } from '../../../features/mergeAccount/hooks/usePromptMergeUsingModal';
 
-const isDevelopment = process.env.REACT_APP_ENVIRONMENT === 'dev';
+const isDevelopment = Constants.expoConfig?.extra?.environment === 'dev';
 
 /**
  * Gets the URL that the user should be sent to in order to merge their account
@@ -15,13 +20,14 @@ export const getMergeProviderUrl = async (
   loginContext: LoginContextValueLoggedIn,
   provider: OauthProvider
 ): Promise<string> => {
-  if (isDevelopment && provider !== 'Direct') {
-    return '/dev_login?merge=1';
-  }
-
-  if (!isDevelopment && provider === 'Dev') {
-    // This shouldn't happen, but just in case we'll generate a real url
-    provider = 'Direct';
+  if (provider === 'Dev') {
+    if (isDevelopment) {
+      return `${HTTP_FRONTEND_URL}/dev_login?merge=1&redirect_url=${encodeURIComponent(
+        mergeRedirectUrl
+      )}&id_token=${encodeURIComponent(loginContext.authTokens.idToken)}`;
+    } else {
+      provider = 'Direct';
+    }
   }
 
   const response = await apiFetch(
@@ -29,7 +35,10 @@ export const getMergeProviderUrl = async (
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json; charset=utf-8' },
-      body: JSON.stringify({ provider: provider }),
+      body: JSON.stringify({
+        provider: provider,
+        redirect_uri: mergeRedirectUrl,
+      }),
     },
     loginContext
   );

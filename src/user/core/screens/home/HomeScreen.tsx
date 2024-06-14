@@ -19,7 +19,12 @@ import { Emotion } from '../../../../shared/models/Emotion';
 /**
  * The standard home screen with home copy, emotion buttons, and bottom nav
  */
-export const HomeScreen: OsehScreen<'home', HomeResources, HomeAPIParams, HomeMappedParams> = {
+export const HomeScreen: OsehScreen<
+  'home',
+  HomeResources,
+  HomeAPIParams,
+  HomeMappedParams
+> = {
   slug: 'home',
   paramMapper: (params) => ({
     ...params,
@@ -27,7 +32,10 @@ export const HomeScreen: OsehScreen<'home', HomeResources, HomeAPIParams, HomeMa
   }),
   initInstanceResources: (ctx, screen, refreshScreen) => {
     const getSessionState = () =>
-      createLoginContextRequest({ ctx, handler: ctx.resources.sessionStateHandler });
+      createLoginContextRequest({
+        ctx,
+        handler: ctx.resources.sessionStateHandler,
+      });
     const getHomeCopy = () =>
       createChainedRequest(getSessionState, ctx.resources.homeCopyHandler, {
         sync: (prevData) => {
@@ -52,7 +60,13 @@ export const HomeScreen: OsehScreen<'home', HomeResources, HomeAPIParams, HomeMa
         async: undefined,
         cancelable: undefined,
       });
-    const mapHomeImageSize = ({ width, height }: { width: number; height: number }) => ({
+    const mapHomeImageSize = ({
+      width,
+      height,
+    }: {
+      width: number;
+      height: number;
+    }) => ({
       width: width,
       height: 258 + Math.max(Math.min(height - 633, 92), 0),
     });
@@ -70,17 +84,21 @@ export const HomeScreen: OsehScreen<'home', HomeResources, HomeAPIParams, HomeMa
       sizeMapper: mapHomeImageSize,
     });
 
-    const copyRequest = createWritableValueWithCallbacks<RequestResult<HomeCopy> | null>(null);
-    const cleanupCopyRequest = createValueWithCallbacksEffect(ctx.login.value, () => {
-      const req = getHomeCopy();
-      setVWC(copyRequest, req);
-      return () => {
-        req.release();
-        if (Object.is(copyRequest.get(), req)) {
-          setVWC(copyRequest, null);
-        }
-      };
-    });
+    const copyRequest =
+      createWritableValueWithCallbacks<RequestResult<HomeCopy> | null>(null);
+    const cleanupCopyRequest = createValueWithCallbacksEffect(
+      ctx.login.value,
+      () => {
+        const req = getHomeCopy();
+        setVWC(copyRequest, req);
+        return () => {
+          req.release();
+          if (Object.is(copyRequest.get(), req)) {
+            setVWC(copyRequest, null);
+          }
+        };
+      }
+    );
     const [copyUnwrapped, cleanupUnwrapCopy] = unwrapRequestResult(
       copyRequest,
       (d) => d.data,
@@ -89,8 +107,14 @@ export const HomeScreen: OsehScreen<'home', HomeResources, HomeAPIParams, HomeMa
 
     const getProfilePicture = () =>
       createMappedRequestResult(
-        createLoginContextRequest({ ctx, handler: ctx.resources.profilePictureHandler }),
-        (optRef) => (optRef.type === 'available' ? { type: 'success', data: optRef.data } : null)
+        createLoginContextRequest({
+          ctx,
+          handler: ctx.resources.profilePictureHandler,
+        }),
+        (optRef) =>
+          optRef.type === 'available'
+            ? { type: 'success', data: optRef.data }
+            : null
       );
 
     const profilePicture = createChainedImageFromRef({
@@ -102,17 +126,21 @@ export const HomeScreen: OsehScreen<'home', HomeResources, HomeAPIParams, HomeMa
     const getStreak = () =>
       createLoginContextRequest({ ctx, handler: ctx.resources.streakHandler });
 
-    const streakRequest = createWritableValueWithCallbacks<RequestResult<StreakInfo> | null>(null);
-    const cleanupStreakRequest = createValueWithCallbacksEffect(ctx.login.value, () => {
-      const req = getStreak();
-      setVWC(streakRequest, req);
-      return () => {
-        req.release();
-        if (Object.is(streakRequest.get(), req)) {
-          setVWC(streakRequest, null);
-        }
-      };
-    });
+    const streakRequest =
+      createWritableValueWithCallbacks<RequestResult<StreakInfo> | null>(null);
+    const cleanupStreakRequest = createValueWithCallbacksEffect(
+      ctx.login.value,
+      () => {
+        const req = getStreak();
+        setVWC(streakRequest, req);
+        return () => {
+          req.release();
+          if (Object.is(streakRequest.get(), req)) {
+            setVWC(streakRequest, null);
+          }
+        };
+      }
+    );
     const [streakUnwrapped, cleanupUnwrapStreak] = unwrapRequestResult(
       streakRequest,
       (d) => d.data,
@@ -120,19 +148,27 @@ export const HomeScreen: OsehScreen<'home', HomeResources, HomeAPIParams, HomeMa
     );
 
     const getEmotions = () =>
-      createLoginContextRequest({ ctx, handler: ctx.resources.emotionsHandler });
+      createLoginContextRequest({
+        ctx,
+        handler: ctx.resources.emotionsHandler,
+      });
 
-    const emotionsRequest = createWritableValueWithCallbacks<RequestResult<Emotion[]> | null>(null);
-    const cleanupEmotionsRequest = createValueWithCallbacksEffect(ctx.login.value, () => {
-      const req = getEmotions();
-      setVWC(emotionsRequest, req);
-      return () => {
-        req.release();
-        if (Object.is(emotionsRequest.get(), req)) {
-          setVWC(emotionsRequest, null);
-        }
-      };
-    });
+    const emotionsRequest = createWritableValueWithCallbacks<RequestResult<
+      Emotion[]
+    > | null>(null);
+    const cleanupEmotionsRequest = createValueWithCallbacksEffect(
+      ctx.login.value,
+      () => {
+        const req = getEmotions();
+        setVWC(emotionsRequest, req);
+        return () => {
+          req.release();
+          if (Object.is(emotionsRequest.get(), req)) {
+            setVWC(emotionsRequest, null);
+          }
+        };
+      }
+    );
     const [emotionsUnwrapped, cleanupUnwrapEmotions] = unwrapRequestResult(
       emotionsRequest,
       (d) => d.data,

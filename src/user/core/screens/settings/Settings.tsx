@@ -38,6 +38,9 @@ import {
   GridSimpleNavigationForeground,
 } from '../../../../shared/components/GridSimpleNavigationForeground';
 import Constants from 'expo-constants';
+import { trackMerge } from './lib/trackMerge';
+
+const isDevelopment = Constants.expoConfig?.extra?.environment === 'dev';
 
 const entrance: StandardScreenTransition = { type: 'fade', ms: 350 };
 const exit: StandardScreenTransition = { type: 'fade', ms: 350 };
@@ -253,14 +256,19 @@ export const Settings = ({
   );
 
   const manageConnectWithProvider = useManageConnectWithProvider({
-    resources,
     mergeError,
     modals,
     onSecureLoginCompleted: (mergeToken) => {
+      if (mergeToken === null) {
+        return;
+      }
       screenOut(workingVWC, startPop, transition, exit, CustomPop, {
         endpoint: '/api/1/users/me/screens/empty_with_merge_token',
         parameters: {
           merge_token: mergeToken,
+        },
+        afterDone: () => {
+          trackMerge(ctx);
         },
       });
     },
@@ -272,7 +280,7 @@ export const Settings = ({
       provider: OauthProvider,
       name: string
     ): SettingLink | null => {
-      if (provider === 'Dev' && process.env.REACT_APP_ENVIRONMENT !== 'dev') {
+      if (provider === 'Dev' && !isDevelopment) {
         return null;
       }
 

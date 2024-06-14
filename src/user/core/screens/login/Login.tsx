@@ -46,9 +46,12 @@ import {
 import { useOsehImageStateRequestHandler } from '../../../../shared/images/useOsehImageStateRequestHandler';
 import { OsehImageProps } from '../../../../shared/images/OsehImageProps';
 import { adaptValueWithCallbacksAsVariableStrategyProps } from '../../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps';
+import { OauthProvider } from '../../../login/lib/OauthProvider';
 
 /* guest -> random guest; apple -> random guest no name */
-const DEV_ACCOUNT_USER_IDENTITY_ID: string = 'timothy';
+const DEV_ACCOUNT_USER_IDENTITY_ID: string = 'guest';
+
+let failedLogin = false;
 
 const prepareLink = async (
   provider: 'Google' | 'SignInWithApple' | 'Direct'
@@ -78,6 +81,23 @@ const prepareLink = async (
   return { url: data.url, redirectUrl };
 };
 
+export const LOGIN_ICONS_BY_PROVIDER: Record<
+  OauthProvider,
+  () => ReactElement
+> = {
+  Google: () => <Google style={styles.google} />,
+  SignInWithApple: () => <Apple style={styles.apple} />,
+  Direct: () => <Email style={styles.email} />,
+  Dev: () => <Email style={styles.email} />,
+};
+
+export const LOGIN_NAMES_BY_PROVIDER: Record<OauthProvider, string> = {
+  Google: 'Sign in with Google',
+  SignInWithApple: 'Sign in with Apple',
+  Direct: 'Sign in with Email',
+  Dev: 'Sign in as Developer',
+};
+
 /**
  * The standard full screen component for logging in, which
  * presents the user with options to log in with Google, Apple,
@@ -93,6 +113,10 @@ export const Login = () => {
 
   const onMessageFromPipe = useCallback(
     (result: LoginMessage) => {
+      if (result.type !== 'success') {
+        failedLogin = true;
+      }
+
       if (result.type === 'cancel') {
         setVWC(
           errorVWC,
@@ -196,7 +220,7 @@ export const Login = () => {
   const onContinueWithProvider = useCallback(
     async (provider: 'Google' | 'SignInWithApple' | 'Direct') => {
       const options: WebBrowser.AuthSessionOpenOptions = {};
-      if (Platform.OS === 'ios' && provider === 'Google') {
+      if (Platform.OS === 'ios' && provider === 'Google' && failedLogin) {
         options.preferEphemeralSession = true;
       }
 
@@ -306,11 +330,14 @@ export const Login = () => {
         refresh_token: string;
         onboard: boolean;
       } = await response.json();
+      console.log('data ready, setting auth tokens..');
       await loginContextRaw.setAuthTokens({
         idToken: data.id_token,
         refreshToken: data.refresh_token,
       });
     } catch (e) {
+      console.log('dev login failed:', e);
+      console.error(e);
       setVWC(errorVWC, await describeError(e));
     }
   }, [loginContextRaw, errorVWC]);
@@ -373,18 +400,18 @@ export const Login = () => {
           items={[
             {
               key: 'Google',
-              icon: <Google style={styles.google} />,
-              name: 'Sign in with Google',
+              icon: LOGIN_ICONS_BY_PROVIDER['Google'](),
+              name: LOGIN_NAMES_BY_PROVIDER['Google'],
             },
             {
               key: 'SignInWithApple',
-              icon: <Apple style={styles.apple} />,
-              name: 'Sign in with Apple',
+              icon: LOGIN_ICONS_BY_PROVIDER['SignInWithApple'](),
+              name: LOGIN_NAMES_BY_PROVIDER['SignInWithApple'],
             },
             {
               key: 'Direct',
-              icon: <Email style={styles.email} />,
-              name: 'Sign in with Email',
+              icon: LOGIN_ICONS_BY_PROVIDER['Direct'](),
+              name: LOGIN_NAMES_BY_PROVIDER['Direct'],
             },
           ]}
           onItemPressed={(key) => onContinueWithProvider(key)}

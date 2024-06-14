@@ -358,6 +358,11 @@ export const useScreenQueue = ({
         const activeScreenInstance = state.result.active;
         const requestedSlug = activeScreenInstance.slug;
         const activeScreen = screensBySlug.get(requestedSlug);
+        const stateChanged = waitForValueWithCallbacksConditionCancelable(
+          screenQueueState.value,
+          (v) => !Object.is(v, state)
+        );
+        stateChanged.promise.catch(() => {});
 
         const loopUid = ++loopCounter;
         logging.info(
@@ -367,6 +372,8 @@ export const useScreenQueue = ({
         );
 
         if (activeScreen === undefined) {
+          stateChanged.cancel();
+
           skipsInARow++;
           if (skipsInARow > 10) {
             logging.error(
@@ -507,6 +514,7 @@ export const useScreenQueue = ({
 
         if (!active.get()) {
           setVWC(loopIsActive, false);
+          stateChanged.cancel();
           repeekRequested.cancel();
           activeResources.dispose();
           prefetchResources.forEach((r) => r?.dispose());
@@ -619,10 +627,20 @@ export const useScreenQueue = ({
             canceled.promise,
             startPopRequested.promise,
             repeekRequested.promise,
+            stateChanged.promise,
           ]);
+
+          if (stateChanged.done()) {
+            logging.info(
+              `${effectUid} | ${loopUid} - detected that something else (usually logout/login or refreshing) changed the screen state`
+            );
+            cancel();
+            reinit(++counter);
+          } // PURPOSEFUL FALL-THROUGH
 
           if (!active.get()) {
             setVWC(loopIsActive, false);
+            stateChanged.cancel();
             repeekRequested.cancel();
             activeResources.dispose();
             prefetchResources.forEach((r) => r?.dispose());
@@ -635,6 +653,7 @@ export const useScreenQueue = ({
             const popTriggerInfo = await startPopRequested.promise;
             if (!active.get()) {
               setVWC(loopIsActive, false);
+              stateChanged.cancel();
               repeekRequested.cancel();
               activeResources.dispose();
               prefetchResources.forEach((r) => r?.dispose());
@@ -690,6 +709,7 @@ export const useScreenQueue = ({
 
             if (!active.get()) {
               setVWC(loopIsActive, false);
+              stateChanged.cancel();
               activeResources.dispose();
               prefetchResources.forEach((r) => r?.dispose());
               finishPopRequested?.cancel();
@@ -757,6 +777,7 @@ export const useScreenQueue = ({
 
             if (!active.get()) {
               setVWC(loopIsActive, false);
+              stateChanged.cancel();
               activeResources.dispose();
               prefetchResources.forEach((r) => r?.dispose());
               finishPopRequested?.cancel();
@@ -781,6 +802,7 @@ export const useScreenQueue = ({
                 { type: 'finishing-pop', component },
                 (a, b) => a.type === b.type
               );
+              stateChanged.cancel();
               activeResources.dispose();
 
               state = popResult.data;
@@ -834,6 +856,7 @@ export const useScreenQueue = ({
             ]);
             if (!active.get()) {
               setVWC(loopIsActive, false);
+              stateChanged.cancel();
               activeResources.dispose();
               newPrefetchResources.forEach((r) => r?.dispose());
               return;
@@ -844,6 +867,7 @@ export const useScreenQueue = ({
             );
 
             state = popResult.data;
+            stateChanged.cancel();
             releaseFromLastLoop = () => {
               logging.info(
                 `${effectUid} | ${loopUid} - releasing prefetch resources`
@@ -866,6 +890,7 @@ export const useScreenQueue = ({
             await Promise.race([peekPromise.promise, canceled.promise]);
             if (!active.get()) {
               setVWC(loopIsActive, false);
+              stateChanged.cancel();
               peekPromise.cancel();
               activeResources.dispose();
               prefetchResources.forEach((r) => r?.dispose());
@@ -889,6 +914,7 @@ export const useScreenQueue = ({
             finishPopRequested?.cancel();
             startPopRequested.cancel();
             if (!active.get()) {
+              stateChanged.cancel();
               activeResources.dispose();
               prefetchResources.forEach((r) => r?.dispose());
               return;
@@ -902,6 +928,7 @@ export const useScreenQueue = ({
               logging.info(
                 `${effectUid} | ${loopUid} - moving onto next loop iteration`
               );
+              stateChanged.cancel();
               state = newResult.data;
               releaseFromLastLoop = () => {
                 setVWC(loopIsActive, false);

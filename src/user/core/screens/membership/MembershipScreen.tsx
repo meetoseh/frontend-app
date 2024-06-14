@@ -9,7 +9,10 @@ import { createMappedLoginContextRequest } from '../../lib/createMappedLoginCont
 import { OsehScreen } from '../../models/Screen';
 import { Entitlement } from '../settings/lib/createEntitlementRequestHandler';
 import { Membership } from './Membership';
-import { MembershipAPIParams, MembershipMappedParams } from './MembershipParams';
+import {
+  MembershipAPIParams,
+  MembershipMappedParams,
+} from './MembershipParams';
 import { MembershipResources } from './MembershipResources';
 import { MembershipUrl } from './lib/createManageMembershipUrlRequestHandler';
 
@@ -35,7 +38,8 @@ export const MembershipScreen: OsehScreen<
         handler: ctx.resources.entitlementsHandler,
         mapper: (user) => ({ user, entitlement: 'pro' }),
       });
-    const proRequest = createWritableValueWithCallbacks<RequestResult<Entitlement> | null>(null);
+    const proRequest =
+      createWritableValueWithCallbacks<RequestResult<Entitlement> | null>(null);
     const cleanupProRequest = createValueWithCallbacksEffect(
       ctx.login.value,
       () => {
@@ -61,9 +65,10 @@ export const MembershipScreen: OsehScreen<
         ctx,
         handler: ctx.resources.manageMembershipUrlHandler,
       });
-    const manageUrlRequest = createWritableValueWithCallbacks<RequestResult<MembershipUrl> | null>(
-      null
-    );
+    const manageUrlRequest =
+      createWritableValueWithCallbacks<RequestResult<MembershipUrl> | null>(
+        null
+      );
     const cleanupManageUrlRequest = createValuesWithCallbacksEffect(
       [proUnwrapped, ctx.login.value],
       () => {
@@ -82,12 +87,18 @@ export const MembershipScreen: OsehScreen<
         const req = getMembershipUrl();
         setVWC(manageUrlRequest, req);
 
-        const cleanupReportExpiration = createValueWithCallbacksEffect(req.data, (v) => {
-          if (v.type === 'success' && v.data.expiresAt.getTime() < Date.now()) {
-            v.reportExpired();
+        const cleanupReportExpiration = createValueWithCallbacksEffect(
+          req.data,
+          (v) => {
+            if (
+              v.type === 'success' &&
+              v.data.expiresAt.getTime() < Date.now()
+            ) {
+              v.reportExpired();
+            }
+            return undefined;
           }
-          return undefined;
-        });
+        );
 
         return () => {
           cleanupReportExpiration();
@@ -100,7 +111,11 @@ export const MembershipScreen: OsehScreen<
     );
     const [manageUrlUnwrapped, cleanupManageUrlUnwrapper] = unwrapRequestResult(
       manageUrlRequest,
-      (d) => ({ url: d.data.url, expiresAt: d.data.expiresAt, reportExpired: d.reportExpired }),
+      (d) => ({
+        url: d.data.url,
+        expiresAt: d.data.expiresAt,
+        reportExpired: d.reportExpired,
+      }),
       () => null
     );
 

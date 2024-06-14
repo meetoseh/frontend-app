@@ -13,7 +13,10 @@ import { ValueWithCallbacks } from '../lib/Callbacks';
  *   the start of the next trigger. Generally its desirable to delay the effect
  *   when hooking into multiple vwcs to allow time for all of them to update.
  */
-export function createValuesWithCallbacksEffect<T, U extends ValueWithCallbacks<T>>(
+export function createValuesWithCallbacksEffect<
+  T,
+  U extends ValueWithCallbacks<T>
+>(
   vwcs: U[],
   effect: () => (() => void) | undefined,
   opts?: {

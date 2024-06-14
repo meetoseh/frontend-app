@@ -6,7 +6,10 @@ import { unwrapRequestResult } from '../../../../shared/requests/unwrapRequestRe
 import { createLoginContextRequest } from '../../lib/createLoginContextRequest';
 import { OsehScreen } from '../../models/Screen';
 import { ReminderTimes } from './ReminderTimes';
-import { ReminderTimesAPIParams, ReminderTimesMappedParams } from './ReminderTimesParams';
+import {
+  ReminderTimesAPIParams,
+  ReminderTimesMappedParams,
+} from './ReminderTimesParams';
 import { ReminderTimesResources } from './ReminderTimesResources';
 import { ReminderChannelsInfo } from './lib/createReminderChannelsHandler';
 import { ReminderSettings } from './lib/createReminderSettingsHandler';
@@ -26,10 +29,15 @@ export const ReminderTimesScreen: OsehScreen<
   }),
   initInstanceResources: (ctx, screen, refreshScreen) => {
     const getChannels = () =>
-      createLoginContextRequest({ ctx, handler: ctx.resources.reminderChannelsHandler });
+      createLoginContextRequest({
+        ctx,
+        handler: ctx.resources.reminderChannelsHandler,
+      });
 
     const channelsRequest =
-      createWritableValueWithCallbacks<RequestResult<ReminderChannelsInfo> | null>(null);
+      createWritableValueWithCallbacks<RequestResult<ReminderChannelsInfo> | null>(
+        null
+      );
     const cleanupChannelsRequest = createValueWithCallbacksEffect(
       ctx.login.value,
       () => {
@@ -53,10 +61,15 @@ export const ReminderTimesScreen: OsehScreen<
     );
 
     const getSettings = () =>
-      createLoginContextRequest({ ctx, handler: ctx.resources.reminderSettingsHandler });
+      createLoginContextRequest({
+        ctx,
+        handler: ctx.resources.reminderSettingsHandler,
+      });
 
     const settingsRequest =
-      createWritableValueWithCallbacks<RequestResult<ReminderSettings> | null>(null);
+      createWritableValueWithCallbacks<RequestResult<ReminderSettings> | null>(
+        null
+      );
     const cleanupSettingsRequest = createValueWithCallbacksEffect(
       ctx.login.value,
       () => {
