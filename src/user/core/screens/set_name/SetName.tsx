@@ -200,6 +200,10 @@ export const SetName = ({
 
   const keyboardVisibleVWC = useKeyboardVisibleValueWithCallbacks();
 
+  const focusFamilyName = useWritableValueWithCallbacks<(() => void) | null>(
+    () => null
+  );
+
   return (
     <GridFullscreenContainer
       windowSizeImmediate={ctx.windowSizeImmediate}
@@ -247,6 +251,15 @@ export const SetName = ({
               inputStyle="white"
               bonusTextInputProps={{
                 value: givenName,
+                autoComplete: 'given-name',
+                enterKeyHint: 'next',
+                onSubmitEditing: () => {
+                  trace({
+                    type: 'given-name-on-submit',
+                    result: 'focus-family-name',
+                  });
+                  focusFamilyName.get()?.();
+                },
               }}
             />
           )}
@@ -265,7 +278,14 @@ export const SetName = ({
               inputStyle="white"
               bonusTextInputProps={{
                 value: familyName,
+                autoComplete: 'family-name',
+                enterKeyHint: 'done',
+                onSubmitEditing: () => {
+                  trace({ type: 'family-name-on-submit', result: 'save' });
+                  tryExit({ ...screen.parameters.save, type: 'save' });
+                },
               }}
+              doFocus={(f) => setVWC(focusFamilyName, f)}
             />
           )}
           applyInstantly

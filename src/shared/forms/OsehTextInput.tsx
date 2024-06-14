@@ -2,6 +2,10 @@ import { ReactElement, useCallback } from 'react';
 import { styles } from './OsehTextInputStyles';
 import { View, Text, TextInput, TextInputProps } from 'react-native';
 import { useReactManagedValueAsValueWithCallbacks } from '../hooks/useReactManagedValueAsValueWithCallbacks';
+import { useWritableValueWithCallbacks } from '../lib/Callbacks';
+import { setVWC } from '../lib/setVWC';
+import { useValuesWithCallbacksEffect } from '../hooks/useValuesWithCallbacksEffect';
+import { useValueWithCallbacksEffect } from '../hooks/useValueWithCallbacksEffect';
 
 type OsehTextInputProps = {
   /**
@@ -72,10 +76,25 @@ export const OsehTextInput = ({
     [onChangeVWC]
   );
 
+  const textInputRef = useWritableValueWithCallbacks<TextInput | null>(
+    () => null
+  );
+  useValueWithCallbacksEffect(textInputRef, (raw) => {
+    if (raw === null) {
+      doFocus?.(() => {});
+      return undefined;
+    }
+
+    const r = raw;
+    doFocus?.(() => r.focus());
+    return undefined;
+  });
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
+        ref={(r) => setVWC(textInputRef, r)}
         style={styles.input}
         defaultValue={defaultValue}
         onChangeText={handleChange}

@@ -144,6 +144,34 @@ export const AddPhone = ({
 
   const keyboardVisible = useKeyboardVisibleValueWithCallbacks();
 
+  const onSubmit = () => {
+    if (!phoneFormatCorrect.get()) {
+      setVWC(errorPhoneVWC, true);
+      return;
+    }
+
+    screenOut(
+      workingVWC,
+      startPop,
+      transition,
+      screen.parameters.cta.exit,
+      screen.parameters.cta.trigger,
+      {
+        endpoint: '/api/1/users/me/screens/pop_to_phone_verify',
+        parameters: {
+          phone_number: phoneVWC.get(),
+          receive_notifications: screen.parameters.reminders,
+          timezone: timezone.timeZone,
+          timezone_technique: timezone.timeZoneTechnique,
+        },
+        onError: async (err) => {
+          const described = await describeError(err);
+          setVWC(errorVWC, described);
+        },
+      }
+    );
+  };
+
   return (
     <GridFullscreenContainer
       windowSizeImmediate={ctx.windowSizeImmediate}
@@ -208,6 +236,15 @@ export const AddPhone = ({
               disabled={disabled}
               bonusTextInputProps={{
                 value: text,
+                keyboardType: 'phone-pad',
+                enterKeyHint: 'next',
+                enablesReturnKeyAutomatically: true,
+                autoComplete: 'tel',
+                onSubmitEditing: () => {
+                  if (!disabled) {
+                    onSubmit();
+                  }
+                },
               }}
             />
           )}
@@ -221,31 +258,7 @@ export const AddPhone = ({
         />
         <FilledInvertedButton
           onPress={() => {
-            if (!phoneFormatCorrect.get()) {
-              setVWC(errorPhoneVWC, true);
-              return;
-            }
-
-            screenOut(
-              workingVWC,
-              startPop,
-              transition,
-              screen.parameters.cta.exit,
-              screen.parameters.cta.trigger,
-              {
-                endpoint: '/api/1/users/me/screens/pop_to_phone_verify',
-                parameters: {
-                  phone_number: phoneVWC.get(),
-                  receive_notifications: screen.parameters.reminders,
-                  timezone: timezone.timeZone,
-                  timezone_technique: timezone.timeZoneTechnique,
-                },
-                onError: async (err) => {
-                  const described = await describeError(err);
-                  setVWC(errorVWC, described);
-                },
-              }
-            );
+            onSubmit();
           }}
           setTextStyle={(s) => setVWC(ctaTextStyleVWC, s)}
         >
