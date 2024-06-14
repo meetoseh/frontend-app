@@ -45,7 +45,6 @@ export const useRefreshedExternalCourse = (
         throw new Error('cannot refresh when uid is undefined');
       }
 
-      signal?.throwIfAborted();
       const response = await apiFetch(
         '/api/1/courses/search_public?category=' + category,
         {

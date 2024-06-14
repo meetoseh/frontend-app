@@ -39,10 +39,7 @@ import Email from './icons/Email';
 import { useIsTablet } from '../../../../shared/lib/useIsTablet';
 import { ProvidersList } from './components/ProvidersList';
 import { useOsehImageStateValueWithCallbacks } from '../../../../shared/images/useOsehImageStateValueWithCallbacks';
-import {
-  useWindowSize,
-  useWindowSizeValueWithCallbacks,
-} from '../../../../shared/hooks/useWindowSize';
+import { useWindowSizeValueWithCallbacks } from '../../../../shared/hooks/useWindowSize';
 import { useOsehImageStateRequestHandler } from '../../../../shared/images/useOsehImageStateRequestHandler';
 import { OsehImageProps } from '../../../../shared/images/OsehImageProps';
 import { adaptValueWithCallbacksAsVariableStrategyProps } from '../../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps';

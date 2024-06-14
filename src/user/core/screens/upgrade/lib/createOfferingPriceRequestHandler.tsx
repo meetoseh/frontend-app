@@ -12,6 +12,7 @@ import {
   Result,
 } from '../../../../../shared/requests/RequestHandler';
 import { Platform } from 'react-native';
+import { RevenueCatPackage } from '../../../features/upgrade/models/RevenueCatPackage';
 
 export type OfferingPriceRef = {
   /** The user to fetch offering information for */
@@ -38,11 +39,7 @@ export const createOfferingPriceRequestHandler = ({
   logging?: 'buffer' | 'direct' | 'none';
   maxStale?: number;
   maxRetries?: number;
-}): RequestHandler<
-  OfferingPriceRef,
-  OfferingPriceRef,
-  PurchasesStoreProduct
-> => {
+}): RequestHandler<OfferingPriceRef, OfferingPriceRef, PurchasesPackage> => {
   return new RequestHandler({
     getRefUid,
     getDataFromRef,
@@ -57,7 +54,7 @@ const getRefUid = (ref: OfferingPriceRef): string =>
   ref.user.userAttributes.sub + '@' + ref.platformProductIdentifier;
 const getDataFromRef: (
   ref: OfferingPriceRef
-) => CancelablePromise<Result<PurchasesStoreProduct>> =
+) => CancelablePromise<Result<PurchasesPackage>> =
   createGetDataFromRefUsingSignal({
     inner: async (ref, signal) => {
       const offering =
@@ -80,7 +77,7 @@ const getDataFromRef: (
           `Package not found: ${ref.platformProductIdentifier} (plan: ${ref.platformProductPlanIdentifier})`
         );
       }
-      return pkg.product;
+      return pkg;
     },
     isExpired: (ref, nowServer) =>
       getJwtExpiration(ref.user.authTokens.idToken) < nowServer,

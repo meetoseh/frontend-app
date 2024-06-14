@@ -31,7 +31,7 @@ import { useManageConnectWithProvider } from './hooks/useManageConnectWithProvid
 import { OauthProvider } from '../../../login/lib/OauthProvider';
 import { styles } from './SettingsStyles';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
-import { View, Text } from 'react-native';
+import { View, Text, Platform } from 'react-native';
 import Wordmark from '../../../../shared/icons/Wordmark';
 import {
   GRID_SIMPLE_NAVIGATION_FOREGROUND_BOTTOM_HEIGHT,
@@ -39,6 +39,14 @@ import {
 } from '../../../../shared/components/GridSimpleNavigationForeground';
 import Constants from 'expo-constants';
 import { trackMerge } from './lib/trackMerge';
+import {
+  Entitlement,
+  entitlementKeyMap,
+} from './lib/createEntitlementRequestHandler';
+import { apiFetch } from '../../../../shared/lib/apiFetch';
+import Purchases from 'react-native-purchases';
+import { convertUsingMapper } from '../../../../shared/lib/CrudFetcher';
+import { showYesNoModal } from '../../../../shared/lib/showYesNoModal';
 
 const isDevelopment = Constants.expoConfig?.extra?.environment === 'dev';
 
@@ -170,6 +178,128 @@ export const Settings = ({
     [remindersLink, setGoalLink]
   );
 
+  const restorePurchasesErrorVWC =
+    useWritableValueWithCallbacks<ReactElement | null>(() => null);
+  useErrorModal(modals, restorePurchasesErrorVWC, 'restore-purchases');
+  const restorePurchasesLink = useMappedValueWithCallbacks(
+    resources.pro,
+    (pro: Entitlement | null): SettingLink => ({
+      text: 'Restore Purchases',
+      details:
+        pro === null
+          ? ['Loading...']
+          : pro.isActive
+          ? ['Currently have Oseh+ access']
+          : ['No Oseh+ access currently'],
+      key: 'restore-purchases',
+      onClick: async () => {
+        trace({
+          type: 'restore-purchases',
+          technique: 'revenuecat',
+          step: 'initializing..',
+        });
+
+        const user = ctx.login.value.get();
+        if (user.state !== 'logged-in') {
+          trace({
+            type: 'restore-purchases',
+            technique: 'revenuecat',
+            step: 'not-logged-in',
+          });
+          return;
+        }
+
+        const response = await apiFetch(
+          '/api/1/users/me/revenue_cat_id',
+          {
+            method: 'GET',
+          },
+          user
+        );
+        if (!response.ok) {
+          throw response;
+        }
+        const data: { revenue_cat_id: string } = await response.json();
+        const revenueCatID = data.revenue_cat_id;
+        trace({
+          type: 'restore-purchases',
+          technique: 'revenuecat',
+          step: 'configuring',
+          revenueCatID,
+        });
+
+        const apiKey = Platform.select({
+          ios: 'appl_iUUQsQeQYmaFsfylOIVhryaoUNa',
+          android: 'goog_ykJYeTeXNtUcUZkeqfTOxGTBicI',
+          default: undefined,
+        });
+        if (apiKey === undefined) {
+          throw new Error('not implemented');
+        }
+        Purchases.configure({
+          apiKey,
+          appUserID: revenueCatID,
+          // Not necessary to enforce entitlements client-side as we don't unlock any
+          // client-side behavior
+          entitlementVerificationMode:
+            Purchases.ENTITLEMENT_VERIFICATION_MODE.DISABLED,
+        });
+        trace({
+          type: 'restore-purchases',
+          technique: 'revenuecat',
+          step: 'restoring',
+        });
+        const newInfo = await Purchases.restorePurchases();
+        const rcThinksHavePro = !!newInfo?.entitlements?.active?.pro?.isActive;
+        trace({
+          type: 'restore-purchases',
+          technique: 'revenuecat',
+          step: 'syncing',
+          rcThinksHavePro,
+        });
+
+        const osehResponse = await apiFetch(
+          '/api/1/users/me/entitlements/pro',
+          {
+            method: 'GET',
+            headers: {
+              pragma: 'no-cache',
+            },
+          },
+          user
+        );
+        if (!response.ok) {
+          throw response;
+        }
+        const dataRaw = await osehResponse.json();
+        const pro = convertUsingMapper(dataRaw, entitlementKeyMap);
+        trace({
+          type: 'restore-purchases',
+          technique: 'revenuecat',
+          step: 'finalizing',
+          osehThinksHavePro: pro.isActive,
+        });
+        ctx.resources.entitlementsHandler.evictOrReplace(
+          { user, entitlement: 'pro' },
+          () => ({
+            type: 'data',
+            data: pro,
+          })
+        );
+        ctx.resources.seriesListHandler.evictAll();
+        ctx.resources.seriesJourneysHandler.evictAll();
+
+        await showYesNoModal(modals, {
+          title: 'Restore Purchases',
+          body: 'Your purchases have been restored.',
+          cta1: 'OK',
+          emphasize: 1,
+        }).promise;
+        return undefined;
+      },
+    })
+  );
+
   const supportUrl = 'mailto:hi@oseh.com';
   const contactSupportLink = useWritableValueWithCallbacks(
     (): SettingLink => ({
@@ -242,12 +372,14 @@ export const Settings = ({
 
   const supportLinks = useMemo(
     () => [
+      restorePurchasesLink,
       contactSupportLink,
       privacyPolicyLink,
       termsAndConditionsLink,
       deleteAccountLink,
     ],
     [
+      restorePurchasesLink,
       contactSupportLink,
       privacyPolicyLink,
       termsAndConditionsLink,

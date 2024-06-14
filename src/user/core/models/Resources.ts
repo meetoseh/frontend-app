@@ -1,7 +1,4 @@
-import {
-  PurchasesOfferings,
-  PurchasesStoreProduct,
-} from 'react-native-purchases';
+import { PurchasesOfferings, PurchasesPackage } from 'react-native-purchases';
 import {
   OsehContentNativeMinimalRef,
   OsehContentNativeRef,
@@ -165,7 +162,7 @@ export type Resources = {
   priceHandler: RequestHandler<
     OfferingPriceRef,
     OfferingPriceRef,
-    PurchasesStoreProduct
+    PurchasesPackage
   >;
   /**
    * Determines if a journey can be shared

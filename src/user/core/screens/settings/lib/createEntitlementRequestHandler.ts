@@ -13,7 +13,7 @@ export type EntitlementRef = {
   entitlement: string;
 };
 
-type EntitlementAPI =
+export type EntitlementAPI =
   | {
       identifier: string;
       is_active: true;

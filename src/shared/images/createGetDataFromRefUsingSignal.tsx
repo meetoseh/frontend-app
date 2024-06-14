@@ -24,6 +24,11 @@ export const createGetDataFromRefUsingSignal =
       body: async (state, resolve, reject) => {
         const controller = new AbortController();
         const signal = controller.signal;
+        signal.throwIfAborted ||= () => {
+          if (signal.aborted) {
+            throw new Error('aborted');
+          }
+        };
         const doAbort = () => controller.abort();
         state.cancelers.add(doAbort);
         if (state.finishing) {
