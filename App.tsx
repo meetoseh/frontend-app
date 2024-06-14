@@ -55,6 +55,8 @@ import { SettingsScreen } from './src/user/core/screens/settings/SettingsScreen'
 import { StartMergeScreen } from './src/user/core/screens/start_merge/StartMergeScreen';
 import { UpgradeScreen } from './src/user/core/screens/upgrade/UpgradeScreen';
 import { VerifyPhoneScreen } from './src/user/core/screens/verify_phone/VerifyPhoneScreen';
+import { VideoInterstitialScreen } from './src/user/core/screens/video_interstitial/VideoInterstitialScreen';
+import { VideoInterstitialOnboardingScreen } from './src/user/core/screens/video_interstitial_onboarding/VideoInterstitialOnboardingScreen';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
@@ -102,6 +104,8 @@ const screens = [
   StartMergeScreen,
   UpgradeScreen,
   VerifyPhoneScreen,
+  VideoInterstitialScreen,
+  VideoInterstitialOnboardingScreen,
 ] as any[] as readonly OsehScreen<
   string,
   ScreenResources,

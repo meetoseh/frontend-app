@@ -1,4 +1,4 @@
-import { OsehContentRef } from '../content/OsehContentRef';
+import { OsehContentRefLoadable } from '../content/OsehContentRef';
 import { OsehImageRef } from '../images/OsehImageRef';
 import { CrudFetcherMapper } from '../lib/CrudFetcher';
 import { OsehTranscriptRef } from '../transcripts/OsehTranscriptRef';
@@ -10,7 +10,7 @@ export type OnboardingVideo = {
   /** The uid of the onboarding video association */
   onboardingVideoUid: string;
   /** The actual video */
-  video: OsehContentRef;
+  video: OsehContentRefLoadable;
   /** The cover image / thumbnail image */
   thumbnail: OsehImageRef;
   /** The transcript for the video, if available */

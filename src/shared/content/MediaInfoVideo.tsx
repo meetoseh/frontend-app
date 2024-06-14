@@ -3,7 +3,10 @@ import {
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
 } from '../lib/Callbacks';
-import { OsehContentTarget } from './OsehContentTarget';
+import {
+  ContentFileNativeExport,
+  OsehContentTarget,
+} from './OsehContentTarget';
 import { MediaInfo } from './useMediaInfo';
 import { StyleProp, ViewStyle } from 'react-native';
 import { setVWC } from '../lib/setVWC';
@@ -17,7 +20,7 @@ export type MediaInfoVideoProps = {
   /** The media info to connect */
   mediaInfo: MediaInfo;
   /** The video being connected */
-  video: ValueWithCallbacks<OsehContentTarget>;
+  video: ValueWithCallbacks<ContentFileNativeExport>;
   /** The style for the video element */
   style?: StyleProp<ViewStyle>;
   /** If specified, included in addition to the style */
@@ -124,14 +127,10 @@ export const MediaInfoVideo = ({
       }))}
       component={({ target, style }) => (
         <Video
-          source={
-            target.state === 'loaded'
-              ? {
-                  uri: target.nativeExport.url,
-                  headers: { Authorization: `bearer ${target.jwt}` },
-                }
-              : undefined
-          }
+          source={{
+            uri: target.url,
+            headers: { Authorization: `bearer ${target.jwt}` },
+          }}
           ref={(r) => setVWC(videoRefVWC, r)}
           resizeMode={ResizeMode.COVER}
           shouldPlay={mediaInfo.shouldPlay.get()}

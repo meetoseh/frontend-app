@@ -24,7 +24,7 @@ export const GridFullscreenContainer = ({
 }: PropsWithChildren<{
   windowSizeImmediate: ValueWithCallbacks<{ width: number; height: number }>;
   /** True to configure the status bar, false not to */
-  statusBar: boolean;
+  statusBar: boolean | 'light' | 'dark';
   /** True to provide a modal context to the children, false not to, or the Modals to provide */
   modals: boolean | WritableValueWithCallbacks<Modals>;
 }>): ReactElement => {
@@ -50,7 +50,11 @@ export const GridFullscreenContainer = ({
 
   return (
     <View ref={(r) => containerRef.set(r)} style={containerStyleVWC.get()}>
-      {!!statusBar && <StatusBar style="light" />}
+      {!!statusBar && (
+        <StatusBar
+          style={typeof statusBar === 'string' ? statusBar : 'light'}
+        />
+      )}
       {modals === false ? (
         children
       ) : (
