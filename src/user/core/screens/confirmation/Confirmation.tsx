@@ -2,7 +2,7 @@ import { ReactElement } from 'react';
 import { ScreenComponentProps } from '../../models/Screen';
 import { ConfirmationMappedParams } from './ConfirmationParams';
 import { ConfirmationResources } from './ConfirmationResources';
-import { View, Text, TextStyle, StyleProp } from 'react-native';
+import { Text, TextStyle, StyleProp } from 'react-native';
 import {
   useEntranceTransition,
   useTransitionProp,

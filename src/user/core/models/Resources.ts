@@ -64,6 +64,10 @@ import {
   OsehExpoTokenSyncMinimalRequest,
   OsehExpoTokenSyncRequest,
 } from '../screens/add_push_token/lib/createExpoTokenSyncHandler';
+import {
+  OsehTrackingPermission,
+  OsehTrackingPermissionsRequest,
+} from '../screens/app_tracking_transparency/lib/trackingPermissionHandler';
 
 /**
  * Contains everything that any screen might want to eagerly preload. Generally,
@@ -346,5 +350,11 @@ export type Resources = {
     OsehExpoTokenSyncMinimalRequest,
     OsehExpoTokenSyncRequest,
     OsehExpoTokenSync
+  >;
+  /** Manages if the user has authorized access to app-related tracking data */
+  trackingPermissionHandler: RequestHandler<
+    OsehTrackingPermissionsRequest,
+    OsehTrackingPermissionsRequest,
+    OsehTrackingPermission
   >;
 };

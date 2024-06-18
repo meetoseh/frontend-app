@@ -53,6 +53,7 @@ import { createAudioDataRequestHandler } from '../../../shared/content/createAud
 import { createNotificationPermissionsRequestHandler } from '../screens/add_push_token/lib/createNotificationPermissionsStatusHandler';
 import { createExpoTokenRequestHandler } from '../screens/add_push_token/lib/createExpoTokenHandler';
 import { createExpoTokenSyncRequestHandler } from '../screens/add_push_token/lib/createExpoTokenSyncHandler';
+import { createTrackingPermissionRequestHandler } from '../screens/app_tracking_transparency/lib/trackingPermissionHandler';
 
 type WindowSize = {
   width: number;
@@ -346,6 +347,9 @@ export const useScreenContext = (
   const expoTokenSyncHandler = useWritableValueWithCallbacks(() =>
     createExpoTokenSyncRequestHandler({ logging, maxStale: 2 })
   );
+  const trackingPermissionHandler = useWritableValueWithCallbacks(() =>
+    createTrackingPermissionRequestHandler({ logging, maxStale: 2 })
+  );
 
   const resources = useMemo(
     (): Resources => ({
@@ -383,6 +387,7 @@ export const useScreenContext = (
       notificationPermissionsHandler: notificationPermissionsHandler.get(),
       expoTokenHandler: expoTokenHandler.get(),
       expoTokenSyncHandler: expoTokenSyncHandler.get(),
+      trackingPermissionHandler: trackingPermissionHandler.get(),
     }),
     [
       privatePlaylistHandler,
@@ -419,6 +424,7 @@ export const useScreenContext = (
       notificationPermissionsHandler,
       expoTokenHandler,
       expoTokenSyncHandler,
+      trackingPermissionHandler,
     ]
   );
   const contentWidth = useContentWidthValueWithCallbacks(windowSizeImmediate);

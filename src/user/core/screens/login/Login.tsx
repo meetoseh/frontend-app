@@ -34,7 +34,6 @@ import { useIsMounted } from '../../../../shared/hooks/useIsMounted';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { OsehImageBackgroundFromStateValueWithCallbacks } from '../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks';
 import { useContentWidth } from '../../../../shared/lib/useContentWidth';
-import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import Email from './icons/Email';
 import { useIsTablet } from '../../../../shared/lib/useIsTablet';
 import { ProvidersList } from './components/ProvidersList';
@@ -344,12 +343,6 @@ export const Login = () => {
   );
 
   const contentWidth = useContentWidth();
-
-  useEffect(() => {
-    (async () => {
-      await requestTrackingPermissionsAsync();
-    })();
-  }, []);
 
   const isTablet = useIsTablet();
 

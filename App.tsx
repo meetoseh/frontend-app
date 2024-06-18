@@ -61,6 +61,7 @@ import { keepExpoTokenSynced } from './src/user/core/screens/add_push_token/lib/
 import { keepRemindersCleared } from './src/user/core/screens/add_push_token/lib/keepRemindersCleared';
 import { AddPushTokenScreen } from './src/user/core/screens/add_push_token/AddPushTokenScreen';
 import { initNotifications } from './src/user/core/screens/add_push_token/lib/initNotifications';
+import { AppTrackingTransparencyScreen } from './src/user/core/screens/app_tracking_transparency/AppTrackingTransparencyScreen';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
@@ -111,6 +112,7 @@ const screens = [
   VideoInterstitialScreen,
   VideoInterstitialOnboardingScreen,
   AddPushTokenScreen,
+  AppTrackingTransparencyScreen,
 ] as any[] as readonly OsehScreen<
   string,
   ScreenResources,
