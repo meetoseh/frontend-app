@@ -8,7 +8,7 @@ import { RenderGuardedComponent } from './src/shared/components/RenderGuardedCom
 import { useConfigureBackgroundAudio } from './src/shared/hooks/useConfigureBackgroundAudio';
 import { useMappedValuesWithCallbacks } from './src/shared/hooks/useMappedValuesWithCallbacks';
 import { useWritableValueWithCallbacks } from './src/shared/lib/Callbacks';
-import { useCallback, useContext } from 'react';
+import { useCallback, useContext, useEffect } from 'react';
 import { setVWC } from './src/shared/lib/setVWC';
 import { Dimensions, View, Text } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -57,6 +57,10 @@ import { UpgradeScreen } from './src/user/core/screens/upgrade/UpgradeScreen';
 import { VerifyPhoneScreen } from './src/user/core/screens/verify_phone/VerifyPhoneScreen';
 import { VideoInterstitialScreen } from './src/user/core/screens/video_interstitial/VideoInterstitialScreen';
 import { VideoInterstitialOnboardingScreen } from './src/user/core/screens/video_interstitial_onboarding/VideoInterstitialOnboardingScreen';
+import { keepExpoTokenSynced } from './src/user/core/screens/add_push_token/lib/keepExpoTokenSynced';
+import { keepRemindersCleared } from './src/user/core/screens/add_push_token/lib/keepRemindersCleared';
+import { AddPushTokenScreen } from './src/user/core/screens/add_push_token/AddPushTokenScreen';
+import { initNotifications } from './src/user/core/screens/add_push_token/lib/initNotifications';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
@@ -106,6 +110,7 @@ const screens = [
   VerifyPhoneScreen,
   VideoInterstitialScreen,
   VideoInterstitialOnboardingScreen,
+  AddPushTokenScreen,
 ] as any[] as readonly OsehScreen<
   string,
   ScreenResources,
@@ -233,6 +238,17 @@ const AppInner = () => {
     loginContextRaw.value,
     (v) => v.state === 'logged-out'
   );
+
+  useEffect(() => {
+    const cleanupInitNotifs = initNotifications();
+    const cleanupTokenSync = keepExpoTokenSynced(screenContext);
+    const cleanupClearReminders = keepRemindersCleared(screenContext);
+    return () => {
+      cleanupInitNotifs();
+      cleanupTokenSync();
+      cleanupClearReminders();
+    };
+  }, [screenContext]);
 
   return (
     <RenderGuardedComponent

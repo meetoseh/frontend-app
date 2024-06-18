@@ -126,6 +126,7 @@ export const Settings = ({
         const loginContextUnch = ctx.login.value.get();
         if (loginContextUnch.state === 'logged-in') {
           ctx.login.setAuthTokens(null);
+          ctx.resources.expoTokenSyncHandler.evictAll();
         }
         return new Promise(() => {});
       },

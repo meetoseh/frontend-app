@@ -54,6 +54,16 @@ import {
 import { OfferingPriceRef } from '../screens/upgrade/lib/createOfferingPriceRequestHandler';
 import { RevenueCatOffering } from '../features/upgrade/models/RevenueCatOffering';
 import { AudioFileData } from '../../../shared/content/createAudioDataHandler';
+import {
+  OsehNotificationPermissionsRequest,
+  OsehNotificationsPermission,
+} from '../screens/add_push_token/lib/createNotificationPermissionsStatusHandler';
+import { OsehExpoToken } from '../screens/add_push_token/lib/createExpoTokenHandler';
+import {
+  OsehExpoTokenSync,
+  OsehExpoTokenSyncMinimalRequest,
+  OsehExpoTokenSyncRequest,
+} from '../screens/add_push_token/lib/createExpoTokenSyncHandler';
 
 /**
  * Contains everything that any screen might want to eagerly preload. Generally,
@@ -313,12 +323,28 @@ export type Resources = {
     LoginContextValueLoggedIn,
     OnboardingVideo
   >;
-  /**
-   * Manages downloading transcripts
-   */
+  /** Manages downloading transcripts */
   transcriptHandler: RequestHandler<
     Pick<OsehTranscriptRef, 'uid'>,
     OsehTranscriptRef,
     OsehTranscript
+  >;
+  /** Manages fetching the current state of notification permissions */
+  notificationPermissionsHandler: RequestHandler<
+    OsehNotificationPermissionsRequest,
+    OsehNotificationPermissionsRequest,
+    OsehNotificationsPermission
+  >;
+  /** Manages fetching the expo push token if we have permissions */
+  expoTokenHandler: RequestHandler<
+    { granted: true },
+    OsehNotificationsPermission & { granted: true },
+    OsehExpoToken
+  >;
+  /** Manages syncing an expo push token with the oseh backend */
+  expoTokenSyncHandler: RequestHandler<
+    OsehExpoTokenSyncMinimalRequest,
+    OsehExpoTokenSyncRequest,
+    OsehExpoTokenSync
   >;
 };

@@ -50,6 +50,9 @@ import { useMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValu
 import Constants from 'expo-constants';
 import { useMappedValuesWithCallbacks } from '../../../shared/hooks/useMappedValuesWithCallbacks';
 import { createAudioDataRequestHandler } from '../../../shared/content/createAudioDataHandler';
+import { createNotificationPermissionsRequestHandler } from '../screens/add_push_token/lib/createNotificationPermissionsStatusHandler';
+import { createExpoTokenRequestHandler } from '../screens/add_push_token/lib/createExpoTokenHandler';
+import { createExpoTokenSyncRequestHandler } from '../screens/add_push_token/lib/createExpoTokenSyncHandler';
 
 type WindowSize = {
   width: number;
@@ -334,6 +337,15 @@ export const useScreenContext = (
   const transcriptHandler = useWritableValueWithCallbacks(() =>
     createTranscriptRequestHandler({ logging, maxStale: 100 })
   );
+  const notificationPermissionsHandler = useWritableValueWithCallbacks(() =>
+    createNotificationPermissionsRequestHandler({ logging, maxStale: 2 })
+  );
+  const expoTokenHandler = useWritableValueWithCallbacks(() =>
+    createExpoTokenRequestHandler({ logging, maxStale: 2 })
+  );
+  const expoTokenSyncHandler = useWritableValueWithCallbacks(() =>
+    createExpoTokenSyncRequestHandler({ logging, maxStale: 2 })
+  );
 
   const resources = useMemo(
     (): Resources => ({
@@ -368,6 +380,9 @@ export const useScreenContext = (
       reminderSettingsHandler: reminderSettingsHandler.get(),
       onboardingVideoHandler: onboardingVideoHandler.get(),
       transcriptHandler: transcriptHandler.get(),
+      notificationPermissionsHandler: notificationPermissionsHandler.get(),
+      expoTokenHandler: expoTokenHandler.get(),
+      expoTokenSyncHandler: expoTokenSyncHandler.get(),
     }),
     [
       privatePlaylistHandler,
@@ -401,6 +416,9 @@ export const useScreenContext = (
       reminderSettingsHandler,
       onboardingVideoHandler,
       transcriptHandler,
+      notificationPermissionsHandler,
+      expoTokenHandler,
+      expoTokenSyncHandler,
     ]
   );
   const contentWidth = useContentWidthValueWithCallbacks(windowSizeImmediate);

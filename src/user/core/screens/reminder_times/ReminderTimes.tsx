@@ -54,6 +54,10 @@ import { Pressable, View, ViewStyle, Text, TextStyle } from 'react-native';
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
 import { ContentContainer } from '../../../../shared/components/ContentContainer';
+import {
+  ErrorBanner,
+  ErrorBannerText,
+} from '../../../../shared/components/ErrorBanner';
 
 /**
  * Allows the user to update their notification settings
@@ -238,7 +242,12 @@ export const ReminderTimes = ({
 
       const loginContextUnch = ctx.login.value.get();
       if (loginContextUnch.state !== 'logged-in') {
-        setVWC(savingErrorVWC, <>Not logged in</>);
+        setVWC(
+          savingErrorVWC,
+          <ErrorBanner>
+            <ErrorBannerText>Not logged in</ErrorBannerText>
+          </ErrorBanner>
+        );
         return false;
       }
 
@@ -255,8 +264,8 @@ export const ReminderTimes = ({
               days_of_week: savingDays,
               time_range: { start: savingStart, end: savingEnd },
               channel,
-              timezone,
-              timezone_technique: 'browser',
+              timezone: timezone.timeZone,
+              timezone_technique: timezone.timeZoneTechnique,
             }),
           },
           loginContext

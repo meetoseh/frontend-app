@@ -36,4 +36,5 @@ const doEvict = async (ctx: ScreenContext): Promise<void> => {
   ctx.resources.manageMembershipUrlHandler.evictAll();
   ctx.resources.reminderChannelsHandler.evictAll();
   ctx.resources.reminderSettingsHandler.evictAll();
+  ctx.resources.expoTokenSyncHandler.evictAll();
 };
