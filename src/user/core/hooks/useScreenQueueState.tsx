@@ -300,6 +300,26 @@ export const useScreenQueueState = (): ScreenQueueState => {
                   return;
                 }
 
+                if (response.status === 403) {
+                  // token is bad!
+                  state.cancelers.remove(doAbort);
+                  state.finishing = true;
+                  state.done = true;
+                  if (Object.is(loginContextRaw.value.get(), loginContext)) {
+                    console.warn(
+                      'Logging out because of 403 error while peeking screen queue'
+                    );
+                    loginContextRaw.setAuthTokens(null);
+                  }
+                  resolve({
+                    type: 'error',
+                    data: undefined,
+                    error: describeHandledError(),
+                    retryAt: undefined,
+                  });
+                  return;
+                }
+
                 const described = await describeError(response);
                 state.cancelers.remove(doAbort);
 

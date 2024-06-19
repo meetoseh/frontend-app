@@ -190,6 +190,7 @@ const EmotionRow = ({
     contentWidthVWC,
     (w): ViewStyle =>
       Object.assign({}, styles.row, {
+        width: w,
         maxWidth: w,
       })
   );
@@ -241,7 +242,7 @@ const CenteringView = ({
     parentWidthVWC,
     (w): ViewStyle =>
       Object.assign({}, style, {
-        width: w,
+        minWidth: w,
       })
   );
   const viewWidthVWC = useWritableValueWithCallbacks<number>(() =>
@@ -257,17 +258,24 @@ const CenteringView = ({
       }
       const parentWidth = parentWidthVWC.get();
       const width = viewWidthVWC.get();
-      if (parentWidth < width) {
+      if (parentWidth >= width) {
         scrollView.scrollTo({ x: 0, animated: false });
       } else {
-        scrollView.scrollTo({ x: (parentWidth - width) / 2, animated: false });
+        scrollView.scrollTo({ x: (width - parentWidth) / 2, animated: false });
       }
       return undefined;
     }
   );
 
   return (
-    <View style={viewStyleVWC.get()} ref={(r) => setVWC(viewRef, r)}>
+    <View
+      style={viewStyleVWC.get()}
+      ref={(r) => setVWC(viewRef, r)}
+      onLayout={(e) => {
+        const realWidth = e?.nativeEvent?.layout?.width ?? parentWidthVWC.get();
+        setVWC(viewWidthVWC, realWidth);
+      }}
+    >
       {children}
     </View>
   );
