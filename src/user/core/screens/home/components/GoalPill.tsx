@@ -3,10 +3,7 @@ import { RenderGuardedComponent } from '../../../../../shared/components/RenderG
 import { useMappedValueWithCallbacks } from '../../../../../shared/hooks/useMappedValueWithCallbacks';
 import { ValueWithCallbacks } from '../../../../../shared/lib/Callbacks';
 import { StreakInfo } from '../../../../journey/models/StreakInfo';
-import {
-  VisualGoal,
-  VisualGoalState,
-} from '../../../features/homeScreen/components/VisualGoal';
+import { VisualGoal, VisualGoalState } from './VisualGoal';
 import { styles } from './GoalPillStyles';
 import { SimpleBlurView } from '../../../../../shared/components/SimpleBlurView';
 

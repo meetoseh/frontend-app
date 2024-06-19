@@ -27,11 +27,8 @@ import { AddPushTokenResources } from './AddPushTokenResources';
 import { AddPushTokenMappedParams } from './AddPushTokenParams';
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
 import { OsehImageFromState } from '../../../../shared/images/OsehImageFromState';
-import {
-  DEFAULT_DAYS,
-  DEFAULT_TIME_RANGE,
-} from '../../features/requestNotificationTime/constants';
-import { TimeRange } from '../../features/requestNotificationTime/EditTimeRange';
+import { DEFAULT_DAYS, DEFAULT_TIME_RANGE } from '../reminder_times/constants';
+import { TimeRange } from '../reminder_times/EditTimeRange';
 import { DayOfWeek } from '../../../../shared/models/DayOfWeek';
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
 import { useWorkingModal } from '../../../../shared/hooks/useWorkingModal';
@@ -49,7 +46,7 @@ import {
   OsehNotificationsPermission,
   createOsehNotificationPermissionsRequest,
 } from './lib/createNotificationPermissionsStatusHandler';
-import { EditReminderTime } from '../../features/requestNotificationTime/EditReminderTime';
+import { EditReminderTime } from '../reminder_times/EditReminderTime';
 import { Channel } from '../reminder_times/lib/Channel';
 import {
   GRID_SIMPLE_NAVIGATION_FOREGROUND_BOTTOM_HEIGHT,

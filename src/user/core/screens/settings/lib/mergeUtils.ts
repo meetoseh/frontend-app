@@ -5,7 +5,7 @@ import {
 } from '../../../../../shared/lib/apiFetch';
 import { OauthProvider } from '../../../../login/lib/OauthProvider';
 import Constants from 'expo-constants';
-import { mergeRedirectUrl } from '../../../features/mergeAccount/hooks/usePromptMergeUsingModal';
+import { mergeRedirectUrl } from '../hooks/usePromptMergeUsingModal';
 
 const isDevelopment = Constants.expoConfig?.extra?.environment === 'dev';
 

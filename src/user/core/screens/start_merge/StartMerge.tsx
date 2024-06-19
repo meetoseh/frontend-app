@@ -13,18 +13,11 @@ import {
   useStandardTransitionsState,
 } from '../../../../shared/hooks/useStandardTransitions';
 import { WipeTransitionOverlay } from '../../../../shared/components/WipeTransitionOverlay';
-import {
-  createWritableValueWithCallbacks,
-  useWritableValueWithCallbacks,
-} from '../../../../shared/lib/Callbacks';
+import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { screenOut } from '../../lib/screenOut';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { StartMergeResources } from './StartMergeResources';
 import { StartMergeMappedParams } from './StartMergeParams';
-import {
-  ProvidersList,
-  ProviderItem,
-} from '../../features/login/components/ProvidersList';
 import { screenWithWorking } from '../../lib/screenWithWorking';
 import { Text } from 'react-native';
 import {
@@ -39,8 +32,9 @@ import { setVWC } from '../../../../shared/lib/setVWC';
 import { useManageConnectWithProvider } from '../settings/hooks/useManageConnectWithProvider';
 import { Modals } from '../../../../shared/contexts/ModalContext';
 import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
-import { MergeProvider } from '../../features/mergeAccount/MergeAccountState';
+import { MergeProvider } from '../settings/lib/MergeProvider';
 import { trackMerge } from '../settings/lib/trackMerge';
+import { ProviderItem, ProvidersList } from '../login/components/ProvidersList';
 
 /**
  * Allows the user to merge their account using one of the indicated providers.

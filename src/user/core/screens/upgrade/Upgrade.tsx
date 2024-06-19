@@ -30,7 +30,7 @@ import { useReactManagedValueAsValueWithCallbacks } from '../../../../shared/hoo
 import { Clock } from './icons/Clock';
 import { Sheet } from './icons/Sheet';
 import { Series } from './icons/Series';
-import { RevenueCatPackage } from '../../features/upgrade/models/RevenueCatPackage';
+import { RevenueCatPackage } from './models/RevenueCatPackage';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
 import { useErrorModal } from '../../../../shared/hooks/useErrorModal';

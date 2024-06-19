@@ -4,7 +4,6 @@ import { createWritableValueWithCallbacks } from '../../../../shared/lib/Callbac
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { RequestResult } from '../../../../shared/requests/RequestHandler';
 import { unwrapRequestResult } from '../../../../shared/requests/unwrapRequestResult';
-import { Identity } from '../../features/settings/hooks/useIdentities';
 import { createLoginContextRequest } from '../../lib/createLoginContextRequest';
 import { createMappedLoginContextRequest } from '../../lib/createMappedLoginContextRequest';
 import { OsehScreen } from '../../models/Screen';
@@ -16,6 +15,7 @@ import {
 } from './SettingsParams';
 import { SettingsResources } from './SettingsResources';
 import { Entitlement } from './lib/createEntitlementRequestHandler';
+import { Identity } from './hooks/useIdentities';
 
 /**
  * Allows the user to perform long-tail actions like updating their reminder

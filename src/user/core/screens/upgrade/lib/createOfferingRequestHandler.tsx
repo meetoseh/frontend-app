@@ -8,9 +8,9 @@ import {
   RequestHandler,
   Result,
 } from '../../../../../shared/requests/RequestHandler';
-import { RevenueCatPlatform } from '../../../features/upgrade/lib/RevenueCatPlatform';
-import { RevenueCatOffering } from '../../../features/upgrade/models/RevenueCatOffering';
-import { revenueCatOfferingsKeyMap } from '../../../features/upgrade/models/RevenueCatOfferings';
+import { RevenueCatPlatform } from './RevenueCatPlatform';
+import { RevenueCatOffering } from '../models/RevenueCatOffering';
+import { revenueCatOfferingsKeyMap } from '../models/RevenueCatOfferings';
 
 /**
  * Creates a request handler capable of fetching the offering for the logged

@@ -1,7 +1,7 @@
 import { PurchasesPackage } from 'react-native-purchases';
 import { OsehImageExportCropped } from '../../../../shared/images/OsehImageExportCropped';
 import { ValueWithCallbacks } from '../../../../shared/lib/Callbacks';
-import { RevenueCatOffering } from '../../features/upgrade/models/RevenueCatOffering';
+import { RevenueCatOffering } from './models/RevenueCatOffering';
 import { ScreenResources } from '../../models/Screen';
 
 export type UpgradeResources = ScreenResources & {

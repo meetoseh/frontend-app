@@ -1,14 +1,14 @@
-import { ReactElement, useCallback, useEffect, useRef } from "react";
-import { styles } from "./TimePickerStyles";
-import { Platform, Pressable, Text, View } from "react-native";
-import { makeSecondsOffsetPretty } from "../../user/core/features/requestNotificationTime/formatUtils";
-import { useWritableValueWithCallbacks } from "../lib/Callbacks";
-import { setVWC } from "../lib/setVWC";
-import { useValueWithCallbacksEffect } from "../hooks/useValueWithCallbacksEffect";
+import { ReactElement, useCallback, useEffect, useRef } from 'react';
+import { styles } from './TimePickerStyles';
+import { Platform, Pressable, Text, View } from 'react-native';
+import { makeSecondsOffsetPretty } from '../../user/core/screens/reminder_times/formatUtils';
+import { useWritableValueWithCallbacks } from '../lib/Callbacks';
+import { setVWC } from '../lib/setVWC';
+import { useValueWithCallbacksEffect } from '../hooks/useValueWithCallbacksEffect';
 import DateTimePicker, {
   DateTimePickerAndroid,
-} from "@react-native-community/datetimepicker";
-import { RenderGuardedComponent } from "./RenderGuardedComponent";
+} from '@react-native-community/datetimepicker';
+import { RenderGuardedComponent } from './RenderGuardedComponent';
 
 type TimePickerProps = {
   /**
@@ -25,11 +25,11 @@ type TimePickerProps = {
    * The variant of the picker style to use.
    * @default 'white'
    */
-  variant?: "white";
+  variant?: 'white';
 };
 
 const usingImperativeAPI =
-  Platform.OS === "android" &&
+  Platform.OS === 'android' &&
   DateTimePickerAndroid !== null &&
   DateTimePickerAndroid !== undefined;
 
@@ -90,7 +90,7 @@ export const TimePicker = ({
       currentValueAsDate.setHours(hours, minutes, 0, 0);
       DateTimePickerAndroid.open({
         value: currentValueAsDate,
-        mode: "time",
+        mode: 'time',
         onChange: (e, selected) => {
           if (selected !== undefined) {
             setValueUsingDate(selected);
@@ -100,7 +100,7 @@ export const TimePicker = ({
       });
 
       return () => {
-        DateTimePickerAndroid.dismiss("time");
+        DateTimePickerAndroid.dismiss('time');
       };
     }
   });
@@ -128,7 +128,7 @@ export const TimePicker = ({
       >
         <Text style={styles.label}>
           {makeSecondsOffsetPretty(value, {
-            minutes: "always",
+            minutes: 'always',
             spaceAmPm: true,
           })}
         </Text>

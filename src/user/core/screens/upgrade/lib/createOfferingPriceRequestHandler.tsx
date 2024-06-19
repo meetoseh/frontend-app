@@ -12,7 +12,7 @@ import {
   Result,
 } from '../../../../../shared/requests/RequestHandler';
 import { Platform } from 'react-native';
-import { RevenueCatPackage } from '../../../features/upgrade/models/RevenueCatPackage';
+import { RevenueCatPackage } from '../models/RevenueCatPackage';
 
 export type OfferingPriceRef = {
   /** The user to fetch offering information for */

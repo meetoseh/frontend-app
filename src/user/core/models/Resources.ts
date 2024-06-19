@@ -28,7 +28,6 @@ import { ExternalCourse } from '../../series/lib/ExternalCourse';
 import { CourseJourneys } from '../../series/lib/createSeriesJourneysRequestHandler';
 import { CourseLikeState } from '../../series/lib/createSeriesLikeStateRequestHandler';
 import { SeriesListRequest } from '../../series/lib/createSeriesListRequestHandler';
-import { Identity } from '../features/settings/hooks/useIdentities';
 import { FavoritesListRequest } from '../screens/favorites/lib/createFavoritesListRequestHandler';
 import { HistoryListRequest } from '../screens/history/lib/createHistoryListRequestHandler';
 import { HomeCopy } from '../screens/home/lib/createHomeCopyRequestHandler';
@@ -52,7 +51,7 @@ import {
   EntitlementRef,
 } from '../screens/settings/lib/createEntitlementRequestHandler';
 import { OfferingPriceRef } from '../screens/upgrade/lib/createOfferingPriceRequestHandler';
-import { RevenueCatOffering } from '../features/upgrade/models/RevenueCatOffering';
+import { RevenueCatOffering } from '../screens/upgrade/models/RevenueCatOffering';
 import { AudioFileData } from '../../../shared/content/createAudioDataHandler';
 import {
   OsehNotificationPermissionsRequest,
@@ -68,6 +67,7 @@ import {
   OsehTrackingPermission,
   OsehTrackingPermissionsRequest,
 } from '../screens/app_tracking_transparency/lib/trackingPermissionHandler';
+import { Identity } from '../screens/settings/hooks/useIdentities';
 
 /**
  * Contains everything that any screen might want to eagerly preload. Generally,

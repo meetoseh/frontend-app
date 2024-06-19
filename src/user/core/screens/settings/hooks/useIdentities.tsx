@@ -11,7 +11,7 @@ import { setVWC } from '../../../../../shared/lib/setVWC';
 import { useValueWithCallbacksEffect } from '../../../../../shared/hooks/useValueWithCallbacksEffect';
 import { apiFetch } from '../../../../../shared/lib/apiFetch';
 import { describeError } from '../../../../../shared/lib/describeError';
-import { MergeProvider } from '../../../features/mergeAccount/MergeAccountState';
+import { MergeProvider } from '../lib/MergeProvider';
 
 export type Identity = {
   /**

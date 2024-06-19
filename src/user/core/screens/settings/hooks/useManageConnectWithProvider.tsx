@@ -16,9 +16,9 @@ import {
   ErrorBanner,
   ErrorBannerText,
 } from '../../../../../shared/components/ErrorBanner';
-import { MergeProvider } from '../../../features/mergeAccount/MergeAccountState';
-import { PromptMergeResult } from '../../../features/mergeAccount/lib/MergeMessagePipe';
-import { usePromptMergeUsingModal } from '../../../features/mergeAccount/hooks/usePromptMergeUsingModal';
+import { MergeProvider } from '../lib/MergeProvider';
+import { PromptMergeResult } from '../lib/MergeMessagePipe';
+import { usePromptMergeUsingModal } from './usePromptMergeUsingModal';
 import { getMergeProviderUrl } from '../lib/mergeUtils';
 
 export const useManageConnectWithProvider = ({

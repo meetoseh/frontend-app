@@ -21,7 +21,7 @@ import {
 } from '../../../../shared/requests/RequestHandler';
 import { createChainedRequest } from '../../../../shared/requests/createChainedRequest';
 import { unwrapRequestResult } from '../../../../shared/requests/unwrapRequestResult';
-import { RevenueCatOffering } from '../../features/upgrade/models/RevenueCatOffering';
+import { RevenueCatOffering } from './models/RevenueCatOffering';
 import { OsehScreen } from '../../models/Screen';
 import { screenImageKeyMap } from '../../models/ScreenImage';
 import { Upgrade } from './Upgrade';
