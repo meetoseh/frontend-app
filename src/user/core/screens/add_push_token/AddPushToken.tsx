@@ -1,4 +1,4 @@
-import { ReactElement, useCallback } from 'react';
+import { ReactElement, useCallback, useEffect } from 'react';
 import { ScreenComponentProps } from '../../models/Screen';
 import { Text, Platform, View, Pressable } from 'react-native';
 import {
@@ -10,7 +10,10 @@ import {
   StandardScreenTransition,
   useStandardTransitionsState,
 } from '../../../../shared/hooks/useStandardTransitions';
-import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
+import {
+  createWritableValueWithCallbacks,
+  useWritableValueWithCallbacks,
+} from '../../../../shared/lib/Callbacks';
 import { GridFullscreenContainer } from '../../../../shared/components/GridFullscreenContainer';
 import { GridDarkGrayBackground } from '../../../../shared/components/GridDarkGrayBackground';
 import { GridContentContainer } from '../../../../shared/components/GridContentContainer';
@@ -59,6 +62,7 @@ import { HorizontalSpacer } from '../../../../shared/components/HorizontalSpacer
 import Close from '../../../../shared/icons/Close';
 import { Back } from '../emotion/icons/Back';
 import { screenWithWorking } from '../../lib/screenWithWorking';
+import { waitForValueWithCallbacksConditionCancelable } from '../../../../shared/lib/waitForValueWithCallbacksCondition';
 
 /**
  * If the user doesn't already have notifications enabled on the current device,
@@ -95,6 +99,71 @@ export const AddPushToken = ({
   const transitionState = useStandardTransitionsState(transition);
 
   const workingVWC = useWritableValueWithCallbacks(() => false);
+
+  useEffect(() => {
+    const active = createWritableValueWithCallbacks(true);
+    checkPermissions();
+    return () => {
+      setVWC(active, false);
+    };
+
+    async function checkPermissions() {
+      if (!active.get()) {
+        return;
+      }
+
+      const nonLoadingCancelable = waitForValueWithCallbacksConditionCancelable(
+        resources.permissions,
+        (v) => v !== null
+      );
+      active.callbacks.add(nonLoadingCancelable.cancel);
+      if (!active.get()) {
+        nonLoadingCancelable.cancel();
+      }
+
+      let permissions: Awaited<typeof nonLoadingCancelable.promise>;
+      try {
+        permissions = await nonLoadingCancelable.promise;
+      } catch (e) {
+        if (!active.get()) {
+          return;
+        }
+        trace({ type: 'check-permissions-error', error: `${e}` });
+        return;
+      } finally {
+        active.callbacks.remove(nonLoadingCancelable.cancel);
+      }
+
+      if (!active.get()) {
+        return;
+      }
+
+      if (permissions === null) {
+        throw new Error('impossible');
+      }
+
+      if (workingVWC.get()) {
+        return;
+      }
+
+      if (permissions.granted || !permissions.canAskAgain) {
+        setVWC(workingVWC, true);
+        try {
+          trace({
+            type: 'skip',
+            reason: permissions.granted
+              ? 'already have permission'
+              : 'cannot open native dialog',
+            granted: permissions.granted,
+            canAskAgain: permissions.canAskAgain,
+          });
+          startPop({ slug: 'skip', parameters: {} })();
+        } finally {
+          setVWC(workingVWC, false);
+        }
+      }
+    }
+  }, [resources.permissions, trace, startPop, workingVWC]);
 
   const getExistingTimeRange = (): TimeRange => {
     const settings = resources.settings.get();
