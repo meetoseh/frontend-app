@@ -48,6 +48,7 @@ import { FilledPremiumButton } from '../../../../shared/components/FilledPremium
 import { HorizontalSpacer } from '../../../../shared/components/HorizontalSpacer';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
 import { Modals } from '../../../../shared/contexts/ModalContext';
+import { OutlineWhiteButton } from '../../../../shared/components/OutlineWhiteButton';
 
 /**
  * Displays the series details page on a specific series
@@ -207,6 +208,49 @@ export const SeriesDetails = ({
               </Fragment>
             );
           })}
+        {screen.parameters.buttons.rewatchIntro !== null && (
+          <>
+            <VerticalSpacer height={40} />
+            <TextStyleForwarder
+              component={(styleVWC) => (
+                <OutlineWhiteButton
+                  onPress={() => {
+                    const cta = screen.parameters.buttons.rewatchIntro;
+                    if (cta === null) {
+                      return;
+                    }
+
+                    screenOut(
+                      workingVWC,
+                      startPop,
+                      transition,
+                      cta.exit,
+                      cta.trigger,
+                      {
+                        beforeDone: async () => {
+                          trace({ type: 'rewatch_intro' });
+                        },
+                        endpoint: '/api/1/users/me/screens/pop_to_series',
+                        parameters: {
+                          series: {
+                            uid: screen.parameters.series.uid,
+                            jwt: screen.parameters.series.jwt,
+                          },
+                        },
+                      }
+                    );
+                  }}
+                  setTextStyle={(s) => setVWC(styleVWC, s)}
+                >
+                  <RenderGuardedComponent
+                    props={styleVWC}
+                    component={(s) => <Text style={s}>Watch Introduction</Text>}
+                  />
+                </OutlineWhiteButton>
+              )}
+            />
+          </>
+        )}
         <VerticalSpacer height={24} />
         <RenderGuardedComponent
           props={ctx.botBarHeight}

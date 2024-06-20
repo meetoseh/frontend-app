@@ -28,6 +28,10 @@ export type SeriesDetailsAPIParams = {
       exit: StandardScreenTransition;
       trigger: string | null;
     };
+    rewatch_intro: {
+      exit: StandardScreenTransition;
+      trigger: string | null;
+    } | null;
   };
 };
 
@@ -70,6 +74,16 @@ export type SeriesDetailsMappedParams = Omit<
       exit: StandardScreenTransition;
       trigger: string | null;
     };
+
+    /**
+     * If not null, a "Watch Introduction" button is shown below the
+     * class list, which when pressed will trigger the corresponding
+     * client flow with server parameters `{"series": "string"}`
+     */
+    rewatchIntro: {
+      exit: StandardScreenTransition;
+      trigger: string | null;
+    } | null;
   };
   __mapped?: true;
 };
@@ -86,6 +100,7 @@ export const seriesDetailsParamsMapper: CrudFetcherMapper<SeriesDetailsMappedPar
         buyNow: v.buy_now,
         back: v.back,
         takeClass: v.take_class,
+        rewatchIntro: v.rewatch_intro ?? null,
       },
     }),
   };
