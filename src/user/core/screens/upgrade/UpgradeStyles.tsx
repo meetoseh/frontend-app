@@ -12,23 +12,42 @@ export const styles = StyleSheet.create({
     fontSize: 28,
     color: Colors.WHITE,
   },
-  message: {
-    textAlign: 'left',
-    fontFamily: 'OpenSans-Regular',
-    fontSize: 16,
-    color: Colors.GRAYSCALE_MID_GRAY,
-  },
-  valueProp: {
+  checklistItem: {
     flexDirection: 'row',
     flexWrap: 'nowrap',
-    alignItems: 'center',
     justifyContent: 'flex-start',
+    alignItems: 'center',
   },
-  valuePropText: {
-    textAlign: 'left',
+  checklistText: {
     fontFamily: 'OpenSans-Regular',
     fontSize: 17,
     color: Colors.PRIMARY_LIGHT,
+  },
+  sequenceItem: {
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+  },
+  sequenceIcon: {
+    fontFamily: 'OpenSans-Regular',
+    fontSize: 19,
+    color: Colors.PRIMARY_LIGHT,
+  },
+  sequenceText: {
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    flexShrink: 1,
+  },
+  sequenceTitle: {
+    fontFamily: 'OpenSans-SemiBold',
+    fontSize: 17,
+    color: Colors.PRIMARY_LIGHT,
+  },
+  sequenceBody: {
+    fontFamily: 'OpenSans-Regular',
+    fontSize: 16,
+    color: Colors.GRAYSCALE_MID_GRAY,
   },
   offers: {
     flexDirection: 'column',
@@ -72,6 +91,12 @@ export const styles = StyleSheet.create({
   },
   offerFrequencyActive: {
     color: Colors.NEW_GRAYSCALE_BORDER,
+  },
+  oneOfferWithTrialInfo: {
+    fontFamily: 'OpenSans-Regular',
+    fontSize: 14,
+    textAlign: 'center',
+    color: Colors.PRIMARY_LIGHT,
   },
   disclaimer: {
     justifyContent: 'flex-start',

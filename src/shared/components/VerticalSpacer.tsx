@@ -8,6 +8,7 @@ import { debugView } from '../lib/debugView';
  */
 export const VerticalSpacer = ({
   height,
+  maxHeight,
   flexBasis,
   flexGrow,
   color,
@@ -15,6 +16,7 @@ export const VerticalSpacer = ({
   debug,
 }: {
   height: number;
+  maxHeight?: number;
   flexBasis?: number;
   flexGrow?: number;
   color?: string;
@@ -28,6 +30,7 @@ export const VerticalSpacer = ({
       style={{
         height: height,
         paddingTop: height,
+        ...(maxHeight !== undefined ? { maxHeight } : {}),
         ...(flexGrow !== undefined ? { flexGrow } : {}),
         ...(flexBasis !== undefined ? { flexBasis } : {}),
         ...(color !== undefined ? { backgroundColor: color } : {}),

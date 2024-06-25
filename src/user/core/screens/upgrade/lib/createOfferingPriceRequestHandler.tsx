@@ -51,7 +51,11 @@ export const createOfferingPriceRequestHandler = ({
 };
 
 const getRefUid = (ref: OfferingPriceRef): string =>
-  ref.user.userAttributes.sub + '@' + ref.platformProductIdentifier;
+  ref.user.userAttributes.sub +
+  '@' +
+  ref.platformProductIdentifier +
+  ':' +
+  (ref.platformProductPlanIdentifier ?? '');
 const getDataFromRef: (
   ref: OfferingPriceRef
 ) => CancelablePromise<Result<PurchasesPackage>> =

@@ -1,6 +1,6 @@
 import { Fragment, ReactElement } from 'react';
 import { ScreenComponentProps } from '../../models/Screen';
-import { UpgradeMappedParams } from './UpgradeParams';
+import { UpgradeCopy, UpgradeMappedParams } from './UpgradeParams';
 import { UpgradeResources } from './UpgradeResources';
 import {
   playEntranceTransition,
@@ -48,14 +48,22 @@ import * as Linking from 'expo-linking';
 import { convertUsingMapper } from '../../../../shared/lib/CrudFetcher';
 import {
   Entitlement,
-  EntitlementAPI,
   entitlementKeyMap,
 } from '../settings/lib/createEntitlementRequestHandler';
-import { describeError } from '../../../../shared/lib/describeError';
 import {
   ErrorBanner,
   ErrorBannerText,
 } from '../../../../shared/components/ErrorBanner';
+import { ScreenImageParsed } from '../../models/ScreenImage';
+import {
+  ParsedPeriod,
+  extractPaidIntervalLength,
+  extractTrialLength,
+} from './lib/purchasesStoreProductHelper';
+import { Check } from '../series_details/icons/Check';
+import { createPriceIdentifier } from './lib/PriceIdentifier';
+
+type Copy = UpgradeCopy<ScreenImageParsed>;
 
 /**
  * The upgrade screen, based on the users current offer but with a configurable
@@ -94,19 +102,6 @@ export const Upgrade = ({
     return undefined;
   });
 
-  const activePackageIdxVWC = useWritableValueWithCallbacks<number>(() => 0);
-  useValueWithCallbacksEffect(resources.offering, (offer) => {
-    const activePackageIdx = activePackageIdxVWC.get();
-    if (
-      offer === null ||
-      offer === undefined ||
-      offer.packages.length <= activePackageIdx
-    ) {
-      setVWC(activePackageIdxVWC, 0);
-    }
-    return undefined;
-  });
-
   const subscribeErrorVWC = useWritableValueWithCallbacks<ReactElement | null>(
     () => null
   );
@@ -137,8 +132,9 @@ export const Upgrade = ({
         >
           <GridImageBackground
             image={resources.image}
-            thumbhash={useReactManagedValueAsValueWithCallbacks(
-              screen.parameters.image.thumbhash
+            thumbhash={useMappedValueWithCallbacks(
+              resources.copy,
+              (c) => c?.image?.thumbhash ?? null
             )}
             size={resources.imageSizeImmediate}
           />
@@ -160,7 +156,7 @@ export const Upgrade = ({
         opacity={transitionState.opacity}
         justifyContent="flex-start"
         gridSizeVWC={ctx.windowSizeImmediate}
-        scrollable={false}
+        scrollable
       >
         <RenderGuardedComponent
           props={ctx.topBarHeight}
@@ -187,91 +183,126 @@ export const Upgrade = ({
             <Back />
           </Pressable>
         </View>
-        <VerticalSpacer height={0} flexGrow={1} />
-        <Text style={styles.header}>{screen.parameters.header}</Text>
-        <VerticalSpacer height={16} />
-        {[
-          { icon: <Clock />, text: 'Unlock longer classes' },
-          {
-            icon: <Sheet />,
-            text: 'Access the entire library',
-          },
-          {
-            icon: <Series />,
-            text: 'Explore expert-led series',
-          },
-          {
-            icon: <Text style={{ fontSize: 17, lineHeight: 24 }}>🧘</Text>,
-            text: 'Enhanced content browsing',
-          },
-        ].map(({ icon, text }, idx) => (
-          <Fragment key={idx}>
-            {idx !== 0 && <VerticalSpacer height={8} />}
-            <View style={styles.valueProp}>
-              {icon}
-              <HorizontalSpacer width={8} />
-              <Text style={styles.valuePropText}>{text}</Text>
-            </View>
-          </Fragment>
-        ))}
-        <VerticalSpacer height={40} />
+        <VerticalSpacer height={16} flexGrow={1} />
         <RenderGuardedComponent
           props={useMappedValuesWithCallbacks(
-            [resources.offering, resources.prices, ctx.contentWidth],
+            [resources.copy, resources.trial],
+            () => ({
+              copy: resources.copy.get(),
+              trial: resources.trial.get(),
+            })
+          )}
+          component={(params) => <Marketing {...params} />}
+        />
+        <RenderGuardedComponent
+          props={useMappedValuesWithCallbacks(
+            [
+              resources.offering,
+              resources.prices,
+              resources.trial,
+              ctx.contentWidth,
+            ],
             () => ({
               offering: resources.offering.get(),
               prices: resources.prices.get(),
+              trial: resources.trial.get(),
               contentWidth: ctx.contentWidth.get(),
             })
           )}
-          component={({ offering, prices, contentWidth }) => (
-            <View
-              style={
-                offering?.packages?.length === 2
-                  ? styles.offers2
-                  : styles.offers
-              }
-            >
-              {offering?.packages?.map((pkg, idx) => {
-                const priceVWC = prices.get(pkg.platformProductIdentifier);
-                if (priceVWC === null || priceVWC === undefined) {
-                  return null;
-                }
-                return (
-                  <Fragment key={idx}>
-                    {idx !== 0 && offering?.packages?.length > 2 && (
-                      <VerticalSpacer height={16} />
-                    )}
-                    {idx !== 0 && offering?.packages?.length === 2 && (
-                      <HorizontalSpacer width={12} />
-                    )}
-                    <RenderGuardedComponent
-                      props={priceVWC}
-                      component={(price) =>
-                        price === null ? (
-                          <></>
-                        ) : (
-                          <Offer
-                            pkg={pkg}
-                            price={price}
-                            idx={idx}
-                            activeIdxVWC={activePackageIdxVWC}
-                            width={
-                              offering?.packages?.length === 2
-                                ? contentWidth / 2 - 6
-                                : contentWidth
+          component={({ offering, prices, trial, contentWidth }) => (
+            <>
+              {trial !== null &&
+              trial.count > 0 &&
+              offering?.packages.length === 1 ? (
+                <>
+                  <Text style={styles.oneOfferWithTrialInfo}>
+                    Unlimited access for {makeTrialPretty(trial)}, then{' '}
+                    {(() => {
+                      const priceVWC = prices.get(
+                        createPriceIdentifier(
+                          offering.packages[0].platformProductIdentifier,
+                          offering.packages[0].platformProductPlanIdentifier
+                        )
+                      );
+                      if (priceVWC === undefined) {
+                        return 'loading...';
+                      }
+                      const price = priceVWC.get();
+                      if (price === null) {
+                        return 'loading...';
+                      }
+                      const paidInterval = extractPaidIntervalLength(
+                        offering.packages[0],
+                        price
+                      );
+                      const perStr =
+                        paidInterval === null
+                          ? ' for life'
+                          : ISO8601_PERIOD_TO_SHORTHAND[paidInterval.iso8601] ??
+                            ` / ${paidInterval.iso8601}`;
+                      return `${price.product.priceString}${perStr}`;
+                    })()}
+                  </Text>
+                  <VerticalSpacer height={2} flexGrow={1} maxHeight={16} />
+                </>
+              ) : (
+                <>
+                  <View
+                    style={
+                      offering?.packages?.length === 2
+                        ? styles.offers2
+                        : styles.offers
+                    }
+                  >
+                    {offering?.packages?.map((pkg, idx) => {
+                      const priceVWC = prices.get(
+                        createPriceIdentifier(
+                          pkg.platformProductIdentifier,
+                          pkg.platformProductPlanIdentifier
+                        )
+                      );
+                      if (priceVWC === null || priceVWC === undefined) {
+                        return null;
+                      }
+                      return (
+                        <Fragment key={idx}>
+                          {idx !== 0 && offering?.packages?.length > 2 && (
+                            <VerticalSpacer height={16} />
+                          )}
+                          {idx !== 0 && offering?.packages?.length === 2 && (
+                            <HorizontalSpacer width={12} />
+                          )}
+                          <RenderGuardedComponent
+                            props={priceVWC}
+                            component={(price) =>
+                              price === null ? (
+                                <></>
+                              ) : (
+                                <Offer
+                                  pkg={pkg}
+                                  price={price}
+                                  idx={idx}
+                                  activeIdxVWC={resources.activePackageIdx}
+                                  width={
+                                    offering?.packages?.length === 2
+                                      ? contentWidth / 2 - 6
+                                      : contentWidth
+                                  }
+                                />
+                              )
                             }
                           />
-                        )
-                      }
-                    />
-                  </Fragment>
-                );
-              })}
-            </View>
+                        </Fragment>
+                      );
+                    })}
+                    <VerticalSpacer height={24} />
+                  </View>
+                  <VerticalSpacer height={8} flexGrow={1} maxHeight={24} />
+                </>
+              )}
+            </>
           )}
         />
-        <VerticalSpacer height={24} />
         <TextStyleForwarder
           component={(styleVWC) => (
             <FilledPremiumButton
@@ -280,7 +311,7 @@ export const Upgrade = ({
                   return;
                 }
 
-                const idx = activePackageIdxVWC.get();
+                const idx = resources.activePackageIdx.get();
                 const pkg = resources.offering.get()?.packages?.[idx];
                 if (pkg === null || pkg === undefined) {
                   trace({
@@ -292,7 +323,12 @@ export const Upgrade = ({
 
                 const price = resources.prices
                   .get()
-                  .get(pkg.platformProductIdentifier)
+                  .get(
+                    createPriceIdentifier(
+                      pkg.platformProductIdentifier,
+                      pkg.platformProductPlanIdentifier
+                    )
+                  )
                   ?.get();
                 if (price === null || price === undefined) {
                   trace({
@@ -416,8 +452,22 @@ export const Upgrade = ({
               setTextStyle={(s) => setVWC(styleVWC, s)}
             >
               <RenderGuardedComponent
-                props={styleVWC}
-                component={(s) => <Text style={s}>Subscribe</Text>}
+                props={useMappedValuesWithCallbacks(
+                  [styleVWC, resources.trial],
+                  () => {
+                    const trial = resources.trial.get();
+                    return {
+                      style: styleVWC.get(),
+                      text:
+                        trial === null || trial.count === 0
+                          ? 'Subscribe'
+                          : `Try ${makeTrialPretty(trial)} free`,
+                    };
+                  }
+                )}
+                component={({ style, text }) => (
+                  <Text style={style}>{text}</Text>
+                )}
               />
             </FilledPremiumButton>
           )}
@@ -483,20 +533,18 @@ const Offer = ({
     () => activeIdxVWC.get() === idx
   );
 
-  const iso8601Period =
-    price.product.defaultOption?.pricingPhases?.[0]?.billingPeriod?.iso8601 ??
-    price.product.subscriptionPeriod ??
-    undefined;
+  const trial = extractTrialLength(pkg, price);
+  const period = extractPaidIntervalLength(pkg, price);
   const perStr =
-    iso8601Period === undefined
+    period === null
       ? ' for life'
-      : ISO8601_PERIOD_TO_SHORTHAND[iso8601Period] ?? ` / ${iso8601Period}`;
+      : ISO8601_PERIOD_TO_SHORTHAND[period.iso8601] ?? ` / ${period.iso8601}`;
 
   const frequencyStr =
-    iso8601Period === undefined
+    period === null
       ? 'Billed once'
-      : ISO8601_PERIOD_TO_FREQUENCY[iso8601Period] ??
-        `Billed once per ${iso8601Period}`;
+      : ISO8601_PERIOD_TO_FREQUENCY[period.iso8601] ??
+        `Billed once per ${period.iso8601}`;
 
   return (
     <RenderGuardedComponent
@@ -512,6 +560,18 @@ const Offer = ({
             setVWC(activeIdxVWC, idx);
           }}
         >
+          {trial !== null && (
+            <Text
+              style={Object.assign(
+                {},
+                styles.offerFrequency,
+                active ? styles.offerFrequencyActive : undefined
+              )}
+            >
+              {makeTrialPretty(trial)} free then
+            </Text>
+          )}
+
           <Text
             style={Object.assign(
               {},
@@ -523,17 +583,126 @@ const Offer = ({
             {perStr}
           </Text>
 
-          <Text
-            style={Object.assign(
-              {},
-              styles.offerFrequency,
-              active ? styles.offerFrequencyActive : undefined
-            )}
-          >
-            {frequencyStr}
-          </Text>
+          {trial === null && (
+            <Text
+              style={Object.assign(
+                {},
+                styles.offerFrequency,
+                active ? styles.offerFrequencyActive : undefined
+              )}
+            >
+              {frequencyStr}
+            </Text>
+          )}
         </Pressable>
       )}
     />
   );
+};
+
+const Marketing = ({
+  copy,
+  trial,
+}: {
+  copy: Copy;
+  trial: ParsedPeriod | null;
+}): ReactElement => {
+  return (
+    <>
+      <Text style={styles.header}>
+        {substituteOfferInfo({ text: copy.header, trial })}
+      </Text>
+      {copy.body.type === 'checklist' && (
+        <MarketingChecklist items={copy.body.items} />
+      )}
+      {copy.body.type === 'sequence' && (
+        <MarketingSequence items={copy.body.items} />
+      )}
+    </>
+  );
+};
+
+const MarketingChecklist = ({ items }: { items: string[] }): ReactElement => (
+  <>
+    <VerticalSpacer height={16} />
+    {items.map((item, idx) => (
+      <Fragment key={idx}>
+        {idx !== 0 && <VerticalSpacer height={8} />}
+        <View style={styles.checklistItem}>
+          <Check />
+          <HorizontalSpacer width={16} />
+          <Text style={styles.checklistText}>{item}</Text>
+        </View>
+      </Fragment>
+    ))}
+    <VerticalSpacer height={8} flexGrow={1} maxHeight={40} />
+  </>
+);
+
+const MarketingSequence = ({
+  items,
+}: {
+  items: {
+    /** The icon utf-8 character */
+    icon: string;
+    /** The title */
+    title: string;
+    /** The body */
+    body: string;
+  }[];
+}): ReactElement => (
+  <>
+    <VerticalSpacer height={8} flexGrow={1} maxHeight={48} />
+    {items.map((item, idx) => (
+      <Fragment key={idx}>
+        {idx !== 0 && <VerticalSpacer height={24} />}
+        <View style={styles.sequenceItem}>
+          <Text style={styles.sequenceIcon}>{item.icon}</Text>
+          <HorizontalSpacer width={16} />
+          <View style={styles.sequenceText}>
+            <Text style={styles.sequenceTitle}>{item.title}</Text>
+            <VerticalSpacer height={8} />
+            <Text style={styles.sequenceBody}>{item.body}</Text>
+          </View>
+        </View>
+      </Fragment>
+    ))}
+    <VerticalSpacer height={8} flexGrow={1} maxHeight={60} />
+  </>
+);
+
+const unitToPretty = {
+  d: { singular: 'day', plural: 'days' },
+  w: { singular: 'week', plural: 'weeks' },
+  m: { singular: 'month', plural: 'months' },
+  y: { singular: 'year', plural: 'years' },
+} as const;
+
+const makeTrialPretty = ({ count, unit }: ParsedPeriod): string => {
+  return `${count.toLocaleString()} ${
+    unitToPretty[unit][count === 1 ? 'singular' : 'plural']
+  }`;
+};
+
+const substituteOfferInfo = ({
+  text,
+  trial,
+}: {
+  text: string;
+  trial: ParsedPeriod | null;
+}) => {
+  return text
+    .replace(/\[trial_interval_count\]/g, trial?.count.toString() ?? '?')
+    .replace(
+      /\[trial_interval_unit_autoplural\]/g,
+      trial === null
+        ? '????'
+        : trial.count === 1
+        ? unitToPretty[trial.unit].singular
+        : unitToPretty[trial.unit].plural
+    )
+    .replace(
+      /\[trial_interval_unit_singular\]/g,
+      trial === null ? '???' : unitToPretty[trial.unit].singular
+    );
 };
