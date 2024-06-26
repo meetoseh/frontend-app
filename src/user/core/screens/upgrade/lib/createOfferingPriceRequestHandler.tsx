@@ -102,8 +102,8 @@ const doesPackageMatchRef: (
       throw new Error('missing platformProductPlanIdentifier on android');
     }
     return (
-      pkg.product.defaultOption.id === ref.platformProductPlanIdentifier &&
-      pkg.product.defaultOption.productId === ref.platformProductIdentifier
+      pkg.product.defaultOption.storeProductId ===
+      `${ref.platformProductIdentifier}:${ref.platformProductPlanIdentifier}`
     );
   },
   default: (pkg, ref) => {

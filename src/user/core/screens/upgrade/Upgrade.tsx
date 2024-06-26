@@ -318,23 +318,41 @@ export const Upgrade = ({
                     type: 'error',
                     message: 'subscribe pressed but pkg is null or undefined',
                   });
+                  screenOut(
+                    workingVWC,
+                    startPop,
+                    transition,
+                    screen.parameters.exit,
+                    'skip'
+                  );
                   return;
                 }
 
-                const price = resources.prices
-                  .get()
-                  .get(
-                    createPriceIdentifier(
-                      pkg.platformProductIdentifier,
-                      pkg.platformProductPlanIdentifier
-                    )
-                  )
-                  ?.get();
+                const priceId = createPriceIdentifier(
+                  pkg.platformProductIdentifier,
+                  pkg.platformProductPlanIdentifier
+                );
+                const prices = resources.prices.get();
+                const priceVWC = prices.get(priceId);
+                const price = priceVWC?.get();
                 if (price === null || price === undefined) {
                   trace({
                     type: 'error',
                     message: 'subscribe pressed but price is null or undefined',
+                    platformProductIdentifier: pkg.platformProductIdentifier,
+                    platformProductPlanIdentifier:
+                      pkg.platformProductPlanIdentifier,
+                    validIdentifiers: Array.from(resources.prices.get().keys()),
+                    priceVWCIsAvailable:
+                      priceVWC !== undefined && priceVWC !== null,
                   });
+                  screenOut(
+                    workingVWC,
+                    startPop,
+                    transition,
+                    screen.parameters.exit,
+                    'skip'
+                  );
                   return;
                 }
 
@@ -344,6 +362,13 @@ export const Upgrade = ({
                     type: 'error',
                     message: 'subscribe pressed but not logged in',
                   });
+                  screenOut(
+                    workingVWC,
+                    startPop,
+                    transition,
+                    screen.parameters.exit,
+                    'skip'
+                  );
                   return;
                 }
 

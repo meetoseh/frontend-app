@@ -114,7 +114,6 @@ const LottieSplashScreen = ({ type }: SplashScreenProps): ReactElement => {
     animationFinished.current = new Callbacks<boolean>();
   }
   const onAnimationFinishWrapper = useCallback((isCanceled: boolean) => {
-    console.log('onAnimationFinishWrapper', isCanceled);
     animationFinished.current.call(isCanceled);
   }, []);
 

@@ -221,7 +221,6 @@ export const useForwardBackwardEffect = ({
         onAnimationFinished.add(onComplete);
       };
 
-      console.log('onAnimationFinished callback registered');
       onAnimationFinished.add(onComplete);
       player.play(animationPointsVWC.get().in, animationPointsVWC.get().out);
 
@@ -232,7 +231,6 @@ export const useForwardBackwardEffect = ({
         }
 
         if (state === 'forward' || state === 'backward') {
-          console.log('onAnimationFinished callback removed');
           onAnimationFinished.remove(onComplete);
         }
       };
