@@ -2,9 +2,22 @@ import { StyleSheet } from 'react-native';
 import * as Colors from '../../../../styling/colors';
 
 export const styles = StyleSheet.create({
-  top: {
+  topBack: {
     alignItems: 'flex-start',
     justifyContent: 'flex-start',
+  },
+  back: {
+    padding: 16,
+  },
+  topX: {
+    alignItems: 'flex-end',
+    justifyContent: 'flex-start',
+  },
+  x: {
+    paddingTop: 18,
+    paddingRight: 16,
+    paddingLeft: 16,
+    paddingBottom: 18,
   },
   header: {
     textAlign: 'left',

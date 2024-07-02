@@ -1,11 +1,19 @@
-import { ReactElement } from 'react';
-import { ValueWithCallbacks } from '../lib/Callbacks';
+import { ReactElement, useMemo } from 'react';
+import {
+  ValueWithCallbacks,
+  useWritableValueWithCallbacks,
+} from '../lib/Callbacks';
 import { OsehImageExportCropped } from '../images/OsehImageExportCropped';
 import { RenderGuardedComponent } from './RenderGuardedComponent';
 import { GridDarkGrayBackground } from './GridDarkGrayBackground';
-import { base64URLToByteArray, thumbHashToDataURL } from '../lib/colorUtils';
+import {
+  base64URLToByteArray,
+  computeAverageRGBAUsingThumbhash,
+  thumbHashToDataURL,
+} from '../lib/colorUtils';
 import { useMappedValuesWithCallbacks } from '../hooks/useMappedValuesWithCallbacks';
 import { View, Image } from 'react-native';
+import { setVWC } from '../lib/setVWC';
 
 /**
  * An element which fills the background using grid-area: 1 / 1 / -1 / -1
@@ -43,15 +51,47 @@ export const GridImageBackground = ({
                 if (thumbhash === null) {
                   return <GridDarkGrayBackground />;
                 }
-                const thumbhashUrl = thumbHashToDataURL(
-                  base64URLToByteArray(thumbhash)
-                );
+                const byteArray = base64URLToByteArray(thumbhash);
+                const thumbhashUrl = thumbHashToDataURL(byteArray);
+                const averageColor =
+                  computeAverageRGBAUsingThumbhash(byteArray);
                 return (
                   <GridImageWithSrc
                     src={thumbhashUrl}
                     size={size}
                     borderRadius={borderRadius}
                     imgDisplaySize={size}
+                    averageColor={`rgb(${averageColor.slice(0, 3).join(',')})`}
+                  />
+                );
+              }}
+            />
+          );
+        }
+
+        if (thumbhashVWC !== undefined) {
+          return (
+            <RenderGuardedComponent
+              props={thumbhashVWC}
+              component={(thumbhash) => {
+                const averageColorRGBA =
+                  thumbhash === null
+                    ? [0, 0, 0, 1]
+                    : computeAverageRGBAUsingThumbhash(
+                        base64URLToByteArray(thumbhash)
+                      );
+                return (
+                  <GridImageWithSrc
+                    src={image.croppedUrl}
+                    size={size}
+                    borderRadius={borderRadius}
+                    imgDisplaySize={{
+                      width: image.croppedToDisplay.displayWidth,
+                      height: image.croppedToDisplay.displayHeight,
+                    }}
+                    averageColor={`rgb(${averageColorRGBA
+                      .slice(0, 3)
+                      .join(',')})`}
                   />
                 );
               }}
@@ -68,6 +108,7 @@ export const GridImageBackground = ({
               width: image.croppedToDisplay.displayWidth,
               height: image.croppedToDisplay.displayHeight,
             }}
+            averageColor="black"
           />
         );
       }}
@@ -85,12 +126,25 @@ export const GridImageWithSrc = ({
   size,
   imgDisplaySize,
   borderRadius,
+  averageColor,
 }: {
   src: string;
   size: { width: number; height: number };
   imgDisplaySize: { width: number; height: number };
   borderRadius?: number;
+  averageColor: string;
 }): ReactElement => {
+  const sourceMemo = useMemo(
+    () => ({
+      uri: src,
+      width: imgDisplaySize.width,
+      height: imgDisplaySize.height,
+    }),
+    [src, imgDisplaySize.width, imgDisplaySize.height]
+  );
+
+  const loadingVWC = useWritableValueWithCallbacks(() => true);
+
   return (
     <View
       style={{
@@ -103,13 +157,32 @@ export const GridImageWithSrc = ({
         overflow: 'hidden',
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: averageColor,
       }}
     >
       <Image
-        source={{
-          uri: src,
-          width: imgDisplaySize.width,
-          height: imgDisplaySize.height,
+        source={sourceMemo}
+        onLoadStart={() => setVWC(loadingVWC, true)}
+        onLoadEnd={() => setVWC(loadingVWC, false)}
+      />
+      <RenderGuardedComponent
+        props={loadingVWC}
+        component={(loading) => {
+          if (!loading) {
+            return <></>;
+          }
+          return (
+            <View
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: size.width,
+                height: size.height,
+                backgroundColor: averageColor,
+              }}
+            />
+          );
         }}
       />
     </View>
