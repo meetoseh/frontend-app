@@ -135,7 +135,7 @@ export const Membership = ({
           action: 'now-available',
           result: 'redirect',
         });
-        window.location.assign(url.url);
+        Linking.openURL(url.url);
         return {
           onClick: undefined,
           onLinkClick: undefined,

@@ -47,6 +47,7 @@ import { apiFetch } from '../../../../shared/lib/apiFetch';
 import Purchases from 'react-native-purchases';
 import { convertUsingMapper } from '../../../../shared/lib/CrudFetcher';
 import { showYesNoModal } from '../../../../shared/lib/showYesNoModal';
+import { purgeClientKeys } from '../../../../shared/journals/clientKeys';
 
 const isDevelopment = Constants.expoConfig?.extra?.environment === 'dev';
 
@@ -126,6 +127,7 @@ export const Settings = ({
         const loginContextUnch = ctx.login.value.get();
         if (loginContextUnch.state === 'logged-in') {
           ctx.login.setAuthTokens(null);
+          purgeClientKeys();
           ctx.resources.expoTokenSyncHandler.evictAll();
         }
         return new Promise(() => {});

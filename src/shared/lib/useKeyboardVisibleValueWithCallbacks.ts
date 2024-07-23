@@ -10,6 +10,7 @@ import { setVWC } from './setVWC';
  *
  * @returns A value with callbacks that's true while the keyboard is
  *   visible, false otherwise
+ * @see useKeyboardHeightValueWithCallbacks for an alternative
  */
 export const useKeyboardVisibleValueWithCallbacks =
   (): ValueWithCallbacks<boolean> => {

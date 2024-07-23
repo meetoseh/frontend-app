@@ -30,7 +30,14 @@ export const GridImageBackground = ({
   /** The size of the container for the image; the image is centered in the container (hiding overflow) */
   size: ValueWithCallbacks<{ width: number; height: number }>;
   thumbhash?: ValueWithCallbacks<string | null>;
-  borderRadius?: number;
+  borderRadius?:
+    | number
+    | {
+        topLeft: number;
+        topRight: number;
+        bottomRight: number;
+        bottomLeft: number;
+      };
 }): ReactElement => {
   return (
     <RenderGuardedComponent
@@ -131,7 +138,14 @@ export const GridImageWithSrc = ({
   src: string;
   size: { width: number; height: number };
   imgDisplaySize: { width: number; height: number };
-  borderRadius?: number;
+  borderRadius?:
+    | number
+    | {
+        topLeft: number;
+        topRight: number;
+        bottomRight: number;
+        bottomLeft: number;
+      };
   averageColor: string;
 }): ReactElement => {
   const sourceMemo = useMemo(
@@ -145,6 +159,21 @@ export const GridImageWithSrc = ({
 
   const loadingVWC = useWritableValueWithCallbacks(() => true);
 
+  const borderRadiusStyle = useMemo(() => {
+    if (borderRadius === undefined) {
+      return {};
+    }
+    if (typeof borderRadius === 'number') {
+      return { borderRadius };
+    }
+    return {
+      borderTopLeftRadius: borderRadius.topLeft,
+      borderTopRightRadius: borderRadius.topRight,
+      borderBottomRightRadius: borderRadius.bottomRight,
+      borderBottomLeftRadius: borderRadius.bottomLeft,
+    };
+  }, [borderRadius]);
+
   return (
     <View
       style={{
@@ -153,7 +182,7 @@ export const GridImageWithSrc = ({
         left: 0,
         width: size.width,
         height: size.height,
-        borderRadius,
+        ...borderRadiusStyle,
         overflow: 'hidden',
         justifyContent: 'center',
         alignItems: 'center',
