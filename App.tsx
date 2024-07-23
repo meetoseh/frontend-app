@@ -65,6 +65,7 @@ import { AppTrackingTransparencyScreen } from './src/user/core/screens/app_track
 import { JournalChatScreen } from './src/user/core/screens/journal_chat/JournalChatScreen';
 import { SimpleHomeScreen } from './src/user/core/screens/simple_home/SimpleHomeScreen';
 import { SimpleNavScreen } from './src/user/core/screens/simple_nav/SimpleNavScreen';
+import { LargeImageInterstitialScreen } from './src/user/core/screens/large_image_interstitial/LargeImageInterstitialScreen';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
@@ -119,6 +120,7 @@ const screens = [
   JournalChatScreen,
   SimpleHomeScreen,
   SimpleNavScreen,
+  LargeImageInterstitialScreen,
 ] as any[] as readonly OsehScreen<
   string,
   ScreenResources,

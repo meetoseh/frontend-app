@@ -1,5 +1,5 @@
-import { CrudFetcherMapper } from '../../../../admin/crud/CrudFetcher';
 import { StandardScreenTransition } from '../../../../shared/hooks/useStandardTransitions';
+import { CrudFetcherMapper } from '../../../../shared/lib/CrudFetcher';
 
 export type SeriesListAPIParamsTooltip = {
   /** Header for the tooltip */
@@ -53,7 +53,10 @@ export type SeriesListAPIParams = {
   series_trigger: string | null;
 };
 
-export type SeriesListMappedParams = Omit<SeriesListAPIParams, 'series_trigger'> & {
+export type SeriesListMappedParams = Omit<
+  SeriesListAPIParams,
+  'series_trigger'
+> & {
   /**
    * The client flow slug to trigger when they tap a series. We trigger this flow
    * through the special endpoint `/api/1/users/me/screens/pop_to_series`, providing the
@@ -65,6 +68,7 @@ export type SeriesListMappedParams = Omit<SeriesListAPIParams, 'series_trigger'>
   __mapped?: true;
 };
 
-export const seriesListParamsMapper: CrudFetcherMapper<SeriesListMappedParams> = {
-  series_trigger: 'seriesTrigger',
-};
+export const seriesListParamsMapper: CrudFetcherMapper<SeriesListMappedParams> =
+  {
+    series_trigger: 'seriesTrigger',
+  };
