@@ -16,7 +16,6 @@ export const useKeyboardHeightValueWithCallbacks =
     const result = useWritableValueWithCallbacks(() => 0);
 
     useEffect(() => {
-      console.log('keyboard effect');
       const willShowListener = Keyboard.addListener('keyboardWillShow', (e) => {
         // ios only
         setVWC(result, e.endCoordinates.height);

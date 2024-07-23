@@ -588,9 +588,6 @@ export const JournalChat = ({
                                 ) {
                                   return;
                                 }
-                                console.log(
-                                  `got new input height: ${inputHeightVWC.get()} -> ${height}`
-                                );
                                 inputHeightVWC.set(height);
                                 inputHeightVWC.callbacks.call(undefined);
                               }
