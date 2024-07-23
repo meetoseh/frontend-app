@@ -63,6 +63,7 @@ import { AddPushTokenScreen } from './src/user/core/screens/add_push_token/AddPu
 import { initNotifications } from './src/user/core/screens/add_push_token/lib/initNotifications';
 import { AppTrackingTransparencyScreen } from './src/user/core/screens/app_tracking_transparency/AppTrackingTransparencyScreen';
 import { JournalChatScreen } from './src/user/core/screens/journal_chat/JournalChatScreen';
+import { SimpleHomeScreen } from './src/user/core/screens/simple_home/SimpleHomeScreen';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
@@ -115,6 +116,7 @@ const screens = [
   AddPushTokenScreen,
   AppTrackingTransparencyScreen,
   JournalChatScreen,
+  SimpleHomeScreen,
 ] as any[] as readonly OsehScreen<
   string,
   ScreenResources,
