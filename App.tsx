@@ -66,6 +66,7 @@ import { JournalChatScreen } from './src/user/core/screens/journal_chat/JournalC
 import { SimpleHomeScreen } from './src/user/core/screens/simple_home/SimpleHomeScreen';
 import { SimpleNavScreen } from './src/user/core/screens/simple_nav/SimpleNavScreen';
 import { LargeImageInterstitialScreen } from './src/user/core/screens/large_image_interstitial/LargeImageInterstitialScreen';
+import { ChatMessageExamplesScreen } from './src/user/core/screens/chat_message_examples/ChatMessageExamplesScreen';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
@@ -121,6 +122,7 @@ const screens = [
   SimpleHomeScreen,
   SimpleNavScreen,
   LargeImageInterstitialScreen,
+  ChatMessageExamplesScreen,
 ] as any[] as readonly OsehScreen<
   string,
   ScreenResources,
