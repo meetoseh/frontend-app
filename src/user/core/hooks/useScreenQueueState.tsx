@@ -24,6 +24,7 @@ import {
   describeFetchError,
 } from '../../../shared/lib/describeError';
 import { useValueWithCallbacksEffect } from '../../../shared/hooks/useValueWithCallbacksEffect';
+import { SCREEN_VERSION } from '../../../shared/lib/screenVersion';
 
 export type UseScreenQueueStateResult = {
   /** The screen that the user should see */
@@ -237,7 +238,9 @@ export const useScreenQueueState = (): ScreenQueueState => {
               let response: Response;
               try {
                 response = await apiFetch(
-                  `${path}?platform=${encodeURIComponent(VISITOR_SOURCE)}`,
+                  `${path}?platform=${encodeURIComponent(
+                    VISITOR_SOURCE
+                  )}&version=${encodeURIComponent(SCREEN_VERSION)}`,
                   {
                     method: 'POST',
                     headers: fullHeaders,
@@ -511,7 +514,7 @@ export const useScreenQueueState = (): ScreenQueueState => {
       apiFetch(
         `/api/1/users/me/screens/trace?platform=${encodeURIComponent(
           VISITOR_SOURCE
-        )}`,
+        )}&version=${encodeURIComponent(SCREEN_VERSION)}`,
         {
           method: 'POST',
           headers: {
