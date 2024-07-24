@@ -229,6 +229,28 @@ export class Bezier {
   }
 
   /**
+   * Similar to precompute(), but executes the delayer between every computation
+   * and doesn't write to precomputed (instead, returns the precomputed values).
+   * A typical delayer would limit the number of computations per frame.
+   */
+  async precomputeWithDelay(
+    maxErr: number = 1e-5,
+    delayer: () => undefined | Promise<void>
+  ): Promise<number[]> {
+    const res = new Array(1001);
+
+    for (let i = 0; i <= 1000; ++i) {
+      res[i] = this._fastCubicYForX(i / 1000);
+      const delayed = delayer();
+      if (delayed !== undefined) {
+        await delayed;
+      }
+    }
+
+    return res;
+  }
+
+  /**
    * A shorthand for 2-dimensional curves. Fetches the y value for some x.
    * @param x0 the x value
    * @returns the y value
