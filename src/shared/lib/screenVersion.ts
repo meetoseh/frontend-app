@@ -3,4 +3,4 @@
  * to be equivalent to. This is provided to all peek / pop related requests,
  * and the backend handles mapping it to the correct screens.
  */
-export const SCREEN_VERSION = 68;
+export const SCREEN_VERSION = 69; /* 1.6.9 */
