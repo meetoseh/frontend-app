@@ -8,6 +8,14 @@ export const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     alignItems: 'center',
   },
+  roundMenuWrapper: {
+    paddingLeft: 24,
+    paddingTop: 8,
+  },
+  favoritesWrapper: {
+    paddingRight: 24,
+    paddingTop: 8,
+  },
   headline: {
     fontFamily: 'OpenSans-SemiBold',
     fontSize: 20,
