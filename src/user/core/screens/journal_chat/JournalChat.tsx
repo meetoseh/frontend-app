@@ -135,9 +135,9 @@ export const JournalChat = ({
   const keyboardHeightVWC = useKeyboardHeightValueWithCallbacks();
 
   const suggestionsSizeVWC = useMappedValuesWithCallbacks(
-    [ctx.contentWidth, suggestionsHeightVWC],
+    [windowWidthVWC, suggestionsHeightVWC],
     () => ({
-      width: ctx.contentWidth.get(),
+      width: windowWidthVWC.get(),
       height: suggestionsHeightVWC.get(),
     })
   );
