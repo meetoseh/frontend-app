@@ -42,6 +42,7 @@ import Back from '../../../../shared/components/icons/Back';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
 import { useKeyboardHeightValueWithCallbacks } from '../../../../shared/lib/useKeyboardHeightValueWithCallbacks';
 import * as Colors from '../../../../styling/colors';
+import { trackClassTaken } from '../home/lib/trackClassTaken';
 
 const SUGGESTIONS = [
   { text: 'I have a lot of anxiety right now', width: 160 },
@@ -344,6 +345,13 @@ export const JournalChat = ({
                                         upgrade_slug:
                                           screen.parameters.upgradeTrigger,
                                       },
+                                      afterDone:
+                                        textPart.details.access !==
+                                        'paid-requires-upgrade'
+                                          ? async () => {
+                                              trackClassTaken(ctx);
+                                            }
+                                          : undefined,
                                     }
                                   );
                                 }}

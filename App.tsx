@@ -249,7 +249,7 @@ const AppInner = () => {
 
   const overlaySpinnerOnFeatures = useMappedValueWithCallbacks(
     screenQueue.value,
-    (v) => v.type === 'finishing-pop'
+    (v) => v.type === 'finishing-pop' || v.type === 'spinner'
   );
 
   const needLoginScreen = useMappedValueWithCallbacks(

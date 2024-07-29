@@ -6,17 +6,24 @@ import {
   WrappedJournalClientKey,
 } from '../../../../shared/journals/clientKeys';
 import { createWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
+import { createCancelableTimeout } from '../../../../shared/lib/createCancelableTimeout';
 import { createFernet } from '../../../../shared/lib/fernet';
 import { getCurrentServerTimeMS } from '../../../../shared/lib/getCurrentServerTimeMS';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { waitForValueWithCallbacksConditionCancelable } from '../../../../shared/lib/waitForValueWithCallbacksCondition';
 import { OsehScreen } from '../../models/Screen';
 import { JournalChat } from './JournalChat';
-import { JournalChatAPIParams, JournalChatMappedParams } from './JournalChatParams';
+import {
+  JournalChatAPIParams,
+  JournalChatMappedParams,
+} from './JournalChatParams';
 import { JournalChatResources } from './JournalChatResources';
 import { JournalChatState } from './lib/JournalChatState';
 import { replyToJournalEntry } from './lib/replyToJournalEntry';
-import { startJournalEntry, StartJournalEntryStateDone } from './lib/startJournalEntry';
+import {
+  startJournalEntry,
+  StartJournalEntryStateDone,
+} from './lib/startJournalEntry';
 
 /**
  * Allows the user to chat with the system.
@@ -40,19 +47,31 @@ export const JournalChatScreen: OsehScreen<
     return result;
   },
   initInstanceResources: (ctx, screen, refreshScreen) => {
-    const greetingInfoVWC = createWritableValueWithCallbacks<StartJournalEntryStateDone | null>(
+    const greetingInfoVWC =
+      createWritableValueWithCallbacks<StartJournalEntryStateDone | null>(null);
+    const greetingVWC = createWritableValueWithCallbacks<
+      JournalChatState | null | undefined
+    >(null);
+    const userMessageVWC = createWritableValueWithCallbacks<string | null>(
       null
     );
-    const greetingVWC = createWritableValueWithCallbacks<JournalChatState | null | undefined>(null);
-    const userMessageVWC = createWritableValueWithCallbacks<string | null>(null);
-    const systemReplyVWC = createWritableValueWithCallbacks<JournalChatState | null | undefined>(
-      null
+    const systemReplyVWC = createWritableValueWithCallbacks<
+      JournalChatState | null | undefined
+    >(null);
+    const [readyVWC, cleanupReady] = createMappedValueWithCallbacks(
+      greetingVWC,
+      (g) => g !== null
     );
-    const [readyVWC, cleanupReady] = createMappedValueWithCallbacks(greetingVWC, (g) => g !== null);
 
-    const journalEntryUIDVWC = createWritableValueWithCallbacks<string | null>(null);
-    const journalEntryJWTVWC = createWritableValueWithCallbacks<string | null>(null);
-    const chatVWC = createWritableValueWithCallbacks<JournalChatState | null | undefined>(null);
+    const journalEntryUIDVWC = createWritableValueWithCallbacks<string | null>(
+      null
+    );
+    const journalEntryJWTVWC = createWritableValueWithCallbacks<string | null>(
+      null
+    );
+    const chatVWC = createWritableValueWithCallbacks<
+      JournalChatState | null | undefined
+    >(null);
     const cleanupChatVWC = createValuesWithCallbacksEffect(
       [greetingVWC, userMessageVWC, systemReplyVWC],
       () => {
@@ -182,8 +201,11 @@ export const JournalChatScreen: OsehScreen<
           setVWC(active, false);
         };
 
-        async function getGreeting() {
-          const clientKeyRaw = await getOrCreateClientKey(user, ctx.interests.visitor);
+        async function getGreeting(retry?: number) {
+          const clientKeyRaw = await getOrCreateClientKey(
+            user,
+            ctx.interests.visitor
+          );
           if (!active.get()) {
             return;
           }
@@ -197,7 +219,10 @@ export const JournalChatScreen: OsehScreen<
           }
 
           const greetingCancelable = startJournalEntry(user, clientKey);
-          const canceled = waitForValueWithCallbacksConditionCancelable(active, (a) => !a);
+          const canceled = waitForValueWithCallbacksConditionCancelable(
+            active,
+            (a) => !a
+          );
           const cleanupAttacher = createValueWithCallbacksEffect(
             greetingCancelable.state,
             (startState) => {
@@ -220,7 +245,10 @@ export const JournalChatScreen: OsehScreen<
           );
 
           try {
-            await Promise.race([greetingCancelable.handlerCancelable.promise, canceled.promise]);
+            await Promise.race([
+              greetingCancelable.handlerCancelable.promise,
+              canceled.promise,
+            ]);
             if (!active.get()) {
               greetingCancelable.handlerCancelable.cancel();
             }
@@ -232,7 +260,23 @@ export const JournalChatScreen: OsehScreen<
           } catch (e) {
             if (active.get()) {
               console.warn('error getting greeting:', e);
-              setVWC(greetingVWC, undefined);
+
+              const finalState = greetingCancelable.state.get();
+              if (
+                finalState.type === 'failed' &&
+                finalState.resolutionHint === 'retry' &&
+                (retry ?? 0) < 3
+              ) {
+                const timeoutCancelable = createCancelableTimeout(5000);
+                timeoutCancelable.promise.catch(() => {});
+                await Promise.race([
+                  timeoutCancelable.promise,
+                  canceled.promise,
+                ]);
+                getGreeting((retry ?? 0) + 1);
+              } else {
+                setVWC(greetingVWC, undefined);
+              }
             }
           } finally {
             cleanupAttacher();
@@ -286,7 +330,10 @@ export const JournalChatScreen: OsehScreen<
         };
 
         async function getSystemReply() {
-          const clientKeyRaw = await getOrCreateClientKey(user, ctx.interests.visitor);
+          const clientKeyRaw = await getOrCreateClientKey(
+            user,
+            ctx.interests.visitor
+          );
           if (!active.get()) {
             return;
           }
@@ -312,7 +359,10 @@ export const JournalChatScreen: OsehScreen<
             clientKey,
             encryptedUserMessage
           );
-          const canceled = waitForValueWithCallbacksConditionCancelable(active, (a) => !a);
+          const canceled = waitForValueWithCallbacksConditionCancelable(
+            active,
+            (a) => !a
+          );
           const cleanupAttacher = createValueWithCallbacksEffect(
             replyCancelable.state,
             (startState) => {
@@ -335,7 +385,10 @@ export const JournalChatScreen: OsehScreen<
           );
 
           try {
-            await Promise.race([replyCancelable.handlerCancelable.promise, canceled.promise]);
+            await Promise.race([
+              replyCancelable.handlerCancelable.promise,
+              canceled.promise,
+            ]);
             if (!active.get()) {
               replyCancelable.handlerCancelable.cancel();
             }
