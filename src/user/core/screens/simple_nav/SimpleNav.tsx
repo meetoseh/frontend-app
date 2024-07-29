@@ -21,6 +21,7 @@ import { Close } from '../interactive_prompt_screen/icons/Close';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
 import { ContentContainer } from '../../../../shared/components/ContentContainer';
 import { View, Pressable, Text, Linking } from 'react-native';
+import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 
 /**
  * A basic navigation screen with primary and secondary sections
@@ -62,6 +63,10 @@ export const SimpleNav = ({
         justifyContent="flex-start"
         scrollable={false}
       >
+        <RenderGuardedComponent
+          props={ctx.topBarHeight}
+          component={(topBarHeight) => <VerticalSpacer height={topBarHeight} />}
+        />
         <View style={styles.close}>
           <Pressable
             onPress={() => {
@@ -160,6 +165,10 @@ export const SimpleNav = ({
           ))}
         </ContentContainer>
         <VerticalSpacer height={0} flexGrow={1} maxHeight={48} />
+        <RenderGuardedComponent
+          props={ctx.botBarHeight}
+          component={(botBarHeight) => <VerticalSpacer height={botBarHeight} />}
+        />
       </GridContentContainer>
     </GridFullscreenContainer>
   );
