@@ -45,7 +45,7 @@ import { adaptValueWithCallbacksAsVariableStrategyProps } from '../../../../shar
 import { OauthProvider } from '../../../login/lib/OauthProvider';
 
 /* guest -> random guest; apple -> random guest no name */
-const DEV_ACCOUNT_USER_IDENTITY_ID: string = 'timothy';
+const DEV_ACCOUNT_USER_IDENTITY_ID: string = 'guest';
 
 let failedLogin = false;
 

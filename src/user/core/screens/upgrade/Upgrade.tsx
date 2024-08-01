@@ -62,6 +62,7 @@ import { createPriceIdentifier } from './lib/PriceIdentifier';
 import Close from '../../../../shared/icons/Close';
 import { ContentContainer } from '../../../../shared/components/ContentContainer';
 import { ScreenContext } from '../../hooks/useScreenContext';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 type Copy = UpgradeCopy<ScreenImageParsed>;
 
@@ -168,7 +169,7 @@ export const Upgrade = ({
           <View style={styles.topBack}>
             <Pressable
               onPress={() => {
-                screenOut(
+                configurableScreenOut(
                   workingVWC,
                   startPop,
                   transition,
@@ -190,7 +191,7 @@ export const Upgrade = ({
           <View style={styles.topX}>
             <Pressable
               onPress={() => {
-                screenOut(
+                configurableScreenOut(
                   workingVWC,
                   startPop,
                   transition,

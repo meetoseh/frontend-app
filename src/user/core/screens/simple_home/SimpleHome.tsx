@@ -186,7 +186,10 @@ export const SimpleHome = ({
                     startPop,
                     transition,
                     screen.parameters.cta.exit,
-                    screen.parameters.cta.trigger
+                    screen.parameters.cta.trigger,
+                    {
+                      endpoint: screen.parameters.cta.endpoint ?? undefined,
+                    }
                   );
                 }}
               >
@@ -219,7 +222,10 @@ export const SimpleHome = ({
                         startPop,
                         transition,
                         cta2.exit,
-                        cta2.trigger
+                        cta2.trigger,
+                        {
+                          endpoint: cta2.endpoint ?? undefined,
+                        }
                       );
                     }}
                   >

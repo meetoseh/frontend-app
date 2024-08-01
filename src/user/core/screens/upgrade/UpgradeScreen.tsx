@@ -38,6 +38,7 @@ import {
   extractTrialLength,
 } from './lib/purchasesStoreProductHelper';
 import { PriceIdentifier, createPriceIdentifier } from './lib/PriceIdentifier';
+import { screenConfigurableTriggerFlowMapper } from '../../models/ScreenConfigurableTrigger';
 
 type Copy = UpgradeCopy<ScreenImageParsed>;
 const LOADING_UPGRADE_COPY: Copy = {
@@ -62,6 +63,7 @@ export const UpgradeScreen: OsehScreen<
   slug: 'upgrade',
   paramMapper: (params) => ({
     ...params,
+    back: convertUsingMapper(params.back2, screenConfigurableTriggerFlowMapper),
     backVariant: params.back_variant ?? 'back',
     image: convertUsingMapper(params.image, screenImageKeyMap),
   }),

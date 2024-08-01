@@ -80,6 +80,26 @@ export const JournalChat = ({
   );
   useEntranceTransition(transition);
 
+  useEffect(() => {
+    // version 73 or below used to create the journal entry client side; we no longer
+    // do this, and once a client has updated we will skip the screen to get to a flow
+    // which has the server initialize the entry
+    if (screen.parameters.journalEntry === null) {
+      screenOut(
+        workingVWC,
+        startPop,
+        transition,
+        screen.parameters.exit,
+        'skip',
+        {
+          beforeDone: async () => {
+            trace({ type: 'no_journal_entry' });
+          },
+        }
+      );
+    }
+  });
+
   const transitionState = useStandardTransitionsState(transition);
   const workingVWC = useWritableValueWithCallbacks(() => false);
   const windowWidthVWC = useMappedValueWithCallbacks(
@@ -92,6 +112,18 @@ export const JournalChat = ({
   const rawInputValueVWC = useWritableValueWithCallbacks<string>(() => '');
 
   const submittedVWC = useWritableValueWithCallbacks<boolean>(() => false);
+  useValueWithCallbacksEffect(resources.chat, (chat) => {
+    if (
+      !submittedVWC.get() &&
+      chat !== null &&
+      chat !== undefined &&
+      chat.data.length > 2
+    ) {
+      setVWC(submittedVWC, true);
+    }
+    return undefined;
+  });
+
   const onSubmit = () => {
     const value = rawInputValueVWC.get().trim();
     if (value === '') {

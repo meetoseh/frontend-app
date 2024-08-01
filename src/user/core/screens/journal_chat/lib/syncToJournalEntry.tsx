@@ -1,5 +1,3 @@
-// 'creating-entry' |'reading-greeting' | 'done' | 'failed';
-
 import { ReactElement } from 'react';
 import {
   createWritableValueWithCallbacks,
@@ -27,27 +25,34 @@ import {
 } from '../../../../../shared/lib/describeError';
 import { apiFetch } from '../../../../../shared/lib/apiFetch';
 
-export type StartJournalEntryStateCreatingEntry = {
+export type SyncToJournalEntryStateSavingUserReply = {
   /**
-   * - `creating-entry`: We have not yet created the journal entry as we haven't received the
-   *   response from `POST /api/1/journals/entries/`
+   * - `requesting-sync`: We are requesting a sync job be created on the backend
    */
-  type: 'creating-entry';
+  type: 'requesting-sync';
+
+  /** The journal entry within which we are syncing */
+  journalEntryUID: string;
+
+  /** The JWT that allows us to sync */
+  journalEntryJWT: string;
+
+  /** The client key we are trying to use to save the reply */
+  clientKey: WrappedJournalClientKey;
 };
 
-export type StartJournalEntryStateReadingGreeting = {
+export type SyncToJournalEntryStateReadingSystemResponse = {
   /**
-   * - `reading-greeting`: We successfully created the journal entry
-   *   and received the required keys to receive the greeting from `WS /api/2/journals/chat/`.
-   *   We are managing the websocket loop, which may involve reconnects
+   * - `reading-system-response`: We successfully started the job and
+   *   are now trying to get the reply from the system
    */
-  type: 'reading-greeting';
+  type: 'reading-system-response';
 
   /** The JWT are using to connect to the websocket endpoint */
   journalChatJWT: string;
-  /** The UID of the journal entry we created */
+  /** The UID of the journal entry the response was saved to */
   journalEntryUID: string;
-  /** The JWT that can be used to respond to the greeting once we have it */
+  /** The refreshed JWT for responding to the journal entry */
   journalEntryJWT: string;
 
   /**
@@ -58,28 +63,27 @@ export type StartJournalEntryStateReadingGreeting = {
   chat: ValueWithCallbacks<JournalChatState>;
 };
 
-export type StartJournalEntryStateDone = {
+export type SyncToJournalEntryStateDone = {
   /**
-   * - `done`: We have successfully received the greeting and the user can
-   *   provide their response
+   * - `done`: We have successfully received the system response
    */
   type: 'done';
 
-  /** The UID of the journal entry we created */
+  /** The UID of the journal entry we synced with */
   journalEntryUID: string;
-  /** The JWT that can be used to respond to the greeting once we have it */
+  /** The JWT that can be used to respond or sync again */
   journalEntryJWT: string;
-  /** the state of the journal after the systems greeting */
-  greeting: JournalChatState;
+  /** the entire chat state */
+  conversation: JournalChatState;
 };
 
-export type StartJournalEntryStateFailed = {
+export type SyncToJournalEntryStateFailed = {
   /**
-   * - `failed`: We failed to create the journal entry
+   * - `failed`: We failed to sync the journal entry
    */
   type: 'failed';
   /** Where the error occurred */
-  at: 'create' | 'read-greeting';
+  at: 'requesting-sync' | 'reading-system-response';
   /** more detail about `at` */
   atUnstable: string;
   /** how we think this can be resolved */
@@ -88,31 +92,33 @@ export type StartJournalEntryStateFailed = {
   error: ReactElement;
 };
 
-export type StartJournalEntryState =
-  | StartJournalEntryStateCreatingEntry
-  | StartJournalEntryStateReadingGreeting
-  | StartJournalEntryStateDone
-  | StartJournalEntryStateFailed;
+export type SyncToJournalEntryState =
+  | SyncToJournalEntryStateSavingUserReply
+  | SyncToJournalEntryStateReadingSystemResponse
+  | SyncToJournalEntryStateDone
+  | SyncToJournalEntryStateFailed;
 
-export type StartJournalEntryResult = {
-  /** The current start journal entry state */
-  state: ValueWithCallbacks<StartJournalEntryState>;
+export type SyncToJournalEntryResult = {
+  /** The current reply to journal entry state */
+  state: ValueWithCallbacks<SyncToJournalEntryState>;
   /** a cancelable promise for when we are done managing the state */
   handlerCancelable: CancelablePromise<void>;
 };
 
 /**
- * Starts a journal entry and retrieves a new system greeting. This can
- * take some time, and the intermediary state is provided via `state`.
- * To wait until we reach a terminal state, or to cancel further processing,
- * use `handlerCancelable`.
+ * Streams the state of the given journal entry from the server.
  */
-export const startJournalEntry = (
+export const syncToJournalEntry = (
   user: LoginContextValueLoggedIn,
+  journalEntryUID: string,
+  journalEntryJWT: string,
   clientKey: WrappedJournalClientKey
-): StartJournalEntryResult => {
-  const result = createWritableValueWithCallbacks<StartJournalEntryState>({
-    type: 'creating-entry',
+): SyncToJournalEntryResult => {
+  const result = createWritableValueWithCallbacks<SyncToJournalEntryState>({
+    type: 'requesting-sync',
+    journalEntryUID,
+    journalEntryJWT,
+    clientKey,
   });
 
   return {
@@ -125,7 +131,7 @@ export const startJournalEntry = (
           canceled.cancel();
           setVWC(result, {
             type: 'failed',
-            at: 'create',
+            at: 'requesting-sync',
             atUnstable: 'initialize',
             error: <>canceled</>,
             resolutionHint: 'retry',
@@ -139,9 +145,11 @@ export const startJournalEntry = (
         const doAbort = () => controller.abort();
         state.cancelers.add(doAbort);
 
-        const created = await createJournalEntry(
+        const created = await startSyncJournalEntry(
           result,
           user,
+          journalEntryUID,
+          journalEntryJWT,
           clientKey,
           state,
           reject,
@@ -167,7 +175,7 @@ export const startJournalEntry = (
           state.cancelers.remove(doAbort);
           setVWC(result, {
             type: 'failed',
-            at: 'read-greeting',
+            at: 'reading-system-response',
             atUnstable: 'compute-initial-integrity',
             error: <>canceled</>,
             resolutionHint: 'retry',
@@ -180,7 +188,7 @@ export const startJournalEntry = (
         const chat =
           createWritableValueWithCallbacks<JournalChatState>(initialState);
         setVWC(result, {
-          type: 'reading-greeting',
+          type: 'reading-system-response',
           ...created,
           chat,
         });
@@ -198,10 +206,23 @@ export const startJournalEntry = (
         try {
           await wsPromise.promise;
         } catch (e) {
+          if (state.finishing) {
+            setVWC(result, {
+              type: 'failed',
+              at: 'reading-system-response',
+              atUnstable: 'websocket',
+              error: <>canceled</>,
+              resolutionHint: 'retry',
+            });
+            state.done = true;
+            reject(new Error('canceled'));
+            return;
+          }
+
           state.finishing = true;
           setVWC(result, {
             type: 'failed',
-            at: 'read-greeting',
+            at: 'reading-system-response',
             atUnstable: 'websocket',
             error: await describeError(e),
             resolutionHint: 'contact-support',
@@ -218,7 +239,7 @@ export const startJournalEntry = (
           type: 'done',
           journalEntryUID: created.journalEntryUID,
           journalEntryJWT: created.journalEntryJWT,
-          greeting: chat.get(),
+          conversation: chat.get(),
         });
         state.done = true;
         resolve();
@@ -227,9 +248,11 @@ export const startJournalEntry = (
   };
 };
 
-const createJournalEntry = async (
-  result: WritableValueWithCallbacks<StartJournalEntryState>,
+const startSyncJournalEntry = async (
+  result: WritableValueWithCallbacks<SyncToJournalEntryState>,
   user: LoginContextValueLoggedIn,
+  journalEntryUID: string,
+  journalEntryJWT: string,
   clientKey: WrappedJournalClientKey,
   state: CancelablePromiseState,
   reject: (e: any) => void,
@@ -242,7 +265,7 @@ const createJournalEntry = async (
   let response: Response;
   try {
     response = await apiFetch(
-      '/api/1/journals/entries/',
+      '/api/1/journals/entries/sync',
       {
         method: 'POST',
         headers: {
@@ -250,6 +273,8 @@ const createJournalEntry = async (
         },
         body: JSON.stringify({
           platform: VISITOR_SOURCE,
+          journal_entry_uid: journalEntryUID,
+          journal_entry_jwt: journalEntryJWT,
           journal_client_key_uid: clientKey.uid,
         }),
         signal,
@@ -260,7 +285,7 @@ const createJournalEntry = async (
     if (state.finishing) {
       setVWC(result, {
         type: 'failed',
-        at: 'create',
+        at: 'requesting-sync',
         atUnstable: 'request',
         error: <>canceled</>,
         resolutionHint: 'retry',
@@ -272,7 +297,7 @@ const createJournalEntry = async (
     state.finishing = true;
     setVWC(result, {
       type: 'failed',
-      at: 'create',
+      at: 'requesting-sync',
       atUnstable: 'request',
       error: describeFetchError(),
       resolutionHint: 'retry',
@@ -286,7 +311,7 @@ const createJournalEntry = async (
     state.finishing = true;
     setVWC(result, {
       type: 'failed',
-      at: 'create',
+      at: 'requesting-sync',
       atUnstable: 'request',
       error: await describeError(response),
       resolutionHint:
@@ -303,7 +328,7 @@ const createJournalEntry = async (
         )[response.status] ?? 'contact-support',
     });
     state.done = true;
-    reject(`create journal entry - ${response.status}: ${response.statusText}`);
+    reject(`sync journal entry - ${response.status}: ${response.statusText}`);
     return null;
   }
 
@@ -318,7 +343,7 @@ const createJournalEntry = async (
     if (state.finishing) {
       setVWC(result, {
         type: 'failed',
-        at: 'create',
+        at: 'requesting-sync',
         atUnstable: 'request-data',
         error: <>canceled</>,
         resolutionHint: 'retry',
@@ -330,7 +355,7 @@ const createJournalEntry = async (
     state.finishing = true;
     setVWC(result, {
       type: 'failed',
-      at: 'create',
+      at: 'requesting-sync',
       atUnstable: 'request-data',
       error: describeFetchError(),
       resolutionHint: 'retry',
