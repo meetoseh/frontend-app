@@ -10,6 +10,7 @@ import {
   InteractivePromptMappedParams,
 } from './InteractivePromptParams';
 import { InteractivePromptResources } from './InteractivePromptResources';
+import { convertScreenConfigurableTriggerWithOldVersion } from '../../models/ScreenConfigurableTrigger';
 
 /**
  * An interactive prompt (shows all users responses) with an optional image
@@ -23,12 +24,19 @@ export const InteractivePromptScreen: OsehScreen<
 > = {
   slug: 'interactive_prompt',
   paramMapper: (params) => ({
-    ...params,
     prompt: convertUsingMapper(params.prompt, interactivePromptKeyMap),
     background:
       params.background === null
         ? null
         : convertUsingMapper(params.background, screenImageKeyMap),
+    countdown: params.countdown,
+    subtitle: params.subtitle,
+    entrance: params.entrance,
+    exit: params.exit,
+    trigger: convertScreenConfigurableTriggerWithOldVersion(
+      params.trigger,
+      params.triggerv75
+    ),
     __mapped: true,
   }),
   initInstanceResources: (ctx, screen, refreshScreen) => {

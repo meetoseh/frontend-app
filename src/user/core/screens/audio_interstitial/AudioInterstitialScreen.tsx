@@ -23,6 +23,7 @@ import {
 } from './AudioInterstitialParams';
 import { AudioInterstitialResources } from './AudioInterstitialResources';
 import { AudioFileData } from '../../../../shared/content/createAudioDataHandler';
+import { convertScreenConfigurableTriggerWithOldVersion } from '../../models/ScreenConfigurableTrigger';
 
 /**
  * An extremely basic audio interstitial
@@ -38,6 +39,11 @@ export const AudioInterstitialScreen: OsehScreen<
     ...params,
     background: convertUsingMapper(params.background, screenImageKeyMap),
     audio: convertUsingMapper(params.audio, screenContentKeyMap),
+    trigger: convertScreenConfigurableTriggerWithOldVersion(
+      params.trigger,
+      params.triggerv75
+    ),
+    __mapped: true,
   }),
   initInstanceResources: (ctx, screen, refreshScreen) => {
     const activeVWC = createWritableValueWithCallbacks(true);

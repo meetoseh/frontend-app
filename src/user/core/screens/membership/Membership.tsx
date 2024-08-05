@@ -23,7 +23,6 @@ import {
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { styles } from './MembershipStyles';
-import { screenOut } from '../../lib/screenOut';
 import { Clock } from '../upgrade/icons/Clock';
 import { Sheet } from '../upgrade/icons/Sheet';
 import { Series } from '../upgrade/icons/Series';
@@ -36,6 +35,7 @@ import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwa
 import { FilledPremiumButton } from '../../../../shared/components/FilledPremiumButton';
 import { HorizontalSpacer } from '../../../../shared/components/HorizontalSpacer';
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * Gives the user basic information about their membership status, and directs
@@ -212,7 +212,7 @@ export const Membership = ({
                     component={(styleVWC) => (
                       <FilledPremiumButton
                         onPress={() => {
-                          screenOut(
+                          configurableScreenOut(
                             workingVWC,
                             startPop,
                             transition,

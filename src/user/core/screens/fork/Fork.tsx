@@ -5,7 +5,6 @@ import { GridFullscreenContainer } from '../../../../shared/components/GridFulls
 import { GridContentContainer } from '../../../../shared/components/GridContentContainer';
 import { styles } from './ForkStyles';
 import {
-  playExitTransition,
   useEntranceTransition,
   useTransitionProp,
 } from '../../../../shared/lib/TransitionProp';
@@ -27,6 +26,7 @@ import { ease } from '../../../../shared/lib/Bezier';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
 import { useStyleVWC } from '../../../../shared/hooks/useStyleVWC';
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * A basic fork screen with a header, message, and a series of choices
@@ -76,30 +76,21 @@ export const Fork = ({
               key={i}
               i={i}
               onPress={async () => {
-                if (workingVWC.get()) {
-                  return;
-                }
-
-                setVWC(workingVWC, true);
-                const finishPop = startPop(
-                  option.trigger === null
-                    ? null
-                    : {
-                        slug: option.trigger,
-                        parameters: {},
-                      }
+                configurableScreenOut(
+                  workingVWC,
+                  startPop,
+                  transition,
+                  option.exit,
+                  option.trigger,
+                  {
+                    afterDone: () => {
+                      trace({
+                        type: 'fork_option_selected',
+                        option,
+                      });
+                    },
+                  }
                 );
-                setVWC(transition.animation, option.exit);
-                const exitTransitionCancelable = playExitTransition(transition);
-                try {
-                  trace({
-                    type: 'fork_option_selected',
-                    option,
-                  });
-                } finally {
-                  await exitTransitionCancelable.promise;
-                  finishPop();
-                }
               }}
               text={option.text}
             />

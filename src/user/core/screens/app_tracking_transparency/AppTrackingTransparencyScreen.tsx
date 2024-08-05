@@ -1,5 +1,6 @@
 import { createWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { OsehScreen } from '../../models/Screen';
+import { convertScreenConfigurableTriggerWithOldVersion } from '../../models/ScreenConfigurableTrigger';
 import { AppTrackingTransparency } from './AppTrackingTransparency';
 import {
   AppTrackingTransparencyAPIParams,
@@ -18,7 +19,14 @@ export const AppTrackingTransparencyScreen: OsehScreen<
 > = {
   slug: 'app_tracking_transparency',
   paramMapper: (params) => ({
-    ...params,
+    success: convertScreenConfigurableTriggerWithOldVersion(
+      params.success,
+      params.successv75
+    ),
+    failure: convertScreenConfigurableTriggerWithOldVersion(
+      params.failure,
+      params.failurev75
+    ),
     __mapped: true,
   }),
   initInstanceResources: (ctx, screen, refreshScreen) => {

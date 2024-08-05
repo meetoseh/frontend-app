@@ -18,10 +18,10 @@ import { GridContentContainer } from '../../../../shared/components/GridContentC
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { styles } from './ConfirmationStyles';
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
-import { screenOut } from '../../lib/screenOut';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { WipeTransitionOverlay } from '../../../../shared/components/WipeTransitionOverlay';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * A basic confirmation screen with a header and message
@@ -70,7 +70,7 @@ export const Confirmation = ({
         <VerticalSpacer height={24} />
         <FilledInvertedButton
           onPress={() => {
-            screenOut(
+            configurableScreenOut(
               workingVWC,
               startPop,
               transition,

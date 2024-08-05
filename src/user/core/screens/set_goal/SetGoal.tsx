@@ -1,4 +1,4 @@
-import { ReactElement, useContext } from 'react';
+import { ReactElement } from 'react';
 import { ScreenComponentProps } from '../../models/Screen';
 import { GridDarkGrayBackground } from '../../../../shared/components/GridDarkGrayBackground';
 import { GridFullscreenContainer } from '../../../../shared/components/GridFullscreenContainer';
@@ -20,11 +20,10 @@ import {
   WritableValueWithTypedCallbacks,
   useWritableValueWithCallbacks,
 } from '../../../../shared/lib/Callbacks';
-import { screenOut } from '../../lib/screenOut';
 import { SetGoalResources } from './SetGoalResources';
 import { SetGoalMappedParams } from './SetGoalParams';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
-import { ModalContext, Modals } from '../../../../shared/contexts/ModalContext';
+import { Modals } from '../../../../shared/contexts/ModalContext';
 import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
 import { useWorkingModal } from '../../../../shared/hooks/useWorkingModal';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
@@ -37,6 +36,8 @@ import { SurveyCheckboxGroup } from '../../../../shared/components/SurveyCheckbo
 import { BackContinue } from '../../../../shared/components/BackContinue';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { Text } from 'react-native';
+import { ScreenConfigurableTrigger } from '../../models/ScreenConfigurableTrigger';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 const _CHOICES = [
   { slug: '1', text: '1 day', days: 1, element: <>1 day</> },
@@ -196,14 +197,14 @@ export const SetGoal = ({
     exit,
   }: {
     type: string;
-    trigger: string | null;
+    trigger: ScreenConfigurableTrigger;
     exit: StandardScreenTransition;
   }) => {
     screenWithWorking(workingVWC, async () => {
       const save = prepareSave();
       if (save === null) {
         trace({ type, draft: false });
-        await screenOut(null, startPop, transition, exit, trigger);
+        await configurableScreenOut(null, startPop, transition, exit, trigger);
         return;
       }
 
@@ -213,12 +214,13 @@ export const SetGoal = ({
       trace({ type, draft: false, step: 'save', result });
       if (result) {
         const finishPop = startPop(
-          trigger === null
+          trigger.type === 'pop'
             ? null
             : {
-                slug: trigger,
-                parameters: {},
-              }
+                slug: trigger.flow,
+                parameters: trigger.parameters,
+              },
+          trigger.endpoint ?? undefined
         );
         await exitTransition.promise;
         finishPop();

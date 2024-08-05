@@ -1,9 +1,8 @@
-import { CSSProperties, ReactElement, useCallback, useMemo } from 'react';
+import { ReactElement, useCallback, useMemo } from 'react';
 import { PeekedScreen, ScreenComponentProps } from '../../models/Screen';
 import { SeriesListMappedParams } from './SeriesListParams';
 import { SeriesListResources } from './SeriesListResources';
 import {
-  playExitTransition,
   useEntranceTransition,
   useTransitionProp,
 } from '../../../../shared/lib/TransitionProp';
@@ -35,16 +34,15 @@ import {
 import { ScreenContext } from '../../hooks/useScreenContext';
 import { useStyleVWC } from '../../../../shared/hooks/useStyleVWC';
 import { setVWC } from '../../../../shared/lib/setVWC';
-import { largestPhysicalPerLogical } from '../../../../shared/images/DisplayRatioHelper';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import {
   GRID_SIMPLE_NAVIGATION_FOREGROUND_BOTTOM_HEIGHT,
   GridSimpleNavigationForeground,
 } from '../../../../shared/components/GridSimpleNavigationForeground';
-import { screenOut } from '../../lib/screenOut';
 import { View, ViewStyle, Text } from 'react-native';
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 type TooltipPlaceholder = { readonly uid: 'tooltip' };
 
@@ -74,7 +72,7 @@ export const SeriesList = ({
 
   const showCourse = useCallback(
     async (course: ExternalCourse) => {
-      screenOut(
+      configurableScreenOut(
         workingVWC,
         startPop,
         transition,
@@ -297,12 +295,16 @@ export const SeriesList = ({
               component={(styleVWC) => (
                 <FilledInvertedButton
                   onPress={() => {
-                    screenOut(
+                    const cta = screen.parameters.cta;
+                    if (cta === null) {
+                      return;
+                    }
+                    configurableScreenOut(
                       workingVWC,
                       startPop,
                       transition,
                       screen.parameters.exit,
-                      screen.parameters.cta?.trigger ?? null,
+                      cta.trigger,
                       {
                         beforeDone: async () => {
                           trace({ type: 'click', target: 'cta' });

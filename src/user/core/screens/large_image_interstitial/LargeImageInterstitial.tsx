@@ -20,12 +20,12 @@ import { RenderGuardedComponent } from '../../../../shared/components/RenderGuar
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
 import { OsehImageFromState } from '../../../../shared/images/OsehImageFromState';
 import { ScreenTextContent } from '../../components/ScreenTextContent';
-import { screenOut } from '../../lib/screenOut';
 import { WipeTransitionOverlay } from '../../../../shared/components/WipeTransitionOverlay';
 import { Text, View } from 'react-native';
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
 import { setVWC } from '../../../../shared/lib/setVWC';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * A somewhat sophisticated image interstitial; top message, image, variable
@@ -108,7 +108,7 @@ export const LargeImageInterstitial = ({
           component={(styleVWC) => (
             <FilledInvertedButton
               onPress={async () => {
-                screenOut(
+                configurableScreenOut(
                   workingVWC,
                   startPop,
                   transition,

@@ -16,9 +16,7 @@ import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { styles } from './AnimatedImageInterstitialStyles';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
-import { OsehImageFromState } from '../../../../shared/images/OsehImageFromState';
 import { ScreenTextContent } from '../../components/ScreenTextContent';
-import { screenOut } from '../../lib/screenOut';
 import { WipeTransitionOverlay } from '../../../../shared/components/WipeTransitionOverlay';
 import { Text, View } from 'react-native';
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
@@ -29,6 +27,7 @@ import { AnimatedImageInterstitialMappedParams } from './AnimatedImageInterstiti
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
 import { ContentContainer } from '../../../../shared/components/ContentContainer';
 import { PIAnimatedImage } from './components/PIAnimatedImage';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * An animated image interstitial formed from 2 images being moved, rotated, scaled, and
@@ -146,7 +145,7 @@ export const AnimatedImageInterstitial = ({
             component={(styleVWC) => (
               <FilledInvertedButton
                 onPress={async () => {
-                  screenOut(
+                  configurableScreenOut(
                     workingVWC,
                     startPop,
                     transition,

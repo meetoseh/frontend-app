@@ -11,6 +11,7 @@ import { OsehTranscript } from '../../../../shared/transcripts/OsehTranscript';
 import { SplashScreen } from '../../../splash/SplashScreen';
 import { createLoginContextRequest } from '../../lib/createLoginContextRequest';
 import { OsehScreen } from '../../models/Screen';
+import { convertScreenConfigurableTriggerWithOldVersion } from '../../models/ScreenConfigurableTrigger';
 import { VideoInterstitial } from '../video_interstitial/VideoInterstitial';
 import {
   VideoInterstitialOnboardingAPIParams,
@@ -30,6 +31,10 @@ export const VideoInterstitialOnboardingScreen: OsehScreen<
   slug: 'video_interstitial_onboarding',
   paramMapper: (params) => ({
     ...params,
+    trigger: convertScreenConfigurableTriggerWithOldVersion(
+      params.trigger,
+      params.triggerv75
+    ),
     __mapped: true,
   }),
   initInstanceResources: (ctx, screen, refreshScreen) => {

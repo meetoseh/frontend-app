@@ -16,6 +16,7 @@ import { setVWC } from '../../../../shared/lib/setVWC';
 import { AppRequestReviewResources } from './AppRequestReviewResources';
 import { AppRequestReviewMappedParams } from './AppRequestReviewParams';
 import { requestReview } from 'expo-store-review';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * A dark gray background while we present the native app request review native popup
@@ -58,7 +59,7 @@ export const AppRequestReview = ({
           type: 'detected-error',
           message: `requestReview is not a function (is ${typeof requestReview})`,
         });
-        screenOut(
+        configurableScreenOut(
           workingVWC,
           startPop,
           transition,
@@ -75,7 +76,7 @@ export const AppRequestReview = ({
       } catch (e) {
         trace({ type: 'request-review-native', step: 'catch', error: `${e}` });
       }
-      screenOut(
+      configurableScreenOut(
         workingVWC,
         startPop,
         transition,

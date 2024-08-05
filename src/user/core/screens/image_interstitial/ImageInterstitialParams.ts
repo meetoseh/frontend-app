@@ -1,11 +1,16 @@
 import { StandardScreenTransition } from '../../../../shared/hooks/useStandardTransitions';
+import {
+  ScreenConfigurableTrigger,
+  ScreenConfigurableTriggerTransitioningPreferredAPI,
+  ScreenConfigurableTriggerTransitioningTemporaryAPI,
+} from '../../models/ScreenConfigurableTrigger';
 import { ScreenImageAPI, ScreenImageParsed } from '../../models/ScreenImage';
 
 export type ImageInterstitialAPIParams = {
   /** The message at the top of the screen, typically providing context */
   top: string;
 
-  /** The image to show at content width and natural height */
+  /** The image to show at content width and natural height (assuming 342w x 215h natural size)  */
   image: ScreenImageAPI;
 
   /** The header message */
@@ -24,12 +29,19 @@ export type ImageInterstitialAPIParams = {
   exit: StandardScreenTransition;
 
   /** The client flow slug to trigger when they hit the button with no parameters */
-  trigger: string | null;
+  trigger: ScreenConfigurableTriggerTransitioningPreferredAPI;
+  triggerv75: ScreenConfigurableTriggerTransitioningTemporaryAPI;
 };
 
-export type ImageInterstitialMappedParams = Omit<ImageInterstitialAPIParams, 'image'> & {
+export type ImageInterstitialMappedParams = Omit<
+  ImageInterstitialAPIParams,
+  'image' | 'trigger' | 'triggerv75'
+> & {
   /** The image to show at content width and natural height */
   image: ScreenImageParsed;
 
-  __mapped?: true;
+  /** The client flow slug to trigger when they hit the button with no parameters */
+  trigger: ScreenConfigurableTrigger;
+
+  __mapped: true;
 };

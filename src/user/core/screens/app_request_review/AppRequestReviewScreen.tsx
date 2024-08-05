@@ -1,5 +1,6 @@
 import { createWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { OsehScreen } from '../../models/Screen';
+import { convertScreenConfigurableTriggerWithOldVersion } from '../../models/ScreenConfigurableTrigger';
 import { AppRequestReview } from './AppRequestReview';
 import {
   AppRequestReviewAPIParams,
@@ -19,7 +20,10 @@ export const AppRequestReviewScreen: OsehScreen<
 > = {
   slug: 'app_review_request',
   paramMapper: (params) => ({
-    ...params,
+    trigger: convertScreenConfigurableTriggerWithOldVersion(
+      params.trigger,
+      params.triggerv75
+    ),
     __mapped: true,
   }),
   initInstanceResources: (ctx, screen, refreshScreen) => {

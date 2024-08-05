@@ -20,6 +20,7 @@ import { ExpirableJourneyRef } from './lib/ExpirableJourneyRef';
 import { JourneyMinimalRef } from './lib/JourneyMinimalRef';
 import { JourneyShareableInfo } from './lib/createIsJourneyShareableRequestHandler';
 import { JourneyLikeState } from './lib/createJourneyLikeStateRequestHandler';
+import { convertScreenConfigurableTriggerWithOldVersion } from '../../models/ScreenConfigurableTrigger';
 
 /**
  * Allows the user to give feedback on a journey
@@ -32,8 +33,29 @@ export const JourneyFeedbackScreen: OsehScreen<
 > = {
   slug: 'journey_feedback',
   paramMapper: (params) => ({
-    ...params,
     journey: convertUsingMapper(params.journey, screenJourneyMapper),
+    entrance: params.entrance,
+    cta1: {
+      text: params.cta1.text,
+      exit: params.cta1.exit,
+      emotion: params.cta1.emotion,
+      trigger: convertScreenConfigurableTriggerWithOldVersion(
+        params.cta1.trigger,
+        params.cta1.triggerv75
+      ),
+    },
+    cta2:
+      params.cta2 === null || params.cta2 === undefined
+        ? null
+        : {
+            text: params.cta2.text,
+            exit: params.cta2.exit,
+            emotion: params.cta2.emotion,
+            trigger: convertScreenConfigurableTriggerWithOldVersion(
+              params.cta2.trigger,
+              params.cta2.triggerv75
+            ),
+          },
     __mapped: true,
   }),
   initInstanceResources: (ctx, screen, refreshScreen) => {
@@ -60,7 +82,7 @@ export const JourneyFeedbackScreen: OsehScreen<
           60 /* high estimate for button height */ -
           (screen.parameters.cta2 ? 16 + 60 : 0) -
           32 /* bottom spacing */ -
-          40 /* avoid being cramped */;
+          40; /* avoid being cramped */
 
         if (availableHeight > 390) {
           return { width, height: 390 };

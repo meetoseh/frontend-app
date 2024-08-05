@@ -38,6 +38,7 @@ import { FilledInvertedButton } from '../../../../shared/components/FilledInvert
 import { LinkButton } from '../../../../shared/components/LinkButton';
 import * as Linking from 'expo-linking';
 import { useKeyboardVisibleValueWithCallbacks } from '../../../../shared/lib/useKeyboardVisibleValueWithCallbacks';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * Allows the user to add a phone number; they need to verify the phone number
@@ -150,7 +151,7 @@ export const AddPhone = ({
       return;
     }
 
-    screenOut(
+    configurableScreenOut(
       workingVWC,
       startPop,
       transition,
@@ -274,7 +275,7 @@ export const AddPhone = ({
             <VerticalSpacer height={16} />
             <LinkButton
               onPress={() => {
-                screenOut(
+                configurableScreenOut(
                   workingVWC,
                   startPop,
                   transition,

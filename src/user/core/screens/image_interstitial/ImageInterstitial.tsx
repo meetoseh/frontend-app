@@ -1,12 +1,11 @@
 import { ReactElement } from 'react';
-import { View, Text } from 'react-native';
+import { Text } from 'react-native';
 import { ScreenComponentProps } from '../../models/Screen';
 import { GridDarkGrayBackground } from '../../../../shared/components/GridDarkGrayBackground';
 import { GridFullscreenContainer } from '../../../../shared/components/GridFullscreenContainer';
 import { GridContentContainer } from '../../../../shared/components/GridContentContainer';
 import { styles } from './ImageInterstitialStyles';
 import {
-  playExitTransition,
   useEntranceTransition,
   useTransitionProp,
 } from '../../../../shared/lib/TransitionProp';
@@ -24,8 +23,8 @@ import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMapped
 import { OsehImageFromState } from '../../../../shared/images/OsehImageFromState';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
-import { screenOut } from '../../lib/screenOut';
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * A basic image interstitial; top message, image, header, subheader, button with CTA
@@ -104,7 +103,7 @@ export const ImageInterstitial = ({
           component={(styleVWC) => (
             <FilledInvertedButton
               onPress={() => {
-                screenOut(
+                configurableScreenOut(
                   workingVWC,
                   startPop,
                   transition,

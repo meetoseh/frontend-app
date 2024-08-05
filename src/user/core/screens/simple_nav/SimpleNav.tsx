@@ -15,13 +15,13 @@ import { GridFullscreenContainer } from '../../../../shared/components/GridFulls
 import { GridDarkGrayBackground } from '../../../../shared/components/GridDarkGrayBackground';
 import { GridContentContainer } from '../../../../shared/components/GridContentContainer';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
-import { screenOut } from '../../lib/screenOut';
 import { styles } from './SimpleNavStyles';
 import { Close } from '../interactive_prompt_screen/icons/Close';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
 import { ContentContainer } from '../../../../shared/components/ContentContainer';
 import { View, Pressable, Text, Linking } from 'react-native';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * A basic navigation screen with primary and secondary sections
@@ -70,7 +70,7 @@ export const SimpleNav = ({
         <View style={styles.close}>
           <Pressable
             onPress={() => {
-              screenOut(
+              configurableScreenOut(
                 workingVWC,
                 startPop,
                 transition,
@@ -96,7 +96,7 @@ export const SimpleNav = ({
                 style={styles.primary}
                 onPress={() => {
                   if (item.type === 'trigger') {
-                    screenOut(
+                    configurableScreenOut(
                       workingVWC,
                       startPop,
                       transition,
@@ -133,7 +133,7 @@ export const SimpleNav = ({
                 style={styles.secondary}
                 onPress={() => {
                   if (item.type === 'trigger') {
-                    screenOut(
+                    configurableScreenOut(
                       workingVWC,
                       startPop,
                       transition,

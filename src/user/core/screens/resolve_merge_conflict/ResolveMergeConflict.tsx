@@ -44,6 +44,7 @@ import { View, Text } from 'react-native';
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
 import { OutlineWhiteButton } from '../../../../shared/components/OutlineWhiteButton';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 const TEST_MERGE_JWT = 'token';
 
@@ -114,16 +115,13 @@ export const ResolveMergeConflict = ({
           timeToExpire,
           resolves: 'instantly',
         });
-        screenWithWorking(workingVWC, async () => {
-          startPop(
-            screen.parameters.expired.trigger === null
-              ? null
-              : {
-                  slug: screen.parameters.expired.trigger,
-                  parameters: {},
-                }
-          )();
-        });
+        configurableScreenOut(
+          workingVWC,
+          startPop,
+          transition,
+          { type: 'fade', ms: 350 },
+          screen.parameters.expired.trigger
+        );
         return;
       }
 
@@ -136,7 +134,7 @@ export const ResolveMergeConflict = ({
           timeToExpire,
           resolves: 'timeout',
         });
-        screenOut(
+        configurableScreenOut(
           workingVWC,
           startPop,
           transition,
@@ -243,12 +241,12 @@ export const ResolveMergeConflict = ({
                   onPress={() => {
                     const emailHint = emailHintVWC.get();
                     const phoneHint = phoneHintVWC.get();
-                    screenOut(
+                    configurableScreenOut(
                       workingVWC,
                       startPop,
                       transition,
                       screen.parameters.cta.exit,
-                      screen.parameters.cta.trigger ?? 'skip',
+                      screen.parameters.cta.trigger,
                       {
                         endpoint:
                           '/api/1/users/me/screens/empty_with_confirm_merge',
@@ -313,7 +311,7 @@ export const ResolveMergeConflict = ({
                     <VerticalSpacer height={16} />
                     <OutlineWhiteButton
                       onPress={() => {
-                        screenOut(
+                        configurableScreenOut(
                           workingVWC,
                           startPop,
                           transition,

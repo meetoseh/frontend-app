@@ -32,6 +32,7 @@ import { AudioInterstitialMappedParams } from './AudioInterstitialParams';
 import { GridImageBackground } from '../../../../shared/components/GridImageBackground';
 import { MediaInfoAudio } from '../../../../shared/content/MediaInfoAudio';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * A basic audio interstitial
@@ -69,35 +70,34 @@ export const AudioInterstitial = ({
   });
 
   const onFinish = () => {
-    if (workingVWC.get()) {
-      return;
-    }
-
-    setVWC(workingVWC, true);
-    const finishPop = startPop(
-      screen.parameters.trigger === null
-        ? null
-        : {
-            slug: screen.parameters.trigger,
-            parameters: {},
+    configurableScreenOut(
+      workingVWC,
+      startPop,
+      transition,
+      screen.parameters.exit,
+      screen.parameters.trigger,
+      {
+        beforeDone: async () => {
+          const audio = resources.audio.get();
+          if (audio !== null) {
+            const state = audio.state.get();
+            if (state.type === 'loaded') {
+              try {
+                await state.stop();
+              } catch (e) {
+                trace({ type: 'audio-stop-error', error: `${e}` });
+              } finally {
+                try {
+                  state.audio.setPositionAsync(0);
+                } catch (e) {
+                  trace({ type: 'audio-reset-error', error: `${e}` });
+                }
+              }
+            }
           }
-    );
-    setVWC(transition.animation, screen.parameters.exit);
-    playExitTransition(transition).promise.finally(() => {
-      const audio = resources.audio.get();
-      if (audio !== null) {
-        const state = audio.state.get();
-        if (state.type === 'loaded') {
-          state.stop().finally(() => {
-            state.audio.setPositionAsync(0);
-            finishPop();
-          });
-          return;
-        }
+        },
       }
-
-      finishPop();
-    });
+    );
   };
 
   useValueWithCallbacksEffect(mediaInfo.ended, (ended) => {

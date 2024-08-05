@@ -19,12 +19,12 @@ import { GridImageBackground } from '../../../../shared/components/GridImageBack
 import { styles } from './HomeStyles';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { GoalPill } from './components/GoalPill';
-import { screenOut } from '../../lib/screenOut';
 import { EmotionsPicker } from './components/EmotionsPicker';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { Image, View, Text } from 'react-native';
 import { BottomNavBarMinimal } from '../../../bottomNav/BottomNavBar';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * The standard home screen with options to take a class by emotion,
@@ -134,7 +134,7 @@ export const Home = ({
               <GoalPill
                 streak={resources.streak}
                 updateGoal={() => {
-                  screenOut(
+                  configurableScreenOut(
                     workingVWC,
                     startPop,
                     transition,
@@ -150,7 +150,7 @@ export const Home = ({
         <EmotionsPicker
           emotions={resources.emotions}
           onTapEmotion={(emotion) => {
-            screenOut(
+            configurableScreenOut(
               workingVWC,
               startPop,
               transition,
@@ -179,7 +179,7 @@ export const Home = ({
           active="home"
           clickHandlers={{
             series: () => {
-              screenOut(
+              configurableScreenOut(
                 workingVWC,
                 startPop,
                 transition,
@@ -188,7 +188,7 @@ export const Home = ({
               );
             },
             account: () => {
-              screenOut(
+              configurableScreenOut(
                 workingVWC,
                 startPop,
                 transition,

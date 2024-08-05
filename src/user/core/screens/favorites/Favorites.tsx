@@ -17,7 +17,6 @@ import {
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
 } from '../../../../shared/lib/Callbacks';
-import { screenOut } from '../../lib/screenOut';
 import { FavoritesResources } from './FavoritesResources';
 import { FavoritesMappedParams } from './FavoritesParams';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
@@ -39,8 +38,9 @@ import {
   GRID_SIMPLE_NAVIGATION_FOREGROUND_TOP_HEIGHT,
   GridSimpleNavigationForeground,
 } from '../../../../shared/components/GridSimpleNavigationForeground';
-import { Dimensions, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * Allows the user to see their list of favorites, go to their history or owned
@@ -76,7 +76,7 @@ export const Favorites = ({
 
   const showJourney = useCallback(
     async (journey: MinimalJourney) => {
-      screenOut(
+      configurableScreenOut(
         workingVWC,
         startPop,
         transition,
@@ -167,7 +167,7 @@ export const Favorites = ({
             active="favorites"
             contentWidth={ctx.contentWidth}
             onHistory={() => {
-              screenOut(
+              configurableScreenOut(
                 workingVWC,
                 startPop,
                 transition,
@@ -185,7 +185,7 @@ export const Favorites = ({
               );
             }}
             onOwned={() => {
-              screenOut(
+              configurableScreenOut(
                 workingVWC,
                 startPop,
                 transition,

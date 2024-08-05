@@ -16,12 +16,12 @@ import { ChatMessageExamplesMappedParams } from './ChatMessageExamplesParams';
 import { ChatMessageExamplesResources } from './ChatMessageExamplesResources';
 import { styles } from './ChatMessageExamplesStyles';
 import { Fragment, ReactElement } from 'react';
-import { screenOut } from '../../lib/screenOut';
 import { View, Text } from 'react-native';
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { setVWC } from '../../../../shared/lib/setVWC';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * An interstitial screen designed specifically to help provide examples
@@ -92,7 +92,7 @@ export const ChatMessageExamples = ({
           component={(styleVWC) => (
             <FilledInvertedButton
               onPress={() => {
-                screenOut(
+                configurableScreenOut(
                   workingVWC,
                   startPop,
                   transition,

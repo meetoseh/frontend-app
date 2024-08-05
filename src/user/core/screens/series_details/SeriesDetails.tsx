@@ -49,6 +49,11 @@ import { HorizontalSpacer } from '../../../../shared/components/HorizontalSpacer
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
 import { Modals } from '../../../../shared/contexts/ModalContext';
 import { OutlineWhiteButton } from '../../../../shared/components/OutlineWhiteButton';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
+import {
+  base64URLToByteArray,
+  computeAverageRGBAUsingThumbhash,
+} from '../../../../shared/lib/colorUtils';
 
 /**
  * Displays the series details page on a specific series
@@ -101,7 +106,7 @@ export const SeriesDetails = ({
         <View style={styles.backWrapper}>
           <Pressable
             onPress={() => {
-              screenOut(
+              configurableScreenOut(
                 workingVWC,
                 startPop,
                 transition,
@@ -152,7 +157,7 @@ export const SeriesDetails = ({
                 component={(styleVWC) => (
                   <FilledPremiumButton
                     onPress={() => {
-                      screenOut(
+                      configurableScreenOut(
                         workingVWC,
                         startPop,
                         transition,
@@ -220,7 +225,7 @@ export const SeriesDetails = ({
                       return;
                     }
 
-                    screenOut(
+                    configurableScreenOut(
                       workingVWC,
                       startPop,
                       transition,
@@ -339,6 +344,34 @@ const Journey = ({
     })
   );
 
+  const backgroundThumbhashVWC = useMappedValueWithCallbacks(
+    backgroundVWC,
+    (v) => (v === null ? null : v.export.item.thumbhash)
+  );
+  const backgroundAverageColorVWC = useMappedValueWithCallbacks(
+    backgroundThumbhashVWC,
+    (thumbhash) =>
+      thumbhash === null
+        ? [0, 0, 0, 0]
+        : computeAverageRGBAUsingThumbhash(base64URLToByteArray(thumbhash)),
+    {
+      inputEqualityFn: Object.is,
+      outputEqualityFn: (a, b) =>
+        a[0] === b[0] && a[1] === b[1] && a[2] === b[2],
+    }
+  );
+  const backgroundInfoVWC = useMappedValuesWithCallbacks(
+    [backgroundVWC, backgroundAverageColorVWC],
+    () => {
+      const averageColorRGBA = backgroundAverageColorVWC.get();
+      const averageColorCss = `rgb(${averageColorRGBA.slice(0, 3).join(',')})`;
+      return {
+        img: backgroundVWC.get(),
+        avgColor: averageColorCss,
+      };
+    }
+  );
+
   const inner = (
     <View
       style={styles.journey}
@@ -356,8 +389,8 @@ const Journey = ({
       }}
     >
       <RenderGuardedComponent
-        props={backgroundVWC}
-        component={(img) =>
+        props={backgroundInfoVWC}
+        component={({ img, avgColor }) =>
           img === null ? (
             <></>
           ) : (
@@ -371,6 +404,7 @@ const Journey = ({
                     width: img.croppedToDisplay.displayWidth,
                     height: img.croppedToDisplay.displayHeight,
                   }}
+                  averageColor={avgColor}
                 />
               )}
               applyInstantly
@@ -458,7 +492,7 @@ const Journey = ({
           return;
         }
 
-        screenOut(
+        configurableScreenOut(
           workingVWC,
           startPop,
           transition,

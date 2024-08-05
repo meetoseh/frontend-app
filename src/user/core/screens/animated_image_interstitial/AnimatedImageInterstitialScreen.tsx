@@ -13,6 +13,7 @@ import {
   AnimatedImageInterstitialMappedParams,
 } from './AnimatedImageInterstitialParams';
 import { AnimatedImageInterstitialResources } from './AnimatedImageInterstitialResources';
+import { convertScreenConfigurableTriggerWithOldVersion } from '../../models/ScreenConfigurableTrigger';
 
 /**
  * An animated screen consisting of two images being moved, rotated, scaled, and faded.
@@ -37,6 +38,10 @@ export const AnimatedImageInterstitialScreen: OsehScreen<
     ),
     assumedContentHeight: params.assumed_content_height,
     content: convertUsingMapper(params.content, screenTextContentMapper),
+    trigger: convertScreenConfigurableTriggerWithOldVersion(
+      params.trigger,
+      params.triggerv75
+    ),
     __mapped: true,
   }),
   initInstanceResources: (ctx, screen, refreshScreen) => {

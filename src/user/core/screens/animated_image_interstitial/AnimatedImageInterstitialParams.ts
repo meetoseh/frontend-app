@@ -1,5 +1,10 @@
 import { StandardScreenTransition } from '../../../../shared/hooks/useStandardTransitions';
 import {
+  ScreenConfigurableTrigger,
+  ScreenConfigurableTriggerTransitioningPreferredAPI,
+  ScreenConfigurableTriggerTransitioningTemporaryAPI,
+} from '../../models/ScreenConfigurableTrigger';
+import {
   ScreenImageWithConfigurableSizeAPI,
   ScreenImageWithConfigurableSizeParsed,
 } from '../../models/ScreenImage';
@@ -43,13 +48,19 @@ export type AnimatedImageInterstitialAPIParams = {
   /** exit transition for cta */
   exit: StandardScreenTransition;
 
-  /** The client flow slug to trigger when they hit the button with no parameters */
-  trigger: string | null;
+  /** The client flow to trigger when they hit the button with no parameters */
+  trigger: ScreenConfigurableTriggerTransitioningPreferredAPI;
+  triggerv75: ScreenConfigurableTriggerTransitioningTemporaryAPI;
 };
 
 export type AnimatedImageInterstitialMappedParams = Omit<
   AnimatedImageInterstitialAPIParams,
-  'image1' | 'image2' | 'content' | 'assumed_content_height'
+  | 'image1'
+  | 'image2'
+  | 'content'
+  | 'assumed_content_height'
+  | 'trigger'
+  | 'triggerv75'
 > & {
   /** first image */
   image1: ScreenImageWithConfigurableSizeParsed;
@@ -66,6 +77,9 @@ export type AnimatedImageInterstitialMappedParams = Omit<
    * default.
    */
   assumedContentHeight: number;
+
+  /** The client flow to trigger when they hit the button with no parameters */
+  trigger: ScreenConfigurableTrigger;
 
   __mapped: true;
 };

@@ -8,6 +8,7 @@ import {
   oauthMergeConfirmationRequiredDetailsKeyMap,
 } from './ResolveMergeConflictParams';
 import { ResolveMergeConflictResources } from './ResolveMergeConflictResources';
+import { convertScreenConfigurableTriggerWithOldVersion } from '../../models/ScreenConfigurableTrigger';
 
 /**
  * Allows the user to resolve a merge conflict
@@ -20,11 +21,35 @@ export const ResolveMergeConflictScreen: OsehScreen<
 > = {
   slug: 'resolve_merge_conflict',
   paramMapper: (params) => ({
-    ...params,
+    entrance: params.entrance,
+    header: params.header,
+    message: params.message,
     conflict: convertUsingMapper(
       params.conflict,
       oauthMergeConfirmationRequiredDetailsKeyMap
     ),
+    cta: {
+      text: params.cta.text,
+      trigger: convertScreenConfigurableTriggerWithOldVersion(
+        params.cta.trigger,
+        params.cta.triggerv75
+      ),
+      exit: params.cta.exit,
+    },
+    skip: {
+      text: params.skip.text,
+      trigger: convertScreenConfigurableTriggerWithOldVersion(
+        params.skip.trigger,
+        params.skip.triggerv75
+      ),
+      exit: params.skip.exit,
+    },
+    expired: {
+      trigger: convertScreenConfigurableTriggerWithOldVersion(
+        params.expired.trigger,
+        params.expired.triggerv75
+      ),
+    },
     __mapped: true,
   }),
   initInstanceResources: (ctx, screen, refreshScreen) => {

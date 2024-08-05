@@ -35,6 +35,7 @@ import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
 import { MergeProvider } from '../settings/lib/MergeProvider';
 import { trackMerge } from '../settings/lib/trackMerge';
 import { ProviderItem, ProvidersList } from '../login/components/ProvidersList';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * Allows the user to merge their account using one of the indicated providers.
@@ -63,13 +64,12 @@ export const StartMerge = ({
     if (screen.parameters.providers.length === 0) {
       screenWithWorking(workingVWC, async () => {
         trace({ type: 'skip', reason: 'no providers in list' });
+        const trigger = screen.parameters.skip.trigger;
         startPop(
-          screen.parameters.skip.trigger === null
+          trigger.type === 'pop'
             ? null
-            : {
-                slug: screen.parameters.skip.trigger,
-                parameters: {},
-              }
+            : { slug: trigger.flow, parameters: trigger.parameters },
+          trigger.endpoint ?? undefined
         )();
       });
     }
@@ -168,7 +168,7 @@ export const StartMerge = ({
           component={(styleVWC) => (
             <OutlineWhiteButton
               onPress={() => {
-                screenOut(
+                configurableScreenOut(
                   workingVWC,
                   startPop,
                   transition,

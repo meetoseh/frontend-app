@@ -22,11 +22,11 @@ import { PromptTime } from '../../../interactive_prompt/hooks/usePromptTime';
 import { styles } from './InteractivePromptStyles';
 import { Close } from './icons/Close';
 import { screenWithWorking } from '../../lib/screenWithWorking';
-import { screenOut } from '../../lib/screenOut';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { Pressable, View } from 'react-native';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * An interactive prompt (one where everyones responses are shown as they
@@ -102,7 +102,7 @@ export const InteractivePrompt = ({
 
             screenWithWorking(workingVWC, async () => {
               leavingCallbackRef.current?.();
-              await screenOut(
+              await configurableScreenOut(
                 null,
                 startPop,
                 transition,
@@ -150,7 +150,7 @@ export const InteractivePrompt = ({
               trace({ type: 'close' });
               screenWithWorking(workingVWC, async () => {
                 leavingCallbackRef.current?.();
-                await screenOut(
+                await configurableScreenOut(
                   null,
                   startPop,
                   transition,

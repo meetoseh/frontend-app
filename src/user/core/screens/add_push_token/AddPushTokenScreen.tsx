@@ -21,6 +21,8 @@ import {
   createOsehNotificationPermissionsRequest,
 } from './lib/createNotificationPermissionsStatusHandler';
 import { initImage } from '../../lib/initImage';
+import { convertScreenConfigurableTriggerWithOldVersion } from '../../models/ScreenConfigurableTrigger';
+import { convertTriggerWithExit } from '../../lib/convertTriggerWithExit';
 
 /**
  * If the user doesn't already have notifications enabled on the current device,
@@ -43,7 +45,9 @@ export const AddPushTokenScreen: OsehScreen<
 > = {
   slug: 'add_push_token',
   paramMapper: (params) => ({
-    ...params,
+    entrance: params.entrance,
+    header: params.header,
+    message: params.message,
     image:
       params.image === null || params.image === undefined
         ? null
@@ -57,6 +61,39 @@ export const AddPushTokenScreen: OsehScreen<
               screenImageWithConfigurableSizeKeyMap
             ),
           },
+    times: params.times,
+    cta: {
+      text: params.cta.text,
+      success: convertScreenConfigurableTriggerWithOldVersion(
+        params.cta.success,
+        params.cta.successv75
+      ),
+      failure: convertScreenConfigurableTriggerWithOldVersion(
+        params.cta.failure,
+        params.cta.failurev75
+      ),
+      exit: params.cta.exit,
+    },
+    back: convertTriggerWithExit(params.back),
+    nav:
+      params.nav.type === 'header-and-footer'
+        ? {
+            type: params.nav.type,
+            title: params.nav.title,
+            home: {
+              trigger: convertScreenConfigurableTriggerWithOldVersion(
+                params.nav.home.trigger,
+                params.nav.home.triggerv75
+              ),
+            },
+            series: {
+              trigger: convertScreenConfigurableTriggerWithOldVersion(
+                params.nav.series.trigger,
+                params.nav.series.triggerv75
+              ),
+            },
+          }
+        : params.nav,
     __mapped: true,
   }),
   initInstanceResources: (ctx, screen, refreshScreen) => {

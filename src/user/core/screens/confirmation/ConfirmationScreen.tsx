@@ -1,7 +1,11 @@
 import { createWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { OsehScreen } from '../../models/Screen';
+import { convertScreenConfigurableTriggerWithOldVersion } from '../../models/ScreenConfigurableTrigger';
 import { Confirmation } from './Confirmation';
-import { ConfirmationAPIParams, ConfirmationMappedParams } from './ConfirmationParams';
+import {
+  ConfirmationAPIParams,
+  ConfirmationMappedParams,
+} from './ConfirmationParams';
 import { ConfirmationResources } from './ConfirmationResources';
 
 /**
@@ -16,6 +20,11 @@ export const ConfirmationScreen: OsehScreen<
   slug: 'confirmation',
   paramMapper: (params) => ({
     ...params,
+    trigger: convertScreenConfigurableTriggerWithOldVersion(
+      params.trigger,
+      params.triggerv75
+    ),
+    __mapped: true,
   }),
   initInstanceResources: (ctx, screen, refreshScreen) => {
     return {

@@ -109,7 +109,9 @@ export const JournalChat = ({
 
   const inputVWC = useWritableValueWithCallbacks<TextInput | null>(() => null);
   const inputHeightVWC = useWritableValueWithCallbacks<number>(() => 22);
-  const rawInputValueVWC = useWritableValueWithCallbacks<string>(() => '');
+  const rawInputValueVWC = useWritableValueWithCallbacks<string>(
+    () => screen.parameters.autofill
+  );
 
   const submittedVWC = useWritableValueWithCallbacks<boolean>(() => false);
   useValueWithCallbacksEffect(resources.chat, (chat) => {

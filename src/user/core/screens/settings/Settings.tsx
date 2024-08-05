@@ -48,6 +48,8 @@ import Purchases from 'react-native-purchases';
 import { convertUsingMapper } from '../../../../shared/lib/CrudFetcher';
 import { showYesNoModal } from '../../../../shared/lib/showYesNoModal';
 import { purgeClientKeys } from '../../../../shared/journals/clientKeys';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
+import { ScreenConfigurableTrigger } from '../../models/ScreenConfigurableTrigger';
 
 const isDevelopment = Constants.expoConfig?.extra?.environment === 'dev';
 
@@ -100,13 +102,13 @@ export const Settings = ({
   }: {
     key: string;
     text: string;
-    trigger: string | null;
+    trigger: ScreenConfigurableTrigger;
   }): SettingLink => ({
     text,
     key,
     onClick: () => {
       trace({ type: 'trigger-link', key, text, trigger });
-      screenOut(workingVWC, startPop, transition, exit, trigger);
+      configurableScreenOut(workingVWC, startPop, transition, exit, trigger);
       return undefined;
     },
   });
@@ -141,7 +143,7 @@ export const Settings = ({
         ? makeTriggerLink({
             key: 'upgrade-placeholder',
             text: 'Loading membership status',
-            trigger: null,
+            trigger: { type: 'pop', endpoint: null },
           })
         : !entitlement.isActive
         ? makeTriggerLink({
@@ -308,16 +310,23 @@ export const Settings = ({
       text: 'Contact Support',
       key: 'contact-support',
       onClick:
-        screen.parameters.support.trigger === null
+        screen.parameters.support === null ||
+        screen.parameters.support === undefined
           ? supportUrl
           : async () => {
+              const support = screen.parameters.support;
+              if (support === null || support === undefined) {
+                trace({ type: 'contact-support', error: 'should-be-link' });
+                return;
+              }
+
               trace({ type: 'contact-support', technique: 'trigger' });
-              screenOut(
+              configurableScreenOut(
                 workingVWC,
                 startPop,
                 transition,
                 exit,
-                screen.parameters.support.trigger
+                support.trigger
               );
             },
       onLinkClick: () => {

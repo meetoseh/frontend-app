@@ -37,7 +37,6 @@ import { useFavoritedModal } from '../../../favorites/hooks/useFavoritedModal';
 import { adaptValueWithCallbacksAsVariableStrategyProps } from '../../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps';
 import { useUnfavoritedModal } from '../../../favorites/hooks/useUnfavoritedModal';
 import { trackFavoritesChanged } from '../home/lib/trackFavoritesChanged';
-import { screenOut } from '../../lib/screenOut';
 import { storeResponse } from './lib/storeResponse';
 import { makePrettyResponse } from './lib/makePrettyResponse';
 import { HorizontalSpacer } from '../../../../shared/components/HorizontalSpacer';
@@ -46,6 +45,7 @@ import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
 import { OutlineWhiteButton } from '../../../../shared/components/OutlineWhiteButton';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * Allows the user to provide feedback on a journey
@@ -350,7 +350,7 @@ export const JourneyFeedback = ({
             <FilledInvertedButton
               onPress={() => {
                 const cta = screen.parameters.cta1;
-                screenOut(
+                configurableScreenOut(
                   workingVWC,
                   startPop,
                   transition,
@@ -393,7 +393,7 @@ export const JourneyFeedback = ({
                       );
                       return;
                     }
-                    screenOut(
+                    configurableScreenOut(
                       workingVWC,
                       startPop,
                       transition,

@@ -17,7 +17,6 @@ import {
 } from '../../../../shared/hooks/useStandardTransitions';
 import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { RoundMenu } from './icons/RoundMenu';
-import { screenOut } from '../../lib/screenOut';
 import { HorizontalSpacer } from '../../../../shared/components/HorizontalSpacer';
 import { FavoritesShortcut } from './icons/FavoritesShortcut';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
@@ -31,6 +30,7 @@ import { setVWC } from '../../../../shared/lib/setVWC';
 import { LinkButton } from '../../../../shared/components/LinkButton';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
 import { ContentContainer } from '../../../../shared/components/ContentContainer';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * The version of the home screen with the home copy and goal pill in
@@ -89,7 +89,7 @@ export const SimpleHome = ({
           <Pressable
             onPress={() => {
               trace({ type: 'nav' });
-              screenOut(
+              configurableScreenOut(
                 workingVWC,
                 startPop,
                 transition,
@@ -105,7 +105,7 @@ export const SimpleHome = ({
           <Pressable
             onPress={() => {
               trace({ type: 'favorites' });
-              screenOut(
+              configurableScreenOut(
                 workingVWC,
                 startPop,
                 transition,
@@ -133,7 +133,7 @@ export const SimpleHome = ({
             <GoalPill
               streak={resources.streak}
               updateGoal={() => {
-                screenOut(
+                configurableScreenOut(
                   workingVWC,
                   startPop,
                   transition,
@@ -181,15 +181,12 @@ export const SimpleHome = ({
                 setTextStyle={(s) => setVWC(styleVWC, s)}
                 onPress={() => {
                   trace({ type: 'cta' });
-                  screenOut(
+                  configurableScreenOut(
                     workingVWC,
                     startPop,
                     transition,
                     screen.parameters.cta.exit,
-                    screen.parameters.cta.trigger,
-                    {
-                      endpoint: screen.parameters.cta.endpoint ?? undefined,
-                    }
+                    screen.parameters.cta.trigger
                   );
                 }}
               >
@@ -217,15 +214,12 @@ export const SimpleHome = ({
                         return;
                       }
                       trace({ type: 'cta2' });
-                      screenOut(
+                      configurableScreenOut(
                         workingVWC,
                         startPop,
                         transition,
                         cta2.exit,
-                        cta2.trigger,
-                        {
-                          endpoint: cta2.endpoint ?? undefined,
-                        }
+                        cta2.trigger
                       );
                     }}
                   >

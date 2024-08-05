@@ -1,4 +1,4 @@
-import { ReactElement, useContext } from 'react';
+import { ReactElement } from 'react';
 import { ScreenComponentProps } from '../../models/Screen';
 import { GridDarkGrayBackground } from '../../../../shared/components/GridDarkGrayBackground';
 import { GridFullscreenContainer } from '../../../../shared/components/GridFullscreenContainer';
@@ -16,13 +16,12 @@ import {
 } from '../../../../shared/hooks/useStandardTransitions';
 import { WipeTransitionOverlay } from '../../../../shared/components/WipeTransitionOverlay';
 import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
-import { screenOut } from '../../lib/screenOut';
 import { VerifyPhoneResources } from './VerifyPhoneResources';
 import { VerifyPhoneMappedParams } from './VerifyPhoneParams';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
-import { ModalContext, Modals } from '../../../../shared/contexts/ModalContext';
+import { Modals } from '../../../../shared/contexts/ModalContext';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { BackContinue } from '../../../../shared/components/BackContinue';
@@ -35,8 +34,7 @@ import { AutoBold } from '../../../../shared/components/AutoBold';
 import { Text } from 'react-native';
 import { OsehTextInput } from '../../../../shared/forms/OsehTextInput';
 import { useKeyboardVisibleValueWithCallbacks } from '../../../../shared/lib/useKeyboardVisibleValueWithCallbacks';
-import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
-import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * Allows the user to verify a phone; triggers the back flow if the
@@ -128,13 +126,15 @@ export const VerifyPhone = ({
           return { type: 'make-request', data: undefined };
         }
       );
+      const trigger = screen.parameters.cta.trigger;
       const finishPop = startPop(
-        screen.parameters.cta.trigger === null
+        trigger.type === 'pop'
           ? null
           : {
-              slug: screen.parameters.cta.trigger,
-              parameters: {},
-            }
+              slug: trigger.flow,
+              parameters: trigger.parameters,
+            },
+        trigger.endpoint ?? undefined
       );
       await exitTransition.promise;
       finishPop();
@@ -151,7 +151,7 @@ export const VerifyPhone = ({
     }
 
     trace({ type: 'expired' });
-    screenOut(
+    configurableScreenOut(
       workingVWC,
       startPop,
       transition,
@@ -229,7 +229,7 @@ export const VerifyPhone = ({
         />
         <BackContinue
           onBack={() => {
-            screenOut(
+            configurableScreenOut(
               workingVWC,
               startPop,
               transition,

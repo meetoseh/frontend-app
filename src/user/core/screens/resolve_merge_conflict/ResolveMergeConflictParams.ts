@@ -1,10 +1,15 @@
-import {
-  CrudFetcherKeyMap,
-  convertUsingKeymap,
-} from '../../../../shared/lib/CrudFetcher';
 import { StandardScreenTransition } from '../../../../shared/hooks/useStandardTransitions';
+import {
+  convertUsingKeymap,
+  CrudFetcherKeyMap,
+} from '../../../../shared/lib/CrudFetcher';
 import { DayOfWeek } from '../../../../shared/models/DayOfWeek';
 import { OauthProvider } from '../../../login/lib/OauthProvider';
+import {
+  ScreenConfigurableTrigger,
+  ScreenConfigurableTriggerTransitioningPreferredAPI,
+  ScreenConfigurableTriggerTransitioningTemporaryAPI,
+} from '../../models/ScreenConfigurableTrigger';
 
 export type EmailForConflict = {
   /** The email address, e.g., anonymous@example.com */
@@ -281,7 +286,7 @@ export const oauthMergeResultKeyMap: CrudFetcherKeyMap<OauthMergeResult> = {
   merging_login_options: 'mergingLoginOptions',
 };
 
-export type ResolveMergeConflictAPIParams = {
+type ResolveMergeConflictParams<T> = {
   /** entrance transition */
   entrance: StandardScreenTransition;
 
@@ -299,34 +304,32 @@ export type ResolveMergeConflictAPIParams = {
     /** The call-to-action text on the button. */
     text: string;
 
-    /** The client flow slug to trigger after successfully merging with no parameters */
-    trigger: string | null;
-
     /** exit transition for cta */
     exit: StandardScreenTransition;
-  };
+  } & T;
 
   /** Handles the skip button which only appears if there is an error */
   skip: {
     /** The text on the skip button */
     text: string;
 
-    /** The client flow slug to trigger after skipping with no parameters */
-    trigger: string | null;
-
     /** exit transition for skip */
     exit: StandardScreenTransition;
-  };
+  } & T;
 
   /** handles what to do if the merge jwt is expired */
-  expired: {
-    /** The trigger with no parameters */
-    trigger: string | null;
-  };
+  expired: T;
 };
 
+export type ResolveMergeConflictAPIParams = ResolveMergeConflictParams<{
+  trigger: ScreenConfigurableTriggerTransitioningPreferredAPI;
+  triggerv75: ScreenConfigurableTriggerTransitioningTemporaryAPI;
+}>;
+
 export type ResolveMergeConflictMappedParams = Omit<
-  ResolveMergeConflictAPIParams,
+  ResolveMergeConflictParams<{
+    trigger: ScreenConfigurableTrigger;
+  }>,
   'conflict'
 > & {
   /** The conflict which needs to be resolved */

@@ -14,7 +14,6 @@ import {
 } from '../../../../shared/hooks/useStandardTransitions';
 import { WipeTransitionOverlay } from '../../../../shared/components/WipeTransitionOverlay';
 import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
-import { screenOut } from '../../lib/screenOut';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { CompletionResources } from './CompletionResources';
 import { CompletionMappedParams } from './CompletionParams';
@@ -24,6 +23,7 @@ import { View, Text, TextStyle, StyleProp } from 'react-native';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { FilledPremiumButton } from '../../../../shared/components/FilledPremiumButton';
 import { setVWC } from '../../../../shared/lib/setVWC';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * A basic completion screen that shows some confetti and includes a call to action
@@ -84,7 +84,7 @@ export const Completion = ({
         <VerticalSpacer height={40} />
         <FilledPremiumButton
           onPress={() => {
-            screenOut(
+            configurableScreenOut(
               workingVWC,
               startPop,
               transition,

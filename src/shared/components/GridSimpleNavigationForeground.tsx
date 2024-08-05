@@ -10,7 +10,6 @@ import {
 } from '../hooks/useStandardTransitions';
 import { useMappedValueWithCallbacks } from '../hooks/useMappedValueWithCallbacks';
 import Back from './icons/Back';
-import { screenOut } from '../../user/core/lib/screenOut';
 import { TransitionPropAsOwner } from '../lib/TransitionProp';
 import { BottomNavBarMinimal } from '../../user/bottomNav/BottomNavBar';
 import { ScreenStartPop } from '../../user/core/models/Screen';
@@ -19,7 +18,8 @@ import { Pressable, View, Text } from 'react-native';
 import { styles } from './GridSimpleNavigationForegroundStyles';
 import { HorizontalSpacer } from './HorizontalSpacer';
 import { RenderGuardedComponent } from './RenderGuardedComponent';
-import { debugView } from '../lib/debugView';
+import { ScreenConfigurableTrigger } from '../../user/core/models/ScreenConfigurableTrigger';
+import { configurableScreenOut } from '../../user/core/lib/configurableScreenOut';
 
 /** Excludes topBarHeight, usually from the screen context */
 export const GRID_SIMPLE_NAVIGATION_FOREGROUND_TOP_HEIGHT = 54;
@@ -66,21 +66,21 @@ export const GridSimpleNavigationForeground = ({
   home:
     | {
         exit: StandardScreenTransition;
-        trigger: string | null;
+        trigger: ScreenConfigurableTrigger;
       }
     | (() => void)
     | null;
   series:
     | {
         exit: StandardScreenTransition;
-        trigger: string | null;
+        trigger: ScreenConfigurableTrigger;
       }
     | (() => void)
     | null;
   account:
     | {
         exit: StandardScreenTransition;
-        trigger: string | null;
+        trigger: ScreenConfigurableTrigger;
       }
     | (() => void)
     | null;
@@ -91,7 +91,7 @@ export const GridSimpleNavigationForeground = ({
       back:
         | {
             exit: StandardScreenTransition;
-            trigger: string | null;
+            trigger: ScreenConfigurableTrigger;
           }
         | (() => void);
       title: string | ReactElement;
@@ -127,7 +127,7 @@ export const GridSimpleNavigationForeground = ({
                 return;
               }
 
-              screenOut(
+              configurableScreenOut(
                 workingVWC,
                 startPop,
                 transition,
@@ -172,7 +172,7 @@ export const GridSimpleNavigationForeground = ({
                   home();
                   return;
                 }
-                screenOut(
+                configurableScreenOut(
                   workingVWC,
                   startPop,
                   transition,
@@ -194,7 +194,7 @@ export const GridSimpleNavigationForeground = ({
                   return;
                 }
 
-                screenOut(
+                configurableScreenOut(
                   workingVWC,
                   startPop,
                   transition,
@@ -215,7 +215,7 @@ export const GridSimpleNavigationForeground = ({
                   account();
                   return;
                 }
-                screenOut(
+                configurableScreenOut(
                   workingVWC,
                   startPop,
                   transition,

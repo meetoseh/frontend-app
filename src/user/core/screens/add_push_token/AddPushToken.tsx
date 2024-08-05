@@ -60,6 +60,8 @@ import Close from '../../../../shared/icons/Close';
 import { Back } from '../emotion/icons/Back';
 import { screenWithWorking } from '../../lib/screenWithWorking';
 import { waitForValueWithCallbacksConditionCancelable } from '../../../../shared/lib/waitForValueWithCallbacksCondition';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
+import { areScreenConfigurableTriggersEqual } from '../../models/ScreenConfigurableTrigger';
 
 /**
  * If the user doesn't already have notifications enabled on the current device,
@@ -361,7 +363,7 @@ export const AddPushToken = ({
   const pushChannelVWC = useWritableValueWithCallbacks<Channel>(() => 'push');
 
   const onBack = () => {
-    screenOut(
+    configurableScreenOut(
       workingVWC,
       startPop,
       transition,
@@ -384,14 +386,18 @@ export const AddPushToken = ({
       const savePromise = saver === null ? Promise.resolve(true) : saver();
 
       let finishPop: (() => void) | null = null;
-      if (screen.parameters.cta.success === screen.parameters.cta.failure) {
+      if (
+        areScreenConfigurableTriggersEqual(
+          screen.parameters.cta.success,
+          screen.parameters.cta.failure
+        )
+      ) {
+        const trigger = screen.parameters.cta.success;
         finishPop = startPop(
-          screen.parameters.cta.success === null
+          trigger.type === 'pop'
             ? null
-            : {
-                slug: screen.parameters.cta.success,
-                parameters: {},
-              }
+            : { slug: trigger.flow, parameters: trigger.parameters },
+          trigger.endpoint ?? undefined
         );
       }
 
@@ -410,12 +416,10 @@ export const AddPushToken = ({
           : screen.parameters.cta.failure;
 
         finishPop = startPop(
-          trigger === null
+          trigger.type === 'pop'
             ? null
-            : {
-                slug: trigger,
-                parameters: {},
-              }
+            : { slug: trigger.flow, parameters: trigger.parameters },
+          trigger.endpoint ?? undefined
         );
       }
 

@@ -25,6 +25,7 @@ import { trackClassTaken } from '../home/lib/trackClassTaken';
 import { Text } from 'react-native';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * A basic screen where the user can choose an emotion
@@ -101,7 +102,7 @@ export const ChooseAFeeling = ({
           emotions={resources.emotions}
           question={null}
           onTapEmotion={(emotion) => {
-            screenOut(
+            configurableScreenOut(
               workingVWC,
               startPop,
               transition,

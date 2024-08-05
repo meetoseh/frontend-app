@@ -13,13 +13,10 @@ import { AppTrackingTransparencyResources } from './AppTrackingTransparencyResou
 import { AppTrackingTransparencyMappedParams } from './AppTrackingTransparencyParams';
 import { GridFullscreenContainer } from '../../../../shared/components/GridFullscreenContainer';
 import { GridDarkGrayBackground } from '../../../../shared/components/GridDarkGrayBackground';
-import {
-  getTrackingPermissionsAsync,
-  requestTrackingPermissionsAsync,
-} from 'expo-tracking-transparency';
+import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import { createOsehTrackingPermissionsRequest } from './lib/trackingPermissionHandler';
-import { screenOut } from '../../lib/screenOut';
 import { screenWithWorking } from '../../lib/screenWithWorking';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * A basic confirmation screen with a header and message
@@ -81,7 +78,7 @@ export const AppTrackingTransparency = ({
           })
         );
         if (active) {
-          screenOut(
+          configurableScreenOut(
             null,
             startPop,
             transition,

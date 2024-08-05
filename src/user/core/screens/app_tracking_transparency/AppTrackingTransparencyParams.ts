@@ -1,12 +1,23 @@
-export type AppTrackingTransparencyAPIParams = {
-  /** The client flow slug to trigger if they accept the native dialog */
-  success: string | null;
+import {
+  ScreenConfigurableTrigger,
+  ScreenConfigurableTriggerTransitioningPreferredAPI,
+  ScreenConfigurableTriggerTransitioningTemporaryAPI,
+} from '../../models/ScreenConfigurableTrigger';
 
-  /** The client flow slug to trigger if they reject the native dialog */
-  failure: string | null;
+export type AppTrackingTransparencyAPIParams = {
+  /** The client flow to trigger if they accept the native dialog */
+  success: ScreenConfigurableTriggerTransitioningPreferredAPI;
+  successv75: ScreenConfigurableTriggerTransitioningTemporaryAPI;
+
+  /** The client flow to trigger if they reject the native dialog */
+  failure: ScreenConfigurableTriggerTransitioningPreferredAPI;
+  failurev75: ScreenConfigurableTriggerTransitioningTemporaryAPI;
 };
 
-export type AppTrackingTransparencyMappedParams =
-  AppTrackingTransparencyAPIParams & {
-    __mapped: true;
-  };
+export type AppTrackingTransparencyMappedParams = {
+  /** The client flow to trigger if they accept the native dialog */
+  success: ScreenConfigurableTrigger;
+  /** The client flow to trigger if they reject the native dialog */
+  failure: ScreenConfigurableTrigger;
+  __mapped: true;
+};

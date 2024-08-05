@@ -36,22 +36,21 @@ export const JournalChatScreen: OsehScreen<
   JournalChatMappedParams
 > = {
   slug: 'journal_chat',
-  paramMapper: (params) => {
-    const result: JournalChatMappedParams = {
-      ...params,
-      journeyTrigger: params.journey_trigger,
-      upgradeTrigger: params.upgrade_trigger,
-      journalEntry:
-        params.journal_entry === null || params.journal_entry === undefined
-          ? null
-          : convertUsingMapper(params.journal_entry, screenJournalEntryKeyMap),
-      __mapped: true,
-    };
-    delete (result as any).journey_trigger;
-    delete (result as any).upgrade_trigger;
-    delete (result as any).journal_entry;
-    return result;
-  },
+  paramMapper: (params) => ({
+    title: params.title,
+    focus: params.focus,
+    back: params.back,
+    entrance: params.entrance,
+    exit: params.exit,
+    journeyTrigger: params.journey_trigger,
+    upgradeTrigger: params.upgrade_trigger,
+    journalEntry:
+      params.journal_entry === null || params.journal_entry === undefined
+        ? null
+        : convertUsingMapper(params.journal_entry, screenJournalEntryKeyMap),
+    autofill: params.autofill ?? '',
+    __mapped: true,
+  }),
   initInstanceResources: (ctx, screen, refreshScreen) => {
     const chatVWC = createWritableValueWithCallbacks<
       JournalChatState | null | undefined

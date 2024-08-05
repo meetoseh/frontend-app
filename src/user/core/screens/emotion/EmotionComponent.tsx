@@ -14,7 +14,6 @@ import {
 } from '../../../../shared/hooks/useStandardTransitions';
 import { WipeTransitionOverlay } from '../../../../shared/components/WipeTransitionOverlay';
 import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
-import { screenOut } from '../../lib/screenOut';
 import { EmotionResources } from './EmotionResources';
 import { EmotionMappedParams } from './EmotionParams';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
@@ -26,6 +25,7 @@ import { FilledInvertedButton } from '../../../../shared/components/FilledInvert
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { FilledPremiumButton } from '../../../../shared/components/FilledPremiumButton';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * A relatively basic screen which presents an emotion and allows the user to
@@ -78,7 +78,7 @@ export const EmotionComponent = ({
                 if (btn === null) {
                   return;
                 }
-                screenOut(
+                configurableScreenOut(
                   workingVWC,
                   startPop,
                   transition,
@@ -111,7 +111,7 @@ export const EmotionComponent = ({
                   if (btn === null) {
                     return;
                   }
-                  screenOut(
+                  configurableScreenOut(
                     workingVWC,
                     startPop,
                     transition,
@@ -153,7 +153,7 @@ export const EmotionComponent = ({
                   if (btn === null) {
                     return;
                   }
-                  screenOut(
+                  configurableScreenOut(
                     workingVWC,
                     startPop,
                     transition,

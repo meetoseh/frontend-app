@@ -32,6 +32,9 @@ export type JournalChatAPIParams = {
   journey_trigger: string;
   journal_entry?: ScreenJournalEntryAPI | null;
 
+  /** If specified, used to fill in text on the input */
+  autofill?: string | null;
+
   /** entrance transition */
   entrance: StandardScreenTransition;
 
@@ -41,7 +44,7 @@ export type JournalChatAPIParams = {
 
 export type JournalChatMappedParams = Omit<
   JournalChatAPIParams,
-  'upgrade_trigger' | 'journey_trigger' | 'journal_entry'
+  'upgrade_trigger' | 'journey_trigger' | 'journal_entry' | 'autofill'
 > & {
   /**
    * The slug of the flow to trigger if the user taps on a journey
@@ -57,5 +60,7 @@ export type JournalChatMappedParams = Omit<
    * The journal entry we are viewing the chat history of
    */
   journalEntry: ScreenJournalEntryParsed | null;
+  /** The initial value of the input */
+  autofill: string;
   __mapped: true;
 };

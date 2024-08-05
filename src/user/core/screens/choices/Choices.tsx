@@ -29,6 +29,7 @@ import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedV
 import { StyleProp, Text, TextStyle } from 'react-native';
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
 import { setVWC } from '../../../../shared/lib/setVWC';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * Asks the user a question and they select their response. Can choose one or
@@ -157,7 +158,7 @@ export const Choices = ({
                   return;
                 }
 
-                screenOut(
+                configurableScreenOut(
                   workingVWC,
                   startPop,
                   transition,

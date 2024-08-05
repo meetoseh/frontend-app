@@ -7,9 +7,13 @@ import { createWritableValueWithCallbacks } from '../../../../shared/lib/Callbac
 import { CancelablePromise } from '../../../../shared/lib/CancelablePromise';
 import { InfiniteListing } from '../../../../shared/lib/InfiniteListing';
 import { setVWC } from '../../../../shared/lib/setVWC';
-import { RequestResult, Result } from '../../../../shared/requests/RequestHandler';
+import {
+  RequestResult,
+  Result,
+} from '../../../../shared/requests/RequestHandler';
 import { unwrapRequestResult } from '../../../../shared/requests/unwrapRequestResult';
 import { MinimalJourney } from '../../../favorites/lib/MinimalJourney';
+import { convertTriggerWithExit } from '../../lib/convertTriggerWithExit';
 import { OsehScreen } from '../../models/Screen';
 import { Favorites } from './Favorites';
 import { FavoritesAPIParams, FavoritesMappedParams } from './FavoritesParams';
@@ -30,7 +34,14 @@ export const FavoritesScreen: OsehScreen<
 > = {
   slug: 'favorites',
   paramMapper: (params) => ({
-    ...params,
+    entrance: params.entrance,
+    back: convertTriggerWithExit(params.back),
+    journey: convertTriggerWithExit(params.journey),
+    history: convertTriggerWithExit(params.history),
+    owned: convertTriggerWithExit(params.owned),
+    home: convertTriggerWithExit(params.home),
+    series: convertTriggerWithExit(params.series),
+    __mapped: true,
   }),
   initInstanceResources: (ctx, screen, refreshScreen) => {
     const activeVWC = createWritableValueWithCallbacks(true);

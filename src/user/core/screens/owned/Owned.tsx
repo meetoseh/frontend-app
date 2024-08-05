@@ -41,6 +41,7 @@ import { MinimalCourseJourney } from '../../../favorites/lib/MinimalCourseJourne
 import { OwnedResources } from './OwnedResources';
 import { OwnedMappedParams } from './OwnedParams';
 import { CourseJourneyItem } from '../../../favorites/components/CourseJourneyItem';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * Allows the user to see their list of purchased content, go to their history
@@ -76,7 +77,7 @@ export const Owned = ({
 
   const showJourney = useCallback(
     async (journey: MinimalCourseJourney) => {
-      screenOut(
+      configurableScreenOut(
         workingVWC,
         startPop,
         transition,
@@ -180,7 +181,7 @@ export const Owned = ({
             active="owned"
             contentWidth={ctx.contentWidth}
             onFavorites={() => {
-              screenOut(
+              configurableScreenOut(
                 workingVWC,
                 startPop,
                 transition,
@@ -197,7 +198,7 @@ export const Owned = ({
               );
             }}
             onHistory={() => {
-              screenOut(
+              configurableScreenOut(
                 workingVWC,
                 startPop,
                 transition,

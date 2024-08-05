@@ -55,6 +55,8 @@ import {
   ErrorBanner,
   ErrorBannerText,
 } from '../../../../shared/components/ErrorBanner';
+import { ScreenConfigurableTrigger } from '../../models/ScreenConfigurableTrigger';
+import { configurableScreenOut } from '../../lib/configurableScreenOut';
 
 /**
  * Allows the user to update their notification settings
@@ -335,12 +337,12 @@ export const ReminderTimes = ({
       trigger,
       exit,
     }: {
-      trigger: string | null;
+      trigger: ScreenConfigurableTrigger;
       exit: StandardScreenTransition;
     }) => {
       screenWithWorking(workingVWC, async () => {
         const finish = () =>
-          screenOut(null, startPop, transition, exit, trigger);
+          configurableScreenOut(null, startPop, transition, exit, trigger);
         const save = prepareSave();
         if (save === null) {
           trace({ type: 'back', draft: false });
@@ -591,7 +593,7 @@ export const ReminderTimes = ({
                 onPress={() => {
                   screenWithWorking(workingVWC, async () => {
                     const exit = () =>
-                      screenOut(
+                      configurableScreenOut(
                         null,
                         startPop,
                         transition,

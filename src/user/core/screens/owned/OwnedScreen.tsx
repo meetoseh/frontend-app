@@ -7,22 +7,41 @@ import { createWritableValueWithCallbacks } from '../../../../shared/lib/Callbac
 import { CancelablePromise } from '../../../../shared/lib/CancelablePromise';
 import { InfiniteListing } from '../../../../shared/lib/InfiniteListing';
 import { setVWC } from '../../../../shared/lib/setVWC';
-import { RequestResult, Result } from '../../../../shared/requests/RequestHandler';
+import {
+  RequestResult,
+  Result,
+} from '../../../../shared/requests/RequestHandler';
 import { unwrapRequestResult } from '../../../../shared/requests/unwrapRequestResult';
 import { MinimalCourseJourney } from '../../../favorites/lib/MinimalCourseJourney';
+import { convertTriggerWithExit } from '../../lib/convertTriggerWithExit';
 import { OsehScreen } from '../../models/Screen';
 import { Owned } from './Owned';
 import { OwnedAPIParams, OwnedMappedParams } from './OwnedParams';
 import { OwnedResources } from './OwnedResources';
-import { OwnedListRequest, createOwnedListRequest } from './lib/createOwnedListRequestHandler';
+import {
+  OwnedListRequest,
+  createOwnedListRequest,
+} from './lib/createOwnedListRequestHandler';
 
 /**
  * Allows the user to see what series they've attached
  */
-export const OwnedScreen: OsehScreen<'owned', OwnedResources, OwnedAPIParams, OwnedMappedParams> = {
+export const OwnedScreen: OsehScreen<
+  'owned',
+  OwnedResources,
+  OwnedAPIParams,
+  OwnedMappedParams
+> = {
   slug: 'owned',
   paramMapper: (params) => ({
-    ...params,
+    entrance: params.entrance,
+    back: convertTriggerWithExit(params.back),
+    journey: convertTriggerWithExit(params.journey),
+    favorites: convertTriggerWithExit(params.favorites),
+    history: convertTriggerWithExit(params.history),
+    home: convertTriggerWithExit(params.home),
+    series: convertTriggerWithExit(params.series),
+    __mapped: true,
   }),
   initInstanceResources: (ctx, screen, refreshScreen) => {
     const activeVWC = createWritableValueWithCallbacks(true);
