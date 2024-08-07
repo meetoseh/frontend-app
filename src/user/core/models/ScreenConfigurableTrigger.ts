@@ -136,7 +136,7 @@ const deepEqualsJSONLike = (a: any, b: any): boolean => {
 };
 
 export type ScreenConfigurableTriggerTransitioningPreferredAPI =
-  | ScreenConfigurableTriggerFlowAPI
+  | ScreenConfigurableTriggerAPI
   | string
   | null
   | undefined;
