@@ -295,16 +295,21 @@ export const JournalChat = ({
                     }
                     if (chat === undefined) {
                       return (
-                        <View style={styles.systemMessage}>
-                          <SystemProfile />
-                          <HorizontalSpacer width={SYSTEM_PIC_TO_CHAT_WIDTH} />
-                          <View style={styles.systemMessageTextWrapper}>
-                            <Text style={styles.systemMessageText}>
-                              An error occurred. Try again or contact support at
-                              hi@oseh.com
-                            </Text>
+                        <>
+                          <VerticalSpacer height={32} flexGrow={0} />
+                          <View style={styles.systemMessage}>
+                            <SystemProfile />
+                            <HorizontalSpacer
+                              width={SYSTEM_PIC_TO_CHAT_WIDTH}
+                            />
+                            <View style={styles.systemMessageTextWrapper}>
+                              <Text style={styles.systemMessageText}>
+                                An error occurred. Try again or contact support
+                                at hi@oseh.com
+                              </Text>
+                            </View>
                           </View>
-                        </View>
+                        </>
                       );
                     }
 

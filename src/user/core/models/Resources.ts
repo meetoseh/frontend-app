@@ -68,6 +68,11 @@ import {
   OsehTrackingPermissionsRequest,
 } from '../screens/app_tracking_transparency/lib/trackingPermissionHandler';
 import { Identity } from '../screens/settings/hooks/useIdentities';
+import {
+  JournalEntryManager,
+  JournalEntryManagerMinimalRef,
+  JournalEntryManagerRef,
+} from '../screens/journal_chat/lib/createJournalEntryManagerHandler';
 
 /**
  * Contains everything that any screen might want to eagerly preload. Generally,
@@ -356,5 +361,13 @@ export type Resources = {
     OsehTrackingPermissionsRequest,
     OsehTrackingPermissionsRequest,
     OsehTrackingPermission
+  >;
+  /**
+   * Manages streaming journal entries
+   */
+  journalEntryManagerHandler: RequestHandler<
+    JournalEntryManagerMinimalRef,
+    JournalEntryManagerRef,
+    JournalEntryManager
   >;
 };

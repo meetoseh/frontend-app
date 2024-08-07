@@ -48,12 +48,12 @@ import { createPurchasesOfferingsRequestHandler } from '../screens/upgrade/lib/c
 import { Dimensions, Platform, ScaledSize, StatusBar } from 'react-native';
 import { useMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValueWithCallbacks';
 import Constants from 'expo-constants';
-import { useMappedValuesWithCallbacks } from '../../../shared/hooks/useMappedValuesWithCallbacks';
 import { createAudioDataRequestHandler } from '../../../shared/content/createAudioDataHandler';
 import { createNotificationPermissionsRequestHandler } from '../screens/add_push_token/lib/createNotificationPermissionsStatusHandler';
 import { createExpoTokenRequestHandler } from '../screens/add_push_token/lib/createExpoTokenHandler';
 import { createExpoTokenSyncRequestHandler } from '../screens/add_push_token/lib/createExpoTokenSyncHandler';
 import { createTrackingPermissionRequestHandler } from '../screens/app_tracking_transparency/lib/trackingPermissionHandler';
+import { createJournalEntryManagerRequestHandler } from '../screens/journal_chat/lib/createJournalEntryManagerHandler';
 
 type WindowSize = {
   width: number;
@@ -350,6 +350,9 @@ export const useScreenContext = (
   const trackingPermissionHandler = useWritableValueWithCallbacks(() =>
     createTrackingPermissionRequestHandler({ logging, maxStale: 2 })
   );
+  const journalEntryManagerHandler = useWritableValueWithCallbacks(() =>
+    createJournalEntryManagerRequestHandler({ logging, maxStale: 100 })
+  );
 
   const resources = useMemo(
     (): Resources => ({
@@ -388,6 +391,7 @@ export const useScreenContext = (
       expoTokenHandler: expoTokenHandler.get(),
       expoTokenSyncHandler: expoTokenSyncHandler.get(),
       trackingPermissionHandler: trackingPermissionHandler.get(),
+      journalEntryManagerHandler: journalEntryManagerHandler.get(),
     }),
     [
       privatePlaylistHandler,
@@ -425,6 +429,7 @@ export const useScreenContext = (
       expoTokenHandler,
       expoTokenSyncHandler,
       trackingPermissionHandler,
+      journalEntryManagerHandler,
     ]
   );
   const contentWidth = useContentWidthValueWithCallbacks(windowSizeImmediate);
