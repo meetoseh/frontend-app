@@ -50,8 +50,7 @@ class Fernet {
       );
     }
 
-    const paddedMessage =
-      message.length % 16 === 0 ? message : aes.padding.pkcs7.pad(message);
+    const paddedMessage = aes.padding.pkcs7.pad(message);
     const cipherText = new aes.ModeOfOperation.cbc(
       this.encryptionKeyData,
       iv

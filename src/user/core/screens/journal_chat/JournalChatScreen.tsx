@@ -271,6 +271,7 @@ export const JournalChatScreen: OsehScreen<
         });
       },
       dispose: () => {
+        setVWC(activeVWC, false);
         cleanupJournalEntryManagerRequester();
         cleanupJournalEntryManagerUnwrapper();
         cleanupJournalEntryUIDUnwrapper();
