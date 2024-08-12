@@ -16,7 +16,6 @@ import {
   useStandardTransitionsState,
 } from '../../../../shared/hooks/useStandardTransitions';
 import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
-import { RoundMenu } from './icons/RoundMenu';
 import { HorizontalSpacer } from '../../../../shared/components/HorizontalSpacer';
 import { FavoritesShortcut } from './icons/FavoritesShortcut';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
@@ -31,6 +30,8 @@ import { LinkButton } from '../../../../shared/components/LinkButton';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
 import { ContentContainer } from '../../../../shared/components/ContentContainer';
 import { configurableScreenOut } from '../../lib/configurableScreenOut';
+import { RoundMenu } from '../../../../shared/components/icons/RoundMenu';
+import { OsehColors } from '../../../../shared/OsehColors';
 
 /**
  * The version of the home screen with the home copy and goal pill in
@@ -97,9 +98,25 @@ export const SimpleHome = ({
                 screen.parameters.settings.trigger
               );
             }}
-            style={styles.roundMenuWrapper}
           >
-            <RoundMenu />
+            <RoundMenu
+              icon={{
+                width: 18,
+              }}
+              container={{
+                width: 48 + 24,
+                height: 48 + 8,
+              }}
+              startPadding={{
+                x: {
+                  fixed: 24 + (48 - 18) / 2,
+                },
+                y: {
+                  fixed: 8 + (48 - 12) / 2,
+                },
+              }}
+              color={OsehColors.v4.primary.light}
+            />
           </Pressable>
           <HorizontalSpacer width={0} flexGrow={1} />
           <Pressable

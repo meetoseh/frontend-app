@@ -2,7 +2,6 @@ import { Fragment, ReactElement } from 'react';
 import { ScreenComponentProps } from '../../models/Screen';
 import {
   TransitionPropAsOwner,
-  playExitTransition,
   useEntranceTransition,
   useTransitionProp,
 } from '../../../../shared/lib/TransitionProp';
@@ -19,7 +18,6 @@ import { GridContentContainer } from '../../../../shared/components/GridContentC
 import { SeriesDetailsResources } from './SeriesDetailsResources';
 import { SeriesDetailsMappedParams } from './SeriesDetailsParams';
 import { styles } from './SeriesDetailsStyles';
-import { Back } from './icons/Back';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { useFavoritedModal } from '../../../favorites/hooks/useFavoritedModal';
 import { adaptValueWithCallbacksAsVariableStrategyProps } from '../../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps';
@@ -42,7 +40,6 @@ import { formatDurationClock } from '../../../../shared/lib/networkResponseUtils
 import { trackClassTaken } from '../home/lib/trackClassTaken';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { View, Text, Pressable } from 'react-native';
-import { screenOut } from '../../lib/screenOut';
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
 import { FilledPremiumButton } from '../../../../shared/components/FilledPremiumButton';
 import { HorizontalSpacer } from '../../../../shared/components/HorizontalSpacer';
@@ -54,6 +51,8 @@ import {
   base64URLToByteArray,
   computeAverageRGBAUsingThumbhash,
 } from '../../../../shared/lib/colorUtils';
+import { OsehColors } from '../../../../shared/OsehColors';
+import { Back } from '../../../../shared/components/icons/Back';
 
 /**
  * Displays the series details page on a specific series
@@ -120,7 +119,12 @@ export const SeriesDetails = ({
               );
             }}
           >
-            <Back />
+            <Back
+              icon={{ width: 20 }}
+              container={{ width: 60, height: 32 }}
+              startPadding={{ x: { fraction: 0 }, y: { fraction: 0 } }}
+              color={OsehColors.v4.primary.light}
+            />
           </Pressable>
         </View>
         <VerticalSpacer height={20} />

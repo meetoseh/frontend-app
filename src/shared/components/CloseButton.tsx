@@ -1,11 +1,10 @@
-import { ReactElement, useCallback, useMemo } from 'react';
-import { useStateCompat as useState } from '../hooks/useStateCompat';
-import { Platform, Pressable, View, ViewStyle } from 'react-native';
+import { ReactElement, useCallback } from 'react';
+import { Pressable, View, ViewStyle } from 'react-native';
 import { useTopBarHeight } from '../hooks/useTopBarHeight';
 import { styles } from './CloseButtonStyles';
-import Close from '../icons/Close';
 import * as Colors from '../../styling/colors';
-import { useWritableValueWithCallbacks } from '../lib/Callbacks';
+import { OsehColors } from '../OsehColors';
+import { Close } from './icons/Close';
 
 type CloseButtonProps = {
   /**
@@ -56,9 +55,17 @@ export const CloseButton = ({
         })}
       >
         <Close
-          width={14}
-          height={14}
-          fill={variant === 'dark' ? Colors.GRAYSCALE_DARK_GRAY : Colors.WHITE}
+          icon={{ width: 14 }}
+          container={{ width: 14, height: 14 }}
+          startPadding={{
+            x: { fraction: 0.5 },
+            y: { fraction: 0.5 },
+          }}
+          color={
+            variant === 'dark'
+              ? OsehColors.v4.primary.dark
+              : OsehColors.v4.primary.light
+          }
         />
       </Pressable>
     </View>

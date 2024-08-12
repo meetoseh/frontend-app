@@ -37,7 +37,6 @@ import { EditReminderTime } from './EditReminderTime';
 import { TimeRange } from './EditTimeRange';
 import { DayOfWeek } from '../../../../shared/models/DayOfWeek';
 import { DEFAULT_DAYS, DEFAULT_TIME_RANGE } from './constants';
-import Back from '../../../../shared/components/icons/Back';
 import { apiFetch } from '../../../../shared/lib/apiFetch';
 import { Modals } from '../../../../shared/contexts/ModalContext';
 import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
@@ -57,6 +56,8 @@ import {
 } from '../../../../shared/components/ErrorBanner';
 import { ScreenConfigurableTrigger } from '../../models/ScreenConfigurableTrigger';
 import { configurableScreenOut } from '../../lib/configurableScreenOut';
+import { OsehColors } from '../../../../shared/OsehColors';
+import { Back } from '../../../../shared/components/icons/Back';
 
 /**
  * Allows the user to update their notification settings
@@ -509,7 +510,12 @@ export const ReminderTimes = ({
           >
             <View style={styles.backWrapper}>
               <Pressable onPress={() => handleBack(screen.parameters.back)}>
-                <Back />
+                <Back
+                  icon={{ width: 20 }}
+                  container={{ width: 52, height: 53 }}
+                  startPadding={{ x: { fraction: 0.5 }, y: { fraction: 0.5 } }}
+                  color={OsehColors.v4.primary.light}
+                />
               </Pressable>
             </View>
           </ContentContainer>

@@ -20,13 +20,14 @@ import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedV
 import { InteractivePromptRouter } from '../../../interactive_prompt/components/InteractivePromptRouter';
 import { PromptTime } from '../../../interactive_prompt/hooks/usePromptTime';
 import { styles } from './InteractivePromptStyles';
-import { Close } from './icons/Close';
 import { screenWithWorking } from '../../lib/screenWithWorking';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { Pressable, View } from 'react-native';
 import { configurableScreenOut } from '../../lib/configurableScreenOut';
+import { Close } from '../../../../shared/components/icons/Close';
+import { OsehColors } from '../../../../shared/OsehColors';
 
 /**
  * An interactive prompt (one where everyones responses are shown as they
@@ -160,7 +161,24 @@ export const InteractivePrompt = ({
               });
             }}
           >
-            <Close />
+            <Close
+              icon={{
+                width: 24,
+              }}
+              container={{
+                width: 16 + 24 + 32,
+                height: 16 + 24 + 32,
+              }}
+              startPadding={{
+                x: {
+                  fixed: 16,
+                },
+                y: {
+                  fixed: 16,
+                },
+              }}
+              color={OsehColors.v4.primary.light}
+            />
           </Pressable>
         </View>
       </GridContentContainer>

@@ -40,7 +40,7 @@ export const styles = StyleSheet.create({
     color: Colors.PRIMARY_LIGHT,
   },
   numClasses: {
-    textAlign: 'center',
+    textAlign: 'left',
     fontFamily: 'OpenSans-Regular',
     fontSize: 17,
     color: Colors.PRIMARY_LIGHT,

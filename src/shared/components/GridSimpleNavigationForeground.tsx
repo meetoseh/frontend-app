@@ -9,7 +9,6 @@ import {
   StandardScreenTransitionState,
 } from '../hooks/useStandardTransitions';
 import { useMappedValueWithCallbacks } from '../hooks/useMappedValueWithCallbacks';
-import Back from './icons/Back';
 import { TransitionPropAsOwner } from '../lib/TransitionProp';
 import { BottomNavBarMinimal } from '../../user/bottomNav/BottomNavBar';
 import { ScreenStartPop } from '../../user/core/models/Screen';
@@ -20,6 +19,8 @@ import { HorizontalSpacer } from './HorizontalSpacer';
 import { RenderGuardedComponent } from './RenderGuardedComponent';
 import { ScreenConfigurableTrigger } from '../../user/core/models/ScreenConfigurableTrigger';
 import { configurableScreenOut } from '../../user/core/lib/configurableScreenOut';
+import { Back } from './icons/Back';
+import { OsehColors } from '../OsehColors';
 
 /** Excludes topBarHeight, usually from the screen context */
 export const GRID_SIMPLE_NAVIGATION_FOREGROUND_TOP_HEIGHT = 54;
@@ -141,7 +142,12 @@ export const GridSimpleNavigationForeground = ({
               );
             }}
           >
-            <Back />
+            <Back
+              icon={{ width: 20 }}
+              container={{ width: 52, height: 53 }}
+              startPadding={{ x: { fraction: 0.5 }, y: { fraction: 0.5 } }}
+              color={OsehColors.v4.primary.light}
+            />
           </Pressable>
           <HorizontalSpacer width={0} flexGrow={1} />
           <Text style={styles.headerText}>{title}</Text>

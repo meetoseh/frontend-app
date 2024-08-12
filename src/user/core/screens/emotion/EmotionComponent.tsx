@@ -17,7 +17,6 @@ import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks'
 import { EmotionResources } from './EmotionResources';
 import { EmotionMappedParams } from './EmotionParams';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
-import { Back } from './icons/Back';
 import { trackClassTaken } from '../home/lib/trackClassTaken';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { Pressable, View, Text, StyleProp } from 'react-native';
@@ -26,6 +25,8 @@ import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwa
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { FilledPremiumButton } from '../../../../shared/components/FilledPremiumButton';
 import { configurableScreenOut } from '../../lib/configurableScreenOut';
+import { OsehColors } from '../../../../shared/OsehColors';
+import { Back } from '../../../../shared/components/icons/Back';
 
 /**
  * A relatively basic screen which presents an emotion and allows the user to
@@ -87,7 +88,12 @@ export const EmotionComponent = ({
                 );
               }}
             >
-              <Back />
+              <Back
+                icon={{ width: 20 }}
+                container={{ width: 36, height: 52 }}
+                startPadding={{ x: { fraction: 0 }, y: { fraction: 1 } }}
+                color={OsehColors.v4.primary.light}
+              />
             </Pressable>
           </View>
         )}

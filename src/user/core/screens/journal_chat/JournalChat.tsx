@@ -21,7 +21,6 @@ import { screenOut } from '../../lib/screenOut';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { JournalChatResources } from './JournalChatResources';
 import { JournalChatMappedParams } from './JournalChatParams';
-import { Close } from '../interactive_prompt_screen/icons/Close';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
 import { ContentContainer } from '../../../../shared/components/ContentContainer';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
@@ -38,11 +37,19 @@ import { createValueWithCallbacksEffect } from '../../../../shared/hooks/createV
 import { Arrow } from './icons/Arrow';
 import { ThinkingDots } from '../../../../shared/components/ThinkingDots';
 import { Pressable, TextInput, View, Text, ScrollView } from 'react-native';
-import Back from '../../../../shared/components/icons/Back';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
 import { useKeyboardHeightValueWithCallbacks } from '../../../../shared/lib/useKeyboardHeightValueWithCallbacks';
 import * as Colors from '../../../../styling/colors';
 import { trackClassTaken } from '../home/lib/trackClassTaken';
+import { Back } from '../../../../shared/components/icons/Back';
+import { OsehColors } from '../../../../shared/OsehColors';
+import {
+  RESIZING_TEXT_AREA_ICON_SETTINGS,
+  ResizingTextArea,
+  ResizingTextAreaProps,
+} from '../../../../shared/components/ResizingTextArea';
+import { Close } from '../../../../shared/components/icons/Close';
+import { Send } from '../../../../shared/components/icons/Send';
 
 const SUGGESTIONS = [
   { text: 'I have a lot of anxiety right now', width: 160 },
@@ -108,10 +115,9 @@ export const JournalChat = ({
   );
 
   const inputVWC = useWritableValueWithCallbacks<TextInput | null>(() => null);
-  const inputHeightVWC = useWritableValueWithCallbacks<number>(() => 22);
   const rawInputValueVWC = useWritableValueWithCallbacks<string>(
     () => screen.parameters.autofill
-  );
+  ) as ResizingTextAreaProps['value'];
 
   const submittedVWC = useWritableValueWithCallbacks<boolean>(() => false);
   useValueWithCallbacksEffect(resources.chat, (chat) => {
@@ -142,7 +148,8 @@ export const JournalChat = ({
     }
 
     ele.blur();
-    setVWC(rawInputValueVWC, '');
+    rawInputValueVWC.set('');
+    rawInputValueVWC.callbacks.call({ updateInput: true });
     setVWC(submittedVWC, true);
     resources.trySubmitUserResponse(value);
   };
@@ -174,15 +181,6 @@ export const JournalChat = ({
     () => ({
       width: windowWidthVWC.get(),
       height: suggestionsHeightVWC.get(),
-    })
-  );
-
-  const inputPropsVWC = useMappedValuesWithCallbacks(
-    [inputHeightVWC, rawInputValueVWC, submittedVWC],
-    () => ({
-      text: rawInputValueVWC.get(),
-      height: inputHeightVWC.get(),
-      editable: !submittedVWC.get(),
     })
   );
 
@@ -228,7 +226,12 @@ export const JournalChat = ({
                 );
               }}
             >
-              <Back />
+              <Back
+                icon={{ width: 20 }}
+                container={{ width: 52, height: 53 }}
+                startPadding={{ x: { fraction: 0.5 }, y: { fraction: 0.5 } }}
+                color={OsehColors.v4.primary.light}
+              />
             </Pressable>
           ) : (
             <HorizontalSpacer width={0} flexGrow={1} />
@@ -256,7 +259,12 @@ export const JournalChat = ({
                 );
               }}
             >
-              <Close />
+              <Close
+                icon={{ width: 24 }}
+                container={{ width: 56, height: 56 }}
+                startPadding={{ x: { fraction: 0.5 }, y: { fraction: 0.5 } }}
+                color={OsehColors.v4.primary.light}
+              />
             </Pressable>
           ) : (
             <HorizontalSpacer width={0} flexGrow={1} />
@@ -582,10 +590,10 @@ export const JournalChat = ({
                                 return;
                               }
 
-                              setVWC(
-                                rawInputValueVWC,
-                                rawInputValueVWC.get() + suggestion.text
-                              );
+                              rawInputValueVWC.set(suggestion.text);
+                              rawInputValueVWC.callbacks.call({
+                                updateInput: true,
+                              });
                               ele.focus();
                             }}
                           >
@@ -603,57 +611,23 @@ export const JournalChat = ({
                 />
                 <VerticalSpacer height={SUGGESTIONS_TO_INPUT_HEIGHT} />
                 <ContentContainer contentWidthVWC={ctx.contentWidth}>
-                  <View style={styles.form}>
-                    <View style={styles.inputWrapper}>
-                      <RenderGuardedComponent
-                        props={inputPropsVWC}
-                        component={({ text, height, editable }) => (
-                          <TextInput
-                            style={Object.assign({}, styles.input, {
-                              height: height,
-                            })}
-                            placeholderTextColor={Colors.GRAYSCALE_DISABLED}
-                            multiline
-                            placeholder="How are you feeling today?"
-                            ref={(r) => setVWC(inputVWC, r)}
-                            value={text}
-                            editable={editable}
-                            onChangeText={(t) => setVWC(rawInputValueVWC, t)}
-                            onContentSizeChange={(e) => {
-                              const height =
-                                e?.nativeEvent?.contentSize?.height;
-                              if (
-                                height !== undefined &&
-                                !isNaN(height) &&
-                                height > 0
-                              ) {
-                                const old = inputHeightVWC.get();
-                                if (
-                                  old === height ||
-                                  (old > height &&
-                                    Math.abs(old - height) < 1e-3)
-                                ) {
-                                  return;
-                                }
-                                inputHeightVWC.set(height);
-                                inputHeightVWC.callbacks.call(undefined);
-                              }
-                            }}
-                          />
-                        )}
-                        applyInstantly
-                      />
-                    </View>
-                    <HorizontalSpacer width={6} />
-                    <Pressable
-                      style={styles.submit}
-                      onPress={() => {
-                        onSubmit();
-                      }}
-                    >
-                      <Submit />
-                    </Pressable>
-                  </View>
+                  <ResizingTextArea
+                    variant="dark"
+                    placeholder="Type your message"
+                    submit={{
+                      icon: (
+                        <Send
+                          color2={OsehColors.v4.primary.dark}
+                          color={OsehColors.v4.primary.light}
+                          {...RESIZING_TEXT_AREA_ICON_SETTINGS}
+                        />
+                      ),
+                      onClick: onSubmit,
+                    }}
+                    value={rawInputValueVWC}
+                    refVWC={inputVWC}
+                    enterBehavior="submit-unless-shift"
+                  />
                 </ContentContainer>
                 <RenderGuardedComponent
                   props={keyboardHeightVWC}

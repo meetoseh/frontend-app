@@ -1,14 +1,14 @@
 import { StyleSheet } from 'react-native';
-import * as Colors from '../../../../styling/colors';
+import { OsehColors } from '../../../../shared/OsehColors';
 
 export const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     flexWrap: 'nowrap',
-    backgroundColor: Colors.GRAYSCALE_BLACK,
+    backgroundColor: OsehColors.v4.primary.dark,
     borderBottomWidth: 1,
     borderStyle: 'solid',
-    borderBottomColor: Colors.NEW_GRAYSCALE_DARK_GRAY,
+    borderBottomColor: OsehColors.v4.primary.charcoal,
     justifyContent: 'flex-start',
     alignItems: 'center',
   },
@@ -30,7 +30,7 @@ export const styles = StyleSheet.create({
     fontFamily: 'OpenSans-Regular',
     fontSize: 20,
     textAlign: 'center',
-    color: Colors.PRIMARY_LIGHT,
+    color: OsehColors.v4.primary.light,
     flexBasis: 'auto',
     flexGrow: 0,
     flexShrink: 0,
@@ -61,7 +61,7 @@ export const styles = StyleSheet.create({
     fontFamily: 'OpenSans-Regular',
     fontSize: 16,
     textAlign: 'left',
-    color: Colors.PRIMARY_LIGHT,
+    color: OsehColors.v4.primary.light,
   },
   paragraph: {},
   journeyCard: {
@@ -96,31 +96,31 @@ export const styles = StyleSheet.create({
     paddingRight: 4,
     paddingBottom: 2,
     paddingLeft: 4,
-    backgroundColor: Colors.GRAYSCALE_BLACK_BACKGROUND,
+    backgroundColor: OsehColors.v4.primary.dark + '80',
     borderRadius: 4,
     alignSelf: 'flex-end',
   },
   journeyCardTopForegroundPaidText: {
     fontFamily: 'OpenSans-Regular',
     fontSize: 14,
-    color: Colors.PRIMARY_LIGHT,
+    color: OsehColors.v4.primary.light,
   },
   journeyCardTopForegroundTitle: {
     fontFamily: 'OpenSans-Regular',
     fontSize: 17,
-    color: Colors.PRIMARY_LIGHT,
+    color: OsehColors.v4.primary.light,
   },
   journeyCardTopForegroundInstructor: {
     fontFamily: 'OpenSans-Regular',
     fontSize: 14,
-    color: Colors.GRAYSCALE_MID_GRAY,
+    color: OsehColors.v4.primary.smoke,
   },
   journeyCardBottom: {
     flexDirection: 'row',
     flexWrap: 'nowrap',
     justifyContent: 'flex-start',
     alignItems: 'center',
-    backgroundColor: Colors.GRAYSCALE_BLACK,
+    backgroundColor: OsehColors.v4.primary.dark,
     borderBottomLeftRadius: 10,
     borderBottomRightRadius: 10,
     paddingTop: 14.5,
@@ -132,7 +132,7 @@ export const styles = StyleSheet.create({
     fontFamily: 'OpenSans-Regular',
     fontSize: 14,
     lineHeight: 16.8,
-    color: Colors.GRAYSCALE_DISABLED,
+    color: OsehColors.v4.primary.grey,
   },
   selfMessage: {
     alignSelf: 'flex-end',
@@ -145,7 +145,7 @@ export const styles = StyleSheet.create({
     borderTopRightRadius: 16,
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 2,
-    backgroundColor: Colors.GRAYSCALE_LIGHTENED_BACKGROUND,
+    backgroundColor: OsehColors.v4.experimental.lessDarkGrey,
   },
   selfMessageTextWrapper: {
     justifyContent: 'flex-start',
@@ -155,13 +155,13 @@ export const styles = StyleSheet.create({
     fontFamily: 'OpenSans-Regular',
     fontSize: 16,
     textAlign: 'left',
-    color: Colors.PRIMARY_LIGHT,
+    color: OsehColors.v4.primary.light,
   },
   hint: {
     fontFamily: 'OpenSans-Regular',
     fontSize: 12,
     textAlign: 'center',
-    color: Colors.GRAYSCALE_DISABLED,
+    color: OsehColors.v4.primary.grey,
   },
   suggestions: {
     flexGrow: 0,
@@ -178,8 +178,8 @@ export const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderStyle: 'solid',
-    borderColor: Colors.GRAYSCALE_EMPHASIZE_BORDER,
-    backgroundColor: Colors.GRAYSCALE_EMPHASIZE_BACKGROUND,
+    borderColor: OsehColors.v4.primary.darkGrey,
+    backgroundColor: OsehColors.v4.primary.dark,
     paddingTop: 8,
     paddingRight: 12,
     paddingBottom: 8,
@@ -189,7 +189,7 @@ export const styles = StyleSheet.create({
     fontFamily: 'OpenSans-Regular',
     fontSize: 14,
     textAlign: 'left',
-    color: Colors.PRIMARY_LIGHT,
+    color: OsehColors.v4.primary.light,
   },
   form: {
     flexDirection: 'row',
@@ -200,9 +200,9 @@ export const styles = StyleSheet.create({
   inputWrapper: {
     borderWidth: 1,
     borderStyle: 'solid',
-    borderColor: Colors.NEW_GRAYSCALE_BORDER,
+    borderColor: OsehColors.v4.primary.darkGrey,
     borderRadius: 28,
-    backgroundColor: Colors.GRAYSCALE_BLACK,
+    backgroundColor: OsehColors.v4.primary.dark,
     paddingTop: 10,
     paddingRight: 16,
     paddingBottom: 10,
@@ -215,7 +215,7 @@ export const styles = StyleSheet.create({
   input: {
     fontFamily: 'OpenSans-Regular',
     fontSize: 16,
-    color: Colors.PRIMARY_LIGHT,
+    color: OsehColors.v4.primary.light,
     padding: 0,
     paddingVertical: 0,
     paddingTop: 0,

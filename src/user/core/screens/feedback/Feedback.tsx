@@ -19,7 +19,6 @@ import { GridDarkGrayBackground } from '../../../../shared/components/GridDarkGr
 import { GridContentContainer } from '../../../../shared/components/GridContentContainer';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
 import { styles } from './FeedbackStyles';
-import { Close } from '../interactive_prompt_screen/icons/Close';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
@@ -39,6 +38,8 @@ import { FilledInvertedButton } from '../../../../shared/components/FilledInvert
 import { useKeyboardHeightValueWithCallbacks } from '../../../../shared/lib/useKeyboardHeightValueWithCallbacks';
 import { LinkButton } from '../../../../shared/components/LinkButton';
 import { configurableScreenOut } from '../../lib/configurableScreenOut';
+import { Close } from '../../../../shared/components/icons/Close';
+import { OsehColors } from '../../../../shared/OsehColors';
 
 /**
  * Presents the user the opportunity to give some free-form feedback
@@ -241,7 +242,24 @@ export const Feedback = ({
               });
             }}
           >
-            <Close />
+            <Close
+              icon={{
+                width: 24,
+              }}
+              container={{
+                width: 16 + 24 + 32,
+                height: 16 + 24 + 32,
+              }}
+              startPadding={{
+                x: {
+                  fixed: 16,
+                },
+                y: {
+                  fixed: 16,
+                },
+              }}
+              color={OsehColors.v4.primary.light}
+            />
           </Pressable>
         </View>
         <ContentContainer contentWidthVWC={ctx.contentWidth}>

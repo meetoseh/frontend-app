@@ -54,14 +54,14 @@ import {
   GridSimpleNavigationForeground,
 } from '../../../../shared/components/GridSimpleNavigationForeground';
 import { LinkButton } from '../../../../shared/components/LinkButton';
-import { screenOut } from '../../lib/screenOut';
 import { HorizontalSpacer } from '../../../../shared/components/HorizontalSpacer';
-import Close from '../../../../shared/icons/Close';
-import { Back } from '../emotion/icons/Back';
 import { screenWithWorking } from '../../lib/screenWithWorking';
 import { waitForValueWithCallbacksConditionCancelable } from '../../../../shared/lib/waitForValueWithCallbacksCondition';
 import { configurableScreenOut } from '../../lib/configurableScreenOut';
 import { areScreenConfigurableTriggersEqual } from '../../models/ScreenConfigurableTrigger';
+import { Close } from '../../../../shared/components/icons/Close';
+import { OsehColors } from '../../../../shared/OsehColors';
+import { Back } from '../../../../shared/components/icons/Back';
 
 /**
  * If the user doesn't already have notifications enabled on the current device,
@@ -456,20 +456,28 @@ export const AddPushToken = ({
         {screen.parameters.nav.type === 'x' && (
           <View style={styles.row}>
             <HorizontalSpacer width={0} flexGrow={1} />
-            <Pressable
-              onPress={onBack}
-              style={{
-                padding: 16,
-              }}
-            >
-              <Close />
+            <Pressable onPress={onBack}>
+              <Close
+                icon={{ width: 24 }}
+                container={{ width: 56, height: 56 }}
+                startPadding={{
+                  x: { fraction: 0.5 },
+                  y: { fraction: 0.5 },
+                }}
+                color={OsehColors.v4.primary.light}
+              />
             </Pressable>
           </View>
         )}
         {screen.parameters.nav.type === 'arrow' && (
           <View style={styles.row}>
             <Pressable onPress={onBack}>
-              <Back />
+              <Back
+                icon={{ width: 20 }}
+                container={{ width: 56, height: 56 }}
+                startPadding={{ x: { fraction: 0.5 }, y: { fraction: 0.5 } }}
+                color={OsehColors.v4.primary.light}
+              />
             </Pressable>
           </View>
         )}

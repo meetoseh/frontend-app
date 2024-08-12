@@ -24,12 +24,10 @@ import {
   StyleProp,
   TextStyle,
 } from 'react-native';
-import { useValuesWithCallbacksEffect } from '../../hooks/useValuesWithCallbacksEffect';
 import { useAnimationTargetAndRendered } from '../../anim/useAnimationTargetAndRendered';
 import { useMappedValueWithCallbacks } from '../../hooks/useMappedValueWithCallbacks';
 import { useStyleVWC } from '../../hooks/useStyleVWC';
 import { RenderGuardedComponent } from '../../components/RenderGuardedComponent';
-import Close from '../../icons/Close';
 import { SimpleBlurView } from '../../components/SimpleBlurView';
 import * as Colors from '../../../styling/colors';
 import Play from './assets/Play';
@@ -45,6 +43,8 @@ import Arrow from './assets/Arrow';
 import { useMappedValuesWithCallbacks } from '../../hooks/useMappedValuesWithCallbacks';
 import { useTopBarHeight } from '../../hooks/useTopBarHeight';
 import { useBotBarHeight } from '../../hooks/useBotBarHeight';
+import { Close } from '../../components/icons/Close';
+import { OsehColors } from '../../OsehColors';
 
 export type PlayerCTA = {
   /** The title for the button */
@@ -277,7 +277,15 @@ export const PlayerForeground = ({
                             : undefined
                         )}
                       >
-                        <Close />
+                        <Close
+                          icon={{ width: 24 }}
+                          container={{ width: 56, height: 56 }}
+                          startPadding={{
+                            x: { fraction: 0.5 },
+                            y: { fraction: 0.5 },
+                          }}
+                          color={OsehColors.v4.primary.light}
+                        />
                       </View>
                     </Pressable>
                   </View>

@@ -16,12 +16,13 @@ import { GridDarkGrayBackground } from '../../../../shared/components/GridDarkGr
 import { GridContentContainer } from '../../../../shared/components/GridContentContainer';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { styles } from './SimpleNavStyles';
-import { Close } from '../interactive_prompt_screen/icons/Close';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
 import { ContentContainer } from '../../../../shared/components/ContentContainer';
 import { View, Pressable, Text, Linking } from 'react-native';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { configurableScreenOut } from '../../lib/configurableScreenOut';
+import { Close } from '../../../../shared/components/icons/Close';
+import { OsehColors } from '../../../../shared/OsehColors';
 
 /**
  * A basic navigation screen with primary and secondary sections
@@ -84,7 +85,24 @@ export const SimpleNav = ({
               );
             }}
           >
-            <Close />
+            <Close
+              icon={{
+                width: 24,
+              }}
+              container={{
+                width: 56,
+                height: 56,
+              }}
+              startPadding={{
+                x: {
+                  fraction: 0.5,
+                },
+                y: {
+                  fraction: 0.5,
+                },
+              }}
+              color={OsehColors.v4.primary.light}
+            />
           </Pressable>
         </View>
         <VerticalSpacer height={0} flexGrow={1} />

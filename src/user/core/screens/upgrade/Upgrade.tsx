@@ -22,7 +22,6 @@ import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedV
 import { WipeTransitionOverlay } from '../../../../shared/components/WipeTransitionOverlay';
 import { styles } from './UpgradeStyles';
 import { setVWC } from '../../../../shared/lib/setVWC';
-import { Back } from './icons/Back';
 import { GridBlackBackground } from '../../../../shared/components/GridBlackBackground';
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
 import { GridImageBackground } from '../../../../shared/components/GridImageBackground';
@@ -59,10 +58,12 @@ import {
 } from './lib/purchasesStoreProductHelper';
 import { Check } from '../series_details/icons/Check';
 import { createPriceIdentifier } from './lib/PriceIdentifier';
-import Close from '../../../../shared/icons/Close';
 import { ContentContainer } from '../../../../shared/components/ContentContainer';
 import { ScreenContext } from '../../hooks/useScreenContext';
 import { configurableScreenOut } from '../../lib/configurableScreenOut';
+import { Close } from '../../../../shared/components/icons/Close';
+import { OsehColors } from '../../../../shared/OsehColors';
+import { Back } from '../../../../shared/components/icons/Back';
 
 type Copy = UpgradeCopy<ScreenImageParsed>;
 
@@ -184,7 +185,12 @@ export const Upgrade = ({
               }}
               style={styles.back}
             >
-              <Back />
+              <Back
+                icon={{ width: 20 }}
+                container={{ width: 20, height: 20 }}
+                startPadding={{ x: { fraction: 0.5 }, y: { fraction: 0.5 } }}
+                color={OsehColors.v4.primary.light}
+              />
             </Pressable>
           </View>
         ) : (
@@ -206,7 +212,15 @@ export const Upgrade = ({
               }}
               style={styles.x}
             >
-              <Close />
+              <Close
+                icon={{ width: 24 }}
+                container={{ width: 56, height: 56 }}
+                startPadding={{
+                  x: { fraction: 0.5 },
+                  y: { fraction: 0.5 },
+                }}
+                color={OsehColors.v4.primary.light}
+              />
             </Pressable>
           </View>
         )}
