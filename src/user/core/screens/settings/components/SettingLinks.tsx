@@ -18,7 +18,8 @@ import {
 import { useMappedValueWithCallbacks } from '../../../../../shared/hooks/useMappedValueWithCallbacks';
 import { useMappedValuesWithCallbacks } from '../../../../../shared/hooks/useMappedValuesWithCallbacks';
 import { InlineOsehSpinner } from '../../../../../shared/components/InlineOsehSpinner';
-import { RightCaret } from '../../fork/icons/RightCaret';
+import { Forward } from '../../../../../shared/components/icons/Forward';
+import { OsehColors } from '../../../../../shared/OsehColors';
 
 /**
  * Describes a link that can be used within a settings link block
@@ -343,7 +344,17 @@ const SettingLinkComponent = ({
                   }}
                 />
               ) : (
-                args.action === 'arrow' && <RightCaret />
+                args.action === 'arrow' && (
+                  <Forward
+                    icon={{ width: 20 }}
+                    container={{ width: 20, height: 20 }}
+                    startPadding={{
+                      x: { fraction: 0.5 },
+                      y: { fraction: 0.5 },
+                    }}
+                    color={OsehColors.v4.primary.light}
+                  />
+                )
               )}
             </View>
           </Pressable>

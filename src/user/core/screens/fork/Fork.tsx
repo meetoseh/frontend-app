@@ -17,7 +17,6 @@ import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks'
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { ForkResources } from './ForkResources';
 import { ForkMappedParams } from './ForkParams';
-import { RightCaret } from './icons/RightCaret';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { View, Text, Pressable } from 'react-native';
 import { useAnimationTargetAndRendered } from '../../../../shared/anim/useAnimationTargetAndRendered';
@@ -27,6 +26,8 @@ import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedV
 import { useStyleVWC } from '../../../../shared/hooks/useStyleVWC';
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
 import { configurableScreenOut } from '../../lib/configurableScreenOut';
+import { OsehColors } from '../../../../shared/OsehColors';
+import { Forward } from '../../../../shared/components/icons/Forward';
 
 /**
  * A basic fork screen with a header, message, and a series of choices
@@ -160,7 +161,12 @@ const Btn = ({
       onPressOut={() => setVWC(pressingVWC, false)}
     >
       <Text style={styles.optionText}>{text}</Text>
-      <RightCaret />
+      <Forward
+        icon={{ width: 20 }}
+        container={{ width: 20, height: 20 }}
+        startPadding={{ x: { fraction: 0.5 }, y: { fraction: 0.5 } }}
+        color={OsehColors.v4.primary.light}
+      />
     </Pressable>
   );
 };

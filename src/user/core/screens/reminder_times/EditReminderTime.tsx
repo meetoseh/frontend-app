@@ -28,10 +28,11 @@ import {
   makeTimeRangePretty,
   nameForChannel,
 } from './formatUtils';
-import { Channel } from '../../features/requestNotificationTime/RequestNotificationTimeState';
 import { View, Text, Pressable } from 'react-native';
-import RightCaret from './icons/RightCaret';
 import { DayOfWeek } from '../../../../shared/models/DayOfWeek';
+import { Channel } from './lib/Channel';
+import { Forward } from '../../../../shared/components/icons/Forward';
+import { OsehColors } from '../../../../shared/OsehColors';
 
 export type EditReminderTimeProps = {
   /**
@@ -310,7 +311,12 @@ export const EditReminderTime = ({
               )}
             />
           </View>
-          <RightCaret />
+          <Forward
+            icon={{ width: 20 }}
+            container={{ width: 20, height: 20 }}
+            startPadding={{ x: { fraction: 0.5 }, y: { fraction: 0.5 } }}
+            color={OsehColors.v4.primary.light}
+          />
         </Option>
         <Option
           notFirst
@@ -343,7 +349,12 @@ export const EditReminderTime = ({
               )}
             />
           </View>
-          <RightCaret />
+          <Forward
+            icon={{ width: 20 }}
+            container={{ width: 20, height: 20 }}
+            startPadding={{ x: { fraction: 0.5 }, y: { fraction: 0.5 } }}
+            color={OsehColors.v4.primary.light}
+          />
         </Option>
       </View>
     </View>

@@ -9,6 +9,7 @@ import {
   RequestHandler,
   Result,
 } from '../../../../../shared/requests/RequestHandler';
+import { describeError } from '../../../../../shared/lib/describeError';
 import { getJwtExpiration } from '../../../../../shared/lib/getJwtExpiration';
 import { JournalChatState } from './JournalChatState';
 import { ReactElement } from 'react';
@@ -22,14 +23,13 @@ import {
 } from '../../../../../shared/journals/clientKeys';
 import { createValueWithCallbacksEffect } from '../../../../../shared/hooks/createValueWithCallbacksEffect';
 import { manageWebsocketChatLoop } from './manageWebsocketChatLoop';
+import { apiFetch } from '../../../../../shared/lib/apiFetch';
 import { VISITOR_SOURCE } from '../../../../../shared/lib/visitorSource';
 import { Visitor } from '../../../../../shared/hooks/useVisitorValueWithCallbacks';
 import { createFernet } from '../../../../../shared/lib/fernet';
 import { adaptCallbacksToAbortSignal } from '../../../../../shared/lib/adaptCallbacksToAbortSignal';
 import { createCancelablePromiseFromCallbacks } from '../../../../../shared/lib/createCancelablePromiseFromCallbacks';
 import { createCancelableTimeout } from '../../../../../shared/lib/createCancelableTimeout';
-import { describeError } from '../../../../../shared/lib/describeError';
-import { apiFetch } from '../../../../../shared/lib/apiFetch';
 
 export type JournalEntryManagerRef = {
   /** The UID of the journal entry to get */
@@ -81,6 +81,7 @@ export type JournalEntryManager = {
    *
    * A sync-like endpoint is any endpoint whose signature is compatible with
    * `/api/1/journals/entries/sync`
+   * @returns A promise after the task finishes or we have decided not to start it
    */
   refresh: (
     user: LoginContextValueLoggedIn,
@@ -89,8 +90,10 @@ export type JournalEntryManager = {
       endpoint?: string;
       bonusParams?: (clientKey: WrappedJournalClientKey) => Promise<object>;
       unsafeToRetry?: boolean;
+      /** defaults to true */
+      sticky?: boolean;
     }
-  ) => void;
+  ) => Promise<void>;
 
   /**
    * Connects to the chat endpoint using an existing chat JWT to update the
@@ -108,12 +111,13 @@ export type JournalEntryManager = {
    * mutations, so this is primarily a UI concern.
    *
    * CONCURRENCY: see `startTask`
+   * @returns A promise after the task finishes or we have decided not to start it
    */
   attach: (
     journalChatJWT: string,
     clientKey: WrappedJournalClientKey,
     opts: { sticky: boolean }
-  ) => void;
+  ) => Promise<void>;
 
   /**
    * The underlying task that is started by the `attach` function. This is easier
@@ -138,6 +142,8 @@ export type JournalEntryManager = {
       endpoint?: string;
       bonusParams?: (clientKey: WrappedJournalClientKey) => Promise<object>;
       unsafeToRetry?: boolean;
+      /** defaults to true */
+      sticky?: boolean;
     }
   ) => CancelablePromise<void>;
 
@@ -291,7 +297,7 @@ export const createJournalEntryManager = (
           taskChangedPromise.promise,
         ]);
       } catch (e) {
-        console.log('eating task error:', e);
+        console.log('eating previous task error:', e);
       }
 
       taskChangedPromise.cancel();
@@ -308,9 +314,11 @@ export const createJournalEntryManager = (
     isDisposedCancelable.cancel();
 
     let newTask;
+    let initializeTaskError = undefined;
     try {
       newTask = action(journalEntryJWTVWC, chatVWC, errorVWC);
     } catch (e) {
+      initializeTaskError = e;
       newTask = constructCancelablePromise<void>({
         body: async (state, resolve, reject) => {
           if (state.finishing) {
@@ -338,9 +346,11 @@ export const createJournalEntryManager = (
     taskVWC.set(newTask);
     taskVWC.callbacks.call(undefined);
 
+    let waitForTaskError = undefined;
     try {
       await newTask.promise;
     } catch (e) {
+      waitForTaskError = e;
       if (!disposedVWC.get()) {
         console.trace('journal entry manager task error:', e);
       }
@@ -348,6 +358,15 @@ export const createJournalEntryManager = (
       if (Object.is(taskVWC.get(), newTask)) {
         taskVWC.set(null);
         taskVWC.callbacks.call(undefined);
+      }
+    }
+
+    if (!disposedVWC.get()) {
+      if (initializeTaskError !== undefined) {
+        throw initializeTaskError;
+      }
+      if (waitForTaskError !== undefined) {
+        throw waitForTaskError;
       }
     }
   };
@@ -376,11 +395,21 @@ export const createJournalEntryManager = (
           const cleanupChatAttacher = createValueWithCallbacksEffect(
             myChatVWC,
             (myChat) => {
-              if (stickyChat !== null && myChat.data.length === 0) {
+              if (
+                stickyChat !== null &&
+                myChat.data.length < stickyChat.data.length
+              ) {
                 setVWC(
                   chatVWC,
                   {
                     ...stickyChat,
+                    data: [
+                      ...myChat.data,
+                      ...stickyChat.data.slice(
+                        myChat.data.length,
+                        stickyChat.data.length
+                      ),
+                    ],
                     transient: myChat.transient,
                   },
                   () => false
@@ -452,7 +481,9 @@ export const createJournalEntryManager = (
     clientKey,
     opts
   ) => {
-    startTask(() => dangerousCreateAttachTask(journalChatJWT, clientKey, opts));
+    return startTask(() =>
+      dangerousCreateAttachTask(journalChatJWT, clientKey, opts)
+    );
   };
 
   const dangerousCreateRefreshTask: JournalEntryManager['dangerousCreateRefreshTask'] =
@@ -465,7 +496,13 @@ export const createJournalEntryManager = (
             return;
           }
 
+          const sticky = opts?.sticky ?? true;
+
           setVWC(errorVWC, null);
+          if (!sticky) {
+            setVWC(chatVWC, null);
+          }
+
           const clientKeyRaw = await getOrCreateClientKey(user, visitor);
           if (state.finishing) {
             state.done = true;
@@ -581,12 +618,15 @@ export const createJournalEntryManager = (
               reject(new Error('canceled'));
               return;
             }
+            state.finishing = true;
             console.warn(
               `JournalEntryManager error in starting sync via ${realEndpoint}:`,
               e
             );
             setVWC(errorVWC, described);
             setVWC(chatVWC, undefined);
+            state.done = true;
+            reject(e);
             return;
           }
 
@@ -601,7 +641,7 @@ export const createJournalEntryManager = (
             data.journal_chat_jwt,
             clientKey,
             {
-              sticky: true,
+              sticky,
             }
           );
           state.cancelers.add(attacher.cancel);
@@ -625,7 +665,7 @@ export const createJournalEntryManager = (
     };
 
   const refresh: JournalEntryManager['refresh'] = (user, visitor, opts) => {
-    startTask(() => dangerousCreateRefreshTask(user, visitor, opts));
+    return startTask(() => dangerousCreateRefreshTask(user, visitor, opts));
   };
 
   return {

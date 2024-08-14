@@ -115,7 +115,7 @@ export const ResizingTextArea = (props: ResizingTextAreaProps) => {
           props={textInputProps}
           component={({ height, editable, text }) => (
             <TextInput
-              style={Object.assign({}, styles.simpleText, {
+              style={Object.assign({}, styles.textareaText, {
                 height: height,
               })}
               placeholderTextColor={OsehColors.v4.primary.grey}
