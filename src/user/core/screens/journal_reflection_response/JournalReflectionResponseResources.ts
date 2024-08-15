@@ -6,7 +6,9 @@ export type JournalReflectionResponseResources = ScreenResources & {
    * The current reflection question; null while loading, undefined if an error
    * occurred. Provided as a series of paragraphs.
    */
-  question: ValueWithCallbacks<{ entryCounter: number; paragraphs: string[] } | null | undefined>;
+  question: ValueWithCallbacks<
+    { entryCounter: number; paragraphs: string[] } | null | undefined
+  >;
 
   /**
    * The current reflection response on the server, provided as a single string
@@ -18,16 +20,6 @@ export type JournalReflectionResponseResources = ScreenResources & {
   savedResponse: ValueWithCallbacks<
     { entryCounter: number; value: string } | 'loading' | 'error' | 'dne'
   >;
-
-  /**
-   * The journal entry uid we are looking at, null if unavailable
-   */
-  journalEntryUID: ValueWithCallbacks<string | null>;
-
-  /**
-   * The latest JWT for accessing the journal entry, null if unavailable
-   */
-  journalEntryJWT: ValueWithCallbacks<string | null>;
 
   /**
    * Stores the user's response to the reflection question and returns a promise

@@ -6,17 +6,9 @@ export type JournalReflectionLargeResources = ScreenResources & {
    * The current reflection question; null while loading, undefined if an error
    * occurred. Provided as a series of paragraphs.
    */
-  question: ValueWithCallbacks<{ entryCounter: number; paragraphs: string[] } | null | undefined>;
-
-  /**
-   * The journal entry uid we are looking at, null if unavailable
-   */
-  journalEntryUID: ValueWithCallbacks<string | null>;
-
-  /**
-   * The latest JWT for accessing the journal entry, null if unavailable
-   */
-  journalEntryJWT: ValueWithCallbacks<string | null>;
+  question: ValueWithCallbacks<
+    { entryCounter: number; paragraphs: string[] } | null | undefined
+  >;
 
   /**
    * Submits a new version of the reflection question; this will cause the

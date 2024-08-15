@@ -8,11 +8,13 @@ import { debugView } from '../lib/debugView';
  */
 export const HorizontalSpacer = ({
   width,
+  maxWidth,
   flexBasis,
   flexGrow,
   debug,
 }: {
   width: number;
+  maxWidth?: number;
   flexBasis?: number;
   flexGrow?: number;
   debug?: string;
@@ -24,6 +26,7 @@ export const HorizontalSpacer = ({
       style={{
         width: width,
         paddingLeft: width,
+        ...(maxWidth !== undefined ? { maxWidth } : {}),
         ...(flexGrow !== undefined ? { flexGrow } : {}),
         ...(flexBasis !== undefined ? { flexBasis } : {}),
       }}

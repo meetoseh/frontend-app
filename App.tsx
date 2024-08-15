@@ -72,6 +72,7 @@ import { AnimatedImageInterstitialScreen } from './src/user/core/screens/animate
 import { AppRequestReviewScreen } from './src/user/core/screens/app_request_review/AppRequestReviewScreen';
 import { JournalReflectionLargeScreen } from './src/user/core/screens/journal_reflection_large/JournalReflectionLargeScreen';
 import { JournalReflectionResponseScreen } from './src/user/core/screens/journal_reflection_response/JournalReflectionResponseScreen';
+import { JournalEntryViewScreen } from './src/user/core/screens/journal_entry_view/JournalEntryViewScreen';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
@@ -133,6 +134,7 @@ const screens = [
   AppRequestReviewScreen,
   JournalReflectionLargeScreen,
   JournalReflectionResponseScreen,
+  JournalEntryViewScreen,
 ] as any[] as readonly OsehScreen<
   string,
   ScreenResources,

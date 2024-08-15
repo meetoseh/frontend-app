@@ -248,7 +248,7 @@ export const JournalChatScreen: OsehScreen<
       chat: chatVWC,
       journalEntryUID: journalEntryUIDVWC,
       journalEntryJWT: journalEntryJWTVWC,
-      trySubmitUserResponse: (userResponse: string) => {
+      trySubmitUserResponse: async (userResponse: string) => {
         const journalEntryManager = journalEntryManagerUnwrappedVWC.get();
         if (journalEntryManager === null) {
           return;
@@ -259,7 +259,7 @@ export const JournalChatScreen: OsehScreen<
           return;
         }
 
-        journalEntryManager.refresh(user, ctx.interests.visitor, {
+        await journalEntryManager.refresh(user, ctx.interests.visitor, {
           endpoint: '/api/1/journals/entries/chat/',
           bonusParams: async (clientKey) => ({
             version: SCREEN_VERSION,
@@ -269,6 +269,12 @@ export const JournalChatScreen: OsehScreen<
             ),
           }),
         });
+        const journalEntryUID = journalEntryUIDVWC.get();
+        if (journalEntryUID !== null) {
+          ctx.resources.journalEntryMetadataHandler.evictOrReplace({
+            uid: journalEntryUID,
+          });
+        }
       },
       dispose: () => {
         setVWC(activeVWC, false);

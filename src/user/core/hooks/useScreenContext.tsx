@@ -54,6 +54,7 @@ import { createExpoTokenRequestHandler } from '../screens/add_push_token/lib/cre
 import { createExpoTokenSyncRequestHandler } from '../screens/add_push_token/lib/createExpoTokenSyncHandler';
 import { createTrackingPermissionRequestHandler } from '../screens/app_tracking_transparency/lib/trackingPermissionHandler';
 import { createJournalEntryManagerRequestHandler } from '../screens/journal_chat/lib/createJournalEntryManagerHandler';
+import { createJournalEntryMetadataRequestHandler } from '../screens/journal_chat/lib/createJournalEntryMetadataRequestHandler';
 
 type WindowSize = {
   width: number;
@@ -353,6 +354,9 @@ export const useScreenContext = (
   const journalEntryManagerHandler = useWritableValueWithCallbacks(() =>
     createJournalEntryManagerRequestHandler({ logging, maxStale: 100 })
   );
+  const journalEntryMetadataHandler = useWritableValueWithCallbacks(() =>
+    createJournalEntryMetadataRequestHandler({ logging, maxStale: 100 })
+  );
 
   const resources = useMemo(
     (): Resources => ({
@@ -392,6 +396,7 @@ export const useScreenContext = (
       expoTokenSyncHandler: expoTokenSyncHandler.get(),
       trackingPermissionHandler: trackingPermissionHandler.get(),
       journalEntryManagerHandler: journalEntryManagerHandler.get(),
+      journalEntryMetadataHandler: journalEntryMetadataHandler.get(),
     }),
     [
       privatePlaylistHandler,
@@ -430,6 +435,7 @@ export const useScreenContext = (
       expoTokenSyncHandler,
       trackingPermissionHandler,
       journalEntryManagerHandler,
+      journalEntryMetadataHandler,
     ]
   );
   const contentWidth = useContentWidthValueWithCallbacks(windowSizeImmediate);

@@ -73,6 +73,11 @@ import {
   JournalEntryManagerMinimalRef,
   JournalEntryManagerRef,
 } from '../screens/journal_chat/lib/createJournalEntryManagerHandler';
+import {
+  JournalEntryMetadata,
+  JournalEntryMetadataMinimalRef,
+  JournalEntryMetadataRef,
+} from '../screens/journal_chat/lib/createJournalEntryMetadataRequestHandler';
 
 /**
  * Contains everything that any screen might want to eagerly preload. Generally,
@@ -369,5 +374,12 @@ export type Resources = {
     JournalEntryManagerMinimalRef,
     JournalEntryManagerRef,
     JournalEntryManager
+  >;
+
+  /** Manages retrieving metadata on journal entries */
+  journalEntryMetadataHandler: RequestHandler<
+    JournalEntryMetadataMinimalRef,
+    JournalEntryMetadataRef,
+    JournalEntryMetadata
   >;
 };
