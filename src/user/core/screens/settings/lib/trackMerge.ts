@@ -37,4 +37,6 @@ const doEvict = async (ctx: ScreenContext): Promise<void> => {
   ctx.resources.reminderChannelsHandler.evictAll();
   ctx.resources.reminderSettingsHandler.evictAll();
   ctx.resources.expoTokenSyncHandler.evictAll();
+  ctx.resources.journalEntryManagerHandler.evictAll();
+  ctx.resources.journalEntryMetadataHandler.evictAll();
 };

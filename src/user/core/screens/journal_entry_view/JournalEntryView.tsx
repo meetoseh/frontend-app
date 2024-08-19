@@ -93,6 +93,10 @@ export const JournalEntryView = ({
         justifyContent="flex-start"
         scrollable
       >
+        <RenderGuardedComponent
+          props={ctx.topBarHeight}
+          component={(h) => <VerticalSpacer height={h} />}
+        />
         <ScreenHeader
           close={{
             variant: screen.parameters.close.variant,
@@ -363,6 +367,10 @@ export const JournalEntryView = ({
           />
         </ContentContainer>
         <VerticalSpacer height={32} />
+        <RenderGuardedComponent
+          props={ctx.botBarHeight}
+          component={(h) => <VerticalSpacer height={h} />}
+        />
       </GridContentContainer>
     </GridFullscreenContainer>
   );

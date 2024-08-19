@@ -514,6 +514,8 @@ export const Upgrade = ({
                       );
                       ctx.resources.seriesListHandler.evictAll();
                       ctx.resources.seriesJourneysHandler.evictAll();
+                      ctx.resources.journalEntryManagerHandler.evictAll();
+                      ctx.resources.journalEntryMetadataHandler.evictAll();
                       await exitPromise.promise;
                       finishPop();
                       setVWC(workingVWC, false);

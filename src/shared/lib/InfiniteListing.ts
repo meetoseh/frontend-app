@@ -116,7 +116,10 @@ export class NetworkedInfiniteListing<T extends object> {
     filter: CrudFetcherFilter,
     initialSort: CrudFetcherSort,
     sortMaker: InfiniteListingSortMaker<T>,
-    keyMap: CrudFetcherKeyMap<T> | ((raw: any) => T),
+    keyMap:
+      | CrudFetcherKeyMap<T>
+      | ((raw: any) => T)
+      | ((raw: any) => Promise<T>),
     loginContextRaw: LoginContextValue
   ) {
     this.cachedList = new CachedServerList(
@@ -1326,7 +1329,10 @@ class ServerList<T> {
    * The function or standard key map for converting raw items from the server
    * into the items we want to store in memory.
    */
-  private readonly keyMap: CrudFetcherKeyMap<T> | ((raw: any) => T);
+  private readonly keyMap:
+    | CrudFetcherKeyMap<T>
+    | ((raw: any) => T)
+    | ((raw: any) => Promise<T>);
 
   /**
    * The value provided from useContext(LoginContext), which never updates,
@@ -1340,7 +1346,10 @@ class ServerList<T> {
     filter: CrudFetcherFilter,
     initialSort: CrudFetcherSort,
     sortMaker: InfiniteListingSortMaker<T>,
-    keyMap: CrudFetcherKeyMap<T> | ((raw: any) => T),
+    keyMap:
+      | CrudFetcherKeyMap<T>
+      | ((raw: any) => T)
+      | ((raw: any) => Promise<T>),
     loginContextRaw: LoginContextValue
   ) {
     this.endpoint = endpoint;
@@ -1412,7 +1421,12 @@ class ServerList<T> {
       const keyMap = this.keyMap;
       const items =
         typeof keyMap === 'function'
-          ? data.items.map((i) => keyMap.call(undefined, i))
+          ? await Promise.all(
+              data.items.map(
+                (i) =>
+                  (keyMap as any).call(undefined, i) as unknown as Promise<T>
+              )
+            )
           : data.items.map((i) => convertUsingKeymap(i, keyMap));
 
       const haveMore =

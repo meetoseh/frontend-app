@@ -1,4 +1,4 @@
-import { MouseEventHandler, ReactElement } from 'react';
+import { ReactElement } from 'react';
 import { styles } from './ScreenHeaderStyles';
 import { Back } from './icons/Back';
 import { OsehColors } from '../OsehColors';

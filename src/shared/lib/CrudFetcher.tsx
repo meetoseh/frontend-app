@@ -37,11 +37,27 @@ type SortItem = {
 
 export type CrudFetcherSort = SortItem[];
 
-type FilterItem = {
+export type SimpleFilterItem = {
   operator: string;
   value: any;
 };
 
+export type BitwiseFilterItem = {
+  /** bit flag fields mutation */
+  mutation: {
+    operator: string;
+    value: number;
+  };
+  /** bit flag fields comparison */
+  comparison: {
+    operator: string;
+    value: number;
+  };
+  value?: undefined;
+  operator?: undefined;
+};
+
+export type FilterItem = SimpleFilterItem | BitwiseFilterItem;
 export type CrudFetcherFilter = { [key: string]: FilterItem };
 
 /**

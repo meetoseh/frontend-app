@@ -11,12 +11,14 @@ export const HorizontalSpacer = ({
   maxWidth,
   flexBasis,
   flexGrow,
+  flexShrink,
   debug,
 }: {
   width: number;
   maxWidth?: number;
   flexBasis?: number;
   flexGrow?: number;
+  flexShrink?: number;
   debug?: string;
 }): ReactElement =>
   width === 0 && flexGrow === undefined ? (
@@ -28,6 +30,7 @@ export const HorizontalSpacer = ({
         paddingLeft: width,
         ...(maxWidth !== undefined ? { maxWidth } : {}),
         ...(flexGrow !== undefined ? { flexGrow } : {}),
+        ...(flexShrink !== undefined ? { flexShrink } : {}),
         ...(flexBasis !== undefined ? { flexBasis } : {}),
       }}
       onLayout={debug === undefined ? undefined : debugView(debug, false)}
