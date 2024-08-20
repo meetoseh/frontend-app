@@ -151,7 +151,6 @@ export const FlexGrowContentWidthTextArea = (
           return;
         }
 
-        console.log('detected container rendering @ ', newHeight);
         setVWC(containerHeightVWC, newHeight);
       }}
     >

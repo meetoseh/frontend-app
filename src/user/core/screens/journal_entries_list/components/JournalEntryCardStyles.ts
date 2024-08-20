@@ -51,6 +51,10 @@ export const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     alignItems: 'stretch',
   },
+  growWithNoBasis: {
+    flexBasis: 0,
+    flexGrow: 1,
+  },
   tag: {
     backgroundColor: OsehColors.v4.experimental.lighten5,
     borderRadius: 10,

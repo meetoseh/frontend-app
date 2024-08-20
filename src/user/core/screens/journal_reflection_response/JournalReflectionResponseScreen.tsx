@@ -470,6 +470,7 @@ export const JournalReflectionResponseScreen: OsehScreen<
             uid: journalEntryUID,
           });
         }
+        ctx.resources.journalEntryListHandler.evictAll();
       },
       dispose: () => {
         setVWC(activeVWC, false);

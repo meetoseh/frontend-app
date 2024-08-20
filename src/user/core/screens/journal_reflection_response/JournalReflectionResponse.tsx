@@ -105,13 +105,6 @@ export const JournalReflectionResponse = ({
   const responseVWC = useWritableValueWithCallbacks<string>(
     () => ''
   ) as FlexGrowContentWidthTextAreaProps['value'];
-  useValueWithCallbacksEffect(resources.savedResponse, (r) => {
-    if (r !== 'dne' && r !== 'error' && r !== 'loading') {
-      responseVWC.set(r.value);
-      responseVWC.callbacks.call({ updateInput: true });
-    }
-    return undefined;
-  });
   const canonicalResponseVWC = useMappedValueWithCallbacks(
     downgradeTypedVWC(responseVWC),
     (r) =>
@@ -135,6 +128,19 @@ export const JournalReflectionResponse = ({
 
   const autoSavingVWC = useWritableValueWithCallbacks(() => false);
   useWorkingModal(modals, autoSavingVWC);
+
+  useValueWithCallbacksEffect(resources.savedResponse, (r) => {
+    if (
+      r !== 'dne' &&
+      r !== 'error' &&
+      r !== 'loading' &&
+      !autoSavingVWC.get()
+    ) {
+      responseVWC.set(r.value);
+      responseVWC.callbacks.call({ updateInput: true });
+    }
+    return undefined;
+  });
 
   useValuesWithCallbacksEffect(
     [canonicalResponseVWC, resources.savedResponse, editableVWC],

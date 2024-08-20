@@ -171,9 +171,16 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'nowrap',
     justifyContent: 'flex-start',
-    alignItems: 'center',
+    alignItems: 'stretch',
+  },
+  suggestionWrapper: {
+    height: 0,
+    position: 'relative',
   },
   suggestion: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
     minHeight: 52,
     borderRadius: 10,
     borderWidth: 1,

@@ -107,7 +107,7 @@ export const JournalEntryCard = ({
         }
       }
 
-      if (summary !== null && journey !== null) {
+      if (summary !== null) {
         return {
           title: summary.title,
           journey,
@@ -298,7 +298,7 @@ export const JournalEntryCard = ({
 
                         if (item.data.tags.length > 0) {
                           items.push(
-                            <View style={styles.row} key={items.length}>
+                            <View style={styles.rowWrap} key={items.length}>
                               <HorizontalSpacer width={16} />
                               {item.data.tags.map((tag, i) => (
                                 <Fragment key={i}>
@@ -397,39 +397,32 @@ export const JournalEntryCard = ({
                 <VerticalSpacer height={0} flexGrow={1} />
                 <View style={styles.row}>
                   <HorizontalSpacer width={16} />
-                  <View style={styles.column}>
-                    <VerticalSpacer height={0} flexGrow={1} />
-                    <View style={styles.rowWrap}>
+                  <View style={[styles.column, styles.growWithNoBasis]}>
+                    <VerticalSpacer height={16} flexGrow={1} />
+                    <View style={[styles.rowWrap, { gap: 16 }]}>
                       {abridged.tags.map((tag, i) => (
-                        <Fragment key={i}>
-                          {i > 0 && <HorizontalSpacer width={16} />}
+                        <View style={styles.tag} key={i}>
                           <View style={styles.column}>
-                            <VerticalSpacer height={16} />
-                            <View style={styles.tag}>
-                              <View style={styles.column}>
-                                <VerticalSpacer height={5} />
-                                <View style={styles.row}>
-                                  <HorizontalSpacer width={8} />
-                                  <TagText tag={tag} />
-                                  <HorizontalSpacer width={8} />
-                                </View>
-                                <VerticalSpacer height={5} />
-                              </View>
+                            <VerticalSpacer height={5} />
+                            <View style={styles.row}>
+                              <HorizontalSpacer width={8} />
+                              <TagText tag={tag} />
+                              <HorizontalSpacer width={8} />
                             </View>
+                            <VerticalSpacer height={5} />
                           </View>
-                        </Fragment>
+                        </View>
                       ))}
                     </View>
                     <VerticalSpacer height={0} flexGrow={1} />
                   </View>
-                  <HorizontalSpacer width={0} flexGrow={1} />
                   <View style={styles.column}>
                     <VerticalSpacer height={10} flexGrow={1} />
                     {editIconButton}
                   </View>
                   <HorizontalSpacer width={16} />
                 </View>
-                <VerticalSpacer height={16} flexGrow={1} />
+                <VerticalSpacer height={16} />
               </>
             )
           }

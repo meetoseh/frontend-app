@@ -553,54 +553,61 @@ export const JournalChat = ({
                       {SUGGESTIONS.map((suggestion, i) => (
                         <Fragment key={i}>
                           <HorizontalSpacer width={i === 0 ? 16 : 12} />
-                          <Pressable
-                            style={Object.assign({}, styles.suggestion, {
+                          <View
+                            style={Object.assign({}, styles.suggestionWrapper, {
                               width: suggestion.width,
                               flexBasis: suggestion.width,
                             })}
-                            onLayout={
-                              i !== 0
-                                ? undefined
-                                : (e) => {
-                                    const height =
-                                      e?.nativeEvent?.layout?.height;
-                                    if (
-                                      height !== undefined &&
-                                      !isNaN(height) &&
-                                      height > 0
-                                    ) {
-                                      const old = suggestionsHeightVWC.get();
-                                      if (
-                                        old === height ||
-                                        (old > height &&
-                                          Math.abs(old - height) < 1e-3)
-                                      ) {
-                                        return;
-                                      }
-                                      suggestionsHeightVWC.set(height);
-                                      suggestionsHeightVWC.callbacks.call(
-                                        undefined
-                                      );
-                                    }
-                                  }
-                            }
-                            onPress={() => {
-                              const ele = inputVWC.get();
-                              if (ele === null) {
-                                return;
-                              }
-
-                              rawInputValueVWC.set(suggestion.text);
-                              rawInputValueVWC.callbacks.call({
-                                updateInput: true,
-                              });
-                              ele.focus();
-                            }}
                           >
-                            <Text style={styles.suggestionText}>
-                              {suggestion.text}
-                            </Text>
-                          </Pressable>
+                            <Pressable
+                              style={Object.assign({}, styles.suggestion, {
+                                width: suggestion.width,
+                                flexBasis: suggestion.width,
+                              })}
+                              onLayout={
+                                i !== 0
+                                  ? undefined
+                                  : (e) => {
+                                      const height =
+                                        e?.nativeEvent?.layout?.height;
+                                      if (
+                                        height !== undefined &&
+                                        !isNaN(height) &&
+                                        height > 0
+                                      ) {
+                                        const old = suggestionsHeightVWC.get();
+                                        if (
+                                          old === height ||
+                                          (old > height &&
+                                            Math.abs(old - height) < 1e-3)
+                                        ) {
+                                          return;
+                                        }
+                                        suggestionsHeightVWC.set(height);
+                                        suggestionsHeightVWC.callbacks.call(
+                                          undefined
+                                        );
+                                      }
+                                    }
+                              }
+                              onPress={() => {
+                                const ele = inputVWC.get();
+                                if (ele === null) {
+                                  return;
+                                }
+
+                                rawInputValueVWC.set(suggestion.text);
+                                rawInputValueVWC.callbacks.call({
+                                  updateInput: true,
+                                });
+                                ele.focus();
+                              }}
+                            >
+                              <Text style={styles.suggestionText}>
+                                {suggestion.text}
+                              </Text>
+                            </Pressable>
+                          </View>
                           <HorizontalSpacer
                             width={i === SUGGESTIONS.length - 1 ? 16 : 0}
                           />

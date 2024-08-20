@@ -98,13 +98,15 @@ export const styles = StyleSheet.create({
   controlsContainer: {
     flexDirection: 'row',
     flexWrap: 'nowrap',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     alignItems: 'flex-end',
     paddingLeft: 3,
   },
   infoContainer: {
     justifyContent: 'center',
     alignItems: 'flex-start',
+    flexBasis: 0,
+    flexGrow: 1,
   },
   instructor: {
     fontFamily: 'OpenSans-Regular',
