@@ -44,6 +44,21 @@ export type SurveyCheckboxGroupProps<T extends string> = {
    * true to allow multiple options to be checked.
    */
   multiple?: boolean;
+  /**
+   * If specified, then whenever checked changes we run it through this function.
+   * If it returns an array, it must return a new array and we will replace the
+   * checked value with that array (using `undefined` for the callback). If it
+   * returns undefined, checked will become defaultNewChecked and we will call
+   * the typed callbacks with the appropriate action.
+   *
+   * This is useful if you have special tapping behavior, such as a 3-state value
+   * represented with 2 checkboxes.
+   */
+  customValidator?: (
+    oldChecked: T[],
+    defaultNewChecked: T[],
+    pressed: T
+  ) => T[] | undefined;
 };
 
 /**
@@ -57,6 +72,7 @@ export const SurveyCheckboxGroup = <T extends string>({
   variant,
   uncheck,
   multiple,
+  customValidator,
 }: SurveyCheckboxGroupProps<T>): ReactElement => {
   return (
     <View style={styles.container}>
@@ -71,6 +87,7 @@ export const SurveyCheckboxGroup = <T extends string>({
             variant={variant}
             uncheck={uncheck}
             multiple={multiple}
+            customValidator={customValidator}
             label={element}
           />
         </View>
@@ -85,6 +102,7 @@ const WrappedCheckbox = <T extends string>({
   variant,
   uncheck,
   multiple,
+  customValidator,
   label,
 }: {
   checked: SurveyCheckboxGroupProps<T>['checked'];
@@ -92,6 +110,7 @@ const WrappedCheckbox = <T extends string>({
   variant: 'square' | 'round';
   uncheck?: boolean;
   multiple?: boolean;
+  customValidator: SurveyCheckboxGroupProps<T>['customValidator'];
   label: ReactElement;
 }): ReactElement => {
   const isChecked = useMappedValueWithCallbacks(
@@ -115,6 +134,19 @@ const WrappedCheckbox = <T extends string>({
 
             if (v && !multiple) {
               // isChecked is false (if 1)
+              if (customValidator !== undefined) {
+                const replacedArray = customValidator(
+                  checked.get(),
+                  [slug],
+                  slug
+                );
+                if (replacedArray !== undefined) {
+                  checked.set(replacedArray);
+                  checked.callbacks.call(undefined);
+                  return;
+                }
+              }
+
               checked.set([slug]);
               checked.callbacks.call({ action: 'checked', changed: slug });
               return;
@@ -124,6 +156,18 @@ const WrappedCheckbox = <T extends string>({
               // isChecked is false (if 1)
               // multiple is true (if 3)
               const newChecked = [...checked.get(), slug];
+              if (customValidator !== undefined) {
+                const replacedArray = customValidator(
+                  checked.get(),
+                  newChecked,
+                  slug
+                );
+                if (replacedArray !== undefined) {
+                  checked.set(replacedArray);
+                  checked.callbacks.call(undefined);
+                  return;
+                }
+              }
               checked.set(newChecked);
               checked.callbacks.call({ action: 'checked', changed: slug });
               return;
@@ -133,6 +177,18 @@ const WrappedCheckbox = <T extends string>({
             // isChecked is true (if 1)
             // uncheck is true (if 2)
             const newChecked = checked.get().filter((c) => c !== slug);
+            if (customValidator !== undefined) {
+              const replacedArray = customValidator(
+                checked.get(),
+                newChecked,
+                slug
+              );
+              if (replacedArray !== undefined) {
+                checked.set(replacedArray);
+                checked.callbacks.call(undefined);
+                return;
+              }
+            }
             checked.set(newChecked);
             checked.callbacks.call({ action: 'unchecked', changed: slug });
           }}

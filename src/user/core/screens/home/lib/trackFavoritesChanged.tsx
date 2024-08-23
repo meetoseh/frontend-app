@@ -13,36 +13,49 @@ export const trackFavoritesChanged = (
     skipFavoritesList?: boolean;
     skipHistoryList?: boolean;
     skipOwnedList?: boolean;
+    skipLibrary?: boolean;
   }
 ): void => {
   if (!opts?.skipFavoritesList) {
     (async () => {
-      ctx.resources.favoritesListHandler.evictOrReplace(createFavoritesListRequest(), () => ({
-        type: 'make-request',
-        data: undefined,
-      }));
+      ctx.resources.favoritesListHandler.evictOrReplace(
+        createFavoritesListRequest(),
+        () => ({
+          type: 'make-request',
+          data: undefined,
+        })
+      );
     })().catch((e) => {
       console.error('error tracking favorites changed (favorites list)', e);
     });
   }
   if (!opts?.skipHistoryList) {
     (async () => {
-      ctx.resources.historyListHandler.evictOrReplace(createHistoryListRequest(), () => ({
-        type: 'make-request',
-        data: undefined,
-      }));
+      ctx.resources.historyListHandler.evictOrReplace(
+        createHistoryListRequest(),
+        () => ({
+          type: 'make-request',
+          data: undefined,
+        })
+      );
     })().catch((e) => {
       console.error('error tracking favorites changed (history list)', e);
     });
   }
   if (!opts?.skipOwnedList) {
     (async () => {
-      ctx.resources.ownedListHandler.evictOrReplace(createOwnedListRequest(), () => ({
-        type: 'make-request',
-        data: undefined,
-      }));
+      ctx.resources.ownedListHandler.evictOrReplace(
+        createOwnedListRequest(),
+        () => ({
+          type: 'make-request',
+          data: undefined,
+        })
+      );
     })().catch((e) => {
       console.error('error tracking favorites changed (owned list)', e);
     });
+  }
+  if (!opts?.skipLibrary) {
+    ctx.resources.libraryListHandler.evictAll();
   }
 };

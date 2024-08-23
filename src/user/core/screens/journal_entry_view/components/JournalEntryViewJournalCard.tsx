@@ -8,8 +8,9 @@ import { useMappedValueWithCallbacks } from '../../../../../shared/hooks/useMapp
 import { VerticalSpacer } from '../../../../../shared/components/VerticalSpacer';
 import { GridFullscreenContainer } from '../../../../../shared/components/GridFullscreenContainer';
 import { HorizontalSpacer } from '../../../../../shared/components/HorizontalSpacer';
-import { Check } from '../../series_details/icons/Check';
 import { View, Text } from 'react-native';
+import { Check } from '../../../../../shared/components/icons/Check';
+import { OsehColors } from '../../../../../shared/OsehColors';
 
 /**
  * Displays a journey card as it would be within a journal entry view
@@ -94,7 +95,24 @@ export const JournalEntryViewJournalCard = ({
         <VerticalSpacer height={0} flexGrow={1} />
         <View style={styles.row}>
           <HorizontalSpacer width={0} flexGrow={1} />
-          <Check />
+          <Check
+            icon={{
+              width: 20,
+            }}
+            container={{
+              width: 20,
+              height: 20,
+            }}
+            startPadding={{
+              x: {
+                fraction: 0.5,
+              },
+              y: {
+                fraction: 0.5,
+              },
+            }}
+            color={OsehColors.v4.primary.light}
+          />
           <HorizontalSpacer width={0} maxWidth={12} flexGrow={1} />
         </View>
         <VerticalSpacer height={0} flexGrow={1} />

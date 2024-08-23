@@ -147,6 +147,8 @@ export const trackClassTaken = (ctx: ScreenContext): void => {
         return { type: 'data', data: old };
       }
     );
+
+    ctx.resources.libraryListHandler.evictAll();
   })().catch((e) => {
     console.error('error tracking class taken (history & owned lists)', e);
   });

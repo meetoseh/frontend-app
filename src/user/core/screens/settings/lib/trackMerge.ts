@@ -39,4 +39,5 @@ const doEvict = async (ctx: ScreenContext): Promise<void> => {
   ctx.resources.expoTokenSyncHandler.evictAll();
   ctx.resources.journalEntryManagerHandler.evictAll();
   ctx.resources.journalEntryMetadataHandler.evictAll();
+  ctx.resources.journalEntryListHandler.evictAll();
 };

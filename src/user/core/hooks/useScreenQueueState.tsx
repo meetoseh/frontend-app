@@ -25,6 +25,8 @@ import {
 } from '../../../shared/lib/describeError';
 import { useValueWithCallbacksEffect } from '../../../shared/hooks/useValueWithCallbacksEffect';
 import { SCREEN_VERSION } from '../../../shared/lib/screenVersion';
+import { getCurrentServerTimeMS } from '../../../shared/lib/getCurrentServerTimeMS';
+import { getJwtExpiration } from '../../../shared/lib/getJwtExpiration';
 
 export type UseScreenQueueStateResult = {
   /** The screen that the user should see */
@@ -125,6 +127,8 @@ export const useScreenQueueState = (): ScreenQueueState => {
     }> =>
       constructCancelablePromise({
         body: async (state, resolve, reject) => {
+          const nowServer = await getCurrentServerTimeMS();
+
           const canceled = createCancelablePromiseFromCallbacks(
             state.cancelers
           );
@@ -139,7 +143,25 @@ export const useScreenQueueState = (): ScreenQueueState => {
           const loginContextCancelable =
             waitForValueWithCallbacksConditionCancelable(
               loginContextRaw.value,
-              (v) => v.state !== 'loading'
+              (v) => {
+                if (v.state === 'loading') {
+                  return false;
+                }
+
+                if (v.state !== 'logged-in') {
+                  return true;
+                }
+
+                // check if it's very close to expiration
+                const idTokenExpiresAt = getJwtExpiration(v.authTokens.idToken);
+                if (idTokenExpiresAt < nowServer + 60_000) {
+                  console.log('waiting for token to be refreshed');
+                  // should be refreshed automatically
+                  return false;
+                }
+
+                return true;
+              }
             );
 
           const visitorCancelable =

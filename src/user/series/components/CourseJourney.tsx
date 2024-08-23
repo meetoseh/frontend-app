@@ -1,23 +1,19 @@
 import { View, Text } from 'react-native';
 import { useMappedValuesWithCallbacks } from '../../../shared/hooks/useMappedValuesWithCallbacks';
-import { useWindowSizeValueWithCallbacks } from '../../../shared/hooks/useWindowSize';
 import { OsehImageFromStateValueWithCallbacks } from '../../../shared/images/OsehImageFromStateValueWithCallbacks';
 import { OsehImageProps } from '../../../shared/images/OsehImageProps';
 import { OsehImageStateRequestHandler } from '../../../shared/images/useOsehImageStateRequestHandler';
 import { useOsehImageStateValueWithCallbacks } from '../../../shared/images/useOsehImageStateValueWithCallbacks';
-import {
-  Callbacks,
-  useWritableValueWithCallbacks,
-} from '../../../shared/lib/Callbacks';
+import { useWritableValueWithCallbacks } from '../../../shared/lib/Callbacks';
 import { formatDurationClock } from '../../../shared/lib/networkResponseUtils';
 import { setVWC } from '../../../shared/lib/setVWC';
 import { MinimalCourseJourney } from '../../favorites/lib/MinimalCourseJourney';
 import { styles } from './CourseJourneyStyles';
-import { useValuesWithCallbacksEffect } from '../../../shared/hooks/useValuesWithCallbacksEffect';
-import Check from '../assets/Check';
 import { useValueWithCallbacksEffect } from '../../../shared/hooks/useValueWithCallbacksEffect';
 import { convertLogicalHeightToPhysicalHeight } from '../../../shared/images/DisplayRatioHelper';
 import { useContentWidth } from '../../../shared/lib/useContentWidth';
+import { Check } from '../../../shared/components/icons/Check';
+import { OsehColors } from '../../../shared/OsehColors';
 
 const DESIRED_HEIGHT = 76;
 
@@ -97,7 +93,24 @@ export const CourseJourney = ({
           <View style={styles.headerLeft}>
             {association.journey.lastTakenAt !== null && (
               <View style={styles.check}>
-                <Check />
+                <Check
+                  icon={{
+                    width: 20,
+                  }}
+                  container={{
+                    width: 20,
+                    height: 20,
+                  }}
+                  startPadding={{
+                    x: {
+                      fraction: 0.5,
+                    },
+                    y: {
+                      fraction: 0.5,
+                    },
+                  }}
+                  color={OsehColors.v4.primary.light}
+                />
               </View>
             )}
             <Text style={styles.index}>{(index + 1).toLocaleString()}. </Text>

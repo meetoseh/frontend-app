@@ -56,7 +56,6 @@ import {
   extractPaidIntervalLength,
   extractTrialLength,
 } from './lib/purchasesStoreProductHelper';
-import { Check } from '../series_details/icons/Check';
 import { createPriceIdentifier } from './lib/PriceIdentifier';
 import { ContentContainer } from '../../../../shared/components/ContentContainer';
 import { ScreenContext } from '../../hooks/useScreenContext';
@@ -64,6 +63,7 @@ import { configurableScreenOut } from '../../lib/configurableScreenOut';
 import { Close } from '../../../../shared/components/icons/Close';
 import { OsehColors } from '../../../../shared/OsehColors';
 import { Back } from '../../../../shared/components/icons/Back';
+import { Check } from '../../../../shared/components/icons/Check';
 
 type Copy = UpgradeCopy<ScreenImageParsed>;
 
@@ -748,7 +748,24 @@ const MarketingChecklist = ({
         <Fragment key={idx}>
           {idx !== 0 && <VerticalSpacer height={8} />}
           <View style={styles.checklistItem}>
-            <Check />
+            <Check
+              icon={{
+                width: 20,
+              }}
+              container={{
+                width: 20,
+                height: 20,
+              }}
+              startPadding={{
+                x: {
+                  fraction: 0.5,
+                },
+                y: {
+                  fraction: 0.5,
+                },
+              }}
+              color={OsehColors.v4.primary.light}
+            />
             <HorizontalSpacer width={16} />
             <Text style={styles.checklistText}>{item}</Text>
           </View>

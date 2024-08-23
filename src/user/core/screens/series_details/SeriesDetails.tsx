@@ -35,7 +35,6 @@ import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWi
 import { createValueWithCallbacksEffect } from '../../../../shared/hooks/createValueWithCallbacksEffect';
 import { MinimalCourseJourney } from '../../../favorites/lib/MinimalCourseJourney';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
-import { Check } from './icons/Check';
 import { formatDurationClock } from '../../../../shared/lib/networkResponseUtils';
 import { trackClassTaken } from '../home/lib/trackClassTaken';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
@@ -53,6 +52,7 @@ import {
 } from '../../../../shared/lib/colorUtils';
 import { OsehColors } from '../../../../shared/OsehColors';
 import { Back } from '../../../../shared/components/icons/Back';
+import { Check } from '../../../../shared/components/icons/Check';
 
 /**
  * Displays the series details page on a specific series
@@ -421,7 +421,30 @@ const Journey = ({
           <View style={styles.journeyHeaderLeft}>
             <RenderGuardedComponent
               props={takenBeforeVWC}
-              component={(takenBefore) => (!takenBefore ? <></> : <Check />)}
+              component={(takenBefore) =>
+                !takenBefore ? (
+                  <></>
+                ) : (
+                  <Check
+                    icon={{
+                      width: 20,
+                    }}
+                    container={{
+                      width: 20,
+                      height: 20,
+                    }}
+                    startPadding={{
+                      x: {
+                        fraction: 0.5,
+                      },
+                      y: {
+                        fraction: 0.5,
+                      },
+                    }}
+                    color={OsehColors.v4.primary.light}
+                  />
+                )
+              }
             />
             <View style={styles.journeyCounterWrapper}>
               <Text style={styles.journeyCounterText}>

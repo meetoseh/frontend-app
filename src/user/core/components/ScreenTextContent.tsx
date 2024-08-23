@@ -1,10 +1,11 @@
 import { Fragment, ReactElement } from 'react';
 import { ScreenTextContentMapped } from '../models/ScreenTextContentMapped';
 import { styles } from './ScreenTextContentStyles';
-import { Check } from '../screens/series_details/icons/Check';
 import { VerticalSpacer } from '../../../shared/components/VerticalSpacer';
 import { HorizontalSpacer } from '../../../shared/components/HorizontalSpacer';
 import { View, Text } from 'react-native';
+import { Check } from '../../../shared/components/icons/Check';
+import { OsehColors } from '../../../shared/OsehColors';
 
 /**
  * Renders the given screen text content. Assumes this is being rendered
@@ -34,7 +35,24 @@ export const ScreenTextContent = ({
           case 'check':
             return (
               <View key={i} style={styles.check}>
-                <Check />
+                <Check
+                  icon={{
+                    width: 20,
+                  }}
+                  container={{
+                    width: 20,
+                    height: 20,
+                  }}
+                  startPadding={{
+                    x: {
+                      fraction: 0.5,
+                    },
+                    y: {
+                      fraction: 0.5,
+                    },
+                  }}
+                  color={OsehColors.v4.primary.light}
+                />
                 <HorizontalSpacer width={16} />
                 <Text style={styles.body}>{part.message}</Text>
               </View>
