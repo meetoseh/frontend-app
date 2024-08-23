@@ -253,68 +253,62 @@ export function InfiniteList<T extends object>({
   }, [listingUntrackable, itemsUnloadedAboveVWC]);
 
   return (
-    <View>
-      <RenderGuardedComponent
-        props={stateVWC}
-        component={(s) => {
-          if (loadingElement !== undefined && s === 'loading') {
-            return loadingElement;
-          }
+    <RenderGuardedComponent
+      props={stateVWC}
+      component={(s) => {
+        if (loadingElement !== undefined && s === 'loading') {
+          return loadingElement;
+        }
 
-          if (emptyElement !== undefined && s === 'empty') {
-            return emptyElement;
-          }
+        if (emptyElement !== undefined && s === 'empty') {
+          return emptyElement;
+        }
 
-          return (
-            <RenderGuardedComponent
-              props={virtuosoStateVWC}
-              component={([numAvailable, refreshing]) => {
-                return (
-                  <VirtualizedList
-                    style={{ height, flexGrow: 0 }}
-                    data={0}
-                    refreshing={refreshing}
-                    getItem={(data: any, index: number) => ({ key: index })}
-                    getItemCount={(data: any) => numAvailable}
-                    renderItem={({
-                      index,
-                    }: {
-                      index: number;
-                    }): ReactElement => {
-                      return (
-                        <View
-                          key={index}
-                          style={{
-                            paddingTop: index === 0 ? firstTopPadding : gap,
-                            paddingBottom:
-                              index === numAvailable - 1
-                                ? lastBottomPadding
-                                : gap,
-                          }}
-                        >
-                          <ElementFromListing
-                            listingVWC={listingVWC}
-                            unloadedAboveVWC={itemsUnloadedAboveVWC}
-                            height={initialComponentHeight}
-                            width={width}
-                            index={index}
-                            component={component}
-                            itemComparer={itemComparer}
-                          />
-                        </View>
-                      );
-                    }}
-                    onRefresh={() => listingUntrackable.reset()}
-                    onViewableItemsChanged={handleRangeChanged}
-                    showsVerticalScrollIndicator={!noScrollBar}
-                  />
-                );
-              }}
-            />
-          );
-        }}
-      />
-    </View>
+        return (
+          <RenderGuardedComponent
+            props={virtuosoStateVWC}
+            component={([numAvailable, refreshing]) => {
+              return (
+                <VirtualizedList
+                  style={{ height, flexGrow: 0 }}
+                  data={0}
+                  refreshing={refreshing}
+                  getItem={(data: any, index: number) => ({ key: index })}
+                  getItemCount={(data: any) => numAvailable}
+                  renderItem={({ index }: { index: number }): ReactElement => {
+                    return (
+                      <View
+                        key={index}
+                        style={{
+                          paddingTop: index === 0 ? firstTopPadding : gap,
+                          paddingBottom:
+                            index === numAvailable - 1
+                              ? lastBottomPadding
+                              : gap,
+                        }}
+                      >
+                        <ElementFromListing
+                          listingVWC={listingVWC}
+                          unloadedAboveVWC={itemsUnloadedAboveVWC}
+                          height={initialComponentHeight}
+                          width={width}
+                          index={index}
+                          component={component}
+                          itemComparer={itemComparer}
+                        />
+                      </View>
+                    );
+                  }}
+                  onRefresh={() => listingUntrackable.reset()}
+                  onViewableItemsChanged={handleRangeChanged}
+                  showsVerticalScrollIndicator={!noScrollBar}
+                />
+              );
+            }}
+          />
+        );
+      }}
+    />
   );
 }
 

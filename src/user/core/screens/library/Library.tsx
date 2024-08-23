@@ -594,6 +594,9 @@ export const Library = ({
                   setVWC(tagsRowWidthVWC, w);
                   setVWC(tagsRowHeightVWC, h);
                 }}
+                style={{
+                  flexGrow: 0,
+                }}
                 contentContainerStyle={{
                   minWidth: '100%',
                 }} /* https://github.com/facebook/react-native/issues/42874 */
@@ -697,7 +700,7 @@ export const Library = ({
                     width={cw}
                     emptyElement={
                       <View style={styles.emptyWrapper}>
-                        <Text style={styles.empty}>
+                        <Text style={{ ...styles.empty, width: cw }}>
                           Your search did not return any results
                         </Text>
                       </View>
