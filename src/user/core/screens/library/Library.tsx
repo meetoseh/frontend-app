@@ -674,15 +674,13 @@ export const Library = ({
               <RenderGuardedComponent
                 props={ctx.contentWidth}
                 component={(cw) => (
-                  <View
-                    style={Object.assign({}, styles.emptyWrapper, {
-                      width: cw,
-                    })}
-                  >
-                    <Text style={styles.empty}>
-                      There was an error loading the list. Try again or contact
-                      support by emailing hi@oseh.com
-                    </Text>
+                  <View style={styles.emptyWrapper}>
+                    <View style={{ ...styles.empty, width: cw }}>
+                      <Text style={styles.emptyText}>
+                        There was an error loading the list. Try again or
+                        contact support by emailing hi@oseh.com
+                      </Text>
+                    </View>
                   </View>
                 )}
               />
@@ -700,9 +698,11 @@ export const Library = ({
                     width={cw}
                     emptyElement={
                       <View style={styles.emptyWrapper}>
-                        <Text style={{ ...styles.empty, width: cw }}>
-                          Your search did not return any results
-                        </Text>
+                        <View style={{ ...styles.empty, width: cw }}>
+                          <Text style={styles.emptyText}>
+                            Your search did not return any results
+                          </Text>
+                        </View>
                       </View>
                     }
                     noScrollBar

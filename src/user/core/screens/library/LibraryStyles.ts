@@ -36,13 +36,15 @@ export const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 17,
     paddingHorizontal: 34,
-    textAlign: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
     fontFamily: 'OpenSans-Regular',
     fontSize: 14,
     lineHeight: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
     color: OsehColors.v4.primary.light,
+    textAlign: 'center',
   },
   emptyWrapper: {
     justifyContent: 'flex-start',
