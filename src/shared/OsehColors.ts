@@ -14,6 +14,7 @@ export const OsehColors = {
       lessDarkGrey: '#35383A',
       lightError: '#EBADAD',
       lighten5: 'rgba(255, 255, 255, 0.05)',
+      lighten15: 'rgba(255, 255, 255, 0.15)',
     },
     other: {
       ref: '#C83030',

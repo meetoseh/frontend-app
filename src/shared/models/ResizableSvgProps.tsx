@@ -10,13 +10,18 @@ export type ResizableSvgPaddingFixed = {
   fixed: number;
 };
 
-export type ResizableSvgPadding = ResizableSvgPaddingFraction | ResizableSvgPaddingFixed;
+export type ResizableSvgPadding =
+  | ResizableSvgPaddingFraction
+  | ResizableSvgPaddingFixed;
 
 /**
  * Convenience function to compute the amount of padding indicated by a
  * ResizableSvgPadding object, when the fractional amount is relative to the given container
  */
-export const computePadding = (container: number, config: ResizableSvgPadding): number => {
+export const computePadding = (
+  container: number,
+  config: ResizableSvgPadding
+): number => {
   if (config.fraction !== undefined) {
     return container * config.fraction;
   } else {
@@ -45,7 +50,10 @@ export type ResizableSvgProps = {
   color: string;
 };
 
-export const areResizableSvgPropsEqual = (a: ResizableSvgProps, b: ResizableSvgProps): boolean =>
+export const areResizableSvgPropsEqual = (
+  a: ResizableSvgProps,
+  b: ResizableSvgProps
+): boolean =>
   a.icon.width === b.icon.width &&
   a.icon.height === b.icon.height &&
   a.container.width === b.container.width &&
@@ -179,7 +187,9 @@ export const computeResizableSvgProps = ({
   color,
 }: ResizableSvgInfo): ResizableSvgComputedProps => {
   const scale =
-    icon.width === undefined ? icon.height / natural.height : icon.width / natural.width;
+    icon.width === undefined
+      ? icon.height / natural.height
+      : icon.width / natural.width;
 
   const realWidth = natural.width * scale;
   const realTotalPaddingX = container.width - realWidth;

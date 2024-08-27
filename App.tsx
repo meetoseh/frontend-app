@@ -77,6 +77,7 @@ import { JournalEntriesListScreen } from './src/user/core/screens/journal_entrie
 import { JournalEntrySummaryScreen } from './src/user/core/screens/journal_entry_summary/JournalEntrySummaryScreen';
 import { LibraryScreen } from './src/user/core/screens/library/LibraryScreen';
 import { LibraryFilterScreen } from './src/user/core/screens/library_filter/LibraryFilterScreen';
+import { HomeV4Screen } from './src/user/core/screens/homev4/HomeV4Screen';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
@@ -143,6 +144,7 @@ const screens = [
   JournalEntrySummaryScreen,
   LibraryScreen,
   LibraryFilterScreen,
+  HomeV4Screen,
 ] as any[] as readonly OsehScreen<
   string,
   ScreenResources,
