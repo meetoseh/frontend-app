@@ -65,11 +65,9 @@ const manipulateImageUnsafe = async (
     await FileSystem.makeDirectoryAsync(targetFolder, { intermediates: true });
   }
 
-  const format =
-    finalWidthRaw * finalHeightRaw < 600 * 600
-      ? SaveFormat.PNG
-      : SaveFormat.JPEG;
-  const ext = format === SaveFormat.PNG ? 'png' : 'jpeg';
+  // cannot use JPEG as the image may have transparency
+  const format = SaveFormat.PNG;
+  const ext = 'png';
 
   const targetFile = targetFolder + cacheableIdentifier + '.' + ext;
   const fileInfo = await FileSystem.getInfoAsync(targetFile);

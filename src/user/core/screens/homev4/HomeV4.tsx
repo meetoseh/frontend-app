@@ -283,7 +283,7 @@ export const HomeV4 = ({
             </Pressable>
           </View>
         </ContentContainer>
-        <VerticalSpacer height={56} />
+        <VerticalSpacer height={32} />
         <RenderGuardedComponent
           props={ctx.botBarHeight}
           component={(h) => <VerticalSpacer height={h} />}

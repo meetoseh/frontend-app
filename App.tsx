@@ -81,7 +81,7 @@ import { HomeV4Screen } from './src/user/core/screens/homev4/HomeV4Screen';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
-  const cacheReadyVWC = useVersionedCache('1.1.0');
+  const cacheReadyVWC = useVersionedCache('1.2.0');
   const cacheReady = useUnwrappedValueWithCallbacks(cacheReadyVWC);
 
   if (!cacheReady) {
