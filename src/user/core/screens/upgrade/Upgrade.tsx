@@ -64,6 +64,7 @@ import { Close } from '../../../../shared/components/icons/Close';
 import { OsehColors } from '../../../../shared/OsehColors';
 import { Back } from '../../../../shared/components/icons/Back';
 import { Check } from '../../../../shared/components/icons/Check';
+import { adaptExitTransition } from '../../lib/adaptExitTransition';
 
 type Copy = UpgradeCopy<ScreenImageParsed>;
 
@@ -442,6 +443,10 @@ export const Upgrade = ({
                     price,
                     technique: 'revenuecat',
                   });
+                  setVWC(
+                    transition.animation,
+                    await adaptExitTransition(screen.parameters.exit)
+                  );
                   const exitPromise = playExitTransition(transition);
                   try {
                     await Purchases.purchasePackage(price);

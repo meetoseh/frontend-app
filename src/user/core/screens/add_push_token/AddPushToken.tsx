@@ -62,6 +62,7 @@ import { areScreenConfigurableTriggersEqual } from '../../models/ScreenConfigura
 import { Close } from '../../../../shared/components/icons/Close';
 import { OsehColors } from '../../../../shared/OsehColors';
 import { Back } from '../../../../shared/components/icons/Back';
+import { adaptExitTransition } from '../../lib/adaptExitTransition';
 
 /**
  * If the user doesn't already have notifications enabled on the current device,
@@ -379,7 +380,10 @@ export const AddPushToken = ({
 
   const onCTA = () => {
     screenWithWorking(workingVWC, async () => {
-      setVWC(transition.animation, screen.parameters.cta.exit);
+      setVWC(
+        transition.animation,
+        await adaptExitTransition(screen.parameters.cta.exit)
+      );
       const exitTransition = playExitTransition(transition);
 
       const saver = prepareSave();

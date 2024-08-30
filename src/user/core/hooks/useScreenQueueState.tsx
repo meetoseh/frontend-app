@@ -27,6 +27,8 @@ import { useValueWithCallbacksEffect } from '../../../shared/hooks/useValueWithC
 import { SCREEN_VERSION } from '../../../shared/lib/screenVersion';
 import { getCurrentServerTimeMS } from '../../../shared/lib/getCurrentServerTimeMS';
 import { getJwtExpiration } from '../../../shared/lib/getJwtExpiration';
+import { createStandardRoundTripTimeTracker } from '../lib/RoundTripTimeTracker';
+import { createUnencryptedStorageAdapter } from '../lib/SimpleAsyncStorage';
 
 export type UseScreenQueueStateResult = {
   /** The screen that the user should see */
@@ -104,6 +106,17 @@ export type ScreenQueueState = {
     onError?: (error: unknown) => void
   ) => CancelablePromise<Result<UseScreenQueueStateState>>;
 };
+
+/**
+ * The tracker that is updated by useScreenQueueState with measurements of
+ * how long it is taking to use peekLike functions.
+ */
+export const PEEK_RTT_TRACKER = createStandardRoundTripTimeTracker({
+  storage: createUnencryptedStorageAdapter(
+    'peekRoundTripTimeTracker',
+    'peekRoundTripTimeLock'
+  ),
+});
 
 /**
  * A hook for managing the authorized users' client screen queue. Requires a
@@ -257,6 +270,7 @@ export const useScreenQueueState = (): ScreenQueueState => {
                 fullHeaders.set('visitor', visitor.uid);
               }
 
+              const endMeasurement = PEEK_RTT_TRACKER.beginMeasurement();
               let response: Response;
               try {
                 response = await apiFetch(
@@ -272,6 +286,7 @@ export const useScreenQueueState = (): ScreenQueueState => {
                   loginContext
                 );
               } catch (e) {
+                endMeasurement.cancel();
                 state.cancelers.remove(doAbort);
                 if (onError === undefined) {
                   const result: UseScreenQueueStateState = {
@@ -303,6 +318,7 @@ export const useScreenQueueState = (): ScreenQueueState => {
               }
 
               if (state.finishing) {
+                endMeasurement.cancel();
                 state.cancelers.remove(doAbort);
                 state.done = true;
                 reject(new Error('canceled'));
@@ -310,6 +326,7 @@ export const useScreenQueueState = (): ScreenQueueState => {
               }
 
               if (!response.ok) {
+                endMeasurement.cancel();
                 if (onError !== undefined) {
                   state.cancelers.remove(doAbort);
                   setVWC(valueVWC, oldValue);
@@ -417,6 +434,7 @@ export const useScreenQueueState = (): ScreenQueueState => {
               try {
                 data = await response.json();
               } catch (e) {
+                endMeasurement.cancel();
                 state.cancelers.remove(doAbort);
 
                 if (onError !== undefined) {
@@ -473,6 +491,7 @@ export const useScreenQueueState = (): ScreenQueueState => {
                   parameters: p.parameters,
                 }));
 
+              endMeasurement.finish();
               state.finishing = true;
               const result: UseScreenQueueStateState = {
                 type: 'success',

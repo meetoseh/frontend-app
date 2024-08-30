@@ -1,4 +1,4 @@
-import { ReactElement, useCallback } from 'react';
+import { ReactElement } from 'react';
 import { ScreenComponentProps } from '../../models/Screen';
 import { GridDarkGrayBackground } from '../../../../shared/components/GridDarkGrayBackground';
 import { GridFullscreenContainer } from '../../../../shared/components/GridFullscreenContainer';
@@ -26,16 +26,14 @@ import {
 } from '../../../../shared/content/player/PlayerForeground';
 import { VideoInterstitialResources } from './VideoInterstitialResources';
 import { VideoInterstitialMappedParams } from './VideoInterstitialParams';
-import { useValuesWithCallbacksEffect } from '../../../../shared/hooks/useValuesWithCallbacksEffect';
 import { useCurrentTranscriptPhrases } from '../../../../shared/transcripts/useCurrentTranscriptPhrases';
 import { useReactManagedValueAsValueWithCallbacks } from '../../../../shared/hooks/useReactManagedValueAsValueWithCallbacks';
 import { useMediaInfo } from '../../../../shared/content/useMediaInfo';
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
-import { largestPhysicalPerLogical } from '../../../../shared/images/DisplayRatioHelper';
-import { getEffectiveVideoTarget } from '../../../../shared/content/createVideoSizeComparerForTarget';
 import { MediaInfoVideo } from '../../../../shared/content/MediaInfoVideo';
 import { getNativeExport } from '../../../../shared/content/useOsehContentTarget';
 import { StyleProp, ViewStyle } from 'react-native';
+import { adaptExitTransition } from '../../lib/adaptExitTransition';
 
 /**
  * A basic full screen video interstitial
@@ -72,7 +70,7 @@ export const VideoInterstitial = ({
     autoplay: true,
   });
 
-  const onFinish = () => {
+  const onFinish = async () => {
     if (workingVWC.get()) {
       return;
     }
@@ -88,7 +86,10 @@ export const VideoInterstitial = ({
           },
       trigger.endpoint ?? undefined
     );
-    setVWC(transition.animation, screen.parameters.exit);
+    setVWC(
+      transition.animation,
+      await adaptExitTransition(screen.parameters.exit)
+    );
     playExitTransition(transition).promise.finally(() => finishPop());
   };
 

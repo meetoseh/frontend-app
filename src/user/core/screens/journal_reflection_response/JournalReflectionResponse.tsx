@@ -30,17 +30,15 @@ import { JourneyReflectionResponseMappedParams } from './JournalReflectionRespon
 import { HorizontalSpacer } from '../../../../shared/components/HorizontalSpacer';
 import { Forward } from '../../../../shared/components/icons/Forward';
 import { OsehColors } from '../../../../shared/OsehColors';
-import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { screenWithWorking } from '../../lib/screenWithWorking';
 import { Modals } from '../../../../shared/contexts/ModalContext';
 import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
 import { describeError } from '../../../../shared/lib/describeError';
-import { useWorkingModal } from '../../../../shared/hooks/useWorkingModal';
 import { useValuesWithCallbacksEffect } from '../../../../shared/hooks/useValuesWithCallbacksEffect';
 import { createCancelableTimeout } from '../../../../shared/lib/createCancelableTimeout';
 import { waitForValueWithCallbacksConditionCancelable } from '../../../../shared/lib/waitForValueWithCallbacksCondition';
-import { View, Pressable, Text, TextInput } from 'react-native';
+import { View, Text, TextInput } from 'react-native';
 import { OutlineWhiteButton } from '../../../../shared/components/OutlineWhiteButton';
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
 import { useKeyboardHeightValueWithCallbacks } from '../../../../shared/lib/useKeyboardHeightValueWithCallbacks';
@@ -127,7 +125,6 @@ export const JournalReflectionResponse = ({
   useErrorModal(modals, errorVWC, 'saving response');
 
   const autoSavingVWC = useWritableValueWithCallbacks(() => false);
-  useWorkingModal(modals, autoSavingVWC);
 
   useValueWithCallbacksEffect(resources.savedResponse, (r) => {
     if (
@@ -360,20 +357,35 @@ export const JournalReflectionResponse = ({
                         <RenderGuardedComponent
                           props={styleVWC}
                           component={(s) => (
-                            <Forward
-                              icon={{ width: 20 }}
-                              container={{ width: 20, height: 20 }}
-                              startPadding={{
-                                x: { fraction: 0.5 },
-                                y: { fraction: 0.5 },
-                              }}
-                              color={
-                                (typeof s === 'object' &&
-                                s !== null &&
-                                !Array.isArray(s) &&
-                                typeof s.color === 'string'
-                                  ? s.color
-                                  : undefined) ?? OsehColors.v4.primary.light
+                            <RenderGuardedComponent
+                              props={autoSavingVWC}
+                              component={(autoSaving) =>
+                                autoSaving ? (
+                                  <InlineOsehSpinner
+                                    size={{
+                                      type: 'react-rerender',
+                                      props: { width: 20 },
+                                    }}
+                                  />
+                                ) : (
+                                  <Forward
+                                    icon={{ width: 20 }}
+                                    container={{ width: 20, height: 20 }}
+                                    startPadding={{
+                                      x: { fraction: 0.5 },
+                                      y: { fraction: 0.5 },
+                                    }}
+                                    color={
+                                      (typeof s === 'object' &&
+                                      s !== null &&
+                                      !Array.isArray(s) &&
+                                      typeof s.color === 'string'
+                                        ? s.color
+                                        : undefined) ??
+                                      OsehColors.v4.primary.light
+                                    }
+                                  />
+                                )
                               }
                             />
                           )}
