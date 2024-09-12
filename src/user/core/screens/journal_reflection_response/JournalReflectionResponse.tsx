@@ -1,6 +1,8 @@
-import { Fragment, ReactElement } from 'react';
+import { Fragment, ReactElement, useEffect } from 'react';
 import { ScreenComponentProps } from '../../models/Screen';
 import {
+  playEntranceTransition,
+  playExitTransition,
   useEntranceTransition,
   useTransitionProp,
 } from '../../../../shared/lib/TransitionProp';
@@ -9,6 +11,7 @@ import {
   useStandardTransitionsState,
 } from '../../../../shared/hooks/useStandardTransitions';
 import {
+  Callbacks,
   createWritableValueWithCallbacks,
   downgradeTypedVWC,
   useWritableValueWithCallbacks,
@@ -46,6 +49,9 @@ import {
   FlexGrowContentWidthTextArea,
   FlexGrowContentWidthTextAreaProps,
 } from '../../../../shared/components/FlexGrowContentWidthTextArea';
+import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
+import { createValueWithCallbacksEffect } from '../../../../shared/hooks/createValueWithCallbacksEffect';
+import { adaptExitTransition } from '../../lib/adaptExitTransition';
 
 /**
  * Shows the journal reflection question and gives a large amount of room for
@@ -83,9 +89,13 @@ export const JournalReflectionResponse = ({
     return undefined;
   });
 
-  const isReadyToContinueVWC = useMappedValueWithCallbacks(
-    resources.question,
-    (q) => q !== null && q !== undefined
+  const isReadyToContinueVWC = useMappedValuesWithCallbacks(
+    [resources.question, resources.response],
+    () => {
+      const q = resources.question.get();
+      const r = resources.response.get();
+      return q !== null && q !== undefined && r.type === 'available';
+    }
   );
   useValueWithCallbacksEffect(isReadyToContinueVWC, (isReady) => {
     if (isReady) {
@@ -100,21 +110,6 @@ export const JournalReflectionResponse = ({
   );
 
   const inputVWC = useWritableValueWithCallbacks<TextInput | null>(() => null);
-  const responseVWC = useWritableValueWithCallbacks<string>(
-    () => ''
-  ) as FlexGrowContentWidthTextAreaProps['value'];
-  const canonicalResponseVWC = useMappedValueWithCallbacks(
-    downgradeTypedVWC(responseVWC),
-    (r) =>
-      r
-        .trim()
-        .split('\n')
-        .map((l) => l.trim())
-        .filter((l) => l !== '')
-        .join('\n\n')
-  );
-
-  const editableVWC = useWritableValueWithCallbacks(() => true);
   useValueWithCallbacksEffect(inputVWC, (i) => {
     i?.focus();
     return undefined;
@@ -124,77 +119,56 @@ export const JournalReflectionResponse = ({
   );
   useErrorModal(modals, errorVWC, 'saving response');
 
-  const autoSavingVWC = useWritableValueWithCallbacks(() => false);
+  const responseWrappedVWC = useWritableValueWithCallbacks<
+    FlexGrowContentWidthTextAreaProps['value'] | null
+  >(() => null);
 
-  useValueWithCallbacksEffect(resources.savedResponse, (r) => {
-    if (
-      r !== 'dne' &&
-      r !== 'error' &&
-      r !== 'loading' &&
-      !autoSavingVWC.get()
-    ) {
-      responseVWC.set(r.value);
-      responseVWC.callbacks.call({ updateInput: true });
-    }
-    return undefined;
-  });
+  useEffect(() => {
+    let currentV = getValue();
+    const callbacks = new Callbacks<{ updateInput: boolean } | undefined>();
 
-  useValuesWithCallbacksEffect(
-    [canonicalResponseVWC, resources.savedResponse, editableVWC],
-    () => {
-      const canonicalResponse = canonicalResponseVWC.get();
-      const savedResponse = resources.savedResponse.get();
-      if (!editableVWC.get()) {
-        return;
-      }
-
-      const isEmpty = canonicalResponse === '';
-      const isDifferent =
-        (savedResponse === 'dne' && !isEmpty) ||
-        savedResponse === 'error' ||
-        savedResponse === 'loading' ||
-        (savedResponse !== 'dne' && savedResponse.value !== canonicalResponse);
-
-      if (!isDifferent) {
-        return undefined;
-      }
-
-      const active = createWritableValueWithCallbacks(true);
-      saveAfterTimeout();
-      return () => {
-        setVWC(active, false);
-      };
-
-      async function saveAfterTimeout() {
-        const canceled = waitForValueWithCallbacksConditionCancelable(
-          active,
-          (v) => !v
-        );
-        const timeout = createCancelableTimeout(3000);
-        await Promise.race([canceled.promise, timeout.promise]);
-        canceled.cancel();
-        timeout.cancel();
-        if (!active.get()) {
+    const cleanupForwarder = createValueWithCallbacksEffect(
+      resources.response,
+      () => {
+        const newV = getValue();
+        if (newV === currentV) {
           return;
         }
-
-        await screenWithWorking(workingVWC, async () => {
-          const start = performance.now();
-          setVWC(autoSavingVWC, true);
-          setVWC(errorVWC, null);
-          try {
-            await resources.updateResponse(canonicalResponse);
-          } catch (e) {
-            const err = await describeError(e);
-            setVWC(errorVWC, err);
-          } finally {
-            setVWC(autoSavingVWC, false);
-            const timeTaken = performance.now() - start;
-            console.info('Auto-saved response in', timeTaken, 'ms');
-          }
-        });
+        currentV = newV;
+        callbacks.call({ updateInput: true });
+        return undefined;
       }
+    );
+
+    const wvwc: FlexGrowContentWidthTextAreaProps['value'] = {
+      get: () => currentV,
+      set: (v) => {
+        currentV = v;
+        resources.onUserChangedResponse(v);
+      },
+      callbacks,
+    };
+    setVWC(responseWrappedVWC, wvwc);
+    return () => {
+      cleanupForwarder();
+      if (Object.is(responseWrappedVWC.get(), wvwc)) {
+        responseWrappedVWC.set(null);
+        responseWrappedVWC.callbacks.call(undefined);
+      }
+    };
+
+    function getValue() {
+      const v = resources.response.get();
+      if (v.type === 'available') {
+        return v.value;
+      }
+      return '';
     }
+  }, [resources.response, responseWrappedVWC, resources.onUserChangedResponse]);
+
+  const responseTypeVWC = useMappedValueWithCallbacks(
+    resources.response,
+    (r) => r.type
   );
 
   const keyboardHeightVWC = useKeyboardHeightValueWithCallbacks();
@@ -278,17 +252,57 @@ export const JournalReflectionResponse = ({
           }
         />
         <VerticalSpacer height={16} />
-        <FlexGrowContentWidthTextArea
-          placeholder="Write anything"
-          placeholderTextColor={OsehColors.v4.primary.grey}
-          textStyle={styles.responseText}
-          submit={null}
-          value={responseVWC}
-          editable={editableVWC}
-          enterBehavior={'never-submit'}
-          refVWC={inputVWC}
-          contentWidth={ctx.contentWidth}
-          screenWidth={windowWidthVWC}
+        <RenderGuardedComponent
+          props={responseTypeVWC}
+          component={(type) => {
+            if (type === 'available') {
+              return (
+                <RenderGuardedComponent
+                  props={responseWrappedVWC}
+                  component={(valueVWC) =>
+                    valueVWC !== null ? (
+                      <FlexGrowContentWidthTextArea
+                        placeholder="Write anything"
+                        placeholderTextColor={OsehColors.v4.primary.grey}
+                        textStyle={styles.responseText}
+                        submit={null}
+                        value={valueVWC}
+                        enterBehavior={'never-submit'}
+                        refVWC={inputVWC}
+                        contentWidth={ctx.contentWidth}
+                        screenWidth={windowWidthVWC}
+                      />
+                    ) : (
+                      <VerticalSpacer height={0} flexGrow={1} />
+                    )
+                  }
+                />
+              );
+            }
+            if (type === 'loading') {
+              return (
+                <View style={styles.spinner}>
+                  <InlineOsehSpinner
+                    size={{
+                      type: 'react-rerender',
+                      props: {
+                        width: 64,
+                      },
+                    }}
+                    variant="white-thin"
+                  />
+                </View>
+              );
+            }
+            return (
+              <ContentContainer contentWidthVWC={ctx.contentWidth}>
+                <Text style={styles.questionError}>
+                  Something went wrong loading your response. Try again or
+                  contact support at hi@oseh.com
+                </Text>
+              </ContentContainer>
+            );
+          }}
         />
         <VerticalSpacer height={32} />
         <ContentContainer contentWidthVWC={ctx.contentWidth}>
@@ -304,42 +318,44 @@ export const JournalReflectionResponse = ({
                           return;
                         }
                         screenWithWorking(workingVWC, async () => {
-                          const savedResponse = resources.savedResponse.get();
-                          const canonicalResponse = canonicalResponseVWC.get();
-                          const isEmpty = canonicalResponse === '';
-                          const isDifferent =
-                            (savedResponse === 'dne' && !isEmpty) ||
-                            savedResponse === 'error' ||
-                            savedResponse === 'loading' ||
-                            (savedResponse !== 'dne' &&
-                              savedResponse.value !== canonicalResponse);
-                          trace({ type: 'cta', isEmpty, isDifferent });
-                          if (!isDifferent) {
-                            await configurableScreenOut(
-                              null,
-                              startPop,
-                              transition,
-                              screen.parameters.cta.exit,
-                              screen.parameters.cta.trigger
-                            );
+                          trace({
+                            type: 'cta',
+                            step: 'optimistic setup + ensure saved',
+                          });
+
+                          setVWC(
+                            transition.animation,
+                            await adaptExitTransition(
+                              screen.parameters.cta.exit
+                            )
+                          );
+                          const exitTransitionCancelable =
+                            playExitTransition(transition);
+
+                          try {
+                            await resources.ensureSaved();
+                          } catch (e) {
+                            trace({ type: 'cta', step: 'error saving' });
+                            const err = await describeError(e);
+                            setVWC(errorVWC, err);
+                            await exitTransitionCancelable.promise;
+                            await playEntranceTransition(transition).promise;
                             return;
                           }
 
-                          setVWC(errorVWC, null);
-                          try {
-                            await resources.updateResponse(canonicalResponse);
-                          } catch (e) {
-                            const err = await describeError(e);
-                            setVWC(errorVWC, err);
-                            return;
-                          }
-                          await configurableScreenOut(
-                            null,
-                            startPop,
-                            transition,
-                            screen.parameters.cta.exit,
-                            screen.parameters.cta.trigger
+                          trace({ type: 'cta', step: 'saved' });
+                          const finishPop = startPop(
+                            screen.parameters.cta.trigger.type === 'pop'
+                              ? null
+                              : {
+                                  slug: screen.parameters.cta.trigger.flow,
+                                  parameters:
+                                    screen.parameters.cta.trigger.parameters,
+                                },
+                            screen.parameters.cta.trigger.endpoint ?? undefined
                           );
+                          await exitTransitionCancelable.promise;
+                          finishPop();
                         });
                       }}
                       disabled={!isReady}
@@ -357,35 +373,20 @@ export const JournalReflectionResponse = ({
                         <RenderGuardedComponent
                           props={styleVWC}
                           component={(s) => (
-                            <RenderGuardedComponent
-                              props={autoSavingVWC}
-                              component={(autoSaving) =>
-                                autoSaving ? (
-                                  <InlineOsehSpinner
-                                    size={{
-                                      type: 'react-rerender',
-                                      props: { width: 20 },
-                                    }}
-                                  />
-                                ) : (
-                                  <Forward
-                                    icon={{ width: 20 }}
-                                    container={{ width: 20, height: 20 }}
-                                    startPadding={{
-                                      x: { fraction: 0.5 },
-                                      y: { fraction: 0.5 },
-                                    }}
-                                    color={
-                                      (typeof s === 'object' &&
-                                      s !== null &&
-                                      !Array.isArray(s) &&
-                                      typeof s.color === 'string'
-                                        ? s.color
-                                        : undefined) ??
-                                      OsehColors.v4.primary.light
-                                    }
-                                  />
-                                )
+                            <Forward
+                              icon={{ width: 20 }}
+                              container={{ width: 20, height: 20 }}
+                              startPadding={{
+                                x: { fraction: 0.5 },
+                                y: { fraction: 0.5 },
+                              }}
+                              color={
+                                (typeof s === 'object' &&
+                                s !== null &&
+                                !Array.isArray(s) &&
+                                typeof s.color === 'string'
+                                  ? s.color
+                                  : undefined) ?? OsehColors.v4.primary.light
                               }
                             />
                           )}

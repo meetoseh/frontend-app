@@ -1,4 +1,10 @@
-import { ReactElement, useCallback, useContext, useEffect } from 'react';
+import {
+  ReactElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+} from 'react';
 import { Platform, Text, View } from 'react-native';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
@@ -43,6 +49,10 @@ import { useOsehImageStateRequestHandler } from '../../../../shared/images/useOs
 import { OsehImageProps } from '../../../../shared/images/OsehImageProps';
 import { adaptValueWithCallbacksAsVariableStrategyProps } from '../../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps';
 import { OauthProvider } from '../../../login/lib/OauthProvider';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import { VISITOR_SOURCE } from '../../../../shared/lib/visitorSource';
+import { SCREEN_VERSION } from '../../../../shared/lib/screenVersion';
 
 /* guest -> random guest; apple -> random guest no name */
 const DEV_ACCOUNT_USER_IDENTITY_ID: string = 'timothy';
@@ -93,6 +103,8 @@ export const LOGIN_NAMES_BY_PROVIDER: Record<OauthProvider, string> = {
   Direct: 'Sign in with Email',
   Dev: 'Sign in as Developer',
 };
+
+const isDev = Constants.expoConfig?.extra?.environment === 'dev';
 
 /**
  * The standard full screen component for logging in, which
@@ -213,6 +225,60 @@ export const Login = () => {
     }
   }, [onMessageFromPipe, checkedMessagePipeVWC]);
 
+  const checkedIfTrackable = useRef(false);
+  useEffect(() => {
+    if (checkedIfTrackable.current) {
+      return;
+    }
+
+    let active = true;
+    handle();
+    return () => {
+      active = false;
+    };
+
+    async function handle() {
+      if (!active || checkedIfTrackable.current) {
+        return;
+      }
+
+      const specialValueInStorage = await AsyncStorage.getItem(
+        'installTracked'
+      );
+      if (specialValueInStorage !== null) {
+        checkedIfTrackable.current = true;
+        return;
+      }
+
+      const specialSecret = await SecureStore.getItemAsync('installTracked');
+      if (specialSecret !== null) {
+        checkedIfTrackable.current = true;
+        return;
+      }
+
+      if (!active) {
+        return;
+      }
+
+      checkedIfTrackable.current = true;
+      const response = await apiFetch(
+        '/api/1/onboarding/track_possible_new_install?platform=' +
+          VISITOR_SOURCE +
+          '&version=' +
+          SCREEN_VERSION,
+        {
+          method: 'POST',
+          keepalive: true,
+        },
+        null
+      );
+      if (response.ok) {
+        await AsyncStorage.setItem('installTracked', 'true');
+        await SecureStore.setItemAsync('installTracked', 'true');
+      }
+    }
+  }, []);
+
   const onContinueWithProvider = useCallback(
     async (provider: 'Google' | 'SignInWithApple' | 'Direct') => {
       const options: WebBrowser.AuthSessionOpenOptions = {};
@@ -293,7 +359,7 @@ export const Login = () => {
   );
 
   const onLongPressMessage = useCallback(async () => {
-    if (Constants.expoConfig?.extra?.environment !== 'dev') {
+    if (!isDev) {
       return;
     }
 
@@ -383,7 +449,10 @@ export const Login = () => {
         }}
       >
         <OsehWordmarkWhite width={163} height={40} style={styles.logo} />
-        <Text style={styles.message} onLongPress={onLongPressMessage}>
+        <Text
+          style={styles.message}
+          {...(isDev ? { onLongPress: onLongPressMessage } : {})}
+        >
           Reclaim your Calm
         </Text>
         <ProvidersList

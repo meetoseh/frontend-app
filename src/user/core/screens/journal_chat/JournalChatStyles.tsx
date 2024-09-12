@@ -11,6 +11,7 @@ export const styles = StyleSheet.create({
     borderBottomColor: OsehColors.v4.primary.charcoal,
     justifyContent: 'flex-start',
     alignItems: 'center',
+    minHeight: 54,
   },
   backWrapper: {
     flexDirection: 'row',
