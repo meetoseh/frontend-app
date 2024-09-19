@@ -22,7 +22,7 @@ module.exports = {
       bundleIdentifier: 'io.oseh.FrontendApp',
       isTabletOnly: false,
       requireFullScreen: false,
-      associatedDomains: ['applinks:oseh.io'],
+      associatedDomains: ['applinks:oseh.io', 'webcredentials:oseh.io'],
       config: {
         usesNonExemptEncryption: false,
       },
@@ -38,6 +38,20 @@ module.exports = {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#000000',
       },
+      intentFilters: [
+        {
+          action: 'VIEW',
+          autoVerify: true,
+          data: [
+            {
+              scheme: 'https',
+              host: 'oseh.io',
+              pathPrefix: '/a/',
+            },
+          ],
+          category: ['BROWSABLE', 'DEFAULT'],
+        },
+      ],
     },
     extra: {
       rootBackendUrl: process.env.ROOT_BACKEND_URL,

@@ -79,6 +79,7 @@ import { LibraryScreen } from './src/user/core/screens/library/LibraryScreen';
 import { LibraryFilterScreen } from './src/user/core/screens/library_filter/LibraryFilterScreen';
 import { HomeV4Screen } from './src/user/core/screens/homev4/HomeV4Screen';
 import { HoldToContinueScreen } from './src/user/core/screens/hold_to_continue/HoldToContinueScreen';
+import { Passkey, PasskeyRegistrationResult, PasskeyAuthenticationResult  } from 'react-native-passkey';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.

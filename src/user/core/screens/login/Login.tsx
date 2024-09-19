@@ -53,9 +53,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { VISITOR_SOURCE } from '../../../../shared/lib/visitorSource';
 import { SCREEN_VERSION } from '../../../../shared/lib/screenVersion';
+import { Passkey } from 'react-native-passkey';
+import { Passkey as PasskeyIcon } from '../../../../shared/components/icons/Passkey';
+import { OsehColors } from '../../../../shared/OsehColors';
 
 /* guest -> random guest; apple -> random guest no name */
-const DEV_ACCOUNT_USER_IDENTITY_ID: string = 'timothy';
+const DEV_ACCOUNT_USER_IDENTITY_ID: string = 'guest';
 
 let failedLogin = false;
 
@@ -95,6 +98,46 @@ export const LOGIN_ICONS_BY_PROVIDER: Record<
   SignInWithApple: () => <Apple style={styles.apple} />,
   Direct: () => <Email style={styles.email} />,
   Dev: () => <Email style={styles.email} />,
+  Silent: () => (
+    <PasskeyIcon
+      icon={{
+        width: 20,
+      }}
+      container={{
+        width: 32,
+        height: 20,
+      }}
+      startPadding={{
+        x: {
+          fraction: 0,
+        },
+        y: {
+          fraction: 0.5,
+        },
+      }}
+      color={OsehColors.v4.primary.dark}
+    />
+  ),
+  Passkey: () => (
+    <PasskeyIcon
+      icon={{
+        width: 20,
+      }}
+      container={{
+        width: 32,
+        height: 20,
+      }}
+      startPadding={{
+        x: {
+          fraction: 0,
+        },
+        y: {
+          fraction: 0.5,
+        },
+      }}
+      color={OsehColors.v4.primary.dark}
+    />
+  ),
 };
 
 export const LOGIN_NAMES_BY_PROVIDER: Record<OauthProvider, string> = {
@@ -102,6 +145,8 @@ export const LOGIN_NAMES_BY_PROVIDER: Record<OauthProvider, string> = {
   SignInWithApple: 'Sign in with Apple',
   Direct: 'Sign in with Email',
   Dev: 'Sign in as Developer',
+  Silent: 'Sign in with Device',
+  Passkey: 'Sign in with Passkey',
 };
 
 const isDev = Constants.expoConfig?.extra?.environment === 'dev';
@@ -363,6 +408,10 @@ export const Login = () => {
       return;
     }
 
+    // if (await tryPasskeyLogin()) {
+    //   return;
+    // }
+
     setVWC(errorVWC, null);
     try {
       const sub = selectDevAccountSub();
@@ -401,6 +450,147 @@ export const Login = () => {
       console.log('dev login failed:', e);
       console.error(e);
       setVWC(errorVWC, await describeError(e));
+    }
+
+    // for testing for now
+    async function tryPasskeyLogin(): Promise<boolean> {
+      console.log('trying passkey login');
+      if (!Passkey.isSupported()) {
+        console.log('passkey not supported');
+        return true;
+      }
+
+      console.log('passkey supported, trying passkey authentication');
+      const result = await tryPasskeyAuthenticate();
+      if (result === 'success') {
+        console.log('passkey authentication successful');
+        return true;
+      }
+
+      console.log('trying passkey registration');
+      await tryPasskeyRegister();
+      return true;
+    }
+
+    async function tryPasskeyAuthenticate(): Promise<
+      'success' | 'nocredentials' | 'error'
+    > {
+      const response = await apiFetch(
+        '/api/1/oauth/passkeys/authenticate_begin?platform=' +
+          encodeURIComponent(VISITOR_SOURCE) +
+          '&version=' +
+          encodeURIComponent(SCREEN_VERSION),
+        {
+          method: 'POST',
+        },
+        null
+      );
+      if (!response.ok) {
+        throw response;
+      }
+
+      const requestJson = await response.json();
+      console.log('got request json:', requestJson);
+      let result: Awaited<ReturnType<typeof Passkey.get>>;
+      try {
+        result = await Passkey.get(requestJson);
+      } catch (e) {
+        console.log('passkey authentication failed:', e);
+
+        try {
+          if ((e as any).error === 'NoCredentials') {
+            console.log('determined no credentials');
+            return 'nocredentials';
+          }
+        } catch (e2) {
+          console.log('error in error:', e2);
+        }
+        return 'error';
+      }
+      console.log('got result:', result);
+
+      const loginResponse = await apiFetch(
+        '/api/1/oauth/passkeys/authenticate_login_complete',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+          },
+          body: JSON.stringify({
+            id_b64url: result.id,
+            authenticator_data_b64url: result.response.authenticatorData,
+            client_data_json_b64url: result.response.clientDataJSON,
+            signature_b64url: result.response.signature,
+            refresh_token_desired: true,
+          }),
+        },
+        null
+      );
+      if (!loginResponse.ok) {
+        throw loginResponse;
+      }
+
+      const loginResponseJson: {
+        id_token: string;
+        refresh_token?: string | null;
+      } = await loginResponse.json();
+      loginContextRaw.setAuthTokens({
+        idToken: loginResponseJson.id_token,
+        refreshToken: loginResponseJson.refresh_token ?? null,
+      });
+      return 'success';
+    }
+
+    async function tryPasskeyRegister(): Promise<'success' | 'error'> {
+      const response = await apiFetch(
+        '/api/1/oauth/passkeys/register_begin?platform=' +
+          encodeURIComponent(VISITOR_SOURCE) +
+          '&version=' +
+          encodeURIComponent(SCREEN_VERSION),
+        {
+          method: 'POST',
+        },
+        null
+      );
+      if (!response.ok) {
+        throw response;
+      }
+
+      const requestJson = await response.json();
+      console.log('got request json:', requestJson);
+      let result: Awaited<ReturnType<typeof Passkey.create>>;
+      try {
+        result = await Passkey.create(requestJson);
+        console.log('got result:', result);
+      } catch (e) {
+        console.log('passkey registration failed:', e);
+        return 'error';
+      }
+
+      const registerCompleteBody = JSON.stringify({
+        id_b64url: result.id,
+        client_data_json_b64url: result.response.clientDataJSON,
+        attestation_object_b64url: result.response.attestationObject,
+      });
+      console.log('posting to register_complete: ' + registerCompleteBody);
+      const registerCompleteResponse = await apiFetch(
+        '/api/1/oauth/passkeys/register_complete',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+          },
+          body: registerCompleteBody,
+        },
+        null
+      );
+
+      if (!registerCompleteResponse.ok) {
+        throw registerCompleteResponse;
+      }
+
+      console.log('passkey registration complete');
+      return 'success';
     }
   }, [loginContextRaw, errorVWC]);
 

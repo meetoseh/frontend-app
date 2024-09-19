@@ -1,1 +1,7 @@
-export type MergeProvider = 'SignInWithApple' | 'Google' | 'Direct' | 'Dev';
+export type MergeProvider =
+  | 'SignInWithApple'
+  | 'Google'
+  | 'Direct'
+  | 'Silent'
+  | 'Passkey'
+  | 'Dev';

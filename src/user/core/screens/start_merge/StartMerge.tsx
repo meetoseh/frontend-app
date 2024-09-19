@@ -57,13 +57,25 @@ export const StartMerge = ({
   useEntranceTransition(transition);
 
   const transitionState = useStandardTransitionsState(transition);
-
   const workingVWC = useWritableValueWithCallbacks(() => false);
 
+  const cleanedProviders = useMemo(() => {
+    const result: { provider: MergeProvider; url: string }[] = [];
+    for (const provider of screen.parameters.providers) {
+      if (
+        provider.provider in LOGIN_NAMES_BY_PROVIDER &&
+        provider.provider !== 'Silent'
+      ) {
+        result.push(provider);
+      }
+    }
+    return result;
+  }, [screen.parameters.providers]);
+
   useEffect(() => {
-    if (screen.parameters.providers.length === 0) {
+    if (cleanedProviders.length === 0) {
       screenWithWorking(workingVWC, async () => {
-        trace({ type: 'skip', reason: 'no providers in list' });
+        trace({ type: 'skip', reason: 'no useful providers in list' });
         const trigger = screen.parameters.skip.trigger;
         startPop(
           trigger.type === 'pop'
@@ -74,7 +86,7 @@ export const StartMerge = ({
       });
     }
   }, [
-    screen.parameters.providers,
+    cleanedProviders,
     startPop,
     trace,
     workingVWC,
@@ -113,11 +125,11 @@ export const StartMerge = ({
     links: useMemo(() => {
       const result: { [provider in MergeProvider]?: () => string | undefined } =
         {};
-      screen.parameters.providers.forEach((btn) => {
+      cleanedProviders.forEach((btn) => {
         result[btn.provider] = () => btn.url;
       });
       return result;
-    }, [screen.parameters.providers]),
+    }, [cleanedProviders]),
   });
 
   return (
@@ -149,7 +161,7 @@ export const StartMerge = ({
         )}
         <VerticalSpacer height={24} />
         <ProvidersList
-          items={screen.parameters.providers.map(
+          items={cleanedProviders.map(
             ({ provider }): ProviderItem<OauthProvider> => ({
               key: provider,
               icon: LOGIN_ICONS_BY_PROVIDER[provider](),

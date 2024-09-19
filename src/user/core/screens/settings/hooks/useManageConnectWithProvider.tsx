@@ -20,6 +20,10 @@ import { MergeProvider } from '../lib/MergeProvider';
 import { PromptMergeResult } from '../lib/MergeMessagePipe';
 import { usePromptMergeUsingModal } from './usePromptMergeUsingModal';
 import { getMergeProviderUrl } from '../lib/mergeUtils';
+import { apiFetch } from '../../../../../shared/lib/apiFetch';
+import { VISITOR_SOURCE } from '../../../../../shared/lib/visitorSource';
+import { SCREEN_VERSION } from '../../../../../shared/lib/screenVersion';
+import { Passkey } from 'react-native-passkey';
 
 export const useManageConnectWithProvider = ({
   mergeError,
@@ -82,7 +86,7 @@ export const useManageConnectWithProvider = ({
     onPromptMergeResult
   );
 
-  const manageConnectWithProvider = useCallback(
+  const manageConnectWithTypicalProvider = useCallback(
     async (provider: MergeProvider, name: string): Promise<void> => {
       const loginRaw = loginContextRaw.value.get();
       if (loginRaw.state !== 'logged-in') {
@@ -144,6 +148,96 @@ export const useManageConnectWithProvider = ({
       closeModalCallbacks.add(() => closeModal());
     },
     [loginContextRaw, mergeError, modals, promptMergeUsingModal]
+  );
+
+  const manageConnectWithSilent = useCallback(
+    async (provider: 'Silent', name: string): Promise<void> => {
+      const loginRaw = loginContextRaw.value.get();
+      if (loginRaw.state !== 'logged-in') {
+        return;
+      }
+      const login = loginRaw;
+      // TODO
+    },
+    [loginContextRaw]
+  );
+
+  const manageConnectWithPasskey = useCallback(
+    async (provider: 'Passkey', name: string): Promise<void> => {
+      const loginRaw = loginContextRaw.value.get();
+      if (loginRaw.state !== 'logged-in') {
+        return;
+      }
+      const login = loginRaw;
+
+      setVWC(mergeError, null);
+
+      const response = await apiFetch(
+        '/api/1/oauth/passkeys/authenticate_begin?platform=' +
+          encodeURIComponent(VISITOR_SOURCE) +
+          '&version=' +
+          encodeURIComponent(SCREEN_VERSION),
+        {
+          method: 'POST',
+        },
+        null
+      );
+      if (!response.ok) {
+        throw response;
+      }
+
+      const requestJson = await response.json();
+      let result: Awaited<ReturnType<typeof Passkey.get>>;
+      try {
+        result = await Passkey.get(requestJson);
+      } catch (e) {
+        console.log('passkey authentication failed:', e);
+        setVWC(
+          mergeError,
+          <ErrorBanner>
+            <ErrorBannerText>Passkey sign-in did not succeed</ErrorBannerText>
+          </ErrorBanner>
+        );
+        return;
+      }
+      const loginResponse = await apiFetch(
+        '/api/1/oauth/passkeys/authenticate_merge_complete',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+          },
+          body: JSON.stringify({
+            id_b64url: result.id,
+            authenticator_data_b64url: result.response.authenticatorData,
+            client_data_json_b64url: result.response.clientDataJSON,
+            signature_b64url: result.response.signature,
+          }),
+        },
+        login
+      );
+      if (!loginResponse.ok) {
+        throw loginResponse;
+      }
+
+      const mergeResponseJson: {
+        merge_token: string;
+      } = await loginResponse.json();
+
+      onSecureLoginCompleted(mergeResponseJson.merge_token);
+    },
+    [loginContextRaw]
+  );
+
+  const manageConnectWithProvider = useCallback(
+    (provider: MergeProvider, name: string): Promise<void> => {
+      if (provider === 'Passkey') {
+        return manageConnectWithPasskey(provider, name);
+      } else {
+        return manageConnectWithTypicalProvider(provider, name);
+      }
+    },
+    [manageConnectWithPasskey, manageConnectWithTypicalProvider]
   );
 
   return manageConnectWithProvider;
