@@ -24,17 +24,20 @@ import { apiFetch } from '../../../../../shared/lib/apiFetch';
 import { VISITOR_SOURCE } from '../../../../../shared/lib/visitorSource';
 import { SCREEN_VERSION } from '../../../../../shared/lib/screenVersion';
 import { Passkey } from 'react-native-passkey';
+import { showYesNoModal } from '../../../../../shared/lib/showYesNoModal';
 
 export const useManageConnectWithProvider = ({
   mergeError,
   modals,
   onSecureLoginCompleted,
   links,
+  passkeyHint,
 }: {
   mergeError: WritableValueWithCallbacks<ReactElement | null>;
   modals: WritableValueWithCallbacks<Modals>;
   onSecureLoginCompleted: (token: string | null) => void;
   links?: { [provider in MergeProvider]?: () => string | undefined };
+  passkeyHint: 'register' | 'authenticate' | 'ask';
 }): ((provider: MergeProvider, name: string) => Promise<void>) => {
   const loginContextRaw = useContext(LoginContext);
 
@@ -150,18 +153,6 @@ export const useManageConnectWithProvider = ({
     [loginContextRaw, mergeError, modals, promptMergeUsingModal]
   );
 
-  const manageConnectWithSilent = useCallback(
-    async (provider: 'Silent', name: string): Promise<void> => {
-      const loginRaw = loginContextRaw.value.get();
-      if (loginRaw.state !== 'logged-in') {
-        return;
-      }
-      const login = loginRaw;
-      // TODO
-    },
-    [loginContextRaw]
-  );
-
   const manageConnectWithPasskey = useCallback(
     async (provider: 'Passkey', name: string): Promise<void> => {
       const loginRaw = loginContextRaw.value.get();
@@ -172,59 +163,161 @@ export const useManageConnectWithProvider = ({
 
       setVWC(mergeError, null);
 
-      const response = await apiFetch(
-        '/api/1/oauth/passkeys/authenticate_begin?platform=' +
-          encodeURIComponent(VISITOR_SOURCE) +
-          '&version=' +
-          encodeURIComponent(SCREEN_VERSION),
-        {
-          method: 'POST',
-        },
-        null
-      );
-      if (!response.ok) {
-        throw response;
+      let technique = passkeyHint;
+      if (technique === 'ask') {
+        const response = await showYesNoModal(modals, {
+          title: 'Passkey',
+          body: 'Would you like to register a new passkey or connect an existing one?',
+          cta1: 'Register',
+          cta2: 'Connect',
+          emphasize: 1,
+        }).promise;
+        if (response === true) {
+          technique = 'register';
+        } else if (response === false) {
+          technique = 'authenticate';
+        } else {
+          return;
+        }
       }
 
-      const requestJson = await response.json();
-      let result: Awaited<ReturnType<typeof Passkey.get>>;
       try {
-        result = await Passkey.get(requestJson);
+        if (technique === 'register') {
+          await handleRegister();
+        } else {
+          await handleAuthenticate();
+        }
       } catch (e) {
-        console.log('passkey authentication failed:', e);
-        setVWC(
-          mergeError,
-          <ErrorBanner>
-            <ErrorBannerText>Passkey sign-in did not succeed</ErrorBannerText>
-          </ErrorBanner>
-        );
-        return;
+        const described = await describeError(e);
+        setVWC(mergeError, described);
       }
-      const loginResponse = await apiFetch(
-        '/api/1/oauth/passkeys/authenticate_merge_complete',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json; charset=utf-8',
+
+      async function handleRegister() {
+        const response = await apiFetch(
+          '/api/1/oauth/passkeys/register_begin?platform=' +
+            encodeURIComponent(VISITOR_SOURCE) +
+            '&version=' +
+            encodeURIComponent(SCREEN_VERSION),
+          {
+            method: 'POST',
           },
-          body: JSON.stringify({
-            id_b64url: result.id,
-            authenticator_data_b64url: result.response.authenticatorData,
-            client_data_json_b64url: result.response.clientDataJSON,
-            signature_b64url: result.response.signature,
-          }),
-        },
-        login
-      );
-      if (!loginResponse.ok) {
-        throw loginResponse;
+          null
+        );
+        if (!response.ok) {
+          throw response;
+        }
+
+        const requestJson = await response.json();
+        let result: Awaited<ReturnType<typeof Passkey.create>>;
+        try {
+          result = await Passkey.create(requestJson);
+          if (typeof result === 'string') {
+            // android
+            result = JSON.parse(result);
+          }
+        } catch (e) {
+          console.log('passkey regstration failed:', e);
+          setVWC(
+            mergeError,
+            <ErrorBanner>
+              <ErrorBannerText>
+                Passkey creation did not succeed
+              </ErrorBannerText>
+            </ErrorBanner>
+          );
+          return;
+        }
+        const loginResponse = await apiFetch(
+          '/api/1/oauth/passkeys/register_merge_complete?platform=' +
+            encodeURIComponent(VISITOR_SOURCE) +
+            '&version=' +
+            encodeURIComponent(SCREEN_VERSION),
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json; charset=utf-8',
+            },
+            body: JSON.stringify({
+              id_b64url: result.id,
+              client_data_json_b64url: result.response.clientDataJSON,
+              attestation_object_b64url: result.response.attestationObject,
+            }),
+          },
+          login
+        );
+        if (!loginResponse.ok) {
+          throw loginResponse;
+        }
+
+        const mergeResponseJson: {
+          merge_token: string;
+        } = await loginResponse.json();
+
+        onSecureLoginCompleted(mergeResponseJson.merge_token);
       }
 
-      const mergeResponseJson: {
-        merge_token: string;
-      } = await loginResponse.json();
+      async function handleAuthenticate() {
+        const response = await apiFetch(
+          '/api/1/oauth/passkeys/authenticate_begin?platform=' +
+            encodeURIComponent(VISITOR_SOURCE) +
+            '&version=' +
+            encodeURIComponent(SCREEN_VERSION),
+          {
+            method: 'POST',
+          },
+          null
+        );
+        if (!response.ok) {
+          throw response;
+        }
 
-      onSecureLoginCompleted(mergeResponseJson.merge_token);
+        const requestJson = await response.json();
+        let result: Awaited<ReturnType<typeof Passkey.get>>;
+        try {
+          result = await Passkey.get(requestJson);
+          if (typeof result === 'string') {
+            // android
+            result = JSON.parse(result);
+          }
+        } catch (e) {
+          console.log('passkey authentication failed:', e);
+          setVWC(
+            mergeError,
+            <ErrorBanner>
+              <ErrorBannerText>Passkey sign-in did not succeed</ErrorBannerText>
+            </ErrorBanner>
+          );
+          return;
+        }
+        const loginResponse = await apiFetch(
+          '/api/1/oauth/passkeys/authenticate_merge_complete?platform=' +
+            encodeURIComponent(VISITOR_SOURCE) +
+            '&version=' +
+            encodeURIComponent(SCREEN_VERSION),
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json; charset=utf-8',
+            },
+            body: JSON.stringify({
+              id_b64url: result.id,
+              authenticator_data_b64url: result.response.authenticatorData,
+              client_data_json_b64url: result.response.clientDataJSON,
+              signature_b64url: result.response.signature,
+            }),
+          },
+          login
+        );
+        if (!loginResponse.ok) {
+          throw loginResponse;
+        }
+
+        const mergeResponseJson: {
+          merge_token: string;
+        } = await loginResponse.json();
+
+        onSecureLoginCompleted(mergeResponseJson.merge_token);
+      }
     },
     [loginContextRaw]
   );
@@ -233,6 +326,10 @@ export const useManageConnectWithProvider = ({
     (provider: MergeProvider, name: string): Promise<void> => {
       if (provider === 'Passkey') {
         return manageConnectWithPasskey(provider, name);
+      } else if (provider === 'Silent') {
+        return Promise.reject(
+          new Error('Silent is unsupported in this context')
+        );
       } else {
         return manageConnectWithTypicalProvider(provider, name);
       }

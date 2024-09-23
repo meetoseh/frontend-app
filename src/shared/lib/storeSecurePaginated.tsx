@@ -41,18 +41,32 @@ export const storeSecurePaginated = async (
     await deleteSecurePaginated(baseKey);
   }
 
-  const digest = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA512, data);
+  const digest = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA512,
+    data
+  );
 
   const lengthKey = `${baseKey}-length`;
   const digestKey = `${baseKey}-sha512`;
 
-  const lengthSetPromise = SecureStore.setItemAsync(lengthKey, data.length.toString());
+  const lengthSetPromise = SecureStore.setItemAsync(
+    lengthKey,
+    data.length.toString()
+  );
   const digestSetPromise = SecureStore.setItemAsync(digestKey, digest);
 
   const valSetPromises = [];
-  for (let i = 0; i < data.length; i += 2048) {
-    const val = data.substring(i, i + 2048);
-    valSetPromises.push(SecureStore.setItemAsync(`${baseKey}-${i}`, val));
+
+  let expectedNumParts = Math.ceil(data.length / 2048);
+
+  for (let partIndex = 0; partIndex < expectedNumParts; partIndex++) {
+    const dataStartIndex = partIndex * 2048;
+    const dataEndIndex = Math.min(dataStartIndex + 2048, data.length);
+
+    const val = data.substring(dataStartIndex, dataEndIndex);
+    valSetPromises.push(
+      SecureStore.setItemAsync(`${baseKey}-${partIndex}`, val)
+    );
   }
 
   await Promise.all([lengthSetPromise, digestSetPromise, ...valSetPromises]);

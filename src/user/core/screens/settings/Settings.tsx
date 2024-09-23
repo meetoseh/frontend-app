@@ -417,6 +417,7 @@ export const Settings = ({
         },
       });
     },
+    passkeyHint: 'ask',
   });
 
   const getLinkForProvider = useCallback(
@@ -454,7 +455,10 @@ export const Settings = ({
       return {
         text: `Connected with ${name}`,
         key,
-        details: providerIdentities.map((i) => i.email ?? 'unknown'),
+        details:
+          provider === 'Passkey'
+            ? [`${providerIdentities.length} connected`]
+            : providerIdentities.map((i) => i.email ?? 'unknown'),
         onClick: () => manageConnectWithProvider(provider, name),
         action: 'none',
       };
@@ -487,6 +491,12 @@ export const Settings = ({
     identityOpts
   );
 
+  const identityPasskeyLink = useMappedValueWithCallbacks(
+    resources.identities,
+    (r) => getLinkForProvider(r, 'Passkey', 'Passkey'),
+    identityOpts
+  );
+
   const identityDevLink = useMappedValueWithCallbacks(
     resources.identities,
     (r) => getLinkForProvider(r, 'Dev', 'Dev'),
@@ -498,9 +508,16 @@ export const Settings = ({
       identityDirectLink,
       identityGoogleLink,
       identityAppleLink,
+      identityPasskeyLink,
       identityDevLink,
     ],
-    [identityDirectLink, identityGoogleLink, identityAppleLink, identityDevLink]
+    [
+      identityDirectLink,
+      identityGoogleLink,
+      identityAppleLink,
+      identityPasskeyLink,
+      identityDevLink,
+    ]
   );
 
   return (

@@ -130,6 +130,7 @@ export const StartMerge = ({
       });
       return result;
     }, [cleanedProviders]),
+    passkeyHint: 'authenticate',
   });
 
   return (

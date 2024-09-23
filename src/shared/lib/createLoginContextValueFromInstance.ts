@@ -39,4 +39,9 @@ export const createLoginContextValueFromInstance = ({
       'createLoginContextValueFromInstance#listing#setUserAttributes: not safe to do that'
     );
   },
+  setSilentAuthPreference: () => {
+    throw new Error(
+      'createLoginContextValueFromInstance#listing#setSilentAuthPreference: not safe to do that'
+    );
+  },
 });

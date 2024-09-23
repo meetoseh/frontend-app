@@ -27,6 +27,12 @@ import Constants from 'expo-constants';
 import { CancelablePromise } from '../lib/CancelablePromise';
 import { constructCancelablePromise } from '../lib/CancelablePromiseConstructor';
 import { createCancelablePromiseFromCallbacks } from '../lib/createCancelablePromiseFromCallbacks';
+import { createRSA4096PrivateKeyPair, decryptRSA4096V1 } from '../lib/rsa';
+import { base64URLToByteArray, byteArrayToBase64URL } from '../lib/colorUtils';
+import {
+  createNestableProgress,
+  NestableProgress,
+} from '../lib/createNestableProgress';
 
 /**
  * The user attributes that are available when a user is logged in. When
@@ -131,11 +137,22 @@ export type LoginContextValueLoggedIn = {
 
 /**
  * The login context's provided value when we are in the process of
- * loading from stores.
+ * loading from stores, with no more specific info
  */
-export type LoginContextValueLoading = {
+export type LoginContextValueLoadingDefault = {
   state: 'loading';
+  hint: undefined;
 };
+
+export type LoginContextValueLoadingSilentAuth = {
+  state: 'loading';
+  hint: 'silent-auth';
+  progress: ValueWithCallbacks<string[]>;
+};
+
+export type LoginContextValueLoading =
+  | LoginContextValueLoadingDefault
+  | LoginContextValueLoadingSilentAuth;
 
 /**
  * The login context's provided value when logged out
@@ -172,6 +189,13 @@ export type LoginContextValue = {
    * Raises an error if not logged in.
    */
   setUserAttributes: (userAttributes: UserAttributes) => Promise<void>;
+
+  /**
+   * The function to call to set the silent auth preference to a new value.
+   */
+  setSilentAuthPreference: (
+    preference: SilentAuthPreference | null
+  ) => Promise<void>;
 };
 
 const defaultProps: LoginContextValue = {
@@ -195,6 +219,11 @@ const defaultProps: LoginContextValue = {
   setUserAttributes: async () => {
     throw new Error(
       'attempt to setUserAttributes on LoginContextValue defaultProps'
+    );
+  },
+  setSilentAuthPreference: async () => {
+    throw new Error(
+      'attempt to setSilentAuthPreference on LoginContextValue defaultProps'
     );
   },
 };
@@ -370,6 +399,150 @@ const retrieveUserAttributes = async (): Promise<UserAttributes | null> => {
     raw.featureFlags = new Set(raw.featureFlags);
   }
   return raw;
+};
+
+export type SilentAuthPreferenceNever = {
+  /**
+   * - `never`: silent auth should not be used
+   */
+  type: 'never';
+};
+
+export type SilentAuthPreferencePreferred = {
+  /**
+   * - `preferred`: silent auth should be used if possible
+   */
+  type: 'preferred';
+};
+export type SilentAuthPreference =
+  | SilentAuthPreferenceNever
+  | SilentAuthPreferencePreferred;
+
+export const DEFAULT_SILENT_AUTH_PREFERENCE: SilentAuthPreference = {
+  type: 'preferred',
+};
+
+export const storeSilentAuthPreference = async (
+  preference: SilentAuthPreference | null
+) => {
+  if (preference !== null) {
+    await AsyncStorage.setItem(
+      'silentAuthPreference',
+      JSON.stringify(preference)
+    );
+  } else {
+    await AsyncStorage.removeItem('silentAuthPreference');
+  }
+};
+
+export const retrieveSilentAuthPreference =
+  async (): Promise<SilentAuthPreference | null> => {
+    const preferenceJson = await AsyncStorage.getItem('silentAuthPreference');
+    if (preferenceJson === null) {
+      return null;
+    }
+
+    const result = JSON.parse(preferenceJson);
+    if (result.type === 'never' || result.type === 'preferred') {
+      return result;
+    }
+    throw new Error('invalid silent auth preference type');
+  };
+
+export const isSilentAuthSupported = async (): Promise<boolean> => {
+  return true;
+};
+
+export type SilentAuthRSA4096V1Key = {
+  /**
+   * - `rsa-4096-v1`: 4096 bit rsa key, public exponent is 65537, enforces OAEP padding
+   */
+  type: 'rsa-4096-v1';
+  /**
+   * The public modulus (which forms the entire public key, given the public exponent is fixed).
+   * This is a large value (larger than 2^4096)
+   */
+  publicModulusB64URL: string;
+  /**
+   * d = e^-1 mod phi, where phi = lcm(p-1, q-1), where p and q are the prime factors of the
+   * public modulus. This has the special property that it "undoes" encryption with the public
+   * exponent (mod the public modulus). This is a large value (larger than 2^2048)
+   */
+  privateExponentB64URL: string;
+  /**
+   * optional string that can be stored and forwarded for faster challenge solving;
+   * typically, this will be a common RSA representation like JWK that can be passed
+   * to a native RSA library for faster decryption
+   */
+  hwAccelInfo?: string;
+};
+
+export const getSilentAuthOptions = async (): Promise<
+  SilentAuthRSA4096V1Key[]
+> => {
+  const raw = await retrieveSecurePaginated('silentAuthOptions');
+  if (raw === null) {
+    console.log('getSilentAuthOptions --- no stored data found');
+    return [];
+  }
+  const parsed = JSON.parse(raw);
+  if (!Array.isArray(parsed)) {
+    console.log(
+      'getSilentAuthOptions --- ignoring stored data (not an array)',
+      raw
+    );
+    return [];
+  }
+  const result: SilentAuthRSA4096V1Key[] = [];
+  for (const item of parsed) {
+    if (typeof item !== 'object') {
+      console.log(
+        'getSilentAuthOptions --- ignoring stored item (not an object)',
+        JSON.stringify(item)
+      );
+      continue;
+    }
+
+    if (item === null) {
+      console.log('getSilentAuthOptions --- ignoring stored item (null)');
+      continue;
+    }
+
+    if (item.type !== 'rsa-4096-v1') {
+      console.log(
+        'getSilentAuthOptions --- ignoring stored item (wrong type)',
+        JSON.stringify(item)
+      );
+      continue;
+    }
+    result.push(item);
+  }
+  return result;
+};
+
+export const createSilentAuthOption = async (
+  _progress: NestableProgress
+): Promise<SilentAuthRSA4096V1Key> => {
+  return await createRSA4096PrivateKeyPair();
+};
+
+export const storeSilentAuthOptions = async (
+  options: SilentAuthRSA4096V1Key[]
+) => {
+  const serdOptions = JSON.stringify(options);
+  console.log('trying to store silent auth options:', serdOptions);
+  console.log('total length:', serdOptions.length);
+  await storeSecurePaginated('silentAuthOptions', serdOptions);
+};
+
+/** Solves the given challenge to prove we have access to the given option */
+export const solveSilentAuthChallenge = async (
+  option: SilentAuthRSA4096V1Key,
+  challengeB64URL: string
+): Promise<string> => {
+  const challengeBytes = base64URLToByteArray(challengeB64URL);
+  const decrypted = await decryptRSA4096V1(option, challengeBytes);
+  return byteArrayToBase64URL(decrypted);
 };
 
 /**
@@ -549,9 +722,32 @@ type LoginContextQueueItemSetUserAttributes = {
   onDone: () => void;
 };
 
+type LoginContextQueueItemSetSilentAuthPreference = {
+  type: 'setSilentAuthPreference';
+  /**
+   * Returns the new silent auth preference to use based on the old login context value state.
+   *
+   * Returns a SilentAuthPreference to replace the preference. Returns undefined to skip the operation,
+   * e.g., because the login context value is not what you expected.
+   *
+   * @param old The old login context value.
+   * @param oldPreference The old silent auth preference.
+   * @returns The new silent auth preference to use
+   */
+  silentAuthPreference: (
+    old: LoginContextValueUnion,
+    oldPreference: SilentAuthPreference | null
+  ) => SilentAuthPreference | null | undefined;
+  /**
+   * a function to call when this queue item has been processed
+   */
+  onDone: () => void;
+};
+
 type LoginContextQueueItem =
   | LoginContextQueueItemSetAuthTokens
-  | LoginContextQueueItemSetUserAttributes;
+  | LoginContextQueueItemSetUserAttributes
+  | LoginContextQueueItemSetSilentAuthPreference;
 
 const __globalLoginStateLockedVWC = createWritableValueWithCallbacks(false);
 
@@ -624,6 +820,7 @@ export const LoginProvider = ({
   const valueVWC = useWritableValueWithCallbacks<LoginContextValueUnion>(
     () => ({
       state: 'loading',
+      hint: undefined,
     })
   );
 
@@ -662,7 +859,7 @@ export const LoginProvider = ({
       queueVWC.callbacks.call(undefined);
       return result;
     },
-    [queueVWC]
+    [queueVWC, valueVWC]
   );
 
   const setUserAttributes = useCallback(
@@ -697,7 +894,41 @@ export const LoginProvider = ({
       queueVWC.callbacks.call(undefined);
       return result;
     },
-    [queueVWC]
+    [queueVWC, valueVWC]
+  );
+
+  const setSilentAuthPreference = useCallback(
+    (newPreference: SilentAuthPreference | null): Promise<void> => {
+      let immediatelyResolved = false;
+      let resolve: () => void = () => {
+        immediatelyResolved = true;
+      };
+      const result = new Promise<void>((r) => {
+        if (immediatelyResolved) {
+          r();
+          return;
+        }
+
+        resolve = r;
+      });
+
+      const oldValue = valueVWC.get();
+
+      const q = queueVWC.get();
+      q.push({
+        type: 'setSilentAuthPreference',
+        silentAuthPreference: () => {
+          if (Object.is(valueVWC.get(), oldValue)) {
+            return newPreference;
+          }
+          return undefined;
+        },
+        onDone: resolve,
+      });
+      queueVWC.callbacks.call(undefined);
+      return result;
+    },
+    [queueVWC, valueVWC]
   );
 
   useEffect(() => {
@@ -853,10 +1084,13 @@ export const LoginProvider = ({
               }
               if (newTokens === null) {
                 ifDev(() =>
-                  console.debug(`${__logId}: logging out (returned null)`)
+                  console.debug(
+                    `${__logId}: logging out and disabling silent auth (returned null)`
+                  )
                 );
                 await storeAuthTokens(null);
                 await storeUserAttributes(null);
+                await storeSilentAuthPreference({ type: 'never' });
                 setVWC(
                   valueVWC,
                   { state: 'logged-out' },
@@ -921,6 +1155,63 @@ export const LoginProvider = ({
                 },
                 () => false
               );
+            } finally {
+              item.onDone();
+            }
+            break;
+          case 'setSilentAuthPreference':
+            ifDev(() =>
+              console.log(
+                `${__logId}: processing setSilentAuthPreference message`
+              )
+            );
+
+            let oldSilentAuthPreference: SilentAuthPreference | null = null;
+            try {
+              oldSilentAuthPreference = await retrieveSilentAuthPreference();
+            } catch (e) {
+              ifDev(() =>
+                console.warn(
+                  `${__logId}: error retrieving silent auth preference; treating as null`,
+                  e
+                )
+              );
+            }
+
+            try {
+              const newPreference = item.silentAuthPreference(
+                valueVWC.get(),
+                oldSilentAuthPreference
+              );
+              if (newPreference === undefined) {
+                ifDev(() =>
+                  console.debug(
+                    `${__logId}: skipping setSilentAuthPreference (returned undefined)`
+                  )
+                );
+                break;
+              }
+
+              if (newPreference === null) {
+                ifDev(() =>
+                  console.debug(`${__logId}: clearing silent auth preference`)
+                );
+                await storeSilentAuthPreference(null);
+              } else {
+                ifDev(() =>
+                  console.debug(
+                    `${__logId}: setting silent auth preference to ${newPreference.type}`
+                  )
+                );
+                await storeSilentAuthPreference(newPreference);
+              }
+
+              ifDev(() =>
+                console.debug(
+                  `${__logId}: since silent auth preference changed, resyncing storage`
+                )
+              );
+              await assignValueFromStorageRefreshingIfNecessaryWithGlobalLock();
             } finally {
               item.onDone();
             }
@@ -1194,36 +1485,20 @@ export const LoginProvider = ({
             console.error(`${__logId}: error clearing user attributes`, e2)
           );
         }
-        if (valueVWC.get().state !== 'logged-out') {
-          ifDev(() => console.log(`${__logId}: switching to logged-out`));
-          valueVWC.set({ state: 'logged-out' });
-          valueVWC.callbacks.call(undefined);
-        } else {
-          ifDev(() => console.log(`${__logId}: already in logged-out state`));
-        }
-        return;
-      }
 
-      if (authTokens === null && userAttributes === null) {
         ifDev(() =>
           console.log(
-            `${__logId}: stored state is a consistent logged-out state`
+            `${__logId} continuing as if stored state was a consistent logged-out state`
           )
         );
-        if (valueVWC.get().state !== 'logged-out') {
-          ifDev(() => console.log(`${__logId}: switching to logged-out`));
-          valueVWC.set({ state: 'logged-out' });
-          valueVWC.callbacks.call(undefined);
-        } else {
-          ifDev(() => console.log(`${__logId}: already in logged-out state`));
-        }
-        return;
+        authTokens = null;
+        userAttributes = null;
       }
 
-      if (authTokens === null) {
+      if (authTokens === null && userAttributes !== null) {
         ifDev(() =>
           console.log(
-            `${__logId}: stored state is inconsistent (no tokens, have user attributes); clearing user attributes and switching to logged-out`
+            `${__logId}: stored state is inconsistent (no tokens, have user attributes); clearing user attributes and treating as null`
           )
         );
         try {
@@ -1236,20 +1511,13 @@ export const LoginProvider = ({
             console.error(`${__logId}: error clearing user attributes`, e)
           );
         }
-        if (valueVWC.get().state !== 'logged-out') {
-          ifDev(() => console.log(`${__logId}: switching to logged-out`));
-          valueVWC.set({ state: 'logged-out' });
-          valueVWC.callbacks.call(undefined);
-        } else {
-          ifDev(() => console.log(`${__logId}: already in logged-out state`));
-        }
-        return;
+        userAttributes = null;
       }
 
-      if (userAttributes === null) {
+      if (authTokens !== null && userAttributes === null) {
         ifDev(() =>
           console.log(
-            `${__logId}: stored state is inconsistent (have tokens, no user attributes); clearing tokens and switching to logged-out`
+            `${__logId}: stored state is inconsistent (have tokens, no user attributes); clearing tokens and treating as null`
           )
         );
         try {
@@ -1262,6 +1530,20 @@ export const LoginProvider = ({
             console.error(`${__logId}: error clearing auth tokens`, e)
           );
         }
+        authTokens = null;
+      }
+
+      if (authTokens === null && userAttributes === null) {
+        const silentAuthValue = await maybeLoginViaSilentAuthWithGlobalLock();
+        if (silentAuthValue !== null) {
+          [authTokens, userAttributes] = silentAuthValue;
+        }
+      }
+
+      if (authTokens === null || userAttributes === null) {
+        ifDev(() =>
+          console.log(`${__logId}: stored state indicates logged out`)
+        );
         if (valueVWC.get().state !== 'logged-out') {
           ifDev(() => console.log(`${__logId}: switching to logged-out`));
           valueVWC.set({ state: 'logged-out' });
@@ -1350,6 +1632,222 @@ export const LoginProvider = ({
       }
     }
 
+    /** Does NOT update valueVWC, but does update stored */
+    async function maybeLoginViaSilentAuthWithGlobalLock(
+      alreadyRegistered?: boolean
+    ): Promise<[TokenResponseConfig, UserAttributes] | null> {
+      if (!(await isSilentAuthSupported())) {
+        ifDev(() => console.log(`${__logId}: silentauth is not supported`));
+        return null;
+      }
+
+      let silentAuthPreference: Awaited<
+        ReturnType<typeof retrieveSilentAuthPreference>
+      >;
+      try {
+        silentAuthPreference = await retrieveSilentAuthPreference();
+      } catch (e) {
+        ifDev(() =>
+          console.error(
+            `${__logId}: error loading silent auth preference; clearing and treating as null`,
+            e
+          )
+        );
+        try {
+          await storeSilentAuthPreference(null);
+          ifDev(() =>
+            console.log(
+              `${__logId}: successfully cleared silent auth preference`
+            )
+          );
+        } catch (e2) {
+          ifDev(() =>
+            console.error(
+              `${__logId}: error clearing silent auth preference`,
+              e2
+            )
+          );
+        }
+        silentAuthPreference = null;
+      }
+
+      if (silentAuthPreference === null) {
+        ifDev(() =>
+          console.log(
+            `${__logId}: silent auth preference is null, using default`
+          )
+        );
+        silentAuthPreference = DEFAULT_SILENT_AUTH_PREFERENCE;
+      }
+
+      ifDev(() =>
+        console.log(
+          `${__logId}: silent auth preference is ${JSON.stringify(
+            silentAuthPreference
+          )}`
+        )
+      );
+      if (silentAuthPreference.type !== 'preferred') {
+        return null;
+      }
+
+      try {
+        ifDev(() =>
+          console.log(
+            `${__logId}: retrieving silent auth options @ ${Date.now()}`
+          )
+        );
+        const silentAuthOptions = await getSilentAuthOptions();
+        ifDev(() =>
+          console.log(
+            `${__logId}: retrieved ${
+              silentAuthOptions.length
+            } silent auth options @ ${Date.now()}`
+          )
+        );
+
+        const progress = createNestableProgress();
+        valueVWC.set({
+          state: 'loading',
+          hint: 'silent-auth',
+          progress: progress.current,
+        });
+        valueVWC.callbacks.call(undefined);
+
+        if (silentAuthOptions.length === 0) {
+          ifDev(() =>
+            console.log(
+              `${__logId}: no silent auth options available, creating one @ ${Date.now()}`
+            )
+          );
+          const option = await createSilentAuthOption(progress);
+          silentAuthOptions.push(option);
+          ifDev(() =>
+            console.log(
+              `${__logId}: created silent auth option, storing @ ${Date.now()}`
+            )
+          );
+          await storeSilentAuthOptions(silentAuthOptions);
+        }
+        const option = silentAuthOptions[0];
+        ifDev(() =>
+          console.log(
+            `${__logId}: retrieved silent auth options, requesting challenge for ${
+              option.publicModulusB64URL
+            } @ ${Date.now()}`
+          )
+        );
+
+        const challengeApiResponse = await progress.withNestedAsync(
+          'requesting challenge',
+          () =>
+            apiFetch(
+              '/api/1/oauth/silent/begin',
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json; charset=utf-8',
+                },
+                body: JSON.stringify({
+                  type: option.type,
+                  public_key_b64url: option.publicModulusB64URL,
+                }),
+              },
+              null
+            )
+        );
+        if (!challengeApiResponse.ok) {
+          throw challengeApiResponse;
+        }
+        const challengeApiData: {
+          challenge_id: string;
+          challenge_b64url: string;
+        } = await challengeApiResponse.json();
+        ifDev(() =>
+          console.log(
+            `${__logId}: successfully retrieved challenge, solving @ ${Date.now()}`
+          )
+        );
+        const solution = await solveSilentAuthChallenge(
+          option,
+          challengeApiData.challenge_b64url
+        );
+        ifDev(() =>
+          console.log(
+            `${__logId}: successfully solved challenge, logging in @ ${Date.now()}`
+          )
+        );
+        const loginApiResponse = await progress.withNestedAsync(
+          'submitting challenge',
+          () =>
+            apiFetch(
+              '/api/1/oauth/silent/login',
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json; charset=utf-8',
+                },
+                body: JSON.stringify({
+                  challenge_id: challengeApiData.challenge_id,
+                  response_b64url: solution,
+                  refresh_token_desired: true,
+                }),
+              },
+              null
+            )
+        );
+        if (!loginApiResponse.ok) {
+          throw loginApiResponse;
+        }
+        const loginApiData: {
+          id_token: string;
+          refresh_token?: string | null;
+        } = await loginApiResponse.json();
+        ifDev(() =>
+          console.log(`${__logId}: successfully finishing up @ ${Date.now()}`)
+        );
+        const authTokens: TokenResponseConfig = {
+          idToken: loginApiData.id_token,
+          refreshToken: loginApiData.refresh_token ?? null,
+        };
+        const userAttributes = extractUserAttributes(authTokens);
+        ifDev(() =>
+          console.log(
+            `${__logId}: successfully logged in via silent auth, storing tokens`
+          )
+        );
+        await storeAuthTokens(authTokens);
+        ifDev(() =>
+          console.log(
+            `${__logId}: successfully stored tokens, storing user attributes`
+          )
+        );
+        await storeUserAttributes(userAttributes);
+        return [authTokens, userAttributes];
+      } catch (e) {
+        ifDev(() =>
+          console.error(`${__logId}: error using silent auth signin`, e)
+        );
+        try {
+          await storeSilentAuthPreference({ type: 'never' });
+        } catch (e2) {
+          ifDev(() =>
+            console.error(
+              `${__logId}: error storing silent auth preference to never`,
+              e2
+            )
+          );
+        }
+        return null;
+      } finally {
+        const oldValue = valueVWC.get();
+        if (oldValue.state === 'loading' && oldValue.hint === 'silent-auth') {
+          valueVWC.set({ state: 'loading', hint: undefined });
+          valueVWC.callbacks.call(undefined);
+        }
+      }
+    }
+
     async function refreshWithGlobalLockInner(
       refreshableTokens: TokenResponseConfig
     ): Promise<'retry' | 'done'> {
@@ -1411,7 +1909,7 @@ export const LoginProvider = ({
               `${__logId}: token is actually expired; switching to loading to get a spinner. not breaking out of refresh loop though.`
             )
           );
-          setVWC(valueVWC, { state: 'loading' }, () => false);
+          setVWC(valueVWC, { state: 'loading', hint: undefined }, () => false);
         }
       }
 
@@ -1427,7 +1925,11 @@ export const LoginProvider = ({
               `${__logId}: error was not a response; likely a network error. Retrying in 5-10 seconds`
             )
           );
-          setVWC(valueVWC, { state: 'loading' }, (a, b) => a.state === b.state);
+          setVWC(
+            valueVWC,
+            { state: 'loading', hint: undefined },
+            (a, b) => a.state === b.state
+          );
           await new Promise((r) => setTimeout(r, 5000 + Math.random() * 5000));
           return 'retry';
         }
@@ -1473,7 +1975,11 @@ export const LoginProvider = ({
               `${__logId}: retrying in ${effectiveRetryAfter} seconds`
             )
           );
-          setVWC(valueVWC, { state: 'loading' }, (a, b) => a.state === b.state);
+          setVWC(
+            valueVWC,
+            { state: 'loading', hint: undefined },
+            (a, b) => a.state === b.state
+          );
           await new Promise((r) => setTimeout(r, effectiveRetryAfter * 1000));
           return 'retry';
         }
@@ -1486,7 +1992,11 @@ export const LoginProvider = ({
               }), retrying in 5-60 seconds`
             )
           );
-          setVWC(valueVWC, { state: 'loading' }, (a, b) => a.state === b.state);
+          setVWC(
+            valueVWC,
+            { state: 'loading', hint: undefined },
+            (a, b) => a.state === b.state
+          );
           await new Promise((r) => setTimeout(r, 5000 + Math.random() * 55000));
           return 'retry';
         }
@@ -1611,8 +2121,9 @@ export const LoginProvider = ({
           value: valueVWC,
           setAuthTokens,
           setUserAttributes,
+          setSilentAuthPreference,
         }),
-        [valueVWC, setAuthTokens, setUserAttributes]
+        [valueVWC, setAuthTokens, setUserAttributes, setSilentAuthPreference]
       )}
     >
       {children}

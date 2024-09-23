@@ -11,11 +11,12 @@ import * as WebBrowser from 'expo-web-browser';
 import { styles } from './LoginScreenStyles';
 import Constants from 'expo-constants';
 import { SplashScreen } from '../../../splash/SplashScreen';
-import Google from './icons/Google';
-import Apple from './icons/Apple';
 import { StatusBar } from 'expo-status-bar';
 import OsehWordmarkWhite from './icons/OsehWordmarkWhite';
-import { LoginContext } from '../../../../shared/contexts/LoginContext';
+import {
+  isSilentAuthSupported,
+  LoginContext,
+} from '../../../../shared/contexts/LoginContext';
 import { apiFetch } from '../../../../shared/lib/apiFetch';
 import {
   ErrorBanner,
@@ -33,6 +34,7 @@ import {
 } from './LoginMessagePipe';
 import {
   Callbacks,
+  createWritableValueWithCallbacks,
   useWritableValueWithCallbacks,
 } from '../../../../shared/lib/Callbacks';
 import { setVWC } from '../../../../shared/lib/setVWC';
@@ -40,7 +42,6 @@ import { useIsMounted } from '../../../../shared/hooks/useIsMounted';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { OsehImageBackgroundFromStateValueWithCallbacks } from '../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks';
 import { useContentWidth } from '../../../../shared/lib/useContentWidth';
-import Email from './icons/Email';
 import { useIsTablet } from '../../../../shared/lib/useIsTablet';
 import { ProvidersList } from './components/ProvidersList';
 import { useOsehImageStateValueWithCallbacks } from '../../../../shared/images/useOsehImageStateValueWithCallbacks';
@@ -56,6 +57,20 @@ import { SCREEN_VERSION } from '../../../../shared/lib/screenVersion';
 import { Passkey } from 'react-native-passkey';
 import { Passkey as PasskeyIcon } from '../../../../shared/components/icons/Passkey';
 import { OsehColors } from '../../../../shared/OsehColors';
+import { Google } from '../../../../shared/components/icons/Google';
+import { Apple } from '../../../../shared/components/icons/Apple';
+import { Email } from '../../../../shared/components/icons/Email';
+import { Anonymous } from '../../../../shared/components/icons/Anonymous';
+import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
+import { GridFullscreenContainer } from '../../../../shared/components/GridFullscreenContainer';
+import { ScreenContext } from '../../hooks/useScreenContext';
+import { Modals } from '../../../../shared/contexts/ModalContext';
+import { GridBlackBackground } from '../../../../shared/components/GridBlackBackground';
+import { GridDarkGrayBackground } from '../../../../shared/components/GridDarkGrayBackground';
+import { GridContentContainer } from '../../../../shared/components/GridContentContainer';
+import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
+import { HorizontalSpacer } from '../../../../shared/components/HorizontalSpacer';
+import { showYesNoModal } from '../../../../shared/lib/showYesNoModal';
 
 /* guest -> random guest; apple -> random guest no name */
 const DEV_ACCOUNT_USER_IDENTITY_ID: string = 'guest';
@@ -63,7 +78,7 @@ const DEV_ACCOUNT_USER_IDENTITY_ID: string = 'guest';
 let failedLogin = false;
 
 const prepareLink = async (
-  provider: 'Google' | 'SignInWithApple' | 'Direct'
+  provider: 'Google' | 'SignInWithApple' | 'Direct' | 'Dev'
 ): Promise<{ url: string; redirectUrl: string }> => {
   const redirectUrl = Linking.createURL('login_callback');
   const response = await apiFetch(
@@ -92,16 +107,12 @@ const prepareLink = async (
 
 export const LOGIN_ICONS_BY_PROVIDER: Record<
   OauthProvider,
-  () => ReactElement
+  (color?: string) => ReactElement
 > = {
-  Google: () => <Google style={styles.google} />,
-  SignInWithApple: () => <Apple style={styles.apple} />,
-  Direct: () => <Email style={styles.email} />,
-  Dev: () => <Email style={styles.email} />,
-  Silent: () => (
-    <PasskeyIcon
+  Google: (color) => (
+    <Google
       icon={{
-        width: 20,
+        width: 18,
       }}
       container={{
         width: 32,
@@ -109,16 +120,96 @@ export const LOGIN_ICONS_BY_PROVIDER: Record<
       }}
       startPadding={{
         x: {
-          fraction: 0,
+          fixed: 1,
         },
         y: {
           fraction: 0.5,
         },
       }}
-      color={OsehColors.v4.primary.dark}
+      color={color ?? OsehColors.v4.primary.dark}
     />
   ),
-  Passkey: () => (
+  SignInWithApple: (color) => (
+    <Apple
+      icon={{
+        width: 18,
+      }}
+      container={{
+        width: 32,
+        height: 20,
+      }}
+      startPadding={{
+        x: {
+          fixed: 1,
+        },
+        y: {
+          fraction: 0.5,
+        },
+      }}
+      color={color ?? OsehColors.v4.primary.dark}
+    />
+  ),
+  Direct: (color) => (
+    <Email
+      icon={{
+        width: 20,
+      }}
+      container={{
+        width: 32,
+        height: 20,
+      }}
+      startPadding={{
+        x: {
+          fraction: 0,
+        },
+        y: {
+          fraction: 0.5,
+        },
+      }}
+      color={color ?? OsehColors.v4.primary.dark}
+    />
+  ),
+  Dev: (color) => (
+    <Email
+      icon={{
+        width: 20,
+      }}
+      container={{
+        width: 32,
+        height: 20,
+      }}
+      startPadding={{
+        x: {
+          fraction: 0,
+        },
+        y: {
+          fraction: 0.5,
+        },
+      }}
+      color={color ?? OsehColors.v4.primary.dark}
+    />
+  ),
+  Silent: (color) => (
+    <Anonymous
+      icon={{
+        width: 20,
+      }}
+      container={{
+        width: 32,
+        height: 20,
+      }}
+      startPadding={{
+        x: {
+          fixed: 60,
+        },
+        y: {
+          fraction: 0.5,
+        },
+      }}
+      color={color ?? OsehColors.v4.primary.dark}
+    />
+  ),
+  Passkey: (color) => (
     <PasskeyIcon
       icon={{
         width: 20,
@@ -135,7 +226,7 @@ export const LOGIN_ICONS_BY_PROVIDER: Record<
           fraction: 0.5,
         },
       }}
-      color={OsehColors.v4.primary.dark}
+      color={color ?? OsehColors.v4.primary.dark}
     />
   ),
 };
@@ -145,7 +236,7 @@ export const LOGIN_NAMES_BY_PROVIDER: Record<OauthProvider, string> = {
   SignInWithApple: 'Sign in with Apple',
   Direct: 'Sign in with Email',
   Dev: 'Sign in as Developer',
-  Silent: 'Sign in with Device',
+  Silent: 'Sign in later',
   Passkey: 'Sign in with Passkey',
 };
 
@@ -156,8 +247,7 @@ const isDev = Constants.expoConfig?.extra?.environment === 'dev';
  * presents the user with options to log in with Google, Apple,
  * or Direct
  */
-export const Login = () => {
-  const loginContextRaw = useContext(LoginContext);
+export const Login = ({ ctx }: { ctx: ScreenContext }) => {
   const checkedMessagePipeVWC = useWritableValueWithCallbacks(() => false);
   const errorVWC = useWritableValueWithCallbacks<ReactElement | null>(
     () => null
@@ -204,13 +294,13 @@ export const Login = () => {
         ((() => {}) as (t: 'success') => void)(result.type);
 
         const { idToken, refreshToken, onboard } = result;
-        loginContextRaw.setAuthTokens.call(undefined, {
+        ctx.login.setAuthTokens.call(undefined, {
           idToken,
           refreshToken: refreshToken ?? null,
         });
       }
     },
-    [loginContextRaw.setAuthTokens, errorVWC]
+    [ctx.login, errorVWC]
   );
 
   useEffect(() => {
@@ -325,7 +415,179 @@ export const Login = () => {
   }, []);
 
   const onContinueWithProvider = useCallback(
-    async (provider: 'Google' | 'SignInWithApple' | 'Direct') => {
+    async (provider: OauthProvider) => {
+      if (provider === 'Passkey') {
+        const response = await showYesNoModal(modals, {
+          title: 'Passkey',
+          body: 'Would you like to register a new passkey or sign in with an existing one?',
+          cta1: 'Register',
+          cta2: 'Sign in',
+          emphasize: 1,
+        }).promise;
+
+        if (response === null) {
+          return;
+        }
+
+        const technique = response ? 'register' : 'authenticate';
+
+        try {
+          if (technique === 'register') {
+            return await handleRegister();
+          } else {
+            return await handleAuthenticate();
+          }
+        } catch (e) {
+          const described = await describeError(e);
+          setVWC(errorVWC, described);
+        }
+
+        async function handleRegister() {
+          const response = await apiFetch(
+            '/api/1/oauth/passkeys/register_begin?platform=' +
+              encodeURIComponent(VISITOR_SOURCE) +
+              '&version=' +
+              encodeURIComponent(SCREEN_VERSION),
+            {
+              method: 'POST',
+            },
+            null
+          );
+          if (!response.ok) {
+            throw response;
+          }
+
+          const requestJson = await response.json();
+          let result: Awaited<ReturnType<typeof Passkey.create>>;
+          try {
+            result = await Passkey.create(requestJson);
+            if (typeof result === 'string') {
+              // android
+              result = JSON.parse(result);
+            }
+          } catch (e) {
+            console.log('passkey regstration failed:', e);
+            setVWC(
+              errorVWC,
+              <ErrorBanner>
+                <ErrorBannerText>
+                  Passkey creation did not succeed
+                </ErrorBannerText>
+              </ErrorBanner>
+            );
+            return;
+          }
+          const loginResponse = await apiFetch(
+            '/api/1/oauth/passkeys/register_login_complete?platform=' +
+              encodeURIComponent(VISITOR_SOURCE) +
+              '&version=' +
+              encodeURIComponent(SCREEN_VERSION),
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json; charset=utf-8',
+              },
+              body: JSON.stringify({
+                id_b64url: result.id,
+                client_data_json_b64url: result.response.clientDataJSON,
+                attestation_object_b64url: result.response.attestationObject,
+                refresh_token_desired: true,
+              }),
+            },
+            null
+          );
+          if (!loginResponse.ok) {
+            throw loginResponse;
+          }
+
+          const loginResponseJson: {
+            id_token: string;
+            refresh_token?: string;
+          } = await loginResponse.json();
+
+          ctx.login.setAuthTokens.call(undefined, {
+            idToken: loginResponseJson.id_token,
+            refreshToken: loginResponseJson.refresh_token ?? null,
+          });
+        }
+
+        async function handleAuthenticate() {
+          const response = await apiFetch(
+            '/api/1/oauth/passkeys/authenticate_begin?platform=' +
+              encodeURIComponent(VISITOR_SOURCE) +
+              '&version=' +
+              encodeURIComponent(SCREEN_VERSION),
+            {
+              method: 'POST',
+            },
+            null
+          );
+          if (!response.ok) {
+            throw response;
+          }
+
+          const requestJson = await response.json();
+          let result: Awaited<ReturnType<typeof Passkey.get>>;
+          try {
+            result = await Passkey.get(requestJson);
+            if (typeof result === 'string') {
+              // android
+              result = JSON.parse(result);
+            }
+          } catch (e) {
+            console.log('passkey authentication failed:', e);
+            setVWC(
+              errorVWC,
+              <ErrorBanner>
+                <ErrorBannerText>
+                  Passkey sign-in did not succeed
+                </ErrorBannerText>
+              </ErrorBanner>
+            );
+            return;
+          }
+          const loginResponse = await apiFetch(
+            '/api/1/oauth/passkeys/authenticate_login_complete?platform=' +
+              encodeURIComponent(VISITOR_SOURCE) +
+              '&version=' +
+              encodeURIComponent(SCREEN_VERSION),
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json; charset=utf-8',
+              },
+              body: JSON.stringify({
+                id_b64url: result.id,
+                authenticator_data_b64url: result.response.authenticatorData,
+                client_data_json_b64url: result.response.clientDataJSON,
+                signature_b64url: result.response.signature,
+                refresh_token_desired: true,
+              }),
+            },
+            null
+          );
+          if (!loginResponse.ok) {
+            throw loginResponse;
+          }
+
+          const loginResponseJson: {
+            id_token: string;
+            refresh_token?: string;
+          } = await loginResponse.json();
+
+          ctx.login.setAuthTokens.call(undefined, {
+            idToken: loginResponseJson.id_token,
+            refreshToken: loginResponseJson.refresh_token ?? null,
+          });
+        }
+        return;
+      }
+
+      if (provider === 'Silent') {
+        await ctx.login.setSilentAuthPreference({ type: 'preferred' });
+        return;
+      }
+
       const options: WebBrowser.AuthSessionOpenOptions = {};
       if (Platform.OS === 'ios' && provider === 'Google' && failedLogin) {
         options.preferEphemeralSession = true;
@@ -408,10 +670,6 @@ export const Login = () => {
       return;
     }
 
-    // if (await tryPasskeyLogin()) {
-    //   return;
-    // }
-
     setVWC(errorVWC, null);
     try {
       const sub = selectDevAccountSub();
@@ -442,7 +700,7 @@ export const Login = () => {
         onboard: boolean;
       } = await response.json();
       console.log('data ready, setting auth tokens..');
-      await loginContextRaw.setAuthTokens({
+      await ctx.login.setAuthTokens({
         idToken: data.id_token,
         refreshToken: data.refresh_token,
       });
@@ -451,224 +709,121 @@ export const Login = () => {
       console.error(e);
       setVWC(errorVWC, await describeError(e));
     }
-
-    // for testing for now
-    async function tryPasskeyLogin(): Promise<boolean> {
-      console.log('trying passkey login');
-      if (!Passkey.isSupported()) {
-        console.log('passkey not supported');
-        return true;
-      }
-
-      console.log('passkey supported, trying passkey authentication');
-      const result = await tryPasskeyAuthenticate();
-      if (result === 'success') {
-        console.log('passkey authentication successful');
-        return true;
-      }
-
-      console.log('trying passkey registration');
-      await tryPasskeyRegister();
-      return true;
-    }
-
-    async function tryPasskeyAuthenticate(): Promise<
-      'success' | 'nocredentials' | 'error'
-    > {
-      const response = await apiFetch(
-        '/api/1/oauth/passkeys/authenticate_begin?platform=' +
-          encodeURIComponent(VISITOR_SOURCE) +
-          '&version=' +
-          encodeURIComponent(SCREEN_VERSION),
-        {
-          method: 'POST',
-        },
-        null
-      );
-      if (!response.ok) {
-        throw response;
-      }
-
-      const requestJson = await response.json();
-      console.log('got request json:', requestJson);
-      let result: Awaited<ReturnType<typeof Passkey.get>>;
-      try {
-        result = await Passkey.get(requestJson);
-      } catch (e) {
-        console.log('passkey authentication failed:', e);
-
-        try {
-          if ((e as any).error === 'NoCredentials') {
-            console.log('determined no credentials');
-            return 'nocredentials';
-          }
-        } catch (e2) {
-          console.log('error in error:', e2);
-        }
-        return 'error';
-      }
-      console.log('got result:', result);
-
-      const loginResponse = await apiFetch(
-        '/api/1/oauth/passkeys/authenticate_login_complete',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json; charset=utf-8',
-          },
-          body: JSON.stringify({
-            id_b64url: result.id,
-            authenticator_data_b64url: result.response.authenticatorData,
-            client_data_json_b64url: result.response.clientDataJSON,
-            signature_b64url: result.response.signature,
-            refresh_token_desired: true,
-          }),
-        },
-        null
-      );
-      if (!loginResponse.ok) {
-        throw loginResponse;
-      }
-
-      const loginResponseJson: {
-        id_token: string;
-        refresh_token?: string | null;
-      } = await loginResponse.json();
-      loginContextRaw.setAuthTokens({
-        idToken: loginResponseJson.id_token,
-        refreshToken: loginResponseJson.refresh_token ?? null,
-      });
-      return 'success';
-    }
-
-    async function tryPasskeyRegister(): Promise<'success' | 'error'> {
-      const response = await apiFetch(
-        '/api/1/oauth/passkeys/register_begin?platform=' +
-          encodeURIComponent(VISITOR_SOURCE) +
-          '&version=' +
-          encodeURIComponent(SCREEN_VERSION),
-        {
-          method: 'POST',
-        },
-        null
-      );
-      if (!response.ok) {
-        throw response;
-      }
-
-      const requestJson = await response.json();
-      console.log('got request json:', requestJson);
-      let result: Awaited<ReturnType<typeof Passkey.create>>;
-      try {
-        result = await Passkey.create(requestJson);
-        console.log('got result:', result);
-      } catch (e) {
-        console.log('passkey registration failed:', e);
-        return 'error';
-      }
-
-      const registerCompleteBody = JSON.stringify({
-        id_b64url: result.id,
-        client_data_json_b64url: result.response.clientDataJSON,
-        attestation_object_b64url: result.response.attestationObject,
-      });
-      console.log('posting to register_complete: ' + registerCompleteBody);
-      const registerCompleteResponse = await apiFetch(
-        '/api/1/oauth/passkeys/register_complete',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json; charset=utf-8',
-          },
-          body: registerCompleteBody,
-        },
-        null
-      );
-
-      if (!registerCompleteResponse.ok) {
-        throw registerCompleteResponse;
-      }
-
-      console.log('passkey registration complete');
-      return 'success';
-    }
-  }, [loginContextRaw, errorVWC]);
+  }, [ctx.login, errorVWC]);
 
   const checkedMessagePipe = useUnwrappedValueWithCallbacks(
     checkedMessagePipeVWC
   );
 
-  const contentWidth = useContentWidth();
+  const modals = useWritableValueWithCallbacks<Modals>(() => []);
+  useErrorModal(modals, errorVWC, 'logging in');
 
-  const isTablet = useIsTablet();
-
-  const imageHandler = useOsehImageStateRequestHandler({});
-  const backgroundPropsVWC = useMappedValueWithCallbacks(
-    useWindowSizeValueWithCallbacks(),
-    (size): OsehImageProps => ({
-      uid: 'oseh_if_NOA1u2xYanYQlA8rdpPEQQ',
-      jwt: null,
-      displayWidth: size.width,
-      displayHeight: size.height,
-      alt: '',
-      isPublic: true,
-      placeholderColor: '#040b17',
-    })
+  const silentAuthSupportedVWC = useWritableValueWithCallbacks(
+    (): boolean | null => null
   );
-  const backgroundVWC = useOsehImageStateValueWithCallbacks(
-    adaptValueWithCallbacksAsVariableStrategyProps(backgroundPropsVWC),
-    imageHandler
-  );
+  useEffect(() => {
+    let active = true;
+    handle();
+    return () => {
+      active = false;
+    };
 
-  if (!checkedMessagePipe) {
-    return <SplashScreen />;
-  }
+    async function handle() {
+      const supported = await isSilentAuthSupported();
+      setVWC(silentAuthSupportedVWC, supported);
+    }
+  });
 
   return (
-    <View style={styles.container}>
-      <RenderGuardedComponent
-        props={errorVWC}
-        component={(error) => error ?? <></>}
-      />
-      <OsehImageBackgroundFromStateValueWithCallbacks
-        state={backgroundVWC}
-        style={{
-          ...styles.content,
-          ...(isTablet ? styles.contentTablet : {}),
-          width: contentWidth,
-        }}
+    <GridFullscreenContainer
+      windowSizeImmediate={ctx.windowSizeImmediate}
+      statusBar="light"
+      modals={modals}
+    >
+      <GridDarkGrayBackground />
+      <GridContentContainer
+        gridSizeVWC={ctx.windowSizeImmediate}
+        contentWidthVWC={ctx.contentWidth}
+        scrollable={false}
+        justifyContent="flex-start"
       >
-        <OsehWordmarkWhite width={163} height={40} style={styles.logo} />
+        <RenderGuardedComponent
+          props={ctx.topBarHeight}
+          component={(h) => <VerticalSpacer height={h} />}
+        />
+        <VerticalSpacer height={0} flexGrow={1} />
+        <View style={styles.row}>
+          <HorizontalSpacer width={0} flexGrow={1} />
+          <OsehWordmarkWhite width={163} height={40} />
+          <HorizontalSpacer width={0} flexGrow={1} />
+        </View>
+        <VerticalSpacer height={0} maxHeight={24} flexGrow={1} />
         <Text
           style={styles.message}
           {...(isDev ? { onLongPress: onLongPressMessage } : {})}
         >
           Reclaim your Calm
         </Text>
-        <ProvidersList
-          items={[
-            {
-              key: 'Google',
-              icon: LOGIN_ICONS_BY_PROVIDER['Google'](),
-              name: LOGIN_NAMES_BY_PROVIDER['Google'],
-            },
-            {
-              key: 'SignInWithApple',
-              icon: LOGIN_ICONS_BY_PROVIDER['SignInWithApple'](),
-              name: LOGIN_NAMES_BY_PROVIDER['SignInWithApple'],
-            },
-            {
-              key: 'Direct',
-              icon: LOGIN_ICONS_BY_PROVIDER['Direct'](),
-              name: LOGIN_NAMES_BY_PROVIDER['Direct'],
-            },
-          ]}
-          onItemPressed={(key) => onContinueWithProvider(key)}
+        <VerticalSpacer height={0} maxHeight={48} flexGrow={1} />
+        <RenderGuardedComponent
+          props={silentAuthSupportedVWC}
+          component={(silentAuthSupported) => (
+            <ProvidersList
+              items={[
+                ...(silentAuthSupported
+                  ? ([
+                      {
+                        key: 'Silent',
+                        icon: LOGIN_ICONS_BY_PROVIDER['Silent'](),
+                        name: LOGIN_NAMES_BY_PROVIDER['Silent'],
+                      },
+                    ] as const)
+                  : []),
+                ...(Passkey.isSupported()
+                  ? ([
+                      {
+                        key: 'Passkey',
+                        icon: LOGIN_ICONS_BY_PROVIDER['Passkey'](),
+                        name: LOGIN_NAMES_BY_PROVIDER['Passkey'],
+                      },
+                    ] as const)
+                  : []),
+                {
+                  key: 'Google',
+                  icon: LOGIN_ICONS_BY_PROVIDER['Google'](
+                    OsehColors.v4.primary.light
+                  ),
+                  name: LOGIN_NAMES_BY_PROVIDER['Google'],
+                  deemphasize: true,
+                },
+                {
+                  key: 'SignInWithApple',
+                  icon: LOGIN_ICONS_BY_PROVIDER['SignInWithApple'](
+                    OsehColors.v4.primary.light
+                  ),
+                  name: LOGIN_NAMES_BY_PROVIDER['SignInWithApple'],
+                  deemphasize: true,
+                },
+                {
+                  key: 'Direct',
+                  icon: LOGIN_ICONS_BY_PROVIDER['Direct'](
+                    OsehColors.v4.primary.light
+                  ),
+                  name: LOGIN_NAMES_BY_PROVIDER['Direct'],
+                  deemphasize: true,
+                },
+              ]}
+              onItemPressed={(key) => onContinueWithProvider(key)}
+            />
+          )}
         />
-        <View style={{ height: 56 }} />
-      </OsehImageBackgroundFromStateValueWithCallbacks>
-      <StatusBar style="light" />
-    </View>
+        <VerticalSpacer height={32} />
+        <RenderGuardedComponent
+          props={ctx.botBarHeight}
+          component={(h) => <VerticalSpacer height={h} />}
+        />
+      </GridContentContainer>
+    </GridFullscreenContainer>
   );
 };
 

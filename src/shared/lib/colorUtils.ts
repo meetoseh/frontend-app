@@ -27,7 +27,16 @@ export const alphaBlend = (
 export const base64URLToByteArray = (
   base64Url: string
 ): Uint8Array | number[] => {
-  return Buffer.from(base64Url, 'base64');
+  return Buffer.from(base64Url.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+};
+/**
+ * For convenience, the reverse operation of base64URLToByteArray.
+ */
+export const byteArrayToBase64URL = (bytes: Uint8Array | number[]): string => {
+  return Buffer.from(bytes)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
 };
 
 /**
