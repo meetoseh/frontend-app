@@ -52,6 +52,7 @@ import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwa
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
 import { trackClassTaken } from '../home/lib/trackClassTaken';
 import { waitForValuesWithCallbacksCondition } from '../../../../shared/lib/waitForValueWithCallbacksCondition';
+import { makeTextError } from '../../../../shared/lib/describeError';
 
 type TooltipPlaceholder = { readonly uid: 'tooltip' };
 
@@ -131,7 +132,7 @@ export const Library = ({
                 refreshRef: () => ({
                   promise: Promise.resolve({
                     type: 'expired',
-                    error: <>Refresh not expected here</>,
+                    error: makeTextError('Refresh not expected here'),
                     data: undefined,
                     retryAt: undefined,
                   }),

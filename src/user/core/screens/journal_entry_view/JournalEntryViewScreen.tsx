@@ -31,6 +31,7 @@ import {
   JournalEntryViewMappedParams,
 } from './JournalEntryViewParams';
 import { JournalEntryViewResources } from './JournalEntryViewResources';
+import { makeTextError } from '../../../../shared/lib/describeError';
 
 /**
  * Allows the user to view, but not edit, an existing journal entry
@@ -79,7 +80,7 @@ export const JournalEntryViewScreen: OsehScreen<
               promise: Promise.resolve({
                 type: 'expired',
                 data: undefined,
-                error: <>Screen is not mounted</>,
+                error: makeTextError('Screen is not mounted'),
                 retryAt: undefined,
               }),
               done: () => true,
@@ -96,7 +97,9 @@ export const JournalEntryViewScreen: OsehScreen<
                 ? {
                     type: 'error',
                     data: undefined,
-                    error: <>Journal entry not provided by server</>,
+                    error: makeTextError(
+                      'Journal entry not provided by server'
+                    ),
                     retryAt: undefined,
                   }
                 : {
@@ -252,7 +255,7 @@ export const JournalEntryViewScreen: OsehScreen<
               promise: Promise.resolve({
                 type: 'expired',
                 data: undefined,
-                error: <>Screen is not mounted</>,
+                error: makeTextError('Screen is not mounted'),
                 retryAt: undefined,
               }),
               done: () => true,
@@ -266,7 +269,7 @@ export const JournalEntryViewScreen: OsehScreen<
               promise: Promise.resolve({
                 type: 'error',
                 data: undefined,
-                error: <>User is not logged in</>,
+                error: makeTextError('User is not logged in'),
                 retryAt: undefined,
               }),
               done: () => true,
@@ -280,7 +283,7 @@ export const JournalEntryViewScreen: OsehScreen<
               promise: Promise.resolve({
                 type: 'error',
                 data: undefined,
-                error: <>Visitor is not loaded</>,
+                error: makeTextError('Visitor is not loaded'),
                 retryAt: undefined,
               }),
               done: () => true,
@@ -295,7 +298,7 @@ export const JournalEntryViewScreen: OsehScreen<
               promise: Promise.resolve({
                 type: 'error',
                 data: undefined,
-                error: <>JWT is not loaded</>,
+                error: makeTextError('JWT is not loaded'),
                 retryAt: undefined,
               }),
               done: () => true,
@@ -313,7 +316,9 @@ export const JournalEntryViewScreen: OsehScreen<
                 ? {
                     type: 'error',
                     data: undefined,
-                    error: <>Journal entry not provided by server</>,
+                    error: makeTextError(
+                      'Journal entry not provided by server'
+                    ),
                     retryAt: undefined,
                   }
                 : {
@@ -450,6 +455,19 @@ export const JournalEntryViewScreen: OsehScreen<
       ready: readyVWC,
       chat: chatVWC,
       metadata: journalEntryMetadataVWC,
+      refreshJournalEntry: async () => {
+        const journalEntryManager = journalEntryManagerUnwrappedVWC.get();
+        if (journalEntryManager === null) {
+          throw new Error('journal entry manager not initialized');
+        }
+
+        const user = ctx.login.value.get();
+        if (user.state !== 'logged-in') {
+          throw new Error('user not logged in');
+        }
+        await journalEntryManager.refresh(user, ctx.interests.visitor);
+        return journalEntryManager.chat.get();
+      },
       dispose: () => {
         setVWC(activeVWC, false);
         cleanupJournalEntryManagerRequester();

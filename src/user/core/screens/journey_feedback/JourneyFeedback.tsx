@@ -46,6 +46,7 @@ import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwa
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
 import { OutlineWhiteButton } from '../../../../shared/components/OutlineWhiteButton';
 import { configurableScreenOut } from '../../lib/configurableScreenOut';
+import { makeTextError } from '../../../../shared/lib/describeError';
 
 /**
  * Allows the user to provide feedback on a journey
@@ -286,7 +287,9 @@ export const JourneyFeedback = ({
                           });
                           setVWC(
                             shareErrorVWC,
-                            <>This journey cannot be shared at this time</>
+                            makeTextError(
+                              'This journey cannot be shared at this time'
+                            )
                           );
                           return;
                         }
@@ -389,7 +392,7 @@ export const JourneyFeedback = ({
                     if (cta === null) {
                       setVWC(
                         feedbackErrorVWC,
-                        <>cta2 is null but button handler called</>
+                        makeTextError('cta2 is null but button handler called')
                       );
                       return;
                     }

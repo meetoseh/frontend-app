@@ -1,5 +1,5 @@
 import { ReactElement } from 'react';
-import { ValueWithCallbacks } from '../lib/Callbacks';
+import { Callbacks, ValueWithCallbacks } from '../lib/Callbacks';
 import { OldOsehAudioContentState } from './OldOsehAudioContentState';
 import { MediaInfo } from './useMediaInfo';
 import { useValueWithCallbacksEffect } from '../hooks/useValueWithCallbacksEffect';
@@ -28,11 +28,20 @@ export const MediaInfoAudio = ({
       if (!aud.loaded || aud.audio === null || aud.audio.sound === null) {
         return null;
       }
-      return aud.audio.sound;
+
+      const onStatusUpdateCallbacks = new Callbacks<AVPlaybackStatus>();
+      aud.audio.sound.setOnPlaybackStatusUpdate((s) =>
+        onStatusUpdateCallbacks.call(s)
+      );
+
+      return {
+        sound: aud.audio.sound,
+        onStatusUpdate: onStatusUpdateCallbacks,
+      };
     }
 
     if (aud.type === 'loaded') {
-      return aud.audio;
+      return { sound: aud.audio, onStatusUpdate: aud.onStatusUpdate };
     }
 
     return null;
@@ -44,13 +53,13 @@ export const MediaInfoAudio = ({
     }
     const sound = soundRaw;
     setVWC(mediaInfo.readyForDisplay, true);
-    sound.setOnPlaybackStatusUpdate(onPlaybackStatusUpdate);
-    sound.getStatusAsync();
+    sound.onStatusUpdate.add(onPlaybackStatusUpdate);
+    sound.sound.getStatusAsync();
     setVWC(mediaInfo.seekTo, (seconds) =>
-      sound.setPositionAsync(seconds * 1000)
+      sound.sound.setPositionAsync(seconds * 1000)
     );
     return () => {
-      sound.setOnPlaybackStatusUpdate(null);
+      sound.onStatusUpdate.remove(onPlaybackStatusUpdate);
       setVWC(mediaInfo.seekTo, null);
       setVWC(mediaInfo.playbackStatus, null);
     };
@@ -74,9 +83,9 @@ export const MediaInfoAudio = ({
     }
 
     if (shouldPlay) {
-      sound.playAsync();
+      sound.sound.playAsync();
     } else {
-      sound.pauseAsync();
+      sound.sound.pauseAsync();
     }
     return undefined;
   });
@@ -94,7 +103,7 @@ export const MediaInfoAudio = ({
       return;
     }
 
-    sound.setIsMutedAsync(shouldBeMuted);
+    sound.sound.setIsMutedAsync(shouldBeMuted);
   });
 
   return <></>;

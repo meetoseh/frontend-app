@@ -25,6 +25,7 @@ import {
 } from './ImageInterstitialParams';
 import { ImageInterstitialResources } from './ImageInterstitialResources';
 import { convertScreenConfigurableTriggerWithOldVersion } from '../../models/ScreenConfigurableTrigger';
+import { makeTextError } from '../../../../shared/lib/describeError';
 
 /**
  * An extremely basic screen with a header, message, and ok button.
@@ -75,7 +76,7 @@ export const ImageInterstitialScreen: OsehScreen<
               promise: Promise.resolve({
                 type: 'expired',
                 data: undefined,
-                error: <>Screen is not mounted</>,
+                error: makeTextError('Screen is not mounted'),
                 retryAt: undefined,
               }),
               done: () => true,

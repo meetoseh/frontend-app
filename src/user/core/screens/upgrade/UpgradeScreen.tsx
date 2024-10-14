@@ -39,6 +39,7 @@ import {
 } from './lib/purchasesStoreProductHelper';
 import { PriceIdentifier, createPriceIdentifier } from './lib/PriceIdentifier';
 import { screenConfigurableTriggerFlowMapper } from '../../models/ScreenConfigurableTrigger';
+import { makeTextError } from '../../../../shared/lib/describeError';
 
 type Copy = UpgradeCopy<ScreenImageParsed>;
 const LOADING_UPGRADE_COPY: Copy = {
@@ -346,7 +347,7 @@ export const UpgradeScreen: OsehScreen<
               promise: Promise.resolve({
                 type: 'expired',
                 data: undefined,
-                error: <>Screen is not mounted</>,
+                error: makeTextError('Screen is not mounted'),
                 retryAt: undefined,
               }),
               done: () => true,
@@ -376,7 +377,7 @@ export const UpgradeScreen: OsehScreen<
               return {
                 type: 'error',
                 data: undefined,
-                error: <>No longer needed</>,
+                error: makeTextError('No longer needed'),
                 retryAt: undefined,
               };
             }

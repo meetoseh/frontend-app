@@ -1,6 +1,6 @@
 import { CancelablePromise } from '../lib/CancelablePromise';
 import { constructCancelablePromise } from '../lib/CancelablePromiseConstructor';
-import { describeError } from '../lib/describeError';
+import { describeError, makeTextError } from '../lib/describeError';
 import { getCurrentServerTimeMS } from '../lib/getCurrentServerTimeMS';
 import { Result } from '../requests/RequestHandler';
 
@@ -51,7 +51,7 @@ export const createGetDataFromRefUsingSignal =
             resolve({
               type: 'expired',
               data: undefined,
-              error: <>The reference has expired</>,
+              error: makeTextError('The reference has expired'),
               retryAt: undefined,
             });
             return;
@@ -107,8 +107,8 @@ export const createGetDataFromRefUsingSignal =
               resolve({
                 type: 'error',
                 data: undefined,
-                error: (
-                  <>Server provided invalid Retry-After header {retryAfter}</>
+                error: makeTextError(
+                  `Server provided invalid Retry-After header ${retryAfter}`
                 ),
                 retryAt: undefined,
               });

@@ -28,6 +28,7 @@ import {
   seriesListParamsMapper,
 } from './SeriesListParams';
 import { SeriesListResources } from './SeriesListResources';
+import { makeTextError } from '../../../../shared/lib/describeError';
 
 /**
  * Displays the list of series which we have on offer
@@ -51,7 +52,7 @@ export const SeriesListScreen: OsehScreen<
               promise: Promise.resolve({
                 type: 'expired',
                 data: undefined,
-                error: <>Screen is not mounted</>,
+                error: makeTextError('Screen is not mounted'),
                 retryAt: undefined,
               }),
               done: () => true,

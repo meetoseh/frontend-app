@@ -32,6 +32,7 @@ import {
   seriesDetailsParamsMapper,
 } from './SeriesDetailsParams';
 import { SeriesDetailsResources } from './SeriesDetailsResources';
+import { makeTextError } from '../../../../shared/lib/describeError';
 
 /**
  * Presents the details of the series indicated, allowing the user to either
@@ -65,7 +66,7 @@ export const SeriesDetailsScreen: OsehScreen<
                 promise: Promise.resolve({
                   type: 'expired',
                   data: undefined,
-                  error: <>Screen is not mounted</>,
+                  error: makeTextError('Screen is not mounted'),
                   retryAt: undefined,
                 }),
                 done: () => true,
@@ -111,7 +112,7 @@ export const SeriesDetailsScreen: OsehScreen<
               promise: Promise.resolve({
                 type: 'expired',
                 data: undefined,
-                error: <>Screen is not mounted</>,
+                error: makeTextError('Screen is not mounted'),
                 retryAt: undefined,
               }),
               done: () => true,
@@ -369,7 +370,7 @@ const getBackgroundImage = (
             promise: Promise.resolve({
               type: 'expired',
               data: undefined,
-              error: <>Screen is not mounted</>,
+              error: makeTextError('Screen is not mounted'),
               retryAt: undefined,
             }),
             done: () => true,
@@ -385,7 +386,7 @@ const getBackgroundImage = (
             return {
               type: 'expired',
               data: undefined,
-              error: <>No background image</>,
+              error: makeTextError('No background image'),
               retryAt: undefined,
             };
           }

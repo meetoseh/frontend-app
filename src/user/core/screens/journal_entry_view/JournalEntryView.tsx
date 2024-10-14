@@ -26,11 +26,13 @@ import { InlineOsehSpinner } from '../../../../shared/components/InlineOsehSpinn
 import { ContentContainer } from '../../../../shared/components/ContentContainer';
 import { HorizontalSpacer } from '../../../../shared/components/HorizontalSpacer';
 import { ThinkingDots } from '../../../../shared/components/ThinkingDots';
-import { JournalEntryViewJournalCard } from './components/JournalEntryViewJournalCard';
+import { JournalEntryViewJournalCard } from '../journal_chat/components/JournalEntryViewJournalCard';
 import { View, Text } from 'react-native';
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
 import { setVWC } from '../../../../shared/lib/setVWC';
+import { JournalChatParts } from '../journal_chat/components/JournalChatParts';
+import { JournalChatSpinners } from '../journal_chat/components/JournalChatSpinners';
 
 /**
  * Shows the journal reflection question and gives a large amount of room for
@@ -119,7 +121,7 @@ export const JournalEntryView = ({
           windowWidth={windowWidthVWC}
           contentWidth={ctx.contentWidth}
         />
-        <VerticalSpacer height={0} maxHeight={40} flexGrow={1} />
+        <VerticalSpacer height={40} />
         <RenderGuardedComponent
           props={resources.metadata}
           component={(metadata) =>
@@ -156,7 +158,7 @@ export const JournalEntryView = ({
             )
           }
         />
-        <VerticalSpacer height={0} maxHeight={24} flexGrow={1} />
+        <VerticalSpacer height={24} />
         <RenderGuardedComponent
           props={resources.chat}
           component={(chat) => {
@@ -174,168 +176,36 @@ export const JournalEntryView = ({
               );
             }
 
-            const parts: ReactElement[] = [];
-            chat.data.forEach((part) => {
-              if (
-                part.type === 'chat' &&
-                part.display_author === 'self' &&
-                part.data.type === 'textual'
-              ) {
-                if (parts.length > 0) {
-                  parts.push(
-                    <VerticalSpacer
-                      height={0}
-                      maxHeight={16}
-                      flexGrow={1}
-                      key={parts.length}
-                    />
-                  );
-                }
-
-                const textPartElements: ReactElement[] = [];
-                part.data.parts.forEach((textPart) => {
-                  if (textPart.type === 'paragraph') {
-                    if (textPartElements.length > 0) {
-                      textPartElements.push(
-                        <VerticalSpacer
-                          height={0}
-                          maxHeight={24}
-                          flexGrow={1}
-                          key={textPartElements.length}
-                        />
-                      );
-                    }
-
-                    textPartElements.push(
-                      <Text
-                        key={textPartElements.length}
-                        style={styles.paragraph}
-                      >
-                        {textPart.value}
-                      </Text>
-                    );
-                  }
-                });
-
-                parts.push(
-                  <ContentContainer
-                    contentWidthVWC={ctx.contentWidth}
-                    key={parts.length}
-                  >
-                    <View style={styles.selfMessage}>
-                      <View style={styles.selfMessageText}>
-                        {textPartElements}
-                      </View>
-                    </View>
-                  </ContentContainer>
-                );
-              } else if (
-                part.type === 'ui' &&
-                part.data.type === 'ui' &&
-                part.data.conceptually.type === 'user_journey'
-              ) {
-                if (parts.length > 0) {
-                  parts.push(
-                    <VerticalSpacer
-                      height={0}
-                      maxHeight={16}
-                      flexGrow={1}
-                      key={parts.length}
-                    />
-                  );
-                }
-                parts.push(
-                  <ContentContainer
-                    contentWidthVWC={ctx.contentWidth}
-                    key={parts.length}
-                  >
-                    <JournalEntryViewJournalCard
-                      uid={part.data.conceptually.journey_uid}
-                      chat={chat}
-                      ctx={ctx}
-                    />
-                  </ContentContainer>
-                );
-              } else if (
-                part.type === 'reflection-question' &&
-                part.data.type === 'textual'
-              ) {
-                part.data.parts.forEach((subPart, subPartIndex) => {
-                  if (subPart.type !== 'paragraph') {
-                    return;
-                  }
-
-                  if (parts.length > 0) {
-                    parts.push(
-                      <VerticalSpacer
-                        height={0}
-                        maxHeight={subPartIndex === 0 ? 16 : 12}
-                        flexGrow={1}
-                        key={parts.length}
-                      />
-                    );
-                  }
-
-                  parts.push(
-                    <ContentContainer
-                      contentWidthVWC={ctx.contentWidth}
-                      key={parts.length}
-                    >
-                      <Text style={styles.reflectionQuestionText}>
-                        {subPart.value}
-                      </Text>
-                    </ContentContainer>
-                  );
-                });
-              } else if (
-                part.type === 'reflection-response' &&
-                part.data.type === 'textual'
-              ) {
-                part.data.parts.forEach((subPart, subPartIndex) => {
-                  if (subPart.type !== 'paragraph') {
-                    return;
-                  }
-
-                  if (parts.length > 0) {
-                    parts.push(
-                      <VerticalSpacer
-                        height={0}
-                        maxHeight={subPartIndex === 0 ? 16 : 12}
-                        flexGrow={1}
-                        key={parts.length}
-                      />
-                    );
-                  }
-
-                  parts.push(
-                    <ContentContainer
-                      contentWidthVWC={ctx.contentWidth}
-                      key={parts.length}
-                    >
-                      <Text style={styles.reflectionResponseText}>
-                        {subPart.value}
-                      </Text>
-                    </ContentContainer>
-                  );
-                });
-              }
-            });
-
             return (
-              <>
-                {parts}
-                {chat.transient?.type?.startsWith('thinking') ? (
-                  <>
-                    <VerticalSpacer height={24} />
-                    <ThinkingDots />
-                    <VerticalSpacer height={24} />
-                  </>
-                ) : undefined}
-              </>
+              <ContentContainer contentWidthVWC={ctx.contentWidth}>
+                <JournalChatParts
+                  ctx={ctx}
+                  refreshChat={resources.refreshJournalEntry}
+                  chat={chat}
+                  onGotoJourney={(_part, _partIndex, e) => {
+                    e.preventDefault();
+                  }}
+                  partFilter={(part, _partIndex) => part.type !== 'summary'}
+                  textualSubPartFilter={(
+                    part,
+                    partIndex,
+                    _subPart,
+                    _subPartIndex
+                  ) =>
+                    part.display_author === 'self' ||
+                    (part.type === 'chat' && partIndex === 0) ||
+                    part.type === 'reflection-question'
+                  }
+                />
+                {chat.transient !== null && chat.transient !== undefined ? (
+                  <VerticalSpacer height={32} />
+                ) : null}
+                <JournalChatSpinners ctx={ctx} chat={chat} />
+              </ContentContainer>
             );
           }}
         />
-        <VerticalSpacer height={0} flexGrow={1} />
+        <VerticalSpacer height={16} flexGrow={1} />
         <ContentContainer contentWidthVWC={ctx.contentWidth}>
           <TextStyleForwarder
             component={(styleVWC) => (

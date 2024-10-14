@@ -6,6 +6,7 @@ import {
   createWritableValueWithCallbacks,
 } from '../../../shared/lib/Callbacks';
 import { CancelablePromise } from '../../../shared/lib/CancelablePromise';
+import { makeTextError } from '../../../shared/lib/describeError';
 import { mapCancelable } from '../../../shared/lib/mapCancelable';
 import { Result } from '../../../shared/requests/RequestHandler';
 import { ScreenContext } from '../hooks/useScreenContext';
@@ -16,7 +17,10 @@ import { createChainedImageFromPlaylist } from './createChainedImageFromPlaylist
  * A convenience function for fetching the image and thumbhash from an image
  * ref provided directly via the screen parameters.
  */
-export const initImage = <SlugT extends string, ParamT extends { __mapped: boolean }>({
+export const initImage = <
+  SlugT extends string,
+  ParamT extends { __mapped: boolean }
+>({
   ctx,
   screen,
   refreshScreen,
@@ -27,7 +31,10 @@ export const initImage = <SlugT extends string, ParamT extends { __mapped: boole
   screen: PeekedScreen<SlugT, ParamT>;
   refreshScreen: () => CancelablePromise<Result<PeekedScreen<SlugT, ParamT>>>;
   paramMapper: (params: ParamT) => OsehImageRef | null;
-  sizeMapper: (windowSize: { width: number; height: number }) => { width: number; height: number };
+  sizeMapper: (windowSize: { width: number; height: number }) => {
+    width: number;
+    height: number;
+  };
 }): {
   image: ValueWithCallbacks<OsehImageExportCropped | null>;
   thumbhash: ValueWithCallbacks<string | null>;
@@ -46,7 +53,9 @@ export const initImage = <SlugT extends string, ParamT extends { __mapped: boole
   const refRaw = paramMapper(screen.parameters);
   if (refRaw === null) {
     return {
-      image: createWritableValueWithCallbacks<OsehImageExportCropped | null>(null),
+      image: createWritableValueWithCallbacks<OsehImageExportCropped | null>(
+        null
+      ),
       thumbhash: createWritableValueWithCallbacks<string | null>(null),
       sizeImmediate,
       dispose: () => {
@@ -67,7 +76,7 @@ export const initImage = <SlugT extends string, ParamT extends { __mapped: boole
         return {
           type: 'expired',
           data: undefined,
-          error: <>This screen no longer needs this image</>,
+          error: makeTextError('This screen no longer needs this image'),
           retryAt: undefined,
         };
       }

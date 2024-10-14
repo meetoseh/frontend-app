@@ -28,7 +28,10 @@ import { screenWithWorking } from '../../lib/screenWithWorking';
 import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
 import { ContentContainer } from '../../../../shared/components/ContentContainer';
 import { apiFetch } from '../../../../shared/lib/apiFetch';
-import { describeError } from '../../../../shared/lib/describeError';
+import {
+  describeError,
+  makeTextError,
+} from '../../../../shared/lib/describeError';
 import { Modals } from '../../../../shared/contexts/ModalContext';
 import { View, Text, Pressable, TextInput } from 'react-native';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
@@ -117,7 +120,7 @@ export const Feedback = ({
       const loginContextUnch = ctx.login.value.get();
       if (loginContextUnch.state !== 'logged-in') {
         trace({ type: 'submit-error', details: 'not logged in' });
-        setVWC(submitErrorVWC, <>Not logged in</>);
+        setVWC(submitErrorVWC, makeTextError('Not logged in'));
         return;
       }
       const loginContext = loginContextUnch;

@@ -8,7 +8,10 @@ import { ScreenJourneyMapped } from '../../../models/ScreenJourney';
 import { makePrettyResponse } from './makePrettyResponse';
 import { setVWC } from '../../../../../shared/lib/setVWC';
 import { apiFetch } from '../../../../../shared/lib/apiFetch';
-import { describeError } from '../../../../../shared/lib/describeError';
+import {
+  describeError,
+  makeTextError,
+} from '../../../../../shared/lib/describeError';
 
 /**
  * Stores the feedback for a user about a journey, reporting errors
@@ -40,7 +43,7 @@ export const storeResponse = async ({
 
   const loginContextUnch = ctx.login.value.get();
   if (loginContextUnch.state !== 'logged-in') {
-    setVWC(feedbackErrorVWC, <>Not logged in</>);
+    setVWC(feedbackErrorVWC, makeTextError('Not logged in'));
     return false;
   }
   const loginContext = loginContextUnch;

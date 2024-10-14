@@ -2,7 +2,7 @@ module.exports = {
   expo: {
     name: 'Oseh',
     slug: 'frontend-app',
-    version: '1.8.9',
+    version: '1.9.1',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
@@ -33,7 +33,7 @@ module.exports = {
     android: {
       package: 'com.oseh.frontendapp',
       googleServicesFile: './google-services.json',
-      versionCode: 89 /* 1.8.9 */,
+      versionCode: 91 /* 1.9.1 */,
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#000000',
@@ -82,7 +82,8 @@ module.exports = {
       [
         'expo-av',
         {
-          microphonePermission: false,
+          microphonePermission:
+            'Allow Oseh to access your microphone to record a voice note',
         },
       ],
     ],

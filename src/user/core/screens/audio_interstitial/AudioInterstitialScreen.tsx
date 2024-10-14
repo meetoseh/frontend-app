@@ -24,6 +24,7 @@ import {
 import { AudioInterstitialResources } from './AudioInterstitialResources';
 import { AudioFileData } from '../../../../shared/content/createAudioDataHandler';
 import { convertScreenConfigurableTriggerWithOldVersion } from '../../models/ScreenConfigurableTrigger';
+import { makeTextError } from '../../../../shared/lib/describeError';
 
 /**
  * An extremely basic audio interstitial
@@ -60,7 +61,7 @@ export const AudioInterstitialScreen: OsehScreen<
               promise: Promise.resolve({
                 type: 'expired',
                 data: undefined,
-                error: <>Screen is not mounted</>,
+                error: makeTextError('Screen is not mounted'),
                 retryAt: undefined,
               }),
               done: () => true,
@@ -118,7 +119,7 @@ export const AudioInterstitialScreen: OsehScreen<
               promise: Promise.resolve({
                 type: 'expired',
                 data: undefined,
-                error: <>Screen is not mounted</>,
+                error: makeTextError('Screen is not mounted'),
                 retryAt: undefined,
               }),
               done: () => true,
@@ -135,7 +136,7 @@ export const AudioInterstitialScreen: OsehScreen<
                 ? {
                     type: 'error',
                     data: undefined,
-                    error: <>transcript is no longer available</>,
+                    error: makeTextError('transcript is no longer available'),
                     retryAt: undefined,
                   }
                 : {

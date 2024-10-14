@@ -5,6 +5,7 @@ import {
 } from '../../../../shared/images/useOsehImageStateRequestHandler';
 import { createWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { CancelablePromise } from '../../../../shared/lib/CancelablePromise';
+import { makeTextError } from '../../../../shared/lib/describeError';
 import { InfiniteListing } from '../../../../shared/lib/InfiniteListing';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import {
@@ -54,7 +55,7 @@ export const HistoryScreen: OsehScreen<
               promise: Promise.resolve({
                 type: 'expired',
                 data: undefined,
-                error: <>Screen is not mounted</>,
+                error: makeTextError('Screen is not mounted'),
                 retryAt: undefined,
               }),
               done: () => true,

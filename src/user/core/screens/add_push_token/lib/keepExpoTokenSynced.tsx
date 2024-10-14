@@ -1,4 +1,5 @@
 import { createValueWithCallbacksEffect } from '../../../../../shared/hooks/createValueWithCallbacksEffect';
+import { makeTextError } from '../../../../../shared/lib/describeError';
 import { mapCancelable } from '../../../../../shared/lib/mapCancelable';
 import { waitForValueWithCallbacksConditionCancelable } from '../../../../../shared/lib/waitForValueWithCallbacksCondition';
 import { Result } from '../../../../../shared/requests/RequestHandler';
@@ -82,7 +83,9 @@ export const keepExpoTokenSynced = (ctx: ScreenContext): (() => void) => {
                     return {
                       type: 'error',
                       data: undefined,
-                      error: <>Notification permissions have been revoked</>,
+                      error: makeTextError(
+                        'Notification permissions have been revoked'
+                      ),
                       retryAt: undefined,
                     };
                   }
@@ -99,14 +102,14 @@ export const keepExpoTokenSynced = (ctx: ScreenContext): (() => void) => {
                   return {
                     type: 'error',
                     data: undefined,
-                    error: <>this reference has been released</>,
+                    error: makeTextError('this reference has been released'),
                     retryAt: undefined,
                   };
                 }
                 return {
                   type: 'error',
                   data: undefined,
-                  error: <>impossible</>,
+                  error: makeTextError('impossible'),
                   retryAt: undefined,
                 };
               }
@@ -159,7 +162,9 @@ export const keepExpoTokenSynced = (ctx: ScreenContext): (() => void) => {
                     return {
                       type: 'error',
                       data: undefined,
-                      error: res.error ?? <>failed to refresh sync request</>,
+                      error:
+                        res.error ??
+                        makeTextError('failed to refresh sync request'),
                       retryAt: undefined,
                     };
                   }

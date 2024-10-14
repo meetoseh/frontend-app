@@ -12,12 +12,17 @@ import { setVWC } from '../../../../../shared/lib/setVWC';
 import { VerticalSpacer } from '../../../../../shared/components/VerticalSpacer';
 import { HorizontalSpacer } from '../../../../../shared/components/HorizontalSpacer';
 import { RenderGuardedComponent } from '../../../../../shared/components/RenderGuardedComponent';
-import { JournalEntryViewJournalCard } from '../../journal_entry_view/components/JournalEntryViewJournalCard';
+import { JournalEntryViewJournalCard } from '../../journal_chat/components/JournalEntryViewJournalCard';
 import { View, Text, Pressable } from 'react-native';
-import { JournalEntryItemDataDataSummaryV1 } from '../../journal_chat/lib/JournalChatState';
+import {
+  JournalEntryItemDataDataSummaryV1,
+  JournalEntryItemTextualPartVoiceNote,
+} from '../../journal_chat/lib/JournalChatState';
 import { TagText } from '../../journal_entry_summary/components/TagText';
 import { Edit } from '../../../../../shared/components/icons/Edit';
 import { OsehColors } from '../../../../../shared/OsehColors';
+import { TextPartVoiceNoteComponent } from '../../journal_chat/components/TextPartVoiceNoteComponent';
+import { OsehStyles } from '../../../../../shared/OsehStyles';
 
 export type JournalEntryCardProps = {
   /** The journal entry to show */
@@ -36,9 +41,14 @@ export type JournalEntryCardProps = {
 type AbridgedInfoVWC = {
   title: string;
   journey: { uid: string } | null;
-  reflectionResponse: string | null;
+  reflectionResponse:
+    | { type: 'text'; value: string }
+    | { type: 'voice'; part: JournalEntryItemTextualPartVoiceNote }
+    | null;
   tags: string[];
 };
+
+const refreshChat = () => Promise.resolve(undefined);
 
 /**
  * Displays a journal entry card as it would go on the My Journal page
@@ -86,7 +96,7 @@ export const JournalEntryCard = ({
     (je): AbridgedInfoVWC | null => {
       let summary: JournalEntryItemDataDataSummaryV1 | null = null;
       let journey: { uid: string } | null = null;
-      let reflectionResponse: string | null = null;
+      let reflectionResponse: AbridgedInfoVWC['reflectionResponse'] = null;
 
       for (const item of je.payload.items) {
         if (item.type === 'summary' && item.data.type === 'summary') {
@@ -103,7 +113,17 @@ export const JournalEntryCard = ({
           item.data.parts.length > 0 &&
           item.data.parts[0].type === 'paragraph'
         ) {
-          reflectionResponse = item.data.parts[0].value;
+          reflectionResponse = {
+            type: 'text',
+            value: item.data.parts[0].value,
+          };
+        } else if (
+          item.type === 'reflection-response' &&
+          item.data.type === 'textual' &&
+          item.data.parts.length > 0 &&
+          item.data.parts[0].type === 'voice_note'
+        ) {
+          reflectionResponse = { type: 'voice', part: item.data.parts[0] };
         }
       }
 
@@ -385,13 +405,31 @@ export const JournalEntryCard = ({
                 <VerticalSpacer height={16} />
                 <View style={styles.row}>
                   <HorizontalSpacer width={16} />
-                  <Text
-                    style={styles.abridgedBody}
-                    numberOfLines={2}
-                    ellipsizeMode="tail"
-                  >
-                    {abridged.reflectionResponse}
-                  </Text>
+                  {abridged.reflectionResponse?.type === 'text' ? (
+                    <Text
+                      style={styles.abridgedBody}
+                      numberOfLines={2}
+                      ellipsizeMode="tail"
+                    >
+                      {abridged.reflectionResponse.value}
+                    </Text>
+                  ) : abridged.reflectionResponse?.type === 'voice' ? (
+                    <View
+                      style={
+                        (OsehStyles.layout.column,
+                        [{ flexBasis: 0, flexGrow: 1 }])
+                      }
+                    >
+                      <TextPartVoiceNoteComponent
+                        ctx={ctx}
+                        refreshChat={refreshChat}
+                        part={abridged.reflectionResponse.part}
+                        fixedHeight
+                      />
+                    </View>
+                  ) : (
+                    <></>
+                  )}
                   <HorizontalSpacer width={16} />
                 </View>
                 <VerticalSpacer height={0} flexGrow={1} />

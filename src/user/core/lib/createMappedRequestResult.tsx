@@ -1,5 +1,9 @@
 import { createMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValueWithCallbacks';
-import { RequestResult, RequestResultConcrete } from '../../../shared/requests/RequestHandler';
+import { makeTextError } from '../../../shared/lib/describeError';
+import {
+  RequestResult,
+  RequestResultConcrete,
+} from '../../../shared/requests/RequestHandler';
 
 /**
  * Creates a new request result that cleans itself up in the release() function
@@ -9,7 +13,10 @@ import { RequestResult, RequestResultConcrete } from '../../../shared/requests/R
  * The primary convenience of this function is the mapper can return null to indicate
  * that the data is not available, which will bubble up.
  */
-export const createMappedRequestResult = <OriginalDataT extends object, NewDataT extends object>(
+export const createMappedRequestResult = <
+  OriginalDataT extends object,
+  NewDataT extends object
+>(
   requestResult: RequestResult<OriginalDataT>,
   mapper: (data: OriginalDataT) => { type: 'success'; data: NewDataT } | null
 ): RequestResult<NewDataT> => {
@@ -22,7 +29,7 @@ export const createMappedRequestResult = <OriginalDataT extends object, NewDataT
           return {
             data: undefined,
             type: 'error',
-            error: <>Unavailable</>,
+            error: makeTextError('Unavailable'),
           };
         }
         return {

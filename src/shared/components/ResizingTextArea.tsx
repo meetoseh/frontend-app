@@ -1,14 +1,11 @@
 import { ReactElement, useEffect } from 'react';
 import {
-  downgradeTypedVWC,
   useWritableValueWithCallbacks,
   ValueWithCallbacks,
   WritableValueWithCallbacks,
-  WritableValueWithTypedCallbacks,
 } from '../lib/Callbacks';
 import { createValueWithCallbacksEffect } from '../hooks/createValueWithCallbacksEffect';
 import { setVWC } from '../lib/setVWC';
-import { useValuesWithCallbacksEffect } from '../hooks/useValuesWithCallbacksEffect';
 import { styles } from './ResizingTextAreaStyles';
 import { HorizontalSpacer } from './HorizontalSpacer';
 import {
@@ -21,6 +18,11 @@ import {
 import { RenderGuardedComponent } from './RenderGuardedComponent';
 import { useMappedValuesWithCallbacks } from '../hooks/useMappedValuesWithCallbacks';
 import { OsehColors } from '../OsehColors';
+import {
+  useValueWithCallbacksLikeVWC,
+  ValueWithCallbacksLike,
+} from '../ValueWithCallbacksLike';
+import { useMappedValueWithCallbacks } from '../hooks/useMappedValueWithCallbacks';
 
 export type ResizingTextAreaProps = {
   /** The styling variant to use */
@@ -28,17 +30,14 @@ export type ResizingTextAreaProps = {
   /** The text shown when the textarea is not focused and they haven't written anything */
   placeholder: string;
   /** Configures a submit button in the textarea; null for no submit button */
-  submit: { icon: ReactElement; onClick: () => void } | null;
-  /**
-   * The value of the textarea. When the callback is invoked with
-   * `{ updateInput: true }` or `undefined`, we set the value of the input. If it's
-   * called with `{ updateInput: false }`, we don't set the value of the input.
-   * Whenever this is set by this component, `{ updateInput: false }` is used.
-   */
-  value: WritableValueWithTypedCallbacks<
-    string,
-    { updateInput: boolean } | undefined
-  >;
+  submit: ValueWithCallbacksLike<{
+    icon: ReactElement;
+    onClick: () => void;
+  } | null>;
+  /** The value of the textarea */
+  value: ValueWithCallbacks<string>;
+  /** Called when the user changes the value of the text area */
+  onValueChanged: (v: string) => void;
   /** We store the ref to the input here, if provided */
   refVWC?: WritableValueWithCallbacks<TextInput | null>;
   /** If the text area should be editable; undefined for always editable */
@@ -81,7 +80,7 @@ export const ResizingTextArea = (props: ResizingTextAreaProps) => {
   );
 
   const textInputProps = useMappedValuesWithCallbacks(
-    [heightVWC, editableVWC, downgradeTypedVWC(props.value)],
+    [heightVWC, editableVWC, props.value],
     () => ({
       height: heightVWC.get(),
       editable: editableVWC.get(),
@@ -103,72 +102,84 @@ export const ResizingTextArea = (props: ResizingTextAreaProps) => {
     }
   };
 
-  const onChangeText = (text: string) => {
-    props.value.set(text);
-    props.value.callbacks.call({ updateInput: false });
-  };
-
-  if (props.submit === null) {
-    return (
-      <View style={styles.simpleWrapper}>
-        <RenderGuardedComponent
-          props={textInputProps}
-          component={({ height, editable, text }) => (
-            <TextInput
-              style={Object.assign({}, styles.textareaText, {
-                height: height,
-              })}
-              placeholderTextColor={OsehColors.v4.primary.grey}
-              multiline
-              placeholder={props.placeholder}
-              ref={(r) => setVWC(refVWC, r)}
-              value={text}
-              editable={editable}
-              onChangeText={onChangeText}
-              onContentSizeChange={onContentSizeChange}
-            />
-          )}
-          applyInstantly
-        />
-      </View>
-    );
-  }
+  const submitVWC = useValueWithCallbacksLikeVWC(props.submit);
+  const submitIsNullVWC = useMappedValueWithCallbacks(
+    submitVWC,
+    (s) => s === null
+  );
 
   return (
-    <View style={styles.container}>
-      <Pressable
-        style={styles.textareaWrapper}
-        onPress={() => {
-          const ref = refVWC.get();
-          if (ref !== null) {
-            ref.focus();
-          }
-        }}
-      >
-        <RenderGuardedComponent
-          props={textInputProps}
-          component={({ height, editable, text }) => (
-            <TextInput
-              style={Object.assign({}, styles.simpleText, {
-                height: height,
-              })}
-              placeholderTextColor={OsehColors.v4.primary.grey}
-              multiline
-              placeholder={props.placeholder}
-              ref={(r) => setVWC(refVWC, r)}
-              value={text}
-              editable={editable}
-              onChangeText={onChangeText}
-              onContentSizeChange={onContentSizeChange}
+    <RenderGuardedComponent
+      props={submitIsNullVWC}
+      component={(submitIsNull) =>
+        submitIsNull ? (
+          <View style={styles.simpleWrapper}>
+            <RenderGuardedComponent
+              props={textInputProps}
+              component={({ height, editable, text }) => (
+                <TextInput
+                  style={Object.assign({}, styles.textareaText, {
+                    height: height,
+                  })}
+                  placeholderTextColor={OsehColors.v4.primary.grey}
+                  multiline
+                  placeholder={props.placeholder}
+                  ref={(r) => setVWC(refVWC, r)}
+                  value={text}
+                  editable={editable}
+                  onChangeText={props.onValueChanged}
+                  onContentSizeChange={onContentSizeChange}
+                />
+              )}
+              applyInstantly
             />
-          )}
-          applyInstantly
-        />
-      </Pressable>
-      <HorizontalSpacer width={6} />
-      <Pressable style={styles.submit} onPress={props.submit.onClick}>
-        {props.submit.icon}
-      </Pressable>
-    </View>
+          </View>
+        ) : (
+          <View style={styles.container}>
+            <Pressable
+              style={styles.textareaWrapper}
+              onPress={() => {
+                const ref = refVWC.get();
+                if (ref !== null) {
+                  ref.focus();
+                }
+              }}
+            >
+              <RenderGuardedComponent
+                props={textInputProps}
+                component={({ height, editable, text }) => (
+                  <TextInput
+                    style={Object.assign({}, styles.simpleText, {
+                      height: height,
+                    })}
+                    placeholderTextColor={OsehColors.v4.primary.grey}
+                    multiline
+                    placeholder={props.placeholder}
+                    ref={(r) => setVWC(refVWC, r)}
+                    value={text}
+                    editable={editable}
+                    onChangeText={props.onValueChanged}
+                    onContentSizeChange={onContentSizeChange}
+                  />
+                )}
+                applyInstantly
+              />
+            </Pressable>
+            <HorizontalSpacer width={6} />
+            <Pressable
+              style={styles.submit}
+              onPress={() => {
+                submitVWC.get()?.onClick?.();
+              }}
+            >
+              <RenderGuardedComponent
+                props={submitVWC}
+                component={(s) => (s === null ? <></> : s.icon)}
+              />
+            </Pressable>
+          </View>
+        )
+      }
+    />
   );
 };

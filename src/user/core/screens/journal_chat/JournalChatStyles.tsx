@@ -45,25 +45,6 @@ export const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     alignItems: 'center',
   },
-  systemMessage: {
-    flexDirection: 'row',
-    flexWrap: 'nowrap',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-end',
-  },
-  systemMessageTextWrapper: {
-    justifyContent: 'flex-start',
-    alignItems: 'stretch',
-    minHeight: 30,
-    flexGrow: 1,
-    flexShrink: 1,
-  },
-  systemMessageText: {
-    fontFamily: 'OpenSans-Regular',
-    fontSize: 16,
-    textAlign: 'left',
-    color: OsehColors.v4.primary.light,
-  },
   paragraph: {},
   journeyCard: {
     alignItems: 'stretch',

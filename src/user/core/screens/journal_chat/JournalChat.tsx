@@ -13,10 +13,7 @@ import {
   useStandardTransitionsState,
 } from '../../../../shared/hooks/useStandardTransitions';
 import { WipeTransitionOverlay } from '../../../../shared/components/WipeTransitionOverlay';
-import {
-  createWritableValueWithCallbacks,
-  useWritableValueWithCallbacks,
-} from '../../../../shared/lib/Callbacks';
+import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { screenOut } from '../../lib/screenOut';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { JournalChatResources } from './JournalChatResources';
@@ -24,32 +21,28 @@ import { JournalChatMappedParams } from './JournalChatParams';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
 import { ContentContainer } from '../../../../shared/components/ContentContainer';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
-import { SystemProfile } from './icons/SystemProfile';
 import { HorizontalSpacer } from '../../../../shared/components/HorizontalSpacer';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
-import { Submit } from './icons/Submit';
-import { ScreenContext } from '../../hooks/useScreenContext';
-import { OsehImageExportCropped } from '../../../../shared/images/OsehImageExportCropped';
-import { GridImageBackground } from '../../../../shared/components/GridImageBackground';
-import { createChainedImageFromRef } from '../../lib/createChainedImageFromRef';
-import { createValueWithCallbacksEffect } from '../../../../shared/hooks/createValueWithCallbacksEffect';
-import { Arrow } from './icons/Arrow';
-import { ThinkingDots } from '../../../../shared/components/ThinkingDots';
-import { Pressable, TextInput, View, Text, ScrollView } from 'react-native';
+import {
+  Pressable,
+  View,
+  Text,
+  ScrollView,
+  GestureResponderEvent,
+} from 'react-native';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
 import { useKeyboardHeightValueWithCallbacks } from '../../../../shared/lib/useKeyboardHeightValueWithCallbacks';
-import * as Colors from '../../../../styling/colors';
 import { trackClassTaken } from '../home/lib/trackClassTaken';
 import { Back } from '../../../../shared/components/icons/Back';
 import { OsehColors } from '../../../../shared/OsehColors';
-import {
-  RESIZING_TEXT_AREA_ICON_SETTINGS,
-  ResizingTextArea,
-  ResizingTextAreaProps,
-} from '../../../../shared/components/ResizingTextArea';
 import { Close } from '../../../../shared/components/icons/Close';
-import { Send } from '../../../../shared/components/icons/Send';
+import { VoiceNoteStateMachine } from './lib/createVoiceNoteStateMachine';
+import { JournalEntryItemTextualPartJourney } from './lib/JournalChatState';
+import { VoiceOrTextInput } from '../../../../shared/components/voiceOrTextInput/VoiceOrTextInput';
+import { JournalChatParts } from './components/JournalChatParts';
+import { JournalChatSpinners } from './components/JournalChatSpinners';
+import { OsehStyles } from '../../../../shared/OsehStyles';
 
 const SUGGESTIONS = [
   { text: 'I have a lot of anxiety right now', width: 160 },
@@ -65,8 +58,6 @@ const HINT_TO_SUGGESTIONS_HEIGHT = 16;
 const SUGGESTIONS_TO_INPUT_HEIGHT = 16;
 const INPUT_TO_BOTTOM_HEIGHT = 40;
 const INPUT_TO_BOTTOM_WITH_KEYBOARD_HEIGHT = 16;
-const SYSTEM_PIC_WIDTH = 30;
-const SYSTEM_PIC_TO_CHAT_WIDTH = 16;
 
 /**
  * Allows the user to talk with the system
@@ -114,10 +105,25 @@ export const JournalChat = ({
     (s) => s.width
   );
 
-  const inputVWC = useWritableValueWithCallbacks<TextInput | null>(() => null);
+  const inputVWC = useWritableValueWithCallbacks<{
+    focus: () => void;
+    blur: () => void;
+  } | null>(() => null);
   const rawInputValueVWC = useWritableValueWithCallbacks<string>(
     () => screen.parameters.autofill
-  ) as ResizingTextAreaProps['value'];
+  );
+  const inputTypeVWC = useWritableValueWithCallbacks<'text' | 'voice'>(
+    () => 'text'
+  );
+  const fullInputValueVWC = useMappedValuesWithCallbacks(
+    [inputTypeVWC, rawInputValueVWC],
+    (): { type: 'text'; value: string } | { type: 'voice' } => {
+      if (inputTypeVWC.get() === 'text') {
+        return { type: 'text', value: rawInputValueVWC.get() };
+      }
+      return { type: 'voice' };
+    }
+  );
 
   const submittedVWC = useWritableValueWithCallbacks<boolean>(() => false);
   useValueWithCallbacksEffect(resources.chat, (chat) => {
@@ -132,26 +138,24 @@ export const JournalChat = ({
     return undefined;
   });
 
-  const onSubmit = () => {
-    const value = rawInputValueVWC.get().trim();
-    if (value === '') {
-      return;
-    }
-
-    const ele = inputVWC.get();
-    if (ele === null) {
-      return;
-    }
-
+  const onSubmit = (
+    v:
+      | { type: 'text'; value: string }
+      | { type: 'voice'; voiceNote: VoiceNoteStateMachine }
+  ) => {
     if (submittedVWC.get()) {
       return;
     }
 
-    ele.blur();
-    rawInputValueVWC.set('');
-    rawInputValueVWC.callbacks.call({ updateInput: true });
+    if (v.type === 'text' && v.value.trim() === '') {
+      return;
+    }
+
+    inputVWC.get()?.blur();
+    setVWC(rawInputValueVWC, '');
+    setVWC(inputTypeVWC, 'text');
     setVWC(submittedVWC, true);
-    resources.trySubmitUserResponse(value);
+    resources.trySubmitUserResponse(v);
   };
 
   const focusedVWC = useWritableValueWithCallbacks(() => false);
@@ -170,6 +174,47 @@ export const JournalChat = ({
     }
     return undefined;
   });
+
+  const onClickJourneyCard = (
+    part: JournalEntryItemTextualPartJourney,
+    partIndex: number,
+    e: GestureResponderEvent
+  ) => {
+    e.preventDefault();
+    const journalEntryUID = resources.journalEntryUID.get();
+    if (journalEntryUID === null) {
+      return;
+    }
+
+    const journalEntryJWT = resources.journalEntryJWT.get();
+    if (journalEntryJWT === null) {
+      return;
+    }
+
+    screenOut(
+      workingVWC,
+      startPop,
+      transition,
+      screen.parameters.exit,
+      screen.parameters.journeyTrigger,
+      {
+        endpoint: '/api/1/users/me/screens/pop_to_journal_chat_class',
+        parameters: {
+          journal_entry_uid: journalEntryUID,
+          journal_entry_jwt: journalEntryJWT,
+          entry_counter: partIndex + 1,
+          journey_uid: part.uid,
+          upgrade_slug: screen.parameters.upgradeTrigger,
+        },
+        afterDone:
+          part.details.access !== 'paid-requires-upgrade'
+            ? async () => {
+                trackClassTaken(ctx);
+              }
+            : undefined,
+      }
+    );
+  };
 
   const suggestionsHeightVWC = useWritableValueWithCallbacks<number>(
     () => 56.34
@@ -305,216 +350,29 @@ export const JournalChat = ({
                       return (
                         <>
                           <VerticalSpacer height={32} flexGrow={0} />
-                          <View style={styles.systemMessage}>
-                            <SystemProfile />
-                            <HorizontalSpacer
-                              width={SYSTEM_PIC_TO_CHAT_WIDTH}
-                            />
-                            <View style={styles.systemMessageTextWrapper}>
-                              <Text style={styles.systemMessageText}>
-                                An error occurred. Try again or contact support
-                                at hi@oseh.com
-                              </Text>
-                            </View>
-                          </View>
+                          <Text
+                            style={[
+                              OsehStyles.typography.body,
+                              OsehStyles.colors.v4.experimental.lightError,
+                            ]}
+                          >
+                            An error occurred. Try again or contact support at
+                            hi@oseh.com
+                          </Text>
                         </>
                       );
                     }
 
-                    const parts: ReactElement[] = [];
-                    chat.data.forEach((part, partIndex) => {
-                      if (part.type === 'chat') {
-                        if (part.data.type !== 'textual') {
-                          return;
-                        }
-                        if (parts.length > 0) {
-                          parts.push(
-                            <VerticalSpacer height={24} key={parts.length} />
-                          );
-                        }
-
-                        const textPartElements: ReactElement[] = [];
-                        part.data.parts.forEach((textPart) => {
-                          if (textPartElements.length > 0) {
-                            textPartElements.push(
-                              <VerticalSpacer
-                                height={24}
-                                key={textPartElements.length}
-                              />
-                            );
-                          }
-                          if (textPart.type === 'paragraph') {
-                            textPartElements.push(
-                              <Text
-                                key={textPartElements.length}
-                                style={[
-                                  part.display_author === 'self'
-                                    ? styles.selfMessageText
-                                    : styles.systemMessageText,
-                                  styles.paragraph,
-                                ]}
-                              >
-                                {textPart.value}
-                              </Text>
-                            );
-                          } else if (textPart.type === 'journey') {
-                            textPartElements.push(
-                              <Pressable
-                                key={textPartElements.length}
-                                style={styles.journeyCard}
-                                onPress={() => {
-                                  const journalEntryUID =
-                                    resources.journalEntryUID.get();
-                                  if (journalEntryUID === null) {
-                                    return;
-                                  }
-
-                                  const journalEntryJWT =
-                                    resources.journalEntryJWT.get();
-                                  if (journalEntryJWT === null) {
-                                    return;
-                                  }
-
-                                  screenOut(
-                                    workingVWC,
-                                    startPop,
-                                    transition,
-                                    screen.parameters.exit,
-                                    screen.parameters.journeyTrigger,
-                                    {
-                                      endpoint:
-                                        '/api/1/users/me/screens/pop_to_journal_chat_class',
-                                      parameters: {
-                                        journal_entry_uid: journalEntryUID,
-                                        journal_entry_jwt: journalEntryJWT,
-                                        entry_counter: partIndex + 1,
-                                        journey_uid: textPart.uid,
-                                        upgrade_slug:
-                                          screen.parameters.upgradeTrigger,
-                                      },
-                                      afterDone:
-                                        textPart.details.access !==
-                                        'paid-requires-upgrade'
-                                          ? async () => {
-                                              trackClassTaken(ctx);
-                                            }
-                                          : undefined,
-                                    }
-                                  );
-                                }}
-                              >
-                                <View style={styles.journeyCardTop}>
-                                  <View style={styles.journeyCardTopBackground}>
-                                    <JourneyCardTopBackgroundImage
-                                      uid={
-                                        textPart.details.darkened_background.uid
-                                      }
-                                      jwt={
-                                        textPart.details.darkened_background.jwt
-                                      }
-                                      ctx={ctx}
-                                    />
-                                  </View>
-                                  <View style={styles.journeyCardTopForeground}>
-                                    {textPart.details.access ===
-                                      'paid-requires-upgrade' && (
-                                      <View
-                                        style={
-                                          styles.journeyCardTopForegroundPaid
-                                        }
-                                      >
-                                        <Text
-                                          style={
-                                            styles.journeyCardTopForegroundPaidText
-                                          }
-                                        >
-                                          Free Trial
-                                        </Text>
-                                      </View>
-                                    )}
-                                    <VerticalSpacer height={0} flexGrow={1} />
-                                    <Text
-                                      style={
-                                        styles.journeyCardTopForegroundTitle
-                                      }
-                                    >
-                                      {textPart.details.title}
-                                    </Text>
-                                    <VerticalSpacer height={2} />
-                                    <Text
-                                      style={
-                                        styles.journeyCardTopForegroundInstructor
-                                      }
-                                    >
-                                      {textPart.details.instructor.name}
-                                    </Text>
-                                  </View>
-                                </View>
-                                <View style={styles.journeyCardBottom}>
-                                  <Text style={styles.journeyCardInfo}>
-                                    {(() => {
-                                      const inSeconds =
-                                        textPart.details.duration_seconds;
-                                      const minutes = Math.floor(
-                                        inSeconds / 60
-                                      );
-                                      const seconds =
-                                        Math.floor(inSeconds) % 60;
-
-                                      return (
-                                        <Text>
-                                          {minutes}:{seconds < 10 ? '0' : ''}
-                                          {seconds}
-                                        </Text>
-                                      );
-                                    })()}
-                                  </Text>
-                                  <HorizontalSpacer width={0} flexGrow={1} />
-                                  <Arrow />
-                                </View>
-                              </Pressable>
-                            );
-                          }
-                        });
-
-                        if (part.display_author === 'self') {
-                          parts.push(
-                            <View style={styles.selfMessage} key={parts.length}>
-                              <View style={styles.selfMessageTextWrapper}>
-                                {textPartElements}
-                              </View>
-                            </View>
-                          );
-                        } else {
-                          parts.push(
-                            <View
-                              style={styles.systemMessage}
-                              key={parts.length}
-                            >
-                              <SystemProfile />
-                              <HorizontalSpacer
-                                width={SYSTEM_PIC_TO_CHAT_WIDTH}
-                              />
-                              <View style={styles.systemMessageTextWrapper}>
-                                {textPartElements}
-                              </View>
-                            </View>
-                          );
-                        }
-                      }
-                    });
-
                     return (
                       <>
                         <VerticalSpacer height={32} flexGrow={0} />
-                        {parts}
-                        {chat.transient?.type?.startsWith('thinking') ? (
-                          <>
-                            <VerticalSpacer height={24} />
-                            <ThinkingDots />
-                            <VerticalSpacer height={24} />
-                          </>
-                        ) : undefined}
+                        <JournalChatParts
+                          ctx={ctx}
+                          refreshChat={resources.refreshJournalEntry}
+                          onGotoJourney={onClickJourneyCard}
+                          chat={chat}
+                        />
+                        <JournalChatSpinners ctx={ctx} chat={chat} />
                       </>
                     );
                   }}
@@ -596,10 +454,7 @@ export const JournalChat = ({
                                   return;
                                 }
 
-                                rawInputValueVWC.set(suggestion.text);
-                                rawInputValueVWC.callbacks.call({
-                                  updateInput: true,
-                                });
+                                setVWC(rawInputValueVWC, suggestion.text);
                                 ele.focus();
                               }}
                             >
@@ -618,22 +473,19 @@ export const JournalChat = ({
                 />
                 <VerticalSpacer height={SUGGESTIONS_TO_INPUT_HEIGHT} />
                 <ContentContainer contentWidthVWC={ctx.contentWidth}>
-                  <ResizingTextArea
-                    variant="dark"
+                  <VoiceOrTextInput
                     placeholder="Type your message"
-                    submit={{
-                      icon: (
-                        <Send
-                          color2={OsehColors.v4.primary.dark}
-                          color={OsehColors.v4.primary.light}
-                          {...RESIZING_TEXT_AREA_ICON_SETTINGS}
-                        />
-                      ),
-                      onClick: onSubmit,
+                    onSubmit={onSubmit}
+                    value={fullInputValueVWC}
+                    onValueChanged={(v) => {
+                      if (v.type === 'text') {
+                        setVWC(rawInputValueVWC, v.value);
+                        setVWC(inputTypeVWC, 'text');
+                      } else {
+                        setVWC(inputTypeVWC, 'voice');
+                      }
                     }}
-                    value={rawInputValueVWC}
-                    refVWC={inputVWC}
-                    enterBehavior="submit-unless-shift"
+                    onFocuser={(f) => setVWC(inputVWC, f)}
                   />
                 </ContentContainer>
                 <RenderGuardedComponent
@@ -667,77 +519,5 @@ export const JournalChat = ({
       </GridContentContainer>
       <WipeTransitionOverlay wipe={transitionState.wipe} />
     </GridFullscreenContainer>
-  );
-};
-
-const JourneyCardTopBackgroundImage = ({
-  uid,
-  jwt,
-  ctx,
-}: {
-  uid: string;
-  jwt: string;
-  ctx: ScreenContext;
-}): ReactElement => {
-  const thumbhashVWC = useWritableValueWithCallbacks<string | null>(() => null);
-  const imageVWC = useWritableValueWithCallbacks<OsehImageExportCropped | null>(
-    () => null
-  );
-
-  useEffect(() => {
-    const inner = createChainedImageFromRef({
-      ctx,
-      getRef: () => ({
-        data: createWritableValueWithCallbacks({
-          type: 'success',
-          data: { uid, jwt },
-          error: undefined,
-          reportExpired: () => {},
-        }),
-        release: () => {},
-      }),
-      sizeMapper: (ws) => ({
-        width: Math.min(ws.width - 24, 296),
-        height: 120,
-      }),
-    });
-
-    const cleanupThumbhashAttacher = createValueWithCallbacksEffect(
-      inner.thumbhash,
-      (th) => {
-        setVWC(thumbhashVWC, th);
-        return undefined;
-      }
-    );
-    const cleanupImageAttacher = createValueWithCallbacksEffect(
-      inner.image,
-      (im) => {
-        setVWC(imageVWC, im);
-        return undefined;
-      }
-    );
-    return () => {
-      cleanupThumbhashAttacher();
-      cleanupImageAttacher();
-      inner.dispose();
-      setVWC(imageVWC, null);
-    };
-  }, [uid, jwt, ctx, thumbhashVWC, imageVWC]);
-
-  return (
-    <GridImageBackground
-      image={imageVWC}
-      thumbhash={thumbhashVWC}
-      size={useMappedValueWithCallbacks(ctx.contentWidth, (cw) => ({
-        width: cw - SYSTEM_PIC_WIDTH - SYSTEM_PIC_TO_CHAT_WIDTH,
-        height: 120,
-      }))}
-      borderRadius={{
-        topLeft: 10,
-        topRight: 10,
-        bottomLeft: 0,
-        bottomRight: 0,
-      }}
-    />
   );
 };

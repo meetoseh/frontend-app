@@ -12,8 +12,6 @@ import {
 } from '../../../../shared/hooks/useStandardTransitions';
 import {
   Callbacks,
-  createWritableValueWithCallbacks,
-  downgradeTypedVWC,
   useWritableValueWithCallbacks,
 } from '../../../../shared/lib/Callbacks';
 import { GridFullscreenContainer } from '../../../../shared/components/GridFullscreenContainer';
@@ -38,10 +36,7 @@ import { screenWithWorking } from '../../lib/screenWithWorking';
 import { Modals } from '../../../../shared/contexts/ModalContext';
 import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
 import { describeError } from '../../../../shared/lib/describeError';
-import { useValuesWithCallbacksEffect } from '../../../../shared/hooks/useValuesWithCallbacksEffect';
-import { createCancelableTimeout } from '../../../../shared/lib/createCancelableTimeout';
-import { waitForValueWithCallbacksConditionCancelable } from '../../../../shared/lib/waitForValueWithCallbacksCondition';
-import { View, Text, TextInput } from 'react-native';
+import { View, Text, TextInput, Pressable } from 'react-native';
 import { OutlineWhiteButton } from '../../../../shared/components/OutlineWhiteButton';
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
 import { useKeyboardHeightValueWithCallbacks } from '../../../../shared/lib/useKeyboardHeightValueWithCallbacks';
@@ -52,6 +47,16 @@ import {
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
 import { createValueWithCallbacksEffect } from '../../../../shared/hooks/createValueWithCallbacksEffect';
 import { adaptExitTransition } from '../../lib/adaptExitTransition';
+import {
+  createVoiceNoteStateMachineForLocalUpload,
+  VoiceNoteStateMachine,
+} from '../journal_chat/lib/createVoiceNoteStateMachine';
+import * as Linking from 'expo-linking';
+import { OsehStyles } from '../../../../shared/OsehStyles';
+import { Cancel } from '../../../../shared/components/icons/Cancel';
+import { TextPartVoiceNoteComponent } from '../journal_chat/components/TextPartVoiceNoteComponent';
+import { VoiceOrTextInputVoice } from '../../../../shared/components/voiceOrTextInput/VoiceOrTextInputVoice';
+import { Microphone } from '../../../../shared/components/icons/Microphone';
 
 /**
  * Shows the journal reflection question and gives a large amount of room for
@@ -144,7 +149,7 @@ export const JournalReflectionResponse = ({
       get: () => currentV,
       set: (v) => {
         currentV = v;
-        resources.onUserChangedResponse(v);
+        resources.onUserChangedResponse({ type: 'text', value: v });
       },
       callbacks,
     };
@@ -159,8 +164,8 @@ export const JournalReflectionResponse = ({
 
     function getValue() {
       const v = resources.response.get();
-      if (v.type === 'available') {
-        return v.value;
+      if (v.type === 'available' && v.data.type === 'text') {
+        return v.data.value;
       }
       return '';
     }
@@ -170,6 +175,73 @@ export const JournalReflectionResponse = ({
     resources.response,
     (r) => r.type
   );
+  const inputTypeVWC = useWritableValueWithCallbacks<'text' | 'voice'>(
+    () => 'text'
+  );
+  const inputtingVoiceVWC = useWritableValueWithCallbacks<boolean>(() => false);
+  const inputtingVoiceNoteVWC =
+    useWritableValueWithCallbacks<VoiceNoteStateMachine | null>(() => null);
+  useValueWithCallbacksEffect(inputtingVoiceVWC, (v) => {
+    const old = inputtingVoiceNoteVWC.get();
+    if (old !== null && old.state.get().type !== 'released') {
+      old.sendMessage({ type: 'release' });
+    }
+    setVWC(inputtingVoiceNoteVWC, null);
+
+    if (!v) {
+      return undefined;
+    }
+
+    const note = createVoiceNoteStateMachineForLocalUpload({
+      loginContext: ctx.login,
+      visitor: ctx.interests.visitor,
+      assignUID: () => {},
+    });
+    setVWC(inputtingVoiceNoteVWC, note);
+    return undefined;
+  });
+  const previewToShowVWC = useMappedValuesWithCallbacks(
+    [inputTypeVWC, inputtingVoiceVWC],
+    (): 'text' | 'voice' | 'none' =>
+      inputTypeVWC.get() === 'text' && !inputtingVoiceVWC.get()
+        ? 'text'
+        : !inputtingVoiceVWC.get()
+        ? 'voice'
+        : 'none'
+  );
+
+  const doneTypeVWC = useMappedValuesWithCallbacks(
+    [resources.response, inputTypeVWC, inputtingVoiceVWC],
+    (): 'done-or-voice' | 'done' | 'voice-input' => {
+      if (inputtingVoiceVWC.get()) {
+        return 'voice-input';
+      }
+
+      if (inputTypeVWC.get() === 'voice') {
+        return 'done';
+      }
+
+      const resp = resources.response.get();
+      if (
+        resp.type === 'available' &&
+        resp.data.type === 'text' &&
+        resp.data.value === ''
+      ) {
+        return 'done-or-voice';
+      }
+      return 'done';
+    }
+  );
+
+  useValueWithCallbacksEffect(resources.response, (r) => {
+    if (r.type !== 'available') {
+      setVWC(inputTypeVWC, 'text');
+      return undefined;
+    }
+
+    setVWC(inputTypeVWC, r.data.type);
+    return undefined;
+  });
 
   const keyboardHeightVWC = useKeyboardHeightValueWithCallbacks();
 
@@ -234,7 +306,15 @@ export const JournalReflectionResponse = ({
               <ContentContainer contentWidthVWC={ctx.contentWidth}>
                 <Text style={styles.questionError}>
                   Something went wrong loading your reflection question. Try
-                  again or contact support at hi@oseh.com
+                  again or contact support at{' '}
+                  <Text
+                    onPress={() => {
+                      Linking.openURL('mailto:hi@oseh.com');
+                    }}
+                    style={styles.errorLink}
+                  >
+                    hi@oseh.com
+                  </Text>
                 </Text>
               </ContentContainer>
             ) : (
@@ -258,19 +338,128 @@ export const JournalReflectionResponse = ({
             if (type === 'available') {
               return (
                 <RenderGuardedComponent
-                  props={responseWrappedVWC}
-                  component={(valueVWC) =>
-                    valueVWC !== null ? (
-                      <FlexGrowContentWidthTextArea
-                        placeholder="Write anything"
-                        placeholderTextColor={OsehColors.v4.primary.grey}
-                        textStyle={styles.responseText}
-                        submit={null}
-                        value={valueVWC}
-                        enterBehavior={'never-submit'}
-                        refVWC={inputVWC}
-                        contentWidth={ctx.contentWidth}
-                        screenWidth={windowWidthVWC}
+                  props={previewToShowVWC}
+                  component={(previewToShow) =>
+                    previewToShow === 'voice' ? (
+                      <RenderGuardedComponent
+                        props={resources.response}
+                        component={(r) => {
+                          if (
+                            r.type !== 'available' ||
+                            r.data.type !== 'voice'
+                          ) {
+                            return <VerticalSpacer height={0} flexGrow={1} />;
+                          }
+
+                          return (
+                            <>
+                              <RenderGuardedComponent
+                                props={r.data.request.data}
+                                component={(req) => {
+                                  if (req.type === 'error') {
+                                    return (
+                                      <ContentContainer
+                                        contentWidthVWC={ctx.contentWidth}
+                                      >
+                                        <Text style={styles.questionError}>
+                                          Something went wrong loading your
+                                          reflection response voice note. Try
+                                          again or contact support at{' '}
+                                          <Text
+                                            onPress={() => {
+                                              Linking.openURL(
+                                                'mailto:hi@oseh.com'
+                                              );
+                                            }}
+                                            style={styles.errorLink}
+                                          >
+                                            hi@oseh.com
+                                          </Text>
+                                        </Text>
+                                      </ContentContainer>
+                                    );
+                                  }
+                                  if (req.type !== 'success') {
+                                    return <></>;
+                                  }
+                                  return (
+                                    <ContentContainer
+                                      contentWidthVWC={ctx.contentWidth}
+                                    >
+                                      <View style={OsehStyles.layout.row}>
+                                        <HorizontalSpacer
+                                          width={0}
+                                          flexGrow={1}
+                                        />
+                                        <Pressable
+                                          style={
+                                            OsehStyles.unstyling.buttonAsColumn
+                                          }
+                                          onPress={() => {
+                                            resources.onUserChangedResponse({
+                                              type: 'text',
+                                              value: '',
+                                            });
+                                          }}
+                                        >
+                                          <Cancel
+                                            icon={{ width: 24 }}
+                                            container={{
+                                              width: 32,
+                                              height: 32,
+                                            }}
+                                            startPadding={{
+                                              x: { fraction: 0.5 },
+                                              y: { fraction: 0.5 },
+                                            }}
+                                            color={
+                                              OsehColors.v4.primary.darkGrey
+                                            }
+                                            color2={OsehColors.v4.primary.light}
+                                          />
+                                          <Text
+                                            style={OsehStyles.assistive.srOnly}
+                                          >
+                                            Delete
+                                          </Text>
+                                        </Pressable>
+                                        <HorizontalSpacer width={12} />
+                                        <View style={styles.voiceNoteWrapper}>
+                                          <TextPartVoiceNoteComponent
+                                            ctx={ctx}
+                                            voiceNote={req.data}
+                                          />
+                                        </View>
+                                      </View>
+                                    </ContentContainer>
+                                  );
+                                }}
+                              />
+                              <VerticalSpacer height={0} flexGrow={1} />
+                            </>
+                          );
+                        }}
+                      />
+                    ) : previewToShow === 'text' ? (
+                      <RenderGuardedComponent
+                        props={responseWrappedVWC}
+                        component={(valueVWC) =>
+                          valueVWC !== null ? (
+                            <FlexGrowContentWidthTextArea
+                              placeholder="Write anything"
+                              placeholderTextColor={OsehColors.v4.primary.grey}
+                              textStyle={styles.responseText}
+                              submit={null}
+                              value={valueVWC}
+                              enterBehavior={'never-submit'}
+                              refVWC={inputVWC}
+                              contentWidth={ctx.contentWidth}
+                              screenWidth={windowWidthVWC}
+                            />
+                          ) : (
+                            <VerticalSpacer height={0} flexGrow={1} />
+                          )
+                        }
                       />
                     ) : (
                       <VerticalSpacer height={0} flexGrow={1} />
@@ -297,8 +486,16 @@ export const JournalReflectionResponse = ({
             return (
               <ContentContainer contentWidthVWC={ctx.contentWidth}>
                 <Text style={styles.questionError}>
-                  Something went wrong loading your response. Try again or
-                  contact support at hi@oseh.com
+                  Something went wrong loading your reflection response. Try
+                  again or contact support at{' '}
+                  <Text
+                    onPress={() => {
+                      Linking.openURL('mailto:hi@oseh.com');
+                    }}
+                    style={styles.errorLink}
+                  >
+                    hi@oseh.com
+                  </Text>
                 </Text>
               </ContentContainer>
             );
@@ -306,98 +503,153 @@ export const JournalReflectionResponse = ({
         />
         <VerticalSpacer height={32} />
         <ContentContainer contentWidthVWC={ctx.contentWidth}>
-          <View style={styles.done}>
-            <RenderGuardedComponent
-              props={isReadyToContinueVWC}
-              component={(isReady) => (
-                <TextStyleForwarder
-                  component={(styleVWC) => (
-                    <OutlineWhiteButton
-                      onPress={() => {
-                        if (!isReady) {
-                          return;
-                        }
-                        screenWithWorking(workingVWC, async () => {
-                          trace({
-                            type: 'cta',
-                            step: 'optimistic setup + ensure saved',
-                          });
-
-                          setVWC(
-                            transition.animation,
-                            await adaptExitTransition(
-                              screen.parameters.cta.exit
-                            )
-                          );
-                          const exitTransitionCancelable =
-                            playExitTransition(transition);
-
-                          try {
-                            await resources.ensureSaved();
-                          } catch (e) {
-                            trace({ type: 'cta', step: 'error saving' });
-                            const err = await describeError(e);
-                            setVWC(errorVWC, err);
-                            await exitTransitionCancelable.promise;
-                            await playEntranceTransition(transition).promise;
+          <RenderGuardedComponent
+            props={doneTypeVWC}
+            component={(doneType) =>
+              doneType === 'voice-input' ? (
+                <RenderGuardedComponent
+                  props={inputtingVoiceNoteVWC}
+                  component={(voiceNote) =>
+                    voiceNote === null ? (
+                      <></>
+                    ) : (
+                      <VoiceOrTextInputVoice
+                        onCancel={() => {
+                          setVWC(inputtingVoiceVWC, false);
+                        }}
+                        onSend={() => {
+                          const note = inputtingVoiceNoteVWC.get();
+                          if (note === null) {
                             return;
                           }
-
-                          trace({ type: 'cta', step: 'saved' });
-                          const finishPop = startPop(
-                            screen.parameters.cta.trigger.type === 'pop'
-                              ? null
-                              : {
-                                  slug: screen.parameters.cta.trigger.flow,
-                                  parameters:
-                                    screen.parameters.cta.trigger.parameters,
-                                },
-                            screen.parameters.cta.trigger.endpoint ?? undefined
-                          );
-                          await exitTransitionCancelable.promise;
-                          finishPop();
-                        });
-                      }}
-                      disabled={!isReady}
-                      setTextStyle={(s) => setVWC(styleVWC, s)}
-                      thin
-                    >
-                      <View style={styles.buttonInner}>
-                        <RenderGuardedComponent
-                          props={styleVWC}
-                          component={(s) => (
-                            <Text style={s}>{screen.parameters.cta.text}</Text>
-                          )}
-                        />
-                        <HorizontalSpacer width={8} />
-                        <RenderGuardedComponent
-                          props={styleVWC}
-                          component={(s) => (
-                            <Forward
-                              icon={{ width: 20 }}
-                              container={{ width: 20, height: 20 }}
-                              startPadding={{
-                                x: { fraction: 0.5 },
-                                y: { fraction: 0.5 },
-                              }}
-                              color={
-                                (typeof s === 'object' &&
-                                s !== null &&
-                                !Array.isArray(s) &&
-                                typeof s.color === 'string'
-                                  ? s.color
-                                  : undefined) ?? OsehColors.v4.primary.light
-                              }
-                            />
-                          )}
-                        />
-                      </View>
-                    </OutlineWhiteButton>
-                  )}
+                          setVWC(inputtingVoiceNoteVWC, null);
+                          setVWC(inputtingVoiceVWC, false);
+                          resources.onUserChangedResponse({
+                            type: 'voice',
+                            voiceNote: note,
+                          });
+                        }}
+                        voiceNote={voiceNote}
+                      />
+                    )
+                  }
                 />
-              )}
-            />
-          </View>
+              ) : (
+                <View style={OsehStyles.layout.row}>
+                  <HorizontalSpacer width={0} flexGrow={1} />
+                  {doneType === 'done-or-voice' && (
+                    <>
+                      <Pressable
+                        style={OsehStyles.unstyling.buttonAsColumn}
+                        onPress={() => {
+                          setVWC(inputtingVoiceVWC, true);
+                        }}
+                      >
+                        <Microphone
+                          icon={{ width: 24 }}
+                          container={{ width: 32, height: 32 }}
+                          startPadding={{
+                            x: { fraction: 0.5 },
+                            y: { fraction: 0.5 },
+                          }}
+                          color={OsehColors.v4.primary.light}
+                        />
+                        <Text style={OsehStyles.assistive.srOnly}>
+                          Switch to Voice
+                        </Text>
+                      </Pressable>
+                      <HorizontalSpacer width={12} />
+                    </>
+                  )}
+                  <RenderGuardedComponent
+                    props={isReadyToContinueVWC}
+                    component={(isReady) => (
+                      <TextStyleForwarder
+                        component={(styleVWC) => (
+                          <OutlineWhiteButton
+                            onPress={() => {
+                              if (!isReady) {
+                                return;
+                              }
+                              screenWithWorking(workingVWC, async () => {
+                                trace({
+                                  type: 'cta',
+                                  step: 'optimistic setup + ensure saved',
+                                });
+
+                                setVWC(
+                                  transition.animation,
+                                  await adaptExitTransition(
+                                    screen.parameters.cta.exit
+                                  )
+                                );
+                                const exitTransitionCancelable =
+                                  playExitTransition(transition);
+
+                                try {
+                                  await resources.ensureSaved();
+                                } catch (e) {
+                                  trace({ type: 'cta', step: 'error saving' });
+                                  const err = await describeError(e);
+                                  setVWC(errorVWC, err);
+                                  await exitTransitionCancelable.promise;
+                                  await playEntranceTransition(transition)
+                                    .promise;
+                                  return;
+                                }
+
+                                trace({ type: 'cta', step: 'saved' });
+                                const finishPop = startPop(
+                                  screen.parameters.cta.trigger.type === 'pop'
+                                    ? null
+                                    : {
+                                        slug: screen.parameters.cta.trigger
+                                          .flow,
+                                        parameters:
+                                          screen.parameters.cta.trigger
+                                            .parameters,
+                                      },
+                                  screen.parameters.cta.trigger.endpoint ??
+                                    undefined
+                                );
+                                await exitTransitionCancelable.promise;
+                                finishPop();
+                              });
+                            }}
+                            disabled={!isReady}
+                            setTextStyle={(s) => setVWC(styleVWC, s)}
+                          >
+                            <View style={styles.buttonInner}>
+                              <HorizontalSpacer width={18} />
+                              <RenderGuardedComponent
+                                props={styleVWC}
+                                component={(s) => (
+                                  <Text style={s}>
+                                    {screen.parameters.cta.text}
+                                  </Text>
+                                )}
+                              />
+                              <HorizontalSpacer width={8} />
+                              <Forward
+                                icon={{ width: 20 }}
+                                container={{ width: 20, height: 20 }}
+                                startPadding={{
+                                  x: { fraction: 0.5 },
+                                  y: { fraction: 0.5 },
+                                }}
+                                color={OsehColors.v4.primary.light}
+                              />
+                              <HorizontalSpacer width={12} />
+                            </View>
+                          </OutlineWhiteButton>
+                        )}
+                      />
+                    )}
+                  />
+                </View>
+              )
+            }
+          />
         </ContentContainer>
         <RenderGuardedComponent
           props={keyboardHeightVWC}

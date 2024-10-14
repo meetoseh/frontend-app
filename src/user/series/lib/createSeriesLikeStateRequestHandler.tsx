@@ -11,7 +11,10 @@ import { getCurrentServerTimeMS } from '../../../shared/lib/getCurrentServerTime
 import { getJwtExpiration } from '../../../shared/lib/getJwtExpiration';
 import { createCancelablePromiseFromCallbacks } from '../../../shared/lib/createCancelablePromiseFromCallbacks';
 import { apiFetch } from '../../../shared/lib/apiFetch';
-import { describeError } from '../../../shared/lib/describeError';
+import {
+  describeError,
+  makeTextError,
+} from '../../../shared/lib/describeError';
 import { setVWC } from '../../../shared/lib/setVWC';
 import { convertUsingMapper } from '../../../shared/lib/CrudFetcher';
 import { externalCourseKeyMap } from './ExternalCourse';
@@ -266,7 +269,7 @@ export const createCourseLikeState = ({
           if (data.items.length === 0) {
             state.finishing = true;
             setVWC(likedAtVWC, undefined);
-            setVWC(errorVWC, <>Series not found</>);
+            setVWC(errorVWC, makeTextError('Series not found'));
             state.done = true;
             reject(new Error('course not found'));
             return;

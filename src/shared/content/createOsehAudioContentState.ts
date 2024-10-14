@@ -1,12 +1,13 @@
 import { ReactElement } from 'react';
 import {
+  Callbacks,
   ValueWithCallbacks,
   createWritableValueWithCallbacks,
 } from '../lib/Callbacks';
 import { createCancelablePromiseFromCallbacks } from '../lib/createCancelablePromiseFromCallbacks';
 import { setVWC } from '../lib/setVWC';
 import { ContentFileNativeExport } from './OsehContentTarget';
-import { Audio } from 'expo-av';
+import { Audio, AVPlaybackStatus } from 'expo-av';
 
 export type OsehAudioContentStateLoading = {
   /**
@@ -39,6 +40,7 @@ export type OsehAudioContentStateLoaded = {
   stop: () => Promise<void>;
   error: null;
   audio: Audio.Sound;
+  onStatusUpdate: Callbacks<AVPlaybackStatus>;
 };
 
 export type OsehAudioContentStateUnloaded = {
@@ -111,6 +113,11 @@ export const createOsehAudioContentState = (
       return;
     }
 
+    const statusUpdateCallbacks = new Callbacks<AVPlaybackStatus>();
+    soundObject.sound.setOnPlaybackStatusUpdate((s) => {
+      statusUpdateCallbacks.call(s);
+    });
+
     setVWC(result, {
       type: 'loaded',
       play: async () => {
@@ -127,6 +134,7 @@ export const createOsehAudioContentState = (
       },
       error: null,
       audio: soundObject.sound,
+      onStatusUpdate: statusUpdateCallbacks,
     });
 
     await canceled.promise;

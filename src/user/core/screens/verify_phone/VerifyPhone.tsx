@@ -27,7 +27,10 @@ import { setVWC } from '../../../../shared/lib/setVWC';
 import { BackContinue } from '../../../../shared/components/BackContinue';
 import { apiFetch } from '../../../../shared/lib/apiFetch';
 import { screenWithWorking } from '../../lib/screenWithWorking';
-import { describeError } from '../../../../shared/lib/describeError';
+import {
+  describeError,
+  makeTextError,
+} from '../../../../shared/lib/describeError';
 import { useBeforeTime } from '../../../../shared/hooks/useBeforeTime';
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
 import { AutoBold } from '../../../../shared/components/AutoBold';
@@ -74,7 +77,7 @@ export const VerifyPhone = ({
 
       const loginContext = ctx.login.value.get();
       if (loginContext.state !== 'logged-in') {
-        setVWC(errorVWC, <>Not logged in</>);
+        setVWC(errorVWC, makeTextError('Not logged in'));
         return;
       }
 

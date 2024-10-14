@@ -1,3 +1,4 @@
+import { makeTextError } from '../../../../../shared/lib/describeError';
 import { getCurrentServerTimeMS } from '../../../../../shared/lib/getCurrentServerTimeMS';
 import { shuffle } from '../../../../../shared/lib/shuffle';
 import { waitForValueWithCallbacksConditionCancelable } from '../../../../../shared/lib/waitForValueWithCallbacksCondition';
@@ -27,7 +28,7 @@ export const trackClassTaken = (ctx: ScreenContext): void => {
             promise: Promise.resolve({
               type: 'expired',
               data: undefined,
-              error: <>User is not logged in</>,
+              error: makeTextError('User is not logged in'),
               retryAt: undefined,
             }),
             done: () => true,

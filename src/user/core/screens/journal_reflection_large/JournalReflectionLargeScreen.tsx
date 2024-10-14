@@ -27,6 +27,7 @@ import {
   JourneyReflectionLargeAPIParams,
 } from './JournalReflectionLargeParams';
 import { JournalReflectionLargeResources } from './JournalReflectionLargeResources';
+import { makeTextError } from '../../../../shared/lib/describeError';
 
 /**
  * Shows the last reflection question in the journal entry
@@ -77,7 +78,7 @@ export const JournalReflectionLargeScreen: OsehScreen<
           data: createWritableValueWithCallbacks({
             type: 'error',
             data: undefined,
-            error: <>Journal entry not provided by server</>,
+            error: makeTextError('Journal entry not provided by server'),
             retryAt: undefined,
           }),
           release: () => {},
@@ -95,7 +96,7 @@ export const JournalReflectionLargeScreen: OsehScreen<
               promise: Promise.resolve({
                 type: 'expired',
                 data: undefined,
-                error: <>Screen is not mounted</>,
+                error: makeTextError('Screen is not mounted'),
                 retryAt: undefined,
               }),
               done: () => true,
@@ -112,7 +113,9 @@ export const JournalReflectionLargeScreen: OsehScreen<
                 ? {
                     type: 'error',
                     data: undefined,
-                    error: <>Journal entry not provided by server</>,
+                    error: makeTextError(
+                      'Journal entry not provided by server'
+                    ),
                     retryAt: undefined,
                   }
                 : {

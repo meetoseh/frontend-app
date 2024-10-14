@@ -58,6 +58,8 @@ import { createJournalEntryMetadataRequestHandler } from '../screens/journal_cha
 import { createJournalEntryListRequestHandler } from '../screens/journal_entries_list/lib/createJournalEntryListRequestHandler';
 import { createLibraryListRequestHandler } from '../screens/library/lib/createLibraryListRequestHandler';
 import { createInstructorListRequestHandler } from '../screens/library_filter/lib/createInstructorListRequestHandler';
+import { useMappedValuesWithCallbacks } from '../../../shared/hooks/useMappedValuesWithCallbacks';
+import { createVoiceNoteStateMachineRequestHandler } from '../screens/journal_chat/lib/createVoiceNoteStateMachineRequestHandler';
 
 type WindowSize = {
   width: number;
@@ -369,6 +371,20 @@ export const useScreenContext = (
   const instructorsListHandler = useWritableValueWithCallbacks(() =>
     createInstructorListRequestHandler({ logging, maxStale: 100 })
   );
+  const voiceNoteHandler = useMappedValuesWithCallbacks(
+    [contentPlaylistHandler, audioDataHandler],
+    () =>
+      createVoiceNoteStateMachineRequestHandler({
+        logging,
+        maxStale: 100,
+        loginContext,
+        interestsContext,
+        resources: {
+          contentPlaylistHandler: contentPlaylistHandler.get(),
+          audioDataHandler: audioDataHandler.get(),
+        },
+      })
+  );
 
   const resources = useMemo(
     (): Resources => ({
@@ -412,6 +428,7 @@ export const useScreenContext = (
       journalEntryListHandler: journalEntryListHandler.get(),
       libraryListHandler: libraryListHandler.get(),
       instructorsListHandler: instructorsListHandler.get(),
+      voiceNoteHandler: voiceNoteHandler.get(),
     }),
     [
       privatePlaylistHandler,
@@ -454,6 +471,7 @@ export const useScreenContext = (
       journalEntryListHandler,
       libraryListHandler,
       instructorsListHandler,
+      voiceNoteHandler,
     ]
   );
   const contentWidth = useContentWidthValueWithCallbacks(windowSizeImmediate);

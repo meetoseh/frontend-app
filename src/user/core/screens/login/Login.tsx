@@ -1,22 +1,11 @@
-import {
-  ReactElement,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-} from 'react';
+import { ReactElement, useCallback, useEffect, useRef } from 'react';
 import { Platform, Text, View } from 'react-native';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { styles } from './LoginScreenStyles';
 import Constants from 'expo-constants';
-import { SplashScreen } from '../../../splash/SplashScreen';
-import { StatusBar } from 'expo-status-bar';
 import OsehWordmarkWhite from './icons/OsehWordmarkWhite';
-import {
-  isSilentAuthSupported,
-  LoginContext,
-} from '../../../../shared/contexts/LoginContext';
+import { isSilentAuthSupported } from '../../../../shared/contexts/LoginContext';
 import { apiFetch } from '../../../../shared/lib/apiFetch';
 import {
   ErrorBanner,
@@ -24,7 +13,6 @@ import {
 } from '../../../../shared/components/ErrorBanner';
 import { describeError } from '../../../../shared/lib/describeError';
 import { URLSearchParams } from 'react-native-url-polyfill';
-import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
 import { useUnwrappedValueWithCallbacks } from '../../../../shared/hooks/useUnwrappedValueWithCallbacks';
 import {
   LoginMessage,
@@ -34,21 +22,12 @@ import {
 } from './LoginMessagePipe';
 import {
   Callbacks,
-  createWritableValueWithCallbacks,
   useWritableValueWithCallbacks,
 } from '../../../../shared/lib/Callbacks';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { useIsMounted } from '../../../../shared/hooks/useIsMounted';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
-import { OsehImageBackgroundFromStateValueWithCallbacks } from '../../../../shared/images/OsehImageBackgroundFromStateValueWithCallbacks';
-import { useContentWidth } from '../../../../shared/lib/useContentWidth';
-import { useIsTablet } from '../../../../shared/lib/useIsTablet';
 import { ProvidersList } from './components/ProvidersList';
-import { useOsehImageStateValueWithCallbacks } from '../../../../shared/images/useOsehImageStateValueWithCallbacks';
-import { useWindowSizeValueWithCallbacks } from '../../../../shared/hooks/useWindowSize';
-import { useOsehImageStateRequestHandler } from '../../../../shared/images/useOsehImageStateRequestHandler';
-import { OsehImageProps } from '../../../../shared/images/OsehImageProps';
-import { adaptValueWithCallbacksAsVariableStrategyProps } from '../../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps';
 import { OauthProvider } from '../../../login/lib/OauthProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
@@ -65,7 +44,6 @@ import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
 import { GridFullscreenContainer } from '../../../../shared/components/GridFullscreenContainer';
 import { ScreenContext } from '../../hooks/useScreenContext';
 import { Modals } from '../../../../shared/contexts/ModalContext';
-import { GridBlackBackground } from '../../../../shared/components/GridBlackBackground';
 import { GridDarkGrayBackground } from '../../../../shared/components/GridDarkGrayBackground';
 import { GridContentContainer } from '../../../../shared/components/GridContentContainer';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
@@ -73,7 +51,7 @@ import { HorizontalSpacer } from '../../../../shared/components/HorizontalSpacer
 import { showYesNoModal } from '../../../../shared/lib/showYesNoModal';
 
 /* guest -> random guest; apple -> random guest no name */
-const DEV_ACCOUNT_USER_IDENTITY_ID: string = 'guest';
+const DEV_ACCOUNT_USER_IDENTITY_ID: string = 'guest-original';
 
 let failedLogin = false;
 
@@ -669,6 +647,8 @@ export const Login = ({ ctx }: { ctx: ScreenContext }) => {
     if (!isDev) {
       return;
     }
+
+    console.log('on long press');
 
     setVWC(errorVWC, null);
     try {
