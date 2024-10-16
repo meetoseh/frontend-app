@@ -8,10 +8,10 @@ import {
   interactivePromptKeyMap,
 } from '../../interactive_prompt/models/InteractivePrompt';
 import { JourneyRef } from '../models/JourneyRef';
-import { describeError } from '../../../shared/lib/describeError';
 import { apiFetch } from '../../../shared/lib/apiFetch';
 import { convertUsingKeymap } from '../../../shared/lib/CrudFetcher';
 import { useValueWithCallbacksEffect } from '../../../shared/hooks/useValueWithCallbacksEffect';
+import { BoxError, DisplayableError } from '../../../shared/lib/errors';
 
 type JourneyPromptProps = {
   /**
@@ -53,7 +53,7 @@ export const JourneyPrompt = ({
 }: JourneyPromptProps): ReactElement => {
   const [interactivePrompt, setInteractivePrompt] =
     useState<InteractivePrompt | null>(null);
-  const [error, setError] = useState<ReactElement | null>(null);
+  const [error, setError] = useState<DisplayableError | null>(null);
 
   useValueWithCallbacksEffect(
     loginContextRaw.value,
@@ -69,11 +69,11 @@ export const JourneyPrompt = ({
         fetchPrompt().catch((e) => {
           if (active) {
             console.log('Error fetching prompt: ', e);
-            describeError(e).then((errorElement) => {
-              if (active) {
-                setError(errorElement);
-              }
-            });
+            const error =
+              e instanceof DisplayableError
+                ? e
+                : new DisplayableError('client', 'fetch prompt', `${e}`);
+            setError(error);
           }
         });
         return () => {
@@ -110,7 +110,7 @@ export const JourneyPrompt = ({
   );
 
   if (interactivePrompt === null) {
-    return error ?? <></>;
+    return error === null ? <></> : <BoxError error={error} />;
   }
 
   return (

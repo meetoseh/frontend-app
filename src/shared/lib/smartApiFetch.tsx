@@ -1,4 +1,3 @@
-import { ReactElement } from 'react';
 import {
   createWritableValueWithCallbacks,
   ValueWithCallbacks,
@@ -9,31 +8,27 @@ import { createCancelableTimeout } from './createCancelableTimeout';
 import { receiveMessageWithVWC } from './receiveMessageWithVWC';
 import { setVWC } from './setVWC';
 import { apiFetch } from './apiFetch';
-import {
-  describeError,
-  describeFetchError,
-  makeTextError,
-} from './describeError';
 import { CancelablePromise } from './CancelablePromise';
 import { passMessageWithVWC } from './passMessageWithVWC';
+import { DisplayableError } from './errors';
 
 export type SmartAPIFetchMapper<T extends {} | null> = (
   response: Response
 ) => Promise<
   | { value: T; error?: undefined }
-  | { value?: undefined; error: ReactElement; retryable: boolean }
+  | { value?: undefined; error: DisplayableError; retryable: boolean }
 >;
 
 export type SmartAPIUserGetter = () =>
   | { user: LoginContextValueLoggedIn | null; error?: undefined }
-  | { user?: undefined; error: ReactElement };
+  | { user?: undefined; error: DisplayableError };
 
 export type SmartAPIFetchRetryer = (
   attempt: number,
   retryAfterMS: number | null
 ) =>
   | { delay: number; error?: undefined }
-  | { delay?: undefined; error: ReactElement };
+  | { delay?: undefined; error: DisplayableError };
 
 export type SmartAPIFetchRequestInit = Omit<RequestInit, 'signal'> & {
   signal?: undefined;
@@ -132,7 +127,7 @@ export type SmartAPIFetchStateError = {
   /**
    * the error that occurred as it can be shown to the user
    */
-  error: ReactElement;
+  error: DisplayableError;
 
   /** we guarrantee this is undefined for convenience */
   value?: undefined;
@@ -335,7 +330,10 @@ async function transitionFromInFlight<T extends {} | null>(
       throw new Error(`unexpected msg in ${current.type}: ${msg.type}`);
     }
 
-    const described = await describeError(e);
+    const described =
+      e instanceof DisplayableError
+        ? e
+        : new DisplayableError('client', 'fetch', `${e}`);
     setVWC(stateVWC, { type: 'error', error: described });
     return;
   }
@@ -431,11 +429,7 @@ export const createExponentialBackoffRetryer = (
 ): SmartAPIFetchRetryer => {
   return (attempt: number, retryAfterMS: number | null) => {
     if (attempt >= maxRetries) {
-      return {
-        error: makeTextError(
-          'Maximum retries exceeded. Email hi@oseh.com or try again'
-        ),
-      };
+      return { error: new DisplayableError('server-retryable', 'fetch') };
     }
 
     let delay = base * Math.pow(2, attempt) + Math.random() * randomness;
@@ -452,7 +446,7 @@ export const retryerExpoBackoff3 = createExponentialBackoffRetryer(
   3
 );
 export const retryerNever: SmartAPIFetchRetryer = () => ({
-  error: makeTextError('Email hi@oseh.com or try again'),
+  error: new DisplayableError('server-retryable', 'fetch', 'never retries'),
 });
 export const retryerForever5: SmartAPIFetchRetryer = (d) => ({
   delay: Math.max(d, 4500 + 1000 * Math.random()),
@@ -463,11 +457,17 @@ export const retryerForever5: SmartAPIFetchRetryer = (d) => ({
  * retryable status codes, then interpreting the body as json, then
  * calling the provided mapper
  */
-export const createTypicalSmartAPIFetchMapper = <T extends {} | null>(
-  mapJSON: (json: any) => T,
-  bonusRetryableStatusCodes?: number[],
-  excludeRetryableStatusCodes?: number[]
-): SmartAPIFetchMapper<T> => {
+export const createTypicalSmartAPIFetchMapper = <T extends {} | null>({
+  mapJSON,
+  action,
+  bonusRetryableStatusCodes,
+  excludeRetryableStatusCodes,
+}: {
+  mapJSON: (json: any) => T;
+  action: string;
+  bonusRetryableStatusCodes?: number[];
+  excludeRetryableStatusCodes?: number[];
+}): SmartAPIFetchMapper<T> => {
   return async (r) => {
     if (
       !excludeRetryableStatusCodes?.includes(r.status) &&
@@ -478,15 +478,20 @@ export const createTypicalSmartAPIFetchMapper = <T extends {} | null>(
         r.status === 504 ||
         bonusRetryableStatusCodes?.includes(r.status))
     ) {
-      const desc = await describeError(r, { silent: true });
-      return { error: desc, retryable: true };
+      return {
+        error: new DisplayableError('server-retryable', action, `${r.status}`),
+        retryable: true,
+      };
     }
 
     try {
       const data = await r.json();
       return { value: mapJSON(data) };
     } catch {
-      return { error: describeFetchError(), retryable: true };
+      return {
+        error: new DisplayableError('connectivity', action),
+        retryable: true,
+      };
     }
   };
 };

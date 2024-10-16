@@ -1,4 +1,3 @@
-import { ReactElement } from 'react';
 import { CancelablePromise } from '../lib/CancelablePromise';
 import {
   ValueWithCallbacks,
@@ -7,9 +6,9 @@ import {
 } from '../lib/Callbacks';
 import { createUID } from '../lib/createUID';
 import { LeastRecentlyUsedCache } from '../lib/LeastRecentlyUsedCache';
-import { describeError } from '../lib/describeError';
 import { constructCancelablePromise } from '../lib/CancelablePromiseConstructor';
 import { createCancelableTimeout } from '../lib/createCancelableTimeout';
+import { DisplayableError } from '../lib/errors';
 
 type ResultSuccess<T extends object> = {
   /**
@@ -26,8 +25,8 @@ type ResultReferenceIsExpired = {
    */
   type: 'expired';
   data: undefined;
-  /** A generic element describing that the reference is expired */
-  error: ReactElement;
+  /** Describes that the reference is expired */
+  error: DisplayableError;
   retryAt: undefined;
 };
 type ResultAuthError = {
@@ -40,7 +39,7 @@ type ResultAuthError = {
   type: 'forbidden';
   data: undefined;
   /** An element describing the response */
-  error: ReactElement;
+  error: DisplayableError;
   retryAt: undefined;
 };
 type ResultNonretryableError = {
@@ -49,7 +48,7 @@ type ResultNonretryableError = {
    */
   type: 'error';
   data: undefined;
-  error: ReactElement;
+  error: DisplayableError;
   retryAt: undefined;
 };
 type ResultRetryableError = {
@@ -59,7 +58,7 @@ type ResultRetryableError = {
    */
   type: 'errorRetryable';
   data: undefined;
-  error: ReactElement;
+  error: DisplayableError;
   /** When the error should be retried in local time */
   retryAt: Date;
 };
@@ -93,7 +92,7 @@ type ActiveRequest<T extends object> = {
    */
   promiseResult?:
     | { type: 'success'; result: Result<T> }
-    | { type: 'error'; error: ReactElement };
+    | { type: 'error'; error: DisplayableError };
 };
 
 type ActiveDataRequest<
@@ -239,7 +238,7 @@ type RequestResultError = {
   type: 'error';
   data: undefined;
   /** Describes what went wrong */
-  error: ReactElement;
+  error: DisplayableError;
 };
 
 type RequestResultReleased = {
@@ -769,7 +768,6 @@ export class RequestHandler<
         // We could be either a microtask or a task later; for consistency,
         // lets always be at least a task later
         setTimeout(() => {
-          // we check before describeError to avoid its side effects
           {
             const latestRequest = this.requestsByInternalUid.get(internalUid);
             if (
@@ -783,24 +781,30 @@ export class RequestHandler<
             }
           }
 
-          describeError(errorRaw).then((error) => {
-            this.logNest('refPromiseCatch');
-            try {
-              const latestRequest = this.requestsByInternalUid.get(internalUid);
-              if (
-                latestRequest === undefined ||
-                !Object.is(latestRequest.ref.activeRequest, req)
-              ) {
-                this.log('no longer the active request, ignoring');
-                return;
-              }
-
-              req.promiseResult = { type: 'error', error };
-              this.progress(internalUid);
-            } finally {
-              this.logPop();
+          const error =
+            errorRaw instanceof DisplayableError
+              ? errorRaw
+              : new DisplayableError(
+                  'client',
+                  'createRequestHandler',
+                  `${errorRaw}`
+                );
+          this.logNest('refPromiseCatch');
+          try {
+            const latestRequest = this.requestsByInternalUid.get(internalUid);
+            if (
+              latestRequest === undefined ||
+              !Object.is(latestRequest.ref.activeRequest, req)
+            ) {
+              this.log('no longer the active request, ignoring');
+              return;
             }
-          });
+
+            req.promiseResult = { type: 'error', error };
+            this.progress(internalUid);
+          } finally {
+            this.logPop();
+          }
         });
       }
     );
@@ -985,23 +989,29 @@ export class RequestHandler<
             return;
           }
 
-          describeError(errorRaw).then((error) => {
-            this.logNest('dataPromiseCatch');
-            try {
-              const lockedData = this.lockedDataByRefUid.get(refUid);
-              if (
-                lockedData === undefined ||
-                !Object.is(lockedData.activeRequest, req)
-              ) {
-                this.log('no longer the active request, ignoring');
-              } else {
-                req.promiseResult = { type: 'error', error };
-                this.progressData(refUid);
-              }
-            } finally {
-              this.logPop();
+          const error =
+            errorRaw instanceof DisplayableError
+              ? errorRaw
+              : new DisplayableError(
+                  'client',
+                  'createRequestHandler',
+                  `${errorRaw}`
+                );
+          this.logNest('dataPromiseCatch');
+          try {
+            const lockedData = this.lockedDataByRefUid.get(refUid);
+            if (
+              lockedData === undefined ||
+              !Object.is(lockedData.activeRequest, req)
+            ) {
+              this.log('no longer the active request, ignoring');
+            } else {
+              req.promiseResult = { type: 'error', error };
+              this.progressData(refUid);
             }
-          });
+          } finally {
+            this.logPop();
+          }
         });
       }
     );

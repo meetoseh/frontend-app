@@ -1,26 +1,31 @@
-import { ReactElement, useCallback } from "react";
-import { Modals, addModalWithCallbackToRemove } from "../contexts/ModalContext";
-import { WritableValueWithCallbacks } from "../lib/Callbacks";
-import { useValueWithCallbacksEffect } from "./useValueWithCallbacksEffect";
+import { useCallback } from 'react';
+import { Modals, addModalWithCallbackToRemove } from '../contexts/ModalContext';
+import {
+  ValueWithCallbacks,
+  WritableValueWithCallbacks,
+} from '../lib/Callbacks';
+import { useValueWithCallbacksEffect } from './useValueWithCallbacksEffect';
+import {
+  DisplayableError,
+  SimpleDismissBoxError,
+  SimpleDismissModalBoxError,
+} from '../lib/errors';
+import { OsehStyles } from '../OsehStyles';
+import { View } from 'react-native';
+import { RenderGuardedComponent } from '../components/RenderGuardedComponent';
+import { VerticalSpacer } from '../components/VerticalSpacer';
 
 /**
- * When an error is set adds it to the modals. Unlike on the web it's assumed
- * the error is already wrapped in an ErrorBanner and so there's no need for
- * additional modal styling
+ * When an error is set adds it to the modals with some extra top padding
  *
  * @param modals The modals to use to show the error
  * @param error The error to show. We clear the error if dismissed by the user.
- * @param context Used to distinguish where this error is coming from
  */
 export const useErrorModal = (
   modals: WritableValueWithCallbacks<Modals>,
-  errorVWC: WritableValueWithCallbacks<ReactElement | null>,
-  location: string
+  errorVWC: WritableValueWithCallbacks<DisplayableError | null>,
+  { topBarHeightVWC }: { topBarHeightVWC: ValueWithCallbacks<number> }
 ) => {
-  if (typeof location !== "string") {
-    throw new Error("location must be a string");
-  }
-
   useValueWithCallbacksEffect(
     errorVWC,
     useCallback(
@@ -29,9 +34,18 @@ export const useErrorModal = (
           return undefined;
         }
 
-        return addModalWithCallbackToRemove(modals, error);
+        return addModalWithCallbackToRemove(
+          modals,
+          <View style={OsehStyles.layout.column}>
+            <RenderGuardedComponent
+              props={topBarHeightVWC}
+              component={(h) => <VerticalSpacer height={h} />}
+            />
+            <SimpleDismissBoxError error={errorVWC} />
+          </View>
+        );
       },
-      [modals]
+      [modals, errorVWC]
     )
   );
 };

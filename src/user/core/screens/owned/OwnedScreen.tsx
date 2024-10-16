@@ -6,7 +6,7 @@ import {
 import { createWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { CancelablePromise } from '../../../../shared/lib/CancelablePromise';
 import { InfiniteListing } from '../../../../shared/lib/InfiniteListing';
-import { makeTextError } from '../../../../shared/lib/describeError';
+import { DisplayableError } from '../../../../shared/lib/errors';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import {
   RequestResult,
@@ -55,7 +55,11 @@ export const OwnedScreen: OsehScreen<
               promise: Promise.resolve({
                 type: 'expired',
                 data: undefined,
-                error: makeTextError('Screen is not mounted'),
+                error: new DisplayableError(
+                  'server-refresh-required',
+                  'get owned content',
+                  'screen is not mounted'
+                ),
                 retryAt: undefined,
               }),
               done: () => true,

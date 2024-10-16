@@ -9,6 +9,7 @@ import {
 } from '../../../../shared/lib/Callbacks';
 import { CancelablePromise } from '../../../../shared/lib/CancelablePromise';
 import { InfiniteListing } from '../../../../shared/lib/InfiniteListing';
+import { DisplayableError } from '../../../../shared/lib/errors';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import {
   RequestResult,
@@ -28,7 +29,6 @@ import {
   seriesListParamsMapper,
 } from './SeriesListParams';
 import { SeriesListResources } from './SeriesListResources';
-import { makeTextError } from '../../../../shared/lib/describeError';
 
 /**
  * Displays the list of series which we have on offer
@@ -52,7 +52,11 @@ export const SeriesListScreen: OsehScreen<
               promise: Promise.resolve({
                 type: 'expired',
                 data: undefined,
-                error: makeTextError('Screen is not mounted'),
+                error: new DisplayableError(
+                  'server-refresh-required',
+                  'refresh series list',
+                  'screen is not mounted'
+                ),
                 retryAt: undefined,
               }),
               done: () => true,

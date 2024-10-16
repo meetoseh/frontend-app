@@ -39,12 +39,12 @@ import { SurveyCheckboxGroup } from '../../../../shared/components/SurveyCheckbo
 import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
 import { Modals } from '../../../../shared/contexts/ModalContext';
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
-import { describeError } from '../../../../shared/lib/describeError';
-import { View, Text } from 'react-native';
+import { Text } from 'react-native';
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
 import { OutlineWhiteButton } from '../../../../shared/components/OutlineWhiteButton';
 import { configurableScreenOut } from '../../lib/configurableScreenOut';
+import { DisplayableError } from '../../../../shared/lib/errors';
 
 const TEST_MERGE_JWT = 'token';
 
@@ -166,7 +166,7 @@ export const ResolveMergeConflict = ({
       (screen.parameters.conflict.phone === null || phoneHintVWC.get() !== null)
   );
 
-  const mergeErrorVWC = useWritableValueWithCallbacks<ReactElement | null>(
+  const mergeErrorVWC = useWritableValueWithCallbacks<DisplayableError | null>(
     () => null
   );
   const seenErrorVWC = useWritableValueWithCallbacks<boolean>(() => false);
@@ -177,7 +177,7 @@ export const ResolveMergeConflict = ({
     return undefined;
   });
 
-  useErrorModal(modals, mergeErrorVWC, 'merging');
+  useErrorModal(modals, mergeErrorVWC, { topBarHeightVWC: ctx.topBarHeight });
 
   return (
     <GridFullscreenContainer
@@ -277,9 +277,21 @@ export const ResolveMergeConflict = ({
                             emailHint,
                             phoneHint,
                             step: 'error',
-                            error: `${error}`,
+                            error:
+                              error instanceof DisplayableError
+                                ? error.formatProblem()
+                                : `${error}`,
                           });
-                          setVWC(mergeErrorVWC, await describeError(error));
+                          setVWC(
+                            mergeErrorVWC,
+                            error instanceof DisplayableError
+                              ? error
+                              : new DisplayableError(
+                                  'client',
+                                  'merge',
+                                  `${error}`
+                                )
+                          );
                         },
                       }
                     );

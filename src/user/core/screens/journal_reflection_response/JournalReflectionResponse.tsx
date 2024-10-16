@@ -35,7 +35,6 @@ import { setVWC } from '../../../../shared/lib/setVWC';
 import { screenWithWorking } from '../../lib/screenWithWorking';
 import { Modals } from '../../../../shared/contexts/ModalContext';
 import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
-import { describeError } from '../../../../shared/lib/describeError';
 import { View, Text, TextInput, Pressable } from 'react-native';
 import { OutlineWhiteButton } from '../../../../shared/components/OutlineWhiteButton';
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
@@ -57,6 +56,7 @@ import { Cancel } from '../../../../shared/components/icons/Cancel';
 import { TextPartVoiceNoteComponent } from '../journal_chat/components/TextPartVoiceNoteComponent';
 import { VoiceOrTextInputVoice } from '../../../../shared/components/voiceOrTextInput/VoiceOrTextInputVoice';
 import { Microphone } from '../../../../shared/components/icons/Microphone';
+import { DisplayableError } from '../../../../shared/lib/errors';
 
 /**
  * Shows the journal reflection question and gives a large amount of room for
@@ -119,10 +119,10 @@ export const JournalReflectionResponse = ({
     i?.focus();
     return undefined;
   });
-  const errorVWC = useWritableValueWithCallbacks<ReactElement | null>(
+  const errorVWC = useWritableValueWithCallbacks<DisplayableError | null>(
     () => null
   );
-  useErrorModal(modals, errorVWC, 'saving response');
+  useErrorModal(modals, errorVWC, { topBarHeightVWC: ctx.topBarHeight });
 
   const responseWrappedVWC = useWritableValueWithCallbacks<
     FlexGrowContentWidthTextAreaProps['value'] | null
@@ -590,7 +590,18 @@ export const JournalReflectionResponse = ({
                                   await resources.ensureSaved();
                                 } catch (e) {
                                   trace({ type: 'cta', step: 'error saving' });
-                                  const err = await describeError(e);
+                                  const err =
+                                    e instanceof DisplayableError
+                                      ? new DisplayableError(
+                                          e.type,
+                                          'save response',
+                                          e.details
+                                        )
+                                      : new DisplayableError(
+                                          'client',
+                                          'save response',
+                                          `${e}`
+                                        );
                                   setVWC(errorVWC, err);
                                   await exitTransitionCancelable.promise;
                                   await playEntranceTransition(transition)

@@ -8,6 +8,7 @@ import { useToggleFavorited } from '../../journey/hooks/useToggleFavorited';
 import { useMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValueWithCallbacks';
 import {
   ValueWithCallbacks,
+  createWritableValueWithCallbacks,
   useWritableValueWithCallbacks,
 } from '../../../shared/lib/Callbacks';
 import { OsehImageFromStateValueWithCallbacks } from '../../../shared/images/OsehImageFromStateValueWithCallbacks';
@@ -23,6 +24,8 @@ import { useIsTablet } from '../../../shared/lib/useIsTablet';
 import { setVWC } from '../../../shared/lib/setVWC';
 import { createValueWithCallbacksEffect } from '../../../shared/hooks/createValueWithCallbacksEffect';
 import { VerticalSpacer } from '../../../shared/components/VerticalSpacer';
+import { useTopBarHeight } from '../../../shared/hooks/useTopBarHeight';
+import { useReactManagedValueAsValueWithCallbacks } from '../../../shared/hooks/useReactManagedValueAsValueWithCallbacks';
 
 type CourseJourneyItemProps = {
   /**
@@ -112,6 +115,9 @@ export const CourseJourneyItem = ({
   );
 
   const likingVWC = useWritableValueWithCallbacks<boolean>(() => false);
+  const topBarHeightVWC = useReactManagedValueAsValueWithCallbacks(
+    useTopBarHeight()
+  );
   const toggleFavorited = useToggleFavorited({
     modals: modalContext.modals,
     journey: adaptValueWithCallbacksAsVariableStrategyProps(
@@ -136,6 +142,7 @@ export const CourseJourneyItem = ({
       )
     ),
     working: likingVWC,
+    topBarHeight: topBarHeightVWC,
   });
   const onToggleFavorited = useCallback(() => {
     toggleFavorited();

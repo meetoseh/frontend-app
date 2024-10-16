@@ -15,8 +15,8 @@ import { createCancelablePromiseFromCallbacks } from '../../../../../shared/lib/
 import { getCurrentServerTimeMS } from '../../../../../shared/lib/getCurrentServerTimeMS';
 import { setVWC } from '../../../../../shared/lib/setVWC';
 import { createValueWithCallbacksEffect } from '../../../../../shared/hooks/createValueWithCallbacksEffect';
-import { describeError } from '../../../../../shared/lib/describeError';
 import { apiFetch } from '../../../../../shared/lib/apiFetch';
+import { DisplayableError } from '../../../../../shared/lib/errors';
 
 /** A snapshot for a session state, usually used for other resources */
 export type SessionStateSnapshot = {
@@ -96,7 +96,10 @@ const getDataFromRef = (
       retryAt: undefined,
     }),
     async (e, state, resolve, reject) => {
-      const err = await describeError(e);
+      const err =
+        e instanceof DisplayableError
+          ? e
+          : new DisplayableError('client', 'fetch session state', `${e}`);
       if (state.finishing) {
         state.done = true;
         reject(new Error('canceled'));

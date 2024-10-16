@@ -12,18 +12,14 @@ import {
 import { setVWC } from '../../../../../shared/lib/setVWC';
 import { useValueWithCallbacksEffect } from '../../../../../shared/hooks/useValueWithCallbacksEffect';
 import { YesNoModal } from '../../../../../shared/components/YesNoModal';
-import {
-  ErrorBanner,
-  ErrorBannerText,
-} from '../../../../../shared/components/ErrorBanner';
 import { apiFetch } from '../../../../../shared/lib/apiFetch';
-import { describeError } from '../../../../../shared/lib/describeError';
 import { deleteJourneyFeedbackRequestReviewStoredState } from '../../../../journey/lib/JourneyFeedbackRequestReviewStore';
+import { DisplayableError } from '../../../../../shared/lib/errors';
 
 export const useHandleDeleteAccount = (
   loginContextRaw: LoginContextValue,
   modalContext: ModalContextValue,
-  errorVWC: WritableValueWithCallbacks<ReactElement | null>
+  errorVWC: WritableValueWithCallbacks<DisplayableError | null>
 ): (() => void) => {
   const showDeleteConfirmInitialPromptVWC = useWritableValueWithCallbacks(
     () => false
@@ -47,24 +43,31 @@ export const useHandleDeleteAccount = (
       if (loginRaw.state !== 'logged-in') {
         setVWC(
           errorVWC,
-          <ErrorBanner>
-            <ErrorBannerText>Try logging in again first.</ErrorBannerText>
-          </ErrorBanner>
+          new DisplayableError(
+            'server-refresh-required',
+            'delete account',
+            'not logged in'
+          )
         );
         return;
       }
       const login = loginRaw;
 
       try {
-        const response = await apiFetch(
-          `/api/1/users/me/account?${new URLSearchParams({
-            force: force ? '1' : '0',
-          })}`,
-          {
-            method: 'DELETE',
-          },
-          login
-        );
+        let response;
+        try {
+          response = await apiFetch(
+            `/api/1/users/me/account?${new URLSearchParams({
+              force: force ? '1' : '0',
+            })}`,
+            {
+              method: 'DELETE',
+            },
+            login
+          );
+        } catch {
+          throw new DisplayableError('connectivity', 'delete account');
+        }
 
         if (!response.ok) {
           if (!force && response.status === 409) {
@@ -91,11 +94,11 @@ export const useHandleDeleteAccount = (
               console.log('Unknown conflict type', body.type);
               setVWC(
                 errorVWC,
-                <ErrorBanner>
-                  <ErrorBannerText>
-                    E_A7015: Contact hi@oseh.com for assistance.
-                  </ErrorBannerText>
-                </ErrorBanner>
+                new DisplayableError(
+                  'client',
+                  'delete account',
+                  `unknown conflict type: ${body.type}`
+                )
               );
               return;
             }
@@ -107,7 +110,10 @@ export const useHandleDeleteAccount = (
         await loginContextRaw.setAuthTokens(null);
       } catch (e) {
         console.error(e);
-        const err = await describeError(e);
+        const err =
+          e instanceof DisplayableError
+            ? e
+            : new DisplayableError('client', 'delete account', `${e}`);
         setVWC(errorVWC, err);
       }
     },

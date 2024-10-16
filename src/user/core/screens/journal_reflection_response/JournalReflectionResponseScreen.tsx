@@ -35,7 +35,7 @@ import {
   JournalReflectionResponseResources,
   JournalReflectionResponseResponse,
 } from './JournalReflectionResponseResources';
-import { makeTextError } from '../../../../shared/lib/describeError';
+import { DisplayableError } from '../../../../shared/lib/errors';
 
 /**
  * Shows the last journal reflection question and allows the user to respond
@@ -81,7 +81,10 @@ export const JournalReflectionResponseScreen: OsehScreen<
           data: createWritableValueWithCallbacks({
             type: 'error',
             data: undefined,
-            error: makeTextError('Journal entry not provided by server'),
+            error: new DisplayableError(
+              'server-refresh-required',
+              'journal entry not provided'
+            ),
             retryAt: undefined,
           }),
           release: () => {},
@@ -99,7 +102,10 @@ export const JournalReflectionResponseScreen: OsehScreen<
               promise: Promise.resolve({
                 type: 'expired',
                 data: undefined,
-                error: makeTextError('Screen is not mounted'),
+                error: new DisplayableError(
+                  'server-refresh-required',
+                  'screen is not mounted'
+                ),
                 retryAt: undefined,
               }),
               done: () => true,
@@ -116,8 +122,9 @@ export const JournalReflectionResponseScreen: OsehScreen<
                 ? {
                     type: 'error',
                     data: undefined,
-                    error: makeTextError(
-                      'Journal entry not provided by server'
+                    error: new DisplayableError(
+                      'server-refresh-required',
+                      'journal entry not provided'
                     ),
                     retryAt: undefined,
                   }
@@ -439,7 +446,10 @@ export const JournalReflectionResponseScreen: OsehScreen<
                                   return {
                                     type: 'error',
                                     data: undefined,
-                                    error: makeTextError('not supported'),
+                                    error: new DisplayableError(
+                                      'server-refresh-required',
+                                      'refresh voice note'
+                                    ),
                                     retryAt: undefined,
                                   };
                                 }
@@ -592,7 +602,10 @@ export const JournalReflectionResponseScreen: OsehScreen<
                   ({
                     type: 'error',
                     data: undefined,
-                    error: makeTextError('refresh finish not supported'),
+                    error: new DisplayableError(
+                      'server-refresh-required',
+                      'refresh voice note'
+                    ),
                     retryAt: undefined,
                   } as const)
               ),
@@ -871,7 +884,10 @@ export const JournalReflectionResponseScreen: OsehScreen<
                             ({
                               type: 'error',
                               data: undefined,
-                              error: makeTextError('not supported'),
+                              error: new DisplayableError(
+                                'server-refresh-required',
+                                'refresh voice note'
+                              ),
                               retryAt: undefined,
                             } as const)
                         ),

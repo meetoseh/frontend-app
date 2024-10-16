@@ -26,6 +26,8 @@ import { useStyleVWC } from '../../../shared/hooks/useStyleVWC';
 import { setVWC } from '../../../shared/lib/setVWC';
 import { createValueWithCallbacksEffect } from '../../../shared/hooks/createValueWithCallbacksEffect';
 import { VerticalSpacer } from '../../../shared/components/VerticalSpacer';
+import { useReactManagedValueAsValueWithCallbacks } from '../../../shared/hooks/useReactManagedValueAsValueWithCallbacks';
+import { useTopBarHeight } from '../../../shared/hooks/useTopBarHeight';
 
 type HistoryItemProps = {
   /**
@@ -110,6 +112,9 @@ export const HistoryItem = ({
     instructorImages
   );
   const modalContext = useContext(ModalContext);
+  const topBarHeightVWC = useReactManagedValueAsValueWithCallbacks(
+    useTopBarHeight()
+  );
   const toggleFavorited = useToggleFavorited({
     modals: modalContext.modals,
     journey: adaptValueWithCallbacksAsVariableStrategyProps(itemVWC),
@@ -126,6 +131,7 @@ export const HistoryItem = ({
       useMappedValueWithCallbacks(itemVWC, (item) => item.lastTakenAt === null)
     ),
     working: likingVWC,
+    topBarHeight: topBarHeightVWC,
   });
   const onToggleFavorited = useCallback(() => {
     toggleFavorited();

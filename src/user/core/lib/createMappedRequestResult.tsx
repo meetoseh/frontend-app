@@ -1,5 +1,5 @@
 import { createMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValueWithCallbacks';
-import { makeTextError } from '../../../shared/lib/describeError';
+import { DisplayableError } from '../../../shared/lib/errors';
 import {
   RequestResult,
   RequestResultConcrete,
@@ -29,7 +29,11 @@ export const createMappedRequestResult = <
           return {
             data: undefined,
             type: 'error',
-            error: makeTextError('Unavailable'),
+            error: new DisplayableError(
+              'server-refresh-required',
+              'get mapped data',
+              'no longer needed'
+            ),
           };
         }
         return {

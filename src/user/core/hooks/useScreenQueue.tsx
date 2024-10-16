@@ -24,7 +24,7 @@ import { CancelablePromise } from '../../../shared/lib/CancelablePromise';
 import { delayCancelableUntilResolved } from '../../../shared/lib/delayCancelableUntilResolved';
 import { createUID } from '../../../shared/lib/createUID';
 import { Buffer } from 'buffer';
-import { makeTextError } from '../../../shared/lib/describeError';
+import { DisplayableError } from '../../../shared/lib/errors';
 
 export type UseScreenQueueProps = {
   /**
@@ -84,7 +84,7 @@ export type UseScreenQueueState =
        */
       type: 'error';
       /** A description of the error */
-      error: ReactElement;
+      error: DisplayableError;
       component?: undefined;
     }
   | {
@@ -382,7 +382,11 @@ export const useScreenQueue = ({
             );
             setVWC(valueVWC, {
               type: 'error',
-              error: makeTextError('Too many skips in a row'),
+              error: new DisplayableError(
+                'client',
+                'get screen',
+                'too many skips in a row'
+              ),
             });
             return;
           }

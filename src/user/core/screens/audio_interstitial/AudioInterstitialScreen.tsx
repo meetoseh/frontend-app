@@ -24,7 +24,7 @@ import {
 import { AudioInterstitialResources } from './AudioInterstitialResources';
 import { AudioFileData } from '../../../../shared/content/createAudioDataHandler';
 import { convertScreenConfigurableTriggerWithOldVersion } from '../../models/ScreenConfigurableTrigger';
-import { makeTextError } from '../../../../shared/lib/describeError';
+import { DisplayableError } from '../../../../shared/lib/errors';
 
 /**
  * An extremely basic audio interstitial
@@ -61,7 +61,11 @@ export const AudioInterstitialScreen: OsehScreen<
               promise: Promise.resolve({
                 type: 'expired',
                 data: undefined,
-                error: makeTextError('Screen is not mounted'),
+                error: new DisplayableError(
+                  'server-refresh-required',
+                  'get transcript',
+                  'screen is not mounted'
+                ),
                 retryAt: undefined,
               }),
               done: () => true,
@@ -119,7 +123,11 @@ export const AudioInterstitialScreen: OsehScreen<
               promise: Promise.resolve({
                 type: 'expired',
                 data: undefined,
-                error: makeTextError('Screen is not mounted'),
+                error: new DisplayableError(
+                  'server-refresh-required',
+                  'get transcript',
+                  'screen is not mounted'
+                ),
                 retryAt: undefined,
               }),
               done: () => true,
@@ -136,7 +144,11 @@ export const AudioInterstitialScreen: OsehScreen<
                 ? {
                     type: 'error',
                     data: undefined,
-                    error: makeTextError('transcript is no longer available'),
+                    error: new DisplayableError(
+                      'server-refresh-required',
+                      'get transcript',
+                      'no longer available'
+                    ),
                     retryAt: undefined,
                   }
                 : {

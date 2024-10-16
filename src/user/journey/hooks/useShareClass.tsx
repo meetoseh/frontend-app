@@ -18,11 +18,10 @@ import {
   useWritableValueWithCallbacks,
 } from '../../../shared/lib/Callbacks';
 import { LoginContext } from '../../../shared/contexts/LoginContext';
-import { ModalContext } from '../../../shared/contexts/ModalContext';
 import { setVWC } from '../../../shared/lib/setVWC';
 import { apiFetch } from '../../../shared/lib/apiFetch';
-import { describeError } from '../../../shared/lib/describeError';
 import { useValuesWithCallbacksEffect } from '../../../shared/hooks/useValuesWithCallbacksEffect';
+import { DisplayableError } from '../../../shared/lib/errors';
 
 export type UseShareClassProps = {
   /**
@@ -50,7 +49,7 @@ export type UseShareClassResult = {
   /**
    * The last error that occurred, as can be presented to the user
    */
-  error: WritableValueWithCallbacks<ReactElement | null>;
+  error: WritableValueWithCallbacks<DisplayableError | null>;
 
   /**
    * True if we are working on sharing the class, false otherwise
@@ -67,7 +66,9 @@ export const useShareClass = ({
 }: UseShareClassProps): UseShareClassResult => {
   const loginContextRaw = useContext(LoginContext);
   const journeyVWC = useVariableStrategyPropsAsValueWithCallbacks(journey);
-  const error = useWritableValueWithCallbacks<ReactElement | null>(() => null);
+  const error = useWritableValueWithCallbacks<DisplayableError | null>(
+    () => null
+  );
   const shareable = useWritableValueWithCallbacks<boolean | undefined>(
     () => undefined
   );
@@ -239,7 +240,10 @@ export const useShareClass = ({
       try {
         await handleShareInner(journeyUid);
       } catch (e) {
-        const err = await describeError(e);
+        const err =
+          e instanceof DisplayableError
+            ? e
+            : new DisplayableError('client', 'share', `${e}`);
         if (running.get()) {
           setVWC(error, err);
         }

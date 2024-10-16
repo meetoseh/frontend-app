@@ -28,7 +28,7 @@ import {
 } from './lib/createJournalEntryManagerHandler';
 import { VoiceNoteStateMachine } from './lib/createVoiceNoteStateMachine';
 import { JournalChatState } from './lib/JournalChatState';
-import { makeTextError } from '../../../../shared/lib/describeError';
+import { DisplayableError } from '../../../../shared/lib/errors';
 
 /**
  * Allows the user to chat with the system.
@@ -64,7 +64,11 @@ export const JournalChatScreen: OsehScreen<
           data: createWritableValueWithCallbacks({
             type: 'error',
             data: undefined,
-            error: makeTextError('Journal entry not provided by server'),
+            error: new DisplayableError(
+              'server-refresh-required',
+              'get journal entry',
+              'journal entry not provided'
+            ),
             retryAt: undefined,
           }),
           release: () => {},
@@ -82,7 +86,11 @@ export const JournalChatScreen: OsehScreen<
               promise: Promise.resolve({
                 type: 'expired',
                 data: undefined,
-                error: makeTextError('Screen is not mounted'),
+                error: new DisplayableError(
+                  'server-refresh-required',
+                  'get journal entry',
+                  'screen is not mounted'
+                ),
                 retryAt: undefined,
               }),
               done: () => true,
@@ -99,8 +107,10 @@ export const JournalChatScreen: OsehScreen<
                 ? {
                     type: 'error',
                     data: undefined,
-                    error: makeTextError(
-                      'Journal entry not provided by server'
+                    error: new DisplayableError(
+                      'server-refresh-required',
+                      'get journal entry',
+                      'journal entry not provided'
                     ),
                     retryAt: undefined,
                   }
@@ -331,7 +341,10 @@ export const JournalChatScreen: OsehScreen<
                 promise: Promise.resolve({
                   type: 'error',
                   data: undefined,
-                  error: makeTextError('Cannot refresh this ref'),
+                  error: new DisplayableError(
+                    'server-refresh-required',
+                    'save voice note'
+                  ),
                   retryAt: undefined,
                 }),
                 done: () => true,

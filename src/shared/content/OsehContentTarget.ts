@@ -1,4 +1,5 @@
 import { ReactElement } from 'react';
+import { DisplayableError } from '../lib/errors';
 
 /**
  * Describes the meta-information on a native export of a content file.
@@ -58,7 +59,7 @@ export type OsehContentTarget =
     }
   | {
       state: 'failed';
-      error: ReactElement;
+      error: DisplayableError;
       nativeExport: null;
       presigned: null;
       jwt: null;

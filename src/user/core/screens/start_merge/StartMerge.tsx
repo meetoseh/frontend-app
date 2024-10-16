@@ -36,6 +36,7 @@ import { MergeProvider } from '../settings/lib/MergeProvider';
 import { trackMerge } from '../settings/lib/trackMerge';
 import { ProviderItem, ProvidersList } from '../login/components/ProvidersList';
 import { configurableScreenOut } from '../../lib/configurableScreenOut';
+import { DisplayableError } from '../../../../shared/lib/errors';
 
 /**
  * Allows the user to merge their account using one of the indicated providers.
@@ -93,10 +94,10 @@ export const StartMerge = ({
     screen.parameters.skip.trigger,
   ]);
 
-  const mergeError = useWritableValueWithCallbacks<ReactElement | null>(
+  const mergeError = useWritableValueWithCallbacks<DisplayableError | null>(
     () => null
   );
-  useErrorModal(modals, mergeError, 'merging');
+  useErrorModal(modals, mergeError, { topBarHeightVWC: ctx.topBarHeight });
 
   const manageConnectWithProvider = useManageConnectWithProvider({
     mergeError,

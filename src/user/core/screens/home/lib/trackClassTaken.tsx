@@ -1,4 +1,4 @@
-import { makeTextError } from '../../../../../shared/lib/describeError';
+import { DisplayableError } from '../../../../../shared/lib/errors';
 import { getCurrentServerTimeMS } from '../../../../../shared/lib/getCurrentServerTimeMS';
 import { shuffle } from '../../../../../shared/lib/shuffle';
 import { waitForValueWithCallbacksConditionCancelable } from '../../../../../shared/lib/waitForValueWithCallbacksCondition';
@@ -28,7 +28,11 @@ export const trackClassTaken = (ctx: ScreenContext): void => {
             promise: Promise.resolve({
               type: 'expired',
               data: undefined,
-              error: makeTextError('User is not logged in'),
+              error: new DisplayableError(
+                'server-refresh-required',
+                'track class taken',
+                'not logged in'
+              ),
               retryAt: undefined,
             }),
             done: () => true,

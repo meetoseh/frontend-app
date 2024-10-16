@@ -19,16 +19,16 @@ import { delayCancelableUntilResolved } from '../../../shared/lib/delayCancelabl
 import { VISITOR_SOURCE } from '../../../shared/lib/visitorSource';
 import { setVWC } from '../../../shared/lib/setVWC';
 import { apiFetch } from '../../../shared/lib/apiFetch';
-import {
-  describeError,
-  describeFetchError,
-} from '../../../shared/lib/describeError';
 import { useValueWithCallbacksEffect } from '../../../shared/hooks/useValueWithCallbacksEffect';
 import { SCREEN_VERSION } from '../../../shared/lib/screenVersion';
 import { getCurrentServerTimeMS } from '../../../shared/lib/getCurrentServerTimeMS';
 import { getJwtExpiration } from '../../../shared/lib/getJwtExpiration';
 import { createStandardRoundTripTimeTracker } from '../lib/RoundTripTimeTracker';
 import { createUnencryptedStorageAdapter } from '../lib/SimpleAsyncStorage';
+import {
+  chooseErrorFromStatus,
+  DisplayableError,
+} from '../../../shared/lib/errors';
 
 export type UseScreenQueueStateResult = {
   /** The screen that the user should see */
@@ -54,7 +54,7 @@ export type UseScreenQueueStateState =
        */
       type: 'error';
       /** A description of what went wrong */
-      error: ReactElement;
+      error: DisplayableError;
       result?: undefined;
     }
   | {
@@ -291,7 +291,7 @@ export const useScreenQueueState = (): ScreenQueueState => {
                 if (onError === undefined) {
                   const result: UseScreenQueueStateState = {
                     type: 'error',
-                    error: describeFetchError(),
+                    error: new DisplayableError('connectivity', 'get screen'),
                   };
                   setVWC(valueVWC, result);
                   state.finishing = true;
@@ -362,7 +362,10 @@ export const useScreenQueueState = (): ScreenQueueState => {
                   return;
                 }
 
-                const described = await describeError(response);
+                const described = chooseErrorFromStatus(
+                  response.status,
+                  'peek screen'
+                );
                 state.cancelers.remove(doAbort);
 
                 if (state.finishing) {
@@ -453,7 +456,7 @@ export const useScreenQueueState = (): ScreenQueueState => {
 
                 const result: UseScreenQueueStateState = {
                   type: 'error',
-                  error: describeFetchError(),
+                  error: new DisplayableError('connectivity', 'get screen'),
                 };
                 setVWC(valueVWC, result);
                 state.finishing = true;
@@ -619,11 +622,6 @@ export const useScreenQueueState = (): ScreenQueueState => {
   );
 };
 
-function describeHandledError(): ReactElement {
-  return (
-    <>
-      An error occurred and an error handler was specified. You should not see
-      this.
-    </>
-  );
+function describeHandledError(): DisplayableError {
+  return new DisplayableError('canceled', 'get screen', 'already handled');
 }

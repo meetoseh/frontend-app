@@ -46,7 +46,7 @@ import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwa
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
 import { OutlineWhiteButton } from '../../../../shared/components/OutlineWhiteButton';
 import { configurableScreenOut } from '../../lib/configurableScreenOut';
-import { makeTextError } from '../../../../shared/lib/describeError';
+import { DisplayableError } from '../../../../shared/lib/errors';
 
 /**
  * Allows the user to provide feedback on a journey
@@ -83,15 +83,16 @@ export const JourneyFeedback = ({
   const workingVWC = useWritableValueWithCallbacks(() => false);
 
   const responseVWC = useWritableValueWithCallbacks<number | null>(() => null);
-  const feedbackErrorVWC = useWritableValueWithCallbacks<ReactElement | null>(
-    () => null
-  );
-  useErrorModal(modals, feedbackErrorVWC, 'saving feedback');
+  const feedbackErrorVWC =
+    useWritableValueWithCallbacks<DisplayableError | null>(() => null);
+  useErrorModal(modals, feedbackErrorVWC, {
+    topBarHeightVWC: ctx.topBarHeight,
+  });
 
-  const shareErrorVWC = useWritableValueWithCallbacks<ReactElement | null>(
+  const shareErrorVWC = useWritableValueWithCallbacks<DisplayableError | null>(
     () => null
   );
-  useErrorModal(modals, shareErrorVWC, 'sharing journey');
+  useErrorModal(modals, shareErrorVWC, { topBarHeightVWC: ctx.topBarHeight });
 
   const storeResponseWrapper = useCallback((): Promise<boolean> => {
     return storeResponse({
@@ -120,7 +121,7 @@ export const JourneyFeedback = ({
     return undefined;
   });
 
-  const likeErrorVWC = useWritableValueWithCallbacks<ReactElement | null>(
+  const likeErrorVWC = useWritableValueWithCallbacks<DisplayableError | null>(
     () => null
   );
   const showFavoritedUntilVWC = useWritableValueWithCallbacks<
@@ -168,7 +169,7 @@ export const JourneyFeedback = ({
     };
   });
 
-  useErrorModal(modals, likeErrorVWC, 'favoriting or unfavoriting journey');
+  useErrorModal(modals, likeErrorVWC, { topBarHeightVWC: ctx.topBarHeight });
   useFavoritedModal(
     adaptValueWithCallbacksAsVariableStrategyProps(showFavoritedUntilVWC),
     modals
@@ -270,10 +271,11 @@ export const JourneyFeedback = ({
                           });
                           setVWC(
                             shareErrorVWC,
-                            <>
-                              failed to load (expected success, got{' '}
-                              {linkData.type})
-                            </>
+                            new DisplayableError(
+                              'client',
+                              'share class',
+                              `failed to load (expected success, got ${linkData.type})`
+                            )
                           );
                           return;
                         }
@@ -287,8 +289,10 @@ export const JourneyFeedback = ({
                           });
                           setVWC(
                             shareErrorVWC,
-                            makeTextError(
-                              'This journey cannot be shared at this time'
+                            new DisplayableError(
+                              'server-not-retryable',
+                              'share class',
+                              'journey is not shareable'
                             )
                           );
                           return;
@@ -392,7 +396,11 @@ export const JourneyFeedback = ({
                     if (cta === null) {
                       setVWC(
                         feedbackErrorVWC,
-                        makeTextError('cta2 is null but button handler called')
+                        new DisplayableError(
+                          'client',
+                          'cta2',
+                          'button should not be visible'
+                        )
                       );
                       return;
                     }

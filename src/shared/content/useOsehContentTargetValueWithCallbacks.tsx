@@ -6,14 +6,11 @@ import {
   useWritableValueWithCallbacks,
 } from '../lib/Callbacks';
 import { OsehContentRef } from './OsehContentRef';
-import {
-  ContentFileNativeExport,
-  OsehContentTarget,
-} from './OsehContentTarget';
+import { OsehContentTarget } from './OsehContentTarget';
 import { setVWC } from '../lib/setVWC';
 import { MakePropsNotNull } from '../lib/MakePropsNotNull';
 import { getNativeExport } from './useOsehContentTarget';
-import { describeError } from '../lib/describeError';
+import { DisplayableError } from '../lib/errors';
 
 export type UseOsehContentTargetValueWithCallbacksProps = {
   /**
@@ -135,7 +132,10 @@ export const useOsehContentTargetValueWithCallbacks = ({
           if (!active) {
             return;
           }
-          const err = isValidElement(e) ? e : await describeError(e);
+          const err =
+            e instanceof DisplayableError
+              ? e
+              : new DisplayableError('client', 'fetch web export', `${e}`);
           if (!active) {
             return;
           }

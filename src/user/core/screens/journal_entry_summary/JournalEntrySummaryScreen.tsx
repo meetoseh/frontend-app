@@ -30,7 +30,7 @@ import {
   JournalEntrySummaryMappedParams,
 } from './JournalEntrySummaryParams';
 import { JournalEntrySummaryResources } from './JournalEntrySummaryResources';
-import { makeTextError } from '../../../../shared/lib/describeError';
+import { DisplayableError } from '../../../../shared/lib/errors';
 
 /**
  * Shows the last v1 summary in the journal entry
@@ -81,7 +81,10 @@ export const JournalEntrySummaryScreen: OsehScreen<
           data: createWritableValueWithCallbacks({
             type: 'error',
             data: undefined,
-            error: makeTextError('Journal entry not provided by server'),
+            error: new DisplayableError(
+              'server-refresh-required',
+              'refresh journal'
+            ),
             retryAt: undefined,
           }),
           release: () => {},
@@ -99,7 +102,11 @@ export const JournalEntrySummaryScreen: OsehScreen<
               promise: Promise.resolve({
                 type: 'expired',
                 data: undefined,
-                error: makeTextError('Screen is not mounted'),
+                error: new DisplayableError(
+                  'server-refresh-required',
+                  'refresh journal',
+                  'screen is not mounted'
+                ),
                 retryAt: undefined,
               }),
               done: () => true,
@@ -116,8 +123,9 @@ export const JournalEntrySummaryScreen: OsehScreen<
                 ? {
                     type: 'error',
                     data: undefined,
-                    error: makeTextError(
-                      'Journal entry not provided by server'
+                    error: new DisplayableError(
+                      'server-refresh-required',
+                      'refresh journal'
                     ),
                     retryAt: undefined,
                   }

@@ -7,11 +7,6 @@ import Constants from 'expo-constants';
 import OsehWordmarkWhite from './icons/OsehWordmarkWhite';
 import { isSilentAuthSupported } from '../../../../shared/contexts/LoginContext';
 import { apiFetch } from '../../../../shared/lib/apiFetch';
-import {
-  ErrorBanner,
-  ErrorBannerText,
-} from '../../../../shared/components/ErrorBanner';
-import { describeError } from '../../../../shared/lib/describeError';
 import { URLSearchParams } from 'react-native-url-polyfill';
 import { useUnwrappedValueWithCallbacks } from '../../../../shared/hooks/useUnwrappedValueWithCallbacks';
 import {
@@ -49,6 +44,10 @@ import { GridContentContainer } from '../../../../shared/components/GridContentC
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { HorizontalSpacer } from '../../../../shared/components/HorizontalSpacer';
 import { showYesNoModal } from '../../../../shared/lib/showYesNoModal';
+import {
+  chooseErrorFromStatus,
+  DisplayableError,
+} from '../../../../shared/lib/errors';
 
 /* guest -> random guest; apple -> random guest no name */
 const DEV_ACCOUNT_USER_IDENTITY_ID: string = 'guest-original';
@@ -59,24 +58,29 @@ const prepareLink = async (
   provider: 'Google' | 'SignInWithApple' | 'Direct' | 'Dev'
 ): Promise<{ url: string; redirectUrl: string }> => {
   const redirectUrl = Linking.createURL('login_callback');
-  const response = await apiFetch(
-    '/api/1/oauth/prepare',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
+  let response;
+  try {
+    response = await apiFetch(
+      '/api/1/oauth/prepare',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+        },
+        body: JSON.stringify({
+          provider,
+          refresh_token_desired: true,
+          redirect_uri: redirectUrl,
+        }),
       },
-      body: JSON.stringify({
-        provider,
-        refresh_token_desired: true,
-        redirect_uri: redirectUrl,
-      }),
-    },
-    null
-  );
+      null
+    );
+  } catch {
+    throw new DisplayableError('connectivity', `prepare ${provider}`);
+  }
 
   if (!response.ok) {
-    throw response;
+    throw chooseErrorFromStatus(response.status, `prepare ${provider}`);
   }
 
   const data: { url: string } = await response.json();
@@ -227,7 +231,7 @@ const isDev = Constants.expoConfig?.extra?.environment === 'dev';
  */
 export const Login = ({ ctx }: { ctx: ScreenContext }) => {
   const checkedMessagePipeVWC = useWritableValueWithCallbacks(() => false);
-  const errorVWC = useWritableValueWithCallbacks<ReactElement | null>(
+  const errorVWC = useWritableValueWithCallbacks<DisplayableError | null>(
     () => null
   );
   const mountedVWC = useIsMounted();
@@ -241,31 +245,19 @@ export const Login = ({ ctx }: { ctx: ScreenContext }) => {
       if (result.type === 'cancel') {
         setVWC(
           errorVWC,
-          <ErrorBanner>
-            <ErrorBannerText>
-              Authorization failed: cancelled by user
-            </ErrorBannerText>
-          </ErrorBanner>
+          new DisplayableError('client', 'login', 'cancelled by user')
         );
       } else if (result.type === 'dismiss') {
         console.log('dismissed by user; ignoring');
       } else if (result.type === 'unknown') {
         setVWC(
           errorVWC,
-          <ErrorBanner>
-            <ErrorBannerText>
-              Authorization failed: unknown result ({result.rawType})
-            </ErrorBannerText>
-          </ErrorBanner>
+          new DisplayableError('client', 'login', `${result.rawType}`)
         );
       } else if (result.type === 'error') {
         setVWC(
           errorVWC,
-          <ErrorBanner>
-            <ErrorBannerText>
-              Authorization failed: {result.message}
-            </ErrorBannerText>
-          </ErrorBanner>
+          new DisplayableError('client', 'login', `${result.message}`)
         );
       } else {
         // ensures no missing cases
@@ -416,7 +408,10 @@ export const Login = ({ ctx }: { ctx: ScreenContext }) => {
             return await handleAuthenticate();
           }
         } catch (e) {
-          const described = await describeError(e);
+          const described =
+            e instanceof DisplayableError
+              ? e
+              : new DisplayableError('client', 'handle passkey login', `${e}`);
           setVWC(errorVWC, described);
         }
 
@@ -447,11 +442,7 @@ export const Login = ({ ctx }: { ctx: ScreenContext }) => {
             console.log('passkey regstration failed:', e);
             setVWC(
               errorVWC,
-              <ErrorBanner>
-                <ErrorBannerText>
-                  Passkey creation did not succeed
-                </ErrorBannerText>
-              </ErrorBanner>
+              new DisplayableError('client', 'passkey registration', `${e}`)
             );
             return;
           }
@@ -516,11 +507,7 @@ export const Login = ({ ctx }: { ctx: ScreenContext }) => {
             console.log('passkey authentication failed:', e);
             setVWC(
               errorVWC,
-              <ErrorBanner>
-                <ErrorBannerText>
-                  Passkey sign-in did not succeed
-                </ErrorBannerText>
-              </ErrorBanner>
+              new DisplayableError('client', 'passkey authentication', `${e}`)
             );
             return;
           }
@@ -637,7 +624,12 @@ export const Login = ({ ctx }: { ctx: ScreenContext }) => {
           setTimeout(pipe.close, 3000);
         }
       } catch (e) {
-        setVWC(errorVWC, await describeError(e));
+        setVWC(
+          errorVWC,
+          e instanceof DisplayableError
+            ? e
+            : new DisplayableError('client', 'login', `${e}`)
+        );
       }
     },
     [onMessageFromPipe, mountedVWC, errorVWC]
@@ -655,23 +647,28 @@ export const Login = ({ ctx }: { ctx: ScreenContext }) => {
       const sub = selectDevAccountSub();
       console.log('logging in as dev account:', sub);
 
-      const response = await apiFetch(
-        '/api/1/dev/login',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json; charset=utf-8',
+      let response;
+      try {
+        response = await apiFetch(
+          '/api/1/dev/login',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json; charset=utf-8',
+            },
+            body: JSON.stringify({
+              sub,
+              refresh_token_desired: true,
+            }),
           },
-          body: JSON.stringify({
-            sub,
-            refresh_token_desired: true,
-          }),
-        },
-        null
-      );
+          null
+        );
+      } catch {
+        throw new DisplayableError('connectivity', 'dev login');
+      }
 
       if (!response.ok) {
-        throw response;
+        throw chooseErrorFromStatus(response.status, 'dev login');
       }
 
       const data: {
@@ -687,16 +684,17 @@ export const Login = ({ ctx }: { ctx: ScreenContext }) => {
     } catch (e) {
       console.log('dev login failed:', e);
       console.error(e);
-      setVWC(errorVWC, await describeError(e));
+      setVWC(
+        errorVWC,
+        e instanceof DisplayableError
+          ? e
+          : new DisplayableError('client', 'dev login', `${e}`)
+      );
     }
   }, [ctx.login, errorVWC]);
 
-  const checkedMessagePipe = useUnwrappedValueWithCallbacks(
-    checkedMessagePipeVWC
-  );
-
   const modals = useWritableValueWithCallbacks<Modals>(() => []);
-  useErrorModal(modals, errorVWC, 'logging in');
+  useErrorModal(modals, errorVWC, { topBarHeightVWC: ctx.topBarHeight });
 
   const silentAuthSupportedVWC = useWritableValueWithCallbacks(
     (): boolean | null => null

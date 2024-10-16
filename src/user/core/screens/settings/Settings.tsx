@@ -50,6 +50,11 @@ import { showYesNoModal } from '../../../../shared/lib/showYesNoModal';
 import { purgeClientKeys } from '../../../../shared/journals/clientKeys';
 import { configurableScreenOut } from '../../lib/configurableScreenOut';
 import { ScreenConfigurableTrigger } from '../../models/ScreenConfigurableTrigger';
+import {
+  chooseErrorFromStatus,
+  DisplayableError,
+} from '../../../../shared/lib/errors';
+import { setVWC } from '../../../../shared/lib/setVWC';
 
 const isDevelopment = Constants.expoConfig?.extra?.environment === 'dev';
 
@@ -71,7 +76,7 @@ export const Settings = ({
   SettingsMappedParams
 >): ReactElement => {
   const modals = useWritableValueWithCallbacks<Modals>(() => []);
-  const errorVWC = useWritableValueWithCallbacks<ReactElement | null>(
+  const errorVWC = useWritableValueWithCallbacks<DisplayableError | null>(
     () => null
   );
   const handleDeleteAccount = useHandleDeleteAccount(
@@ -79,12 +84,12 @@ export const Settings = ({
     { modals },
     errorVWC
   );
-  const mergeError = useWritableValueWithCallbacks<ReactElement | null>(
+  const mergeError = useWritableValueWithCallbacks<DisplayableError | null>(
     () => null
   );
 
-  useErrorModal(modals, errorVWC, 'settings');
-  useErrorModal(modals, mergeError, 'merge account in settings');
+  useErrorModal(modals, errorVWC, { topBarHeightVWC: ctx.topBarHeight });
+  useErrorModal(modals, mergeError, { topBarHeightVWC: ctx.topBarHeight });
 
   const transition = useTransitionProp(
     (): StandardScreenTransition => entrance
@@ -185,8 +190,10 @@ export const Settings = ({
   );
 
   const restorePurchasesErrorVWC =
-    useWritableValueWithCallbacks<ReactElement | null>(() => null);
-  useErrorModal(modals, restorePurchasesErrorVWC, 'restore-purchases');
+    useWritableValueWithCallbacks<DisplayableError | null>(() => null);
+  useErrorModal(modals, restorePurchasesErrorVWC, {
+    topBarHeightVWC: ctx.topBarHeight,
+  });
   const restorePurchasesLink = useMappedValueWithCallbacks(
     resources.pro,
     (pro: Entitlement | null): SettingLink => ({
@@ -199,109 +206,133 @@ export const Settings = ({
           : ['No Oseh+ access currently'],
       key: 'restore-purchases',
       onClick: async () => {
-        trace({
-          type: 'restore-purchases',
-          technique: 'revenuecat',
-          step: 'initializing..',
-        });
-
-        const user = ctx.login.value.get();
-        if (user.state !== 'logged-in') {
+        try {
           trace({
             type: 'restore-purchases',
             technique: 'revenuecat',
-            step: 'not-logged-in',
+            step: 'initializing..',
           });
-          return;
-        }
 
-        const response = await apiFetch(
-          '/api/1/users/me/revenue_cat_id',
-          {
-            method: 'GET',
-          },
-          user
-        );
-        if (!response.ok) {
-          throw response;
-        }
-        const data: { revenue_cat_id: string } = await response.json();
-        const revenueCatID = data.revenue_cat_id;
-        trace({
-          type: 'restore-purchases',
-          technique: 'revenuecat',
-          step: 'configuring',
-          revenueCatID,
-        });
+          const user = ctx.login.value.get();
+          if (user.state !== 'logged-in') {
+            trace({
+              type: 'restore-purchases',
+              technique: 'revenuecat',
+              step: 'not-logged-in',
+            });
+            return;
+          }
 
-        const apiKey = Platform.select({
-          ios: 'appl_iUUQsQeQYmaFsfylOIVhryaoUNa',
-          android: 'goog_ykJYeTeXNtUcUZkeqfTOxGTBicI',
-          default: undefined,
-        });
-        if (apiKey === undefined) {
-          throw new Error('not implemented');
-        }
-        Purchases.configure({
-          apiKey,
-          appUserID: revenueCatID,
-          // Not necessary to enforce entitlements client-side as we don't unlock any
-          // client-side behavior
-          entitlementVerificationMode:
-            Purchases.ENTITLEMENT_VERIFICATION_MODE.DISABLED,
-        });
-        trace({
-          type: 'restore-purchases',
-          technique: 'revenuecat',
-          step: 'restoring',
-        });
-        const newInfo = await Purchases.restorePurchases();
-        const rcThinksHavePro = !!newInfo?.entitlements?.active?.pro?.isActive;
-        trace({
-          type: 'restore-purchases',
-          technique: 'revenuecat',
-          step: 'syncing',
-          rcThinksHavePro,
-        });
+          let response;
+          try {
+            response = await apiFetch(
+              '/api/1/users/me/revenue_cat_id',
+              {
+                method: 'GET',
+              },
+              user
+            );
+          } catch {
+            throw new DisplayableError('connectivity', 'restore purchases');
+          }
+          if (!response.ok) {
+            throw chooseErrorFromStatus(response.status, 'restore purchases');
+          }
+          const data: { revenue_cat_id: string } = await response.json();
+          const revenueCatID = data.revenue_cat_id;
+          trace({
+            type: 'restore-purchases',
+            technique: 'revenuecat',
+            step: 'configuring',
+            revenueCatID,
+          });
 
-        const osehResponse = await apiFetch(
-          '/api/1/users/me/entitlements/pro',
-          {
-            method: 'GET',
-            headers: {
-              pragma: 'no-cache',
-            },
-          },
-          user
-        );
-        if (!response.ok) {
-          throw response;
-        }
-        const dataRaw = await osehResponse.json();
-        const pro = convertUsingMapper(dataRaw, entitlementKeyMap);
-        trace({
-          type: 'restore-purchases',
-          technique: 'revenuecat',
-          step: 'finalizing',
-          osehThinksHavePro: pro.isActive,
-        });
-        ctx.resources.entitlementsHandler.evictOrReplace(
-          { user, entitlement: 'pro' },
-          () => ({
-            type: 'data',
-            data: pro,
-          })
-        );
-        ctx.resources.seriesListHandler.evictAll();
-        ctx.resources.seriesJourneysHandler.evictAll();
+          const apiKey = Platform.select({
+            ios: 'appl_iUUQsQeQYmaFsfylOIVhryaoUNa',
+            android: 'goog_ykJYeTeXNtUcUZkeqfTOxGTBicI',
+            default: undefined,
+          });
+          if (apiKey === undefined) {
+            throw new Error('not implemented');
+          }
+          Purchases.configure({
+            apiKey,
+            appUserID: revenueCatID,
+            // Not necessary to enforce entitlements client-side as we don't unlock any
+            // client-side behavior
+            entitlementVerificationMode:
+              Purchases.ENTITLEMENT_VERIFICATION_MODE.DISABLED,
+          });
+          trace({
+            type: 'restore-purchases',
+            technique: 'revenuecat',
+            step: 'restoring',
+          });
+          const newInfo = await Purchases.restorePurchases();
+          const rcThinksHavePro =
+            !!newInfo?.entitlements?.active?.pro?.isActive;
+          trace({
+            type: 'restore-purchases',
+            technique: 'revenuecat',
+            step: 'syncing',
+            rcThinksHavePro,
+          });
 
-        await showYesNoModal(modals, {
-          title: 'Restore Purchases',
-          body: 'Your purchases have been restored.',
-          cta1: 'OK',
-          emphasize: 1,
-        }).promise;
-        return undefined;
+          let osehResponse;
+          try {
+            osehResponse = await apiFetch(
+              '/api/1/users/me/entitlements/pro',
+              {
+                method: 'GET',
+                headers: {
+                  pragma: 'no-cache',
+                },
+              },
+              user
+            );
+          } catch {
+            throw new DisplayableError(
+              'connectivity',
+              'restore purchases',
+              'confirm with server'
+            );
+          }
+          if (!response.ok) {
+            throw chooseErrorFromStatus(response.status, 'restore purchases');
+          }
+          const dataRaw = await osehResponse.json();
+          const pro = convertUsingMapper(dataRaw, entitlementKeyMap);
+          trace({
+            type: 'restore-purchases',
+            technique: 'revenuecat',
+            step: 'finalizing',
+            osehThinksHavePro: pro.isActive,
+          });
+          ctx.resources.entitlementsHandler.evictOrReplace(
+            { user, entitlement: 'pro' },
+            () => ({
+              type: 'data',
+              data: pro,
+            })
+          );
+          ctx.resources.seriesListHandler.evictAll();
+          ctx.resources.seriesJourneysHandler.evictAll();
+
+          await showYesNoModal(modals, {
+            title: 'Restore Purchases',
+            body: 'Your purchases have been restored.',
+            cta1: 'OK',
+            emphasize: 1,
+          }).promise;
+          return undefined;
+        } catch (e) {
+          setVWC(
+            restorePurchasesErrorVWC,
+            e instanceof DisplayableError
+              ? e
+              : new DisplayableError('client', 'restore purchases', `${e}`)
+          );
+        }
       },
     })
   );

@@ -40,7 +40,6 @@ import { DEFAULT_DAYS, DEFAULT_TIME_RANGE } from './constants';
 import { apiFetch } from '../../../../shared/lib/apiFetch';
 import { Modals } from '../../../../shared/contexts/ModalContext';
 import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
-import { describeError } from '../../../../shared/lib/describeError';
 import { useTimezone } from '../../../../shared/hooks/useTimezone';
 import { screenWithWorking } from '../../lib/screenWithWorking';
 import { showYesNoModal } from '../../../../shared/lib/showYesNoModal';
@@ -50,14 +49,14 @@ import { Pressable, View, ViewStyle, Text, TextStyle } from 'react-native';
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
 import { ContentContainer } from '../../../../shared/components/ContentContainer';
-import {
-  ErrorBanner,
-  ErrorBannerText,
-} from '../../../../shared/components/ErrorBanner';
 import { ScreenConfigurableTrigger } from '../../models/ScreenConfigurableTrigger';
 import { configurableScreenOut } from '../../lib/configurableScreenOut';
 import { OsehColors } from '../../../../shared/OsehColors';
 import { Back } from '../../../../shared/components/icons/Back';
+import {
+  chooseErrorFromStatus,
+  DisplayableError,
+} from '../../../../shared/lib/errors';
 
 /**
  * Allows the user to update their notification settings
@@ -182,12 +181,12 @@ export const ReminderTimes = ({
   });
 
   const savingVWC = useWritableValueWithCallbacks<boolean>(() => false);
-  const savingErrorVWC = useWritableValueWithCallbacks<ReactElement | null>(
+  const savingErrorVWC = useWritableValueWithCallbacks<DisplayableError | null>(
     () => null
   );
 
   useWorkingModal(modals, savingVWC, 200);
-  useErrorModal(modals, savingErrorVWC, 'saving');
+  useErrorModal(modals, savingErrorVWC, { topBarHeightVWC: ctx.topBarHeight });
 
   const timezone = useTimezone();
 
@@ -244,9 +243,11 @@ export const ReminderTimes = ({
       if (loginContextUnch.state !== 'logged-in') {
         setVWC(
           savingErrorVWC,
-          <ErrorBanner>
-            <ErrorBannerText>Not logged in</ErrorBannerText>
-          </ErrorBanner>
+          new DisplayableError(
+            'server-refresh-required',
+            'store reminder times',
+            'not logged in'
+          )
         );
         return false;
       }
@@ -255,24 +256,29 @@ export const ReminderTimes = ({
       setVWC(savingVWC, true);
       setVWC(savingErrorVWC, null);
       try {
-        const response = await apiFetch(
-          '/api/1/users/me/attributes/notification_time',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json; charset=utf-8' },
-            body: JSON.stringify({
-              days_of_week: savingDays,
-              time_range: { start: savingStart, end: savingEnd },
-              channel,
-              timezone: timezone.timeZone,
-              timezone_technique: timezone.timeZoneTechnique,
-            }),
-          },
-          loginContext
-        );
+        let response;
+        try {
+          response = await apiFetch(
+            '/api/1/users/me/attributes/notification_time',
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json; charset=utf-8' },
+              body: JSON.stringify({
+                days_of_week: savingDays,
+                time_range: { start: savingStart, end: savingEnd },
+                channel,
+                timezone,
+                timezone_technique: 'browser',
+              }),
+            },
+            loginContext
+          );
+        } catch {
+          throw new DisplayableError('connectivity', 'store times');
+        }
 
         if (!response.ok) {
-          throw response;
+          throw chooseErrorFromStatus(response.status, 'store times');
         }
 
         ctx.resources.reminderChannelsHandler.evictOrReplace(
@@ -313,7 +319,12 @@ export const ReminderTimes = ({
         );
         return true;
       } catch (e) {
-        setVWC(savingErrorVWC, await describeError(e));
+        setVWC(
+          savingErrorVWC,
+          e instanceof DisplayableError
+            ? e
+            : new DisplayableError('client', 'store times', `${e}`)
+        );
         return false;
       } finally {
         setVWC(savingVWC, false);

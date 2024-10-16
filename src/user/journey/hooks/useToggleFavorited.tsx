@@ -14,6 +14,7 @@ import { useErrorModal } from '../../../shared/hooks/useErrorModal';
 import { LoginContext } from '../../../shared/contexts/LoginContext';
 import { toggleFavorited } from '../lib/toggleFavorited';
 import { setVWC } from '../../../shared/lib/setVWC';
+import { DisplayableError } from '../../../shared/lib/errors';
 
 type UseToggleFavoritedProps = {
   /**
@@ -48,6 +49,9 @@ type UseToggleFavoritedProps = {
    * done. This is useful for disabling buttons while we're working.
    */
   working?: WritableValueWithCallbacks<boolean>;
+
+  /** The height of the top bar for positioning errors */
+  topBarHeight: ValueWithCallbacks<number>;
 };
 /**
  * Creates a function which will toggle the favorited state of the given
@@ -62,6 +66,7 @@ export const useToggleFavorited = ({
   shared,
   knownUnfavoritable,
   working: workingVWC,
+  topBarHeight: topBarHeightVWC,
 }: UseToggleFavoritedProps): (() => Promise<void>) => {
   const loginContextRaw = useContext(LoginContext);
   const showLikedUntilVWC = useWritableValueWithCallbacks<number | undefined>(
@@ -73,7 +78,7 @@ export const useToggleFavorited = ({
   const showUnlikableUntilVWC = useWritableValueWithCallbacks<
     number | undefined
   >(() => undefined);
-  const errorVWC = useWritableValueWithCallbacks<ReactElement | null>(
+  const errorVWC = useWritableValueWithCallbacks<DisplayableError | null>(
     () => null
   );
   const counterVWC = useWritableValueWithCallbacks<number>(() => 0);
@@ -90,7 +95,7 @@ export const useToggleFavorited = ({
     adaptValueWithCallbacksAsVariableStrategyProps(showUnlikableUntilVWC),
     modals
   );
-  useErrorModal(modals, errorVWC, 'useToggleFavorited');
+  useErrorModal(modals, errorVWC, { topBarHeightVWC });
 
   return useCallback(async () => {
     const id = counterVWC.get() + 1;
@@ -100,14 +105,8 @@ export const useToggleFavorited = ({
     }
 
     try {
-      const loginRaw = loginContextRaw.value.get();
-      if (loginRaw.state !== 'logged-in') {
-        return;
-      }
-      const login = loginRaw;
-
       await toggleFavorited(
-        login,
+        loginContextRaw,
         journey.type === 'react-rerender' ? journey.props : journey.props(),
         shared,
         showLikedUntilVWC,

@@ -45,6 +45,7 @@ import {
   onReviewRequested,
 } from '../lib/JourneyFeedbackRequestReviewStore';
 import { requestReview } from 'expo-store-review';
+import { useTopBarHeight } from '../../../shared/hooks/useTopBarHeight';
 
 type VLKey =
   | 'topPadding'
@@ -101,10 +102,14 @@ export const JourneyFeedbackScreen = ({
   const modals = useWritableValueWithCallbacks<Modals>(() => []);
   const loginContextRaw = useContext(LoginContext);
 
+  const topBarHeightVWC = useReactManagedValueAsValueWithCallbacks(
+    useTopBarHeight()
+  );
   const toggleFavorited = useToggleFavorited({
     modals,
     journey: { type: 'react-rerender', props: journey },
     shared,
+    topBarHeight: topBarHeightVWC,
   });
   const shareClass = useShareClass({
     journey: { type: 'react-rerender', props: journey },

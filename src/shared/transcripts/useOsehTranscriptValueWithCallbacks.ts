@@ -1,4 +1,3 @@
-import { ReactElement } from 'react';
 import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
@@ -12,7 +11,7 @@ import { OsehTranscriptRef } from './OsehTranscriptRef';
 import { useValueWithCallbacksEffect } from '../hooks/useValueWithCallbacksEffect';
 import { setVWC } from '../lib/setVWC';
 import { HTTP_API_URL } from '../lib/apiFetch';
-import { describeError } from '../lib/describeError';
+import { chooseErrorFromStatus, DisplayableError } from '../lib/errors';
 
 export type OsehTranscriptResult =
   | {
@@ -24,7 +23,7 @@ export type OsehTranscriptResult =
       /**
        * An element describing what went wrong
        */
-      error: ReactElement;
+      error: DisplayableError;
     }
   | {
       /**
@@ -77,22 +76,28 @@ export const useOsehTranscriptValueWithCallbacks = (
     };
 
     async function fetchTranscriptInner() {
-      const response = await fetch(
-        `${HTTP_API_URL}/api/1/transcripts/${ref.uid}`,
-        {
+      let response;
+      try {
+        response = await fetch(`${HTTP_API_URL}/api/1/transcripts/${ref.uid}`, {
           method: 'GET',
           headers: {
             Authorization: `bearer ${ref.jwt}`,
           },
-        }
-      );
+        });
+      } catch {
+        throw new DisplayableError(
+          'client',
+          'fetch transcript',
+          'network error'
+        );
+      }
 
       if (!running) {
         return;
       }
 
       if (!response.ok) {
-        throw response;
+        throw chooseErrorFromStatus(response.status, 'fetch transcript');
       }
 
       const rawTranscript: {
@@ -139,7 +144,10 @@ export const useOsehTranscriptValueWithCallbacks = (
       try {
         await fetchTranscriptInner();
       } catch (e) {
-        const err = await describeError(e);
+        const err =
+          e instanceof DisplayableError
+            ? e
+            : new DisplayableError('client', 'fetch transcript', `${e}`);
         if (!running) {
           return;
         }

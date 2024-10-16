@@ -46,10 +46,6 @@ import {
   Entitlement,
   entitlementKeyMap,
 } from '../settings/lib/createEntitlementRequestHandler';
-import {
-  ErrorBanner,
-  ErrorBannerText,
-} from '../../../../shared/components/ErrorBanner';
 import { ScreenImageParsed } from '../../models/ScreenImage';
 import {
   ParsedPeriod,
@@ -65,6 +61,7 @@ import { OsehColors } from '../../../../shared/OsehColors';
 import { Back } from '../../../../shared/components/icons/Back';
 import { Check } from '../../../../shared/components/icons/Check';
 import { adaptExitTransition } from '../../lib/adaptExitTransition';
+import { DisplayableError } from '../../../../shared/lib/errors';
 
 type Copy = UpgradeCopy<ScreenImageParsed>;
 
@@ -105,10 +102,11 @@ export const Upgrade = ({
     return undefined;
   });
 
-  const subscribeErrorVWC = useWritableValueWithCallbacks<ReactElement | null>(
-    () => null
-  );
-  useErrorModal(modals, subscribeErrorVWC, 'starting checkout session');
+  const subscribeErrorVWC =
+    useWritableValueWithCallbacks<DisplayableError | null>(() => null);
+  useErrorModal(modals, subscribeErrorVWC, {
+    topBarHeightVWC: ctx.topBarHeight,
+  });
 
   const windowWidth = useMappedValueWithCallbacks(
     ctx.windowSizeImmediate,
@@ -533,13 +531,11 @@ export const Upgrade = ({
                     trace({ type: 'subscribeError', error: `${e}` });
                     setVWC(
                       subscribeErrorVWC,
-                      <ErrorBanner>
-                        <ErrorBannerText>
-                          {`${e}`}. If the purchase went through, use Restore
-                          Purchases in Settings. You can contact customer
-                          support at hi@oseh.com
-                        </ErrorBannerText>
-                      </ErrorBanner>
+                      new DisplayableError(
+                        'client',
+                        'subscribe',
+                        `${e} (may be able to restore purchases in settings)`
+                      )
                     );
                     setVWC(workingVWC, false);
                     await exitPromise.promise;

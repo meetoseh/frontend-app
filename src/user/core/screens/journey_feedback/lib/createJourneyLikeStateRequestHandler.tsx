@@ -1,4 +1,3 @@
-import { ReactElement } from 'react';
 import {
   ValueWithCallbacks,
   createWritableValueWithCallbacks,
@@ -16,9 +15,12 @@ import { JourneyRef } from '../../../../journey/models/JourneyRef';
 import { constructCancelablePromise } from '../../../../../shared/lib/CancelablePromiseConstructor';
 import { createCancelablePromiseFromCallbacks } from '../../../../../shared/lib/createCancelablePromiseFromCallbacks';
 import { getCurrentServerTimeMS } from '../../../../../shared/lib/getCurrentServerTimeMS';
-import { setVWC } from '../../../../../shared/lib/setVWC';
-import { describeError } from '../../../../../shared/lib/describeError';
 import { apiFetch } from '../../../../../shared/lib/apiFetch';
+import { setVWC } from '../../../../../shared/lib/setVWC';
+import {
+  chooseErrorFromStatus,
+  DisplayableError,
+} from '../../../../../shared/lib/errors';
 
 export type JourneyLikeState = {
   /**
@@ -38,10 +40,9 @@ export type JourneyLikeState = {
    */
   showUnlikedUntil: ValueWithCallbacks<number | undefined>;
   /**
-   * An element as if from describeError describing the last error that occurred,
-   * if any.
+   * Describes the last error that occurred, if any.
    */
-  error: ValueWithCallbacks<ReactElement | null>;
+  error: ValueWithCallbacks<DisplayableError | null>;
 
   /**
    * Refreshes the current liked status of the journey. This will set
@@ -125,7 +126,14 @@ const getDataFromRef = (
         retryAt: undefined,
       }),
       async (e, state, resolve, reject) => {
-        const err = await describeError(e);
+        const err =
+          e instanceof DisplayableError
+            ? e
+            : new DisplayableError(
+                'client',
+                'fetch journey like state',
+                `${e}`
+              );
         if (state.finishing) {
           state.done = true;
           reject(new Error('canceled'));
@@ -174,7 +182,9 @@ export const createJourneyLikeState = ({
   const showUnlikedUntilVWC = createWritableValueWithCallbacks<
     number | undefined
   >(undefined);
-  const errorVWC = createWritableValueWithCallbacks<ReactElement | null>(null);
+  const errorVWC = createWritableValueWithCallbacks<DisplayableError | null>(
+    null
+  );
 
   const refresh = (): CancelablePromise<void> => {
     return constructCancelablePromise({
@@ -230,29 +240,34 @@ export const createJourneyLikeState = ({
         }
 
         try {
-          const response = await apiFetch(
-            '/api/1/users/me/search_history',
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json; charset=utf-8',
-              },
-              body: JSON.stringify({
-                filters: {
-                  uid: {
-                    operator: 'eq',
-                    value: journey.uid,
-                  },
+          let response;
+          try {
+            response = await apiFetch(
+              '/api/1/users/me/search_history',
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json; charset=utf-8',
                 },
-                limit: 1,
-              }),
-              signal,
-            },
-            loginContext
-          );
+                body: JSON.stringify({
+                  filters: {
+                    uid: {
+                      operator: 'eq',
+                      value: journey.uid,
+                    },
+                  },
+                  limit: 1,
+                }),
+                signal,
+              },
+              loginContext
+            );
+          } catch {
+            throw new DisplayableError('connectivity', 'refresh like state');
+          }
 
           if (!response.ok) {
-            throw response;
+            throw chooseErrorFromStatus(response.status, 'refresh like state');
           }
 
           if (state.finishing) {
@@ -298,7 +313,10 @@ export const createJourneyLikeState = ({
             return;
           }
 
-          const err = await describeError(e);
+          const err =
+            e instanceof DisplayableError
+              ? e
+              : new DisplayableError('client', 'refresh like state', `${e}`);
           if (state.finishing) {
             state.done = true;
             reject(new Error('canceled'));
@@ -320,7 +338,13 @@ export const createJourneyLikeState = ({
         if (reportedExpiration) {
           state.finishing = true;
           state.done = true;
-          reject(new Error('this JourneyLikeState has expired'));
+          reject(
+            new DisplayableError(
+              'server-refresh-required',
+              'like journey',
+              'journey ref'
+            )
+          );
           return;
         }
 
@@ -328,7 +352,13 @@ export const createJourneyLikeState = ({
         if (loginContext.state !== 'logged-in') {
           state.finishing = true;
           state.done = true;
-          reject(new Error('not logged in'));
+          reject(
+            new DisplayableError(
+              'server-refresh-required',
+              'like journey',
+              'not logged in'
+            )
+          );
           return;
         }
 
@@ -336,7 +366,7 @@ export const createJourneyLikeState = ({
         canceled.promise.catch(() => {});
         if (state.finishing) {
           state.done = true;
-          reject(new Error('canceled'));
+          reject(new DisplayableError('canceled', 'like journey'));
           canceled.cancel();
           return;
         }
@@ -344,7 +374,7 @@ export const createJourneyLikeState = ({
         const serverNow = await getCurrentServerTimeMS();
         if (state.finishing) {
           state.done = true;
-          reject(new Error('canceled'));
+          reject(new DisplayableError('canceled', 'like journey'));
           return;
         }
 
@@ -353,7 +383,13 @@ export const createJourneyLikeState = ({
           reportedExpiration = true;
           state.finishing = true;
           state.done = true;
-          reject(new Error('this JourneyLikeState has just expired'));
+          reject(
+            new DisplayableError(
+              'server-refresh-required',
+              'like journey',
+              'journey ref'
+            )
+          );
           return;
         }
 
@@ -368,28 +404,33 @@ export const createJourneyLikeState = ({
         }
 
         try {
-          const response = await apiFetch(
-            '/api/1/users/me/journeys/likes',
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json; charset=utf-8',
+          let response;
+          try {
+            response = await apiFetch(
+              '/api/1/users/me/journeys/likes',
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json; charset=utf-8',
+                },
+                body: JSON.stringify({
+                  journey_uid: journey.uid,
+                }),
+                signal,
               },
-              body: JSON.stringify({
-                journey_uid: journey.uid,
-              }),
-              signal,
-            },
-            loginContext
-          );
+              loginContext
+            );
+          } catch {
+            throw new DisplayableError('connectivity', 'like journey');
+          }
 
           if (!response.ok) {
-            throw response;
+            throw chooseErrorFromStatus(response.status, 'like journey');
           }
 
           if (state.finishing) {
             state.done = true;
-            reject(new Error('canceled'));
+            reject(new DisplayableError('canceled', 'like journey'));
             return;
           }
 
@@ -403,7 +444,7 @@ export const createJourneyLikeState = ({
 
           if (state.finishing) {
             state.done = true;
-            reject(new Error('canceled'));
+            reject(new DisplayableError('canceled', 'like journey'));
             return;
           }
 
@@ -416,16 +457,14 @@ export const createJourneyLikeState = ({
         } catch (e) {
           if (state.finishing) {
             state.done = true;
-            reject(new Error('canceled'));
+            reject(new DisplayableError('canceled', 'like journey'));
             return;
           }
 
-          const err = await describeError(e);
-          if (state.finishing) {
-            state.done = true;
-            reject(new Error('canceled'));
-            return;
-          }
+          const err =
+            e instanceof DisplayableError
+              ? e
+              : new DisplayableError('client', 'like journey', `${e}`);
 
           state.finishing = true;
           setVWC(errorVWC, err);
@@ -442,7 +481,13 @@ export const createJourneyLikeState = ({
         if (reportedExpiration) {
           state.finishing = true;
           state.done = true;
-          reject(new Error('this JourneyLikeState has expired'));
+          reject(
+            new DisplayableError(
+              'server-refresh-required',
+              'unlike journey',
+              'journey ref'
+            )
+          );
           return;
         }
 
@@ -450,7 +495,13 @@ export const createJourneyLikeState = ({
         if (loginContext.state !== 'logged-in') {
           state.finishing = true;
           state.done = true;
-          reject(new Error('not logged in'));
+          reject(
+            new DisplayableError(
+              'server-refresh-required',
+              'unlike journey',
+              'not logged in'
+            )
+          );
           return;
         }
 
@@ -458,7 +509,7 @@ export const createJourneyLikeState = ({
         canceled.promise.catch(() => {});
         if (state.finishing) {
           state.done = true;
-          reject(new Error('canceled'));
+          reject(new DisplayableError('canceled', 'unlike journey'));
           canceled.cancel();
           return;
         }
@@ -466,7 +517,7 @@ export const createJourneyLikeState = ({
         const serverNow = await getCurrentServerTimeMS();
         if (state.finishing) {
           state.done = true;
-          reject(new Error('canceled'));
+          reject(new DisplayableError('canceled', 'unlike journey'));
           return;
         }
 
@@ -475,7 +526,13 @@ export const createJourneyLikeState = ({
           reportedExpiration = true;
           state.finishing = true;
           state.done = true;
-          reject(new Error('this JourneyLikeState has just expired'));
+          reject(
+            new DisplayableError(
+              'server-refresh-required',
+              'unlike journey',
+              'journey ref'
+            )
+          );
           return;
         }
 
@@ -490,24 +547,29 @@ export const createJourneyLikeState = ({
         }
 
         try {
-          const response = await apiFetch(
-            `/api/1/users/me/journeys/likes?uid=${encodeURIComponent(
-              journey.uid
-            )}`,
-            {
-              method: 'DELETE',
-              signal,
-            },
-            loginContext
-          );
+          let response;
+          try {
+            response = await apiFetch(
+              `/api/1/users/me/journeys/likes?uid=${encodeURIComponent(
+                journey.uid
+              )}`,
+              {
+                method: 'DELETE',
+                signal,
+              },
+              loginContext
+            );
+          } catch {
+            throw new DisplayableError('connectivity', 'unlike journey');
+          }
 
           if (!response.ok) {
-            throw response;
+            throw chooseErrorFromStatus(response.status, 'unlike journey');
           }
 
           if (state.finishing) {
             state.done = true;
-            reject(new Error('canceled'));
+            reject(new DisplayableError('canceled', 'unlike journey'));
             return;
           }
 
@@ -520,14 +582,17 @@ export const createJourneyLikeState = ({
         } catch (e) {
           if (state.finishing) {
             state.done = true;
-            reject(new Error('canceled'));
+            reject(new DisplayableError('canceled', 'unlike journey'));
             return;
           }
 
-          const err = await describeError(e);
+          const err =
+            e instanceof DisplayableError
+              ? e
+              : new DisplayableError('client', 'unlike journey', `${e}`);
           if (state.finishing) {
             state.done = true;
-            reject(new Error('canceled'));
+            reject(new DisplayableError('canceled', 'unlike journey'));
             return;
           }
 
@@ -545,7 +610,7 @@ export const createJourneyLikeState = ({
     if (likedAt === undefined) {
       return {
         promise: Promise.reject(
-          new Error('Cannot toggle like while still loading')
+          new DisplayableError('client', 'toggle like', 'not loaded')
         ),
         done: () => true,
         cancel: () => {},

@@ -1,7 +1,7 @@
 import { createWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { CancelablePromise } from '../../../../shared/lib/CancelablePromise';
 import { convertUsingMapper } from '../../../../shared/lib/CrudFetcher';
-import { makeTextError } from '../../../../shared/lib/describeError';
+import { DisplayableError } from '../../../../shared/lib/errors';
 import { mapCancelable } from '../../../../shared/lib/mapCancelable';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import {
@@ -51,7 +51,11 @@ export const VideoInterstitialScreen: OsehScreen<
               promise: Promise.resolve({
                 type: 'expired',
                 data: undefined,
-                error: makeTextError('Screen is not mounted'),
+                error: new DisplayableError(
+                  'server-refresh-required',
+                  'refresh transcript',
+                  'screen is not mounted'
+                ),
                 retryAt: undefined,
               }),
               done: () => true,
@@ -68,7 +72,11 @@ export const VideoInterstitialScreen: OsehScreen<
                 ? {
                     type: 'error',
                     data: undefined,
-                    error: makeTextError('transcript is no longer available'),
+                    error: new DisplayableError(
+                      'server-refresh-required',
+                      'refresh transcript',
+                      'transcript ref'
+                    ),
                     retryAt: undefined,
                   }
                 : {

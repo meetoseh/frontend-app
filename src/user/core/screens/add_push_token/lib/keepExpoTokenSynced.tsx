@@ -1,13 +1,11 @@
 import { createValueWithCallbacksEffect } from '../../../../../shared/hooks/createValueWithCallbacksEffect';
-import { makeTextError } from '../../../../../shared/lib/describeError';
+import { DisplayableError } from '../../../../../shared/lib/errors';
 import { mapCancelable } from '../../../../../shared/lib/mapCancelable';
 import { waitForValueWithCallbacksConditionCancelable } from '../../../../../shared/lib/waitForValueWithCallbacksCondition';
 import { Result } from '../../../../../shared/requests/RequestHandler';
-import { createChainedRequest } from '../../../../../shared/requests/createChainedRequest';
 import { ScreenContext } from '../../../hooks/useScreenContext';
 import { OsehExpoTokenSyncRequest } from './createExpoTokenSyncHandler';
 import {
-  OsehNotificationPermissionsRequest,
   OsehNotificationsPermission,
   createOsehNotificationPermissionsRequest,
 } from './createNotificationPermissionsStatusHandler';
@@ -83,8 +81,10 @@ export const keepExpoTokenSynced = (ctx: ScreenContext): (() => void) => {
                     return {
                       type: 'error',
                       data: undefined,
-                      error: makeTextError(
-                        'Notification permissions have been revoked'
+                      error: new DisplayableError(
+                        'client',
+                        'keep push token synced',
+                        'permissions revoked'
                       ),
                       retryAt: undefined,
                     };
@@ -102,14 +102,22 @@ export const keepExpoTokenSynced = (ctx: ScreenContext): (() => void) => {
                   return {
                     type: 'error',
                     data: undefined,
-                    error: makeTextError('this reference has been released'),
+                    error: new DisplayableError(
+                      'server-refresh-required',
+                      'keep push token synced',
+                      'this reference has been released'
+                    ),
                     retryAt: undefined,
                   };
                 }
                 return {
                   type: 'error',
                   data: undefined,
-                  error: makeTextError('impossible'),
+                  error: new DisplayableError(
+                    'client',
+                    'keep push token synced',
+                    'impossible'
+                  ),
                   retryAt: undefined,
                 };
               }
@@ -164,7 +172,11 @@ export const keepExpoTokenSynced = (ctx: ScreenContext): (() => void) => {
                       data: undefined,
                       error:
                         res.error ??
-                        makeTextError('failed to refresh sync request'),
+                        new DisplayableError(
+                          'client',
+                          'keep push token synced',
+                          'failed to refresh sync request'
+                        ),
                       retryAt: undefined,
                     };
                   }

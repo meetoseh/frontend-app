@@ -9,9 +9,9 @@ import { makePrettyResponse } from './makePrettyResponse';
 import { setVWC } from '../../../../../shared/lib/setVWC';
 import { apiFetch } from '../../../../../shared/lib/apiFetch';
 import {
-  describeError,
-  makeTextError,
-} from '../../../../../shared/lib/describeError';
+  chooseErrorFromStatus,
+  DisplayableError,
+} from '../../../../../shared/lib/errors';
 
 /**
  * Stores the feedback for a user about a journey, reporting errors
@@ -27,7 +27,7 @@ export const storeResponse = async ({
   responseVWC: ValueWithCallbacks<number | null>;
   trace: (event: object) => any;
   ctx: ScreenContext;
-  feedbackErrorVWC: WritableValueWithCallbacks<ReactElement | null>;
+  feedbackErrorVWC: WritableValueWithCallbacks<DisplayableError | null>;
   journey: ScreenJourneyMapped;
 }): Promise<boolean> => {
   const response = responseVWC.get();
@@ -43,36 +43,51 @@ export const storeResponse = async ({
 
   const loginContextUnch = ctx.login.value.get();
   if (loginContextUnch.state !== 'logged-in') {
-    setVWC(feedbackErrorVWC, makeTextError('Not logged in'));
+    setVWC(
+      feedbackErrorVWC,
+      new DisplayableError(
+        'server-refresh-required',
+        'store feedback',
+        'not logged in'
+      )
+    );
     return false;
   }
   const loginContext = loginContextUnch;
 
   try {
-    const resp = await apiFetch(
-      '/api/1/journeys/feedback',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
+    let resp;
+    try {
+      resp = await apiFetch(
+        '/api/1/journeys/feedback',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+          },
+          body: JSON.stringify({
+            journey_uid: journey.uid,
+            journey_jwt: journey.jwt,
+            version: 'oseh_jf-otp_sKjKVHs8wbI',
+            response: response,
+            feedback: null,
+          }),
+          keepalive: true,
         },
-        body: JSON.stringify({
-          journey_uid: journey.uid,
-          journey_jwt: journey.jwt,
-          version: 'oseh_jf-otp_sKjKVHs8wbI',
-          response: response,
-          feedback: null,
-        }),
-        keepalive: true,
-      },
-      loginContext
-    );
+        loginContext
+      );
+    } catch {
+      throw new DisplayableError('connectivity', 'store feedback');
+    }
     if (!resp.ok) {
-      throw resp;
+      throw chooseErrorFromStatus(resp.status, 'store feedback');
     }
     return true;
   } catch (e) {
-    const desc = await describeError(e);
+    const desc =
+      e instanceof DisplayableError
+        ? e
+        : new DisplayableError('client', 'store feedback', `${e}`);
     setVWC(feedbackErrorVWC, desc);
     return false;
   }

@@ -23,7 +23,7 @@ import { HorizontalSpacer } from '../../../../../shared/components/HorizontalSpa
 import { AutoWidthRecordedBars } from '../../../../../shared/components/voiceOrTextInput/AutoWidthRecordedBars';
 import { VerticalSpacer } from '../../../../../shared/components/VerticalSpacer';
 import { View, Text, Pressable, Dimensions } from 'react-native';
-import { makeTextError } from '../../../../../shared/lib/describeError';
+import { DisplayableError } from '../../../../../shared/lib/errors';
 
 /**
  * Renders a voice note that came from within a journal entry item. This will
@@ -102,7 +102,11 @@ export const TextPartVoiceNoteComponent = memo(
                 resolve({
                   type: 'error',
                   data: undefined,
-                  error: makeTextError('failed to refresh chat'),
+                  error: new DisplayableError(
+                    'server-refresh-required',
+                    'refresh voice note',
+                    'failed to refresh chat'
+                  ),
                   retryAt: undefined,
                 });
                 return;
@@ -137,7 +141,11 @@ export const TextPartVoiceNoteComponent = memo(
               resolve({
                 type: 'error',
                 data: undefined,
-                error: makeTextError('voice note no longer in this chat'),
+                error: new DisplayableError(
+                  'server-refresh-required',
+                  'get voice note',
+                  'removed from chat'
+                ),
                 retryAt: undefined,
               });
             },

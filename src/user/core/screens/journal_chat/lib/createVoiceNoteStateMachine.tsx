@@ -47,8 +47,8 @@ import { AudioFileData } from '../../../../../shared/content/createAudioDataHand
 import { ContentFileNativeExport } from '../../../../../shared/content/OsehContentTarget';
 import * as FileSystem from 'expo-file-system';
 import { createOsehAudioContentState } from '../../../../../shared/content/createOsehAudioContentState';
-import { makeTextError } from '../../../../../shared/lib/describeError';
 import { exactIntDivide } from '../../../../../shared/lib/exactIntDivide';
+import { DisplayableError } from '../../../../../shared/lib/errors';
 
 /**
  * Previous states:
@@ -1014,7 +1014,7 @@ export type VoiceNoteStateError = {
   type: 'error';
 
   /** a description of the error that occurred */
-  error: ReactElement;
+  error: DisplayableError;
   audio?: undefined;
 };
 
@@ -1272,25 +1272,26 @@ async function transitionFromInitializingForRecording(
   try {
     const permission = await Audio.requestPermissionsAsync();
     if (!permission.granted) {
-      console.log('permission not granted');
       setVWC(
         state,
         {
           type: 'error',
-          error: makeTextError('Permission to record audio was denied'),
+          error: new DisplayableError(
+            'client',
+            'record audio',
+            'permission denied'
+          ),
         },
         () => false
       );
       return;
     }
 
-    console.log('setting audio mode');
     await Audio.setAudioModeAsync({
       // playsInSilentModeIOS: false, -- iOS fails with error code E_AUDIO_AUDIOMODE
       playsInSilentModeIOS: true,
       allowsRecordingIOS: true,
     });
-    console.log('set audio mode');
   } catch (e) {
     console.log(
       `error initializing ${e}; ${
@@ -1301,8 +1302,10 @@ async function transitionFromInitializingForRecording(
       state,
       {
         type: 'error',
-        error: makeTextError(
-          'Failed to initialize audio recording permissions'
+        error: new DisplayableError(
+          'client',
+          'record audio',
+          'failed to initialize'
         ),
       },
       () => false
@@ -1347,7 +1350,11 @@ async function transitionFromInitializingForRecording(
       state,
       {
         type: 'error',
-        error: makeTextError('Failed to prepare audio recording'),
+        error: new DisplayableError(
+          'client',
+          'record audio',
+          'failed to prepare'
+        ),
       },
       () => false
     );
@@ -1434,7 +1441,14 @@ async function transitionFromInitializedForRecording(
 
       setVWC(
         state,
-        { type: 'error', error: makeTextError('Failed to start recording') },
+        {
+          type: 'error',
+          error: new DisplayableError(
+            'client',
+            'record audio',
+            'start recording'
+          ),
+        },
         () => false
       );
       return;
@@ -1671,7 +1685,14 @@ async function transitionFromRecording(
 
     setVWC(
       state,
-      { type: 'error', error: makeTextError('Failed to stop recording') },
+      {
+        type: 'error',
+        error: new DisplayableError(
+          'client',
+          'record audio',
+          'failed to stop recording'
+        ),
+      },
       () => false
     );
     return;
@@ -1683,7 +1704,14 @@ async function transitionFromRecording(
 
     setVWC(
       state,
-      { type: 'error', error: makeTextError('Failed to finalize recording') },
+      {
+        type: 'error',
+        error: new DisplayableError(
+          'client',
+          'record audio',
+          'finalize recording'
+        ),
+      },
       () => false
     );
     return;
@@ -1877,7 +1905,14 @@ async function transitionFromInitializingLocalPlay(
 
     setVWC(
       state,
-      { type: 'error', error: makeTextError('Failed to get audio file info') },
+      {
+        type: 'error',
+        error: new DisplayableError(
+          'client',
+          'record audio',
+          'get audio file info'
+        ),
+      },
       () => false
     );
     return;
@@ -1886,7 +1921,14 @@ async function transitionFromInitializingLocalPlay(
   if (!fileInfo.exists) {
     setVWC(
       state,
-      { type: 'error', error: makeTextError('Audio file does not exist') },
+      {
+        type: 'error',
+        error: new DisplayableError(
+          'client',
+          'record audio',
+          'audio file does not exist'
+        ),
+      },
       () => false
     );
     return;
@@ -1956,7 +1998,14 @@ async function transitionFromInitializingLocalPlay(
     }
     setVWC(
       state,
-      { type: 'error', error: makeTextError('Failed to load audio') },
+      {
+        type: 'error',
+        error: new DisplayableError(
+          'client',
+          'record audio',
+          'failed to load audio'
+        ),
+      },
       () => false
     );
     return;
@@ -1989,12 +2038,21 @@ async function transitionFromInitializingLocalPlay(
       user: () => {
         const raw = current.loginContext.value.get();
         if (raw.state !== 'logged-in') {
-          return { error: makeTextError('not logged in') };
+          return {
+            error: new DisplayableError(
+              'server-refresh-required',
+              'record audio',
+              'not logged in'
+            ),
+          };
         }
         return { user: raw };
       },
       retryer: 'expo-backoff-3',
-      mapper: createTypicalSmartAPIFetchMapper((v) => v),
+      mapper: createTypicalSmartAPIFetchMapper({
+        mapJSON: (v) => v,
+        action: 'record audio',
+      }),
     }),
   });
 }
@@ -2056,7 +2114,11 @@ async function transitionFromInitializingUpload(
         error:
           voiceNoteDataRaw.type === 'error'
             ? voiceNoteDataRaw.error
-            : makeTextError('Failed to initialize voice note'),
+            : new DisplayableError(
+                'client',
+                'upload audio',
+                'failed to initialize upload'
+              ),
       },
       () => false
     );
@@ -2130,7 +2192,14 @@ async function transitionFromUploading(
     current.audio.playable.dispose();
     setVWC(
       state,
-      { type: 'error', error: makeTextError('Not logged in') },
+      {
+        type: 'error',
+        error: new DisplayableError(
+          'server-refresh-required',
+          'upload audio',
+          'not logged in'
+        ),
+      },
       () => false
     );
     return;
@@ -2180,12 +2249,17 @@ async function transitionFromUploading(
   const clientKey = await clientKeyPromise;
   const finalUploadState = current.fileUpload.result.state.get();
   if (finalUploadState !== 'success') {
-    console.log('finalUploadState was', finalUploadState);
-    current.audio.playable.dispose();
     current.fileUpload.result.cancel();
     setVWC(
       state,
-      { type: 'error', error: makeTextError('Failed to upload voice note') },
+      {
+        type: 'error',
+        error: new DisplayableError(
+          'server-not-retryable',
+          'upload audio',
+          'upload failed'
+        ),
+      },
       () => false
     );
     return;
@@ -2221,12 +2295,21 @@ async function transitionFromUploading(
         user: () => {
           const raw = current.loginContext.value.get();
           if (raw.state !== 'logged-in') {
-            return { error: makeTextError('not logged in') };
+            return {
+              error: new DisplayableError(
+                'server-refresh-required',
+                'get transcript',
+                'not logged in'
+              ),
+            };
           }
           return { user: raw };
         },
         retryer: 'forever-5',
-        mapper: createTypicalSmartAPIFetchMapper((v) => v),
+        mapper: createTypicalSmartAPIFetchMapper({
+          mapJSON: (v) => v,
+          action: 'download voice note transcript',
+        }),
       }),
       rebinProgress: createSmartAPIFetch({
         path: '/api/1/voice_notes/show_audio',
@@ -2244,13 +2327,25 @@ async function transitionFromUploading(
         user: () => {
           const userRaw = current.loginContext.value.get();
           if (userRaw.state !== 'logged-in') {
-            return { error: makeTextError('not logged in') };
+            return {
+              error: new DisplayableError(
+                'server-refresh-required',
+                'get better bins',
+                'not logged in'
+              ),
+            };
           }
           return { user: userRaw };
         },
         retryer: (attempt, minDelay) => {
           if (attempt > 10) {
-            return { error: makeTextError('Too many retries') };
+            return {
+              error: new DisplayableError(
+                'server-retryable',
+                'get better bins',
+                'too many retries'
+              ),
+            };
           }
 
           return {
@@ -2262,7 +2357,10 @@ async function transitionFromUploading(
               Math.random() * 1000,
           };
         },
-        mapper: createTypicalSmartAPIFetchMapper((v) => v),
+        mapper: createTypicalSmartAPIFetchMapper({
+          mapJSON: (v) => v,
+          action: 'download voice note',
+        }),
       }),
       journalClientKey: {
         key: await createFernet(clientKey.key),
@@ -2328,7 +2426,7 @@ async function transitionFromTranscribing(
         error:
           transcribeState.type === 'error'
             ? transcribeState.error
-            : makeTextError('Failed to transcribe voice note'),
+            : new DisplayableError('client', 'transcribe voice note'),
       },
       () => false
     );
@@ -2515,7 +2613,14 @@ async function transitionFromRemoteInitializing(
       message.cancel();
       setVWC(
         state,
-        { type: 'error', error: makeTextError('Not logged in') },
+        {
+          type: 'error',
+          error: new DisplayableError(
+            'server-refresh-required',
+            'download voice note',
+            'not logged in'
+          ),
+        },
         () => false
       );
       return;
@@ -2547,7 +2652,14 @@ async function transitionFromRemoteInitializing(
   } catch {
     setVWC(
       state,
-      { type: 'error', error: makeTextError('Failed to setup encryption') },
+      {
+        type: 'error',
+        error: new DisplayableError(
+          'client',
+          'download voice note',
+          'failed to setup encryption'
+        ),
+      },
       () => false
     );
     return;
@@ -2592,12 +2704,21 @@ async function transitionFromRemoteInitializing(
           user: () => {
             const userRaw = current.loginContext.value.get();
             if (userRaw.state !== 'logged-in') {
-              return { error: makeTextError('not logged in') };
+              return {
+                error: new DisplayableError(
+                  'server-refresh-required',
+                  'download voice note',
+                  'not logged in'
+                ),
+              };
             }
             return { user: userRaw };
           },
           retryer: 'expo-backoff-3',
-          mapper: createTypicalSmartAPIFetchMapper((v) => v),
+          mapper: createTypicalSmartAPIFetchMapper({
+            mapJSON: (v) => v,
+            action: 'download voice note transcript',
+          }),
         }),
         transcript: createSmartAPIFetch({
           path: '/api/1/voice_notes/show_transcript',
@@ -2615,12 +2736,21 @@ async function transitionFromRemoteInitializing(
           user: () => {
             const userRaw = current.loginContext.value.get();
             if (userRaw.state !== 'logged-in') {
-              return { error: makeTextError('not logged in') };
+              return {
+                error: new DisplayableError(
+                  'server-refresh-required',
+                  'download voice note transcript',
+                  'not logged in'
+                ),
+              };
             }
             return { user: userRaw };
           },
           retryer: 'expo-backoff-3',
-          mapper: createTypicalSmartAPIFetchMapper((v) => v),
+          mapper: createTypicalSmartAPIFetchMapper({
+            mapJSON: (v) => v,
+            action: 'download voice note transcript',
+          }),
         }),
       },
     },
@@ -2694,7 +2824,11 @@ async function transitionFromRemoteInitialized(
             error:
               audioState.type === 'error'
                 ? audioState.error
-                : makeTextError('Failed to load audio'),
+                : new DisplayableError(
+                    'client',
+                    'download voice note',
+                    'failed to load audio'
+                  ),
           },
           () => false
         );
@@ -2740,7 +2874,7 @@ async function transitionFromRemoteInitialized(
         }
         setVWC(state, {
           type: 'error',
-          error: makeTextError('Failed to decrypt transcript'),
+          error: new DisplayableError('client', 'decrypt and load new bins'),
         });
         return;
       }
@@ -2764,7 +2898,7 @@ async function transitionFromRemoteInitialized(
             error:
               transcriptState.type === 'error'
                 ? transcriptState.error
-                : makeTextError('Failed to load transcript'),
+                : new DisplayableError('client', 'download transcript'),
           },
           () => false
         );
@@ -2793,7 +2927,7 @@ async function transitionFromRemoteInitialized(
         }
         setVWC(state, {
           type: 'error',
-          error: makeTextError('Failed to decrypt transcript'),
+          error: new DisplayableError('client', 'decrypt transcript'),
         });
         return;
       }
@@ -2841,7 +2975,11 @@ async function transitionFromRemoteInitialized(
           promise: Promise.resolve({
             type: 'error',
             data: undefined,
-            error: makeTextError('refresh not supported here'),
+            error: new DisplayableError(
+              'server-refresh-required',
+              'refresh voice note audio',
+              'not supported'
+            ),
             retryAt: undefined,
           }),
           done: () => true,
@@ -2901,7 +3039,11 @@ async function transitionFromRemoteSelectingExport(
       error:
         playlistData.type === 'error'
           ? playlistData.error
-          : makeTextError('Failed to load audio playlist'),
+          : new DisplayableError(
+              'client',
+              'download voice note',
+              'get audio playlist'
+            ),
     });
     return;
   }
@@ -2912,7 +3054,11 @@ async function transitionFromRemoteSelectingExport(
       promise: Promise.resolve({
         type: 'error',
         data: undefined,
-        error: makeTextError('refresh not supported here'),
+        error: new DisplayableError(
+          'server-refresh-required',
+          'download voice note',
+          'refresh audio playlist'
+        ),
         retryAt: undefined,
       }),
       done: () => true,
@@ -2984,7 +3130,7 @@ async function transitionFromRemoteDownloadingAudio(
       error:
         audioData.type === 'error'
           ? audioData.error
-          : makeTextError('Failed to load audio'),
+          : new DisplayableError('client', 'download voice note', 'get audio'),
     });
     return;
   }

@@ -1,17 +1,17 @@
 import { ReactElement, useCallback, useContext } from 'react';
-import {
-  LoginContext,
-  LoginContextValueLoggedIn,
-} from '../../../../../shared/contexts/LoginContext';
+import { LoginContext } from '../../../../../shared/contexts/LoginContext';
 import {
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
 } from '../../../../../shared/lib/Callbacks';
 import { setVWC } from '../../../../../shared/lib/setVWC';
-import { useValueWithCallbacksEffect } from '../../../../../shared/hooks/useValueWithCallbacksEffect';
 import { apiFetch } from '../../../../../shared/lib/apiFetch';
-import { describeError } from '../../../../../shared/lib/describeError';
-import { MergeProvider } from '../lib/MergeProvider';
+import { OauthProvider } from '../../../../login/lib/OauthProvider';
+import { useValuesWithCallbacksEffect } from '../../../../../shared/hooks/useValuesWithCallbacksEffect';
+import {
+  chooseErrorFromStatus,
+  DisplayableError,
+} from '../../../../../shared/lib/errors';
 
 export type Identity = {
   /**
@@ -23,7 +23,7 @@ export type Identity = {
   /**
    * The provider this identity is connected through
    */
-  provider: MergeProvider;
+  provider: OauthProvider;
 
   /**
    * The email address associated with the identity, if there is one
@@ -47,7 +47,7 @@ export type IdentitiesUnavailable = {
 
 export type IdentitiesError = {
   type: 'error';
-  error: ReactElement;
+  error: DisplayableError;
 };
 
 export type IdentitiesState =
@@ -89,23 +89,35 @@ export const useIdentities = (
     type: 'loading',
   }));
 
-  useValueWithCallbacksEffect(
-    suppressedVWC,
-    useCallback(
-      (suppressed) => {
-        if (suppressed) {
-          setVWC(result, { type: 'loading' }, areIdentityStatesEqual);
-          return;
-        }
+  useValuesWithCallbacksEffect(
+    [suppressedVWC, loginContextRaw.value],
+    useCallback(() => {
+      const suppressed = suppressedVWC.get();
+      const loginContextUnch = loginContextRaw.value.get();
+      if (suppressed || loginContextUnch.state === 'loading') {
+        setVWC(result, { type: 'loading' }, areIdentityStatesEqual);
+        return;
+      }
+      if (loginContextUnch.state === 'logged-out') {
+        setVWC(
+          result,
+          { type: 'unavailable', reason: 'not-logged-in' },
+          areIdentityStatesEqual
+        );
+        return;
+      }
+      const loginContext = loginContextUnch;
 
-        let running = true;
-        loadIdentities();
-        return () => {
-          running = false;
-        };
+      let running = true;
+      loadIdentities();
+      return () => {
+        running = false;
+      };
 
-        async function loadIdentitiesInner(login: LoginContextValueLoggedIn) {
-          const response = await apiFetch(
+      async function loadIdentitiesInner() {
+        let response;
+        try {
+          response = await apiFetch(
             '/api/1/users/me/search_identities',
             {
               method: 'POST',
@@ -116,54 +128,43 @@ export const useIdentities = (
                 limit: 1000,
               }),
             },
-            login
+            loginContext
           );
+        } catch {
+          throw new DisplayableError('connectivity', 'load identities');
+        }
 
-          if (!response.ok) {
-            throw response;
-          }
+        if (!response.ok) {
+          throw chooseErrorFromStatus(response.status, 'load identities');
+        }
 
-          const raw: { items: Identity[] } = await response.json();
+        const raw: { items: Identity[] } = await response.json();
+        if (running) {
+          setVWC(
+            result,
+            {
+              type: 'success',
+              identities: raw.items,
+            },
+            () => false
+          );
+        }
+      }
+
+      async function loadIdentities() {
+        try {
+          await loadIdentitiesInner();
+        } catch (e) {
+          const err =
+            e instanceof DisplayableError
+              ? e
+              : new DisplayableError('client', 'load identities', `${e}`);
           if (running) {
-            setVWC(
-              result,
-              {
-                type: 'success',
-                identities: raw.items,
-              },
-              () => false
-            );
+            setVWC(result, { type: 'error', error: err }, () => false);
           }
         }
-
-        async function loadIdentities() {
-          const loginRaw = loginContextRaw.value.get();
-          if (loginRaw.state === 'loading') {
-            setVWC(result, { type: 'loading' }, areIdentityStatesEqual);
-            return;
-          }
-
-          if (loginRaw.state === 'logged-out') {
-            setVWC(
-              result,
-              { type: 'unavailable', reason: 'not-logged-in' },
-              areIdentityStatesEqual
-            );
-            return;
-          }
-
-          try {
-            await loadIdentitiesInner(loginRaw);
-          } catch (e) {
-            const err = await describeError(e);
-            if (running) {
-              setVWC(result, { type: 'error', error: err }, () => false);
-            }
-          }
-        }
-      },
-      [loginContextRaw, result]
-    )
+      }
+    }, [loginContextRaw, result, suppressedVWC])
   );
 
   return result;

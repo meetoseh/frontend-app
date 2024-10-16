@@ -27,10 +27,6 @@ import { setVWC } from '../../../../shared/lib/setVWC';
 import { BackContinue } from '../../../../shared/components/BackContinue';
 import { apiFetch } from '../../../../shared/lib/apiFetch';
 import { screenWithWorking } from '../../lib/screenWithWorking';
-import {
-  describeError,
-  makeTextError,
-} from '../../../../shared/lib/describeError';
 import { useBeforeTime } from '../../../../shared/hooks/useBeforeTime';
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
 import { AutoBold } from '../../../../shared/components/AutoBold';
@@ -39,6 +35,10 @@ import { OsehTextInput } from '../../../../shared/forms/OsehTextInput';
 import { useKeyboardVisibleValueWithCallbacks } from '../../../../shared/lib/useKeyboardVisibleValueWithCallbacks';
 import { configurableScreenOut } from '../../lib/configurableScreenOut';
 import { adaptExitTransition } from '../../lib/adaptExitTransition';
+import {
+  chooseErrorFromStatus,
+  DisplayableError,
+} from '../../../../shared/lib/errors';
 
 /**
  * Allows the user to verify a phone; triggers the back flow if the
@@ -65,7 +65,7 @@ export const VerifyPhone = ({
   const workingVWC = useWritableValueWithCallbacks(() => false);
 
   const codeVWC = useWritableValueWithCallbacks(() => '');
-  const errorVWC = useWritableValueWithCallbacks<ReactElement | null>(
+  const errorVWC = useWritableValueWithCallbacks<DisplayableError | null>(
     () => null
   );
 
@@ -77,7 +77,14 @@ export const VerifyPhone = ({
 
       const loginContext = ctx.login.value.get();
       if (loginContext.state !== 'logged-in') {
-        setVWC(errorVWC, makeTextError('Not logged in'));
+        setVWC(
+          errorVWC,
+          new DisplayableError(
+            'server-refresh-required',
+            'verify phone',
+            'not logged in'
+          )
+        );
         return;
       }
 
@@ -92,26 +99,36 @@ export const VerifyPhone = ({
       const code = codeVWC.get();
       trace({ type: 'verify', codeLength: code.length, step: 'start' });
       try {
-        const response = await apiFetch(
-          '/api/1/phones/verify/finish',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json; charset=utf-8',
+        let response;
+        try {
+          response = await apiFetch(
+            '/api/1/phones/verify/finish',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json; charset=utf-8',
+              },
+              body: JSON.stringify({
+                uid: screen.parameters.verification.uid,
+                code,
+              }),
             },
-            body: JSON.stringify({
-              uid: screen.parameters.verification.uid,
-              code,
-            }),
-          },
-          loginContext
-        );
+            loginContext
+          );
+        } catch {
+          throw new DisplayableError('connectivity', 'verify phone');
+        }
         if (!response.ok) {
-          throw response;
+          throw chooseErrorFromStatus(response.status, 'verify phone');
         }
       } catch (e) {
         trace({ type: 'verify', step: 'error', error: `${e}` });
-        setVWC(errorVWC, await describeError(e));
+        setVWC(
+          errorVWC,
+          e instanceof DisplayableError
+            ? e
+            : new DisplayableError('client', 'verify phone', `${e}`)
+        );
         await exitTransition.promise;
         await playEntranceTransition(transition).promise;
         return;
@@ -168,7 +185,7 @@ export const VerifyPhone = ({
     return undefined;
   });
 
-  useErrorModal(modals, errorVWC, 'verifying code');
+  useErrorModal(modals, errorVWC, { topBarHeightVWC: ctx.topBarHeight });
 
   const keyboardVisibleVWC = useKeyboardVisibleValueWithCallbacks();
 

@@ -19,6 +19,7 @@ import {
   CancelablePromiseState,
   constructCancelablePromise,
 } from '../../../shared/lib/CancelablePromiseConstructor';
+import { apiFetch } from '../../../shared/lib/apiFetch';
 import { CourseRef } from '../lib/CourseRef';
 import { getCurrentServerTimeMS } from '../../../shared/lib/getCurrentServerTimeMS';
 import { getJwtExpiration } from '../../../shared/lib/getJwtExpiration';
@@ -26,6 +27,7 @@ import {
   LoginContext,
   LoginContextValueLoggedIn,
 } from '../../../shared/contexts/LoginContext';
+import { convertUsingMapper } from '../../../shared/lib/CrudFetcher';
 import {
   ExternalCourse,
   externalCourseKeyMap,
@@ -36,9 +38,7 @@ import { useMappedValuesWithCallbacks } from '../../../shared/hooks/useMappedVal
 import { useFavoritedModal } from './useFavoritedModal';
 import { adaptValueWithCallbacksAsVariableStrategyProps } from '../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps';
 import { useUnfavoritedModal } from './useUnfavoritedModal';
-import { describeError } from '../../../shared/lib/describeError';
-import { apiFetch } from '../../../shared/lib/apiFetch';
-import { convertUsingMapper } from '../../../shared/lib/CrudFetcher';
+import { DisplayableError } from '../../../shared/lib/errors';
 
 export type UseCourseLikeStateProps = {
   /**
@@ -77,7 +77,7 @@ export type UseCourseLikeStateResult = {
    * If an error occurred fetching the like status, this will be set to the
    * error message.
    */
-  error: WritableValueWithCallbacks<ReactElement | null>;
+  error: WritableValueWithCallbacks<DisplayableError | null>;
   /**
    * Refreshes the current liked status of the course. This will set
    * likedAt to undefined until the refresh is complete.
@@ -124,7 +124,9 @@ export const useCourseLikeState = ({
     }
     return { uid: course.uid, value: val };
   });
-  const error = useWritableValueWithCallbacks<ReactElement | null>(() => null);
+  const error = useWritableValueWithCallbacks<DisplayableError | null>(
+    () => null
+  );
 
   const showingLikedUntil = useWritableValueWithCallbacks<number | undefined>(
     () => undefined
@@ -230,15 +232,10 @@ export const useCourseLikeState = ({
         reject(e);
         return;
       }
-      const describePromise = describeError(e);
-      await Promise.race([describePromise, canceled.promise]);
-      canceled.cancel();
-      if (state.finishing) {
-        state.done = true;
-        reject(e);
-        return;
-      }
-      const err = await describePromise;
+      const err =
+        e instanceof DisplayableError
+          ? e
+          : new DisplayableError('client', 'update if course is liked', `${e}`);
       if (state.finishing) {
         state.done = true;
         reject(e);

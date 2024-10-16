@@ -35,11 +35,6 @@ import { useWorkingModal } from '../../../../shared/hooks/useWorkingModal';
 import { useErrorModal } from '../../../../shared/hooks/useErrorModal';
 import { Modals } from '../../../../shared/contexts/ModalContext';
 import { useTimezone } from '../../../../shared/hooks/useTimezone';
-import {
-  ErrorBanner,
-  ErrorBannerText,
-} from '../../../../shared/components/ErrorBanner';
-import { describeError } from '../../../../shared/lib/describeError';
 import { apiFetch } from '../../../../shared/lib/apiFetch';
 import { requestPermissionsAsync } from 'expo-notifications';
 import {
@@ -63,6 +58,10 @@ import { Close } from '../../../../shared/components/icons/Close';
 import { OsehColors } from '../../../../shared/OsehColors';
 import { Back } from '../../../../shared/components/icons/Back';
 import { adaptExitTransition } from '../../lib/adaptExitTransition';
+import {
+  chooseErrorFromStatus,
+  DisplayableError,
+} from '../../../../shared/lib/errors';
 
 /**
  * If the user doesn't already have notifications enabled on the current device,
@@ -194,12 +193,12 @@ export const AddPushToken = ({
   });
 
   const savingVWC = useWritableValueWithCallbacks<boolean>(() => false);
-  const savingErrorVWC = useWritableValueWithCallbacks<ReactElement | null>(
+  const savingErrorVWC = useWritableValueWithCallbacks<DisplayableError | null>(
     () => null
   );
 
   useWorkingModal(modals, savingVWC, 200);
-  useErrorModal(modals, savingErrorVWC, 'saving');
+  useErrorModal(modals, savingErrorVWC, { topBarHeightVWC: ctx.topBarHeight });
 
   const timezone = useTimezone();
 
@@ -241,9 +240,11 @@ export const AddPushToken = ({
       if (loginContextUnch.state !== 'logged-in') {
         setVWC(
           savingErrorVWC,
-          <ErrorBanner>
-            <ErrorBannerText>Not logged in</ErrorBannerText>
-          </ErrorBanner>
+          new DisplayableError(
+            'server-refresh-required',
+            'save reminder times',
+            'not logged in'
+          )
         );
         return false;
       }
@@ -252,24 +253,29 @@ export const AddPushToken = ({
       setVWC(savingVWC, true);
       setVWC(savingErrorVWC, null);
       try {
-        const response = await apiFetch(
-          '/api/1/users/me/attributes/notification_time',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json; charset=utf-8' },
-            body: JSON.stringify({
-              days_of_week: savingDays,
-              time_range: { start: savingStart, end: savingEnd },
-              channel: 'push',
-              timezone: timezone.timeZone,
-              timezone_technique: timezone.timeZoneTechnique,
-            }),
-          },
-          loginContext
-        );
+        let response;
+        try {
+          response = await apiFetch(
+            '/api/1/users/me/attributes/notification_time',
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json; charset=utf-8' },
+              body: JSON.stringify({
+                days_of_week: savingDays,
+                time_range: { start: savingStart, end: savingEnd },
+                channel: 'push',
+                timezone: timezone.timeZone,
+                timezone_technique: timezone.timeZoneTechnique,
+              }),
+            },
+            loginContext
+          );
+        } catch {
+          throw new DisplayableError('connectivity', 'save reminder times');
+        }
 
         if (!response.ok) {
-          throw response;
+          throw chooseErrorFromStatus(response.status, 'save reminder times');
         }
         ctx.resources.reminderChannelsHandler.evictOrReplace(
           loginContext,
@@ -313,7 +319,10 @@ export const AddPushToken = ({
         );
         return true;
       } catch (e) {
-        setVWC(savingErrorVWC, await describeError(e));
+        setVWC(
+          savingErrorVWC,
+          new DisplayableError('client', 'save reminder times', `${e}`)
+        );
         return false;
       } finally {
         setVWC(savingVWC, false);

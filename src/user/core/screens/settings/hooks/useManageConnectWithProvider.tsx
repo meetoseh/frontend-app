@@ -11,11 +11,6 @@ import {
 } from '../../../../../shared/contexts/ModalContext';
 import { LoginContext } from '../../../../../shared/contexts/LoginContext';
 import { YesNoModal } from '../../../../../shared/components/YesNoModal';
-import { describeError } from '../../../../../shared/lib/describeError';
-import {
-  ErrorBanner,
-  ErrorBannerText,
-} from '../../../../../shared/components/ErrorBanner';
 import { MergeProvider } from '../lib/MergeProvider';
 import { PromptMergeResult } from '../lib/MergeMessagePipe';
 import { usePromptMergeUsingModal } from './usePromptMergeUsingModal';
@@ -25,6 +20,7 @@ import { VISITOR_SOURCE } from '../../../../../shared/lib/visitorSource';
 import { SCREEN_VERSION } from '../../../../../shared/lib/screenVersion';
 import { Passkey } from 'react-native-passkey';
 import { showYesNoModal } from '../../../../../shared/lib/showYesNoModal';
+import { DisplayableError } from '../../../../../shared/lib/errors';
 
 export const useManageConnectWithProvider = ({
   mergeError,
@@ -33,7 +29,7 @@ export const useManageConnectWithProvider = ({
   links,
   passkeyHint,
 }: {
-  mergeError: WritableValueWithCallbacks<ReactElement | null>;
+  mergeError: WritableValueWithCallbacks<DisplayableError | null>;
   modals: WritableValueWithCallbacks<Modals>;
   onSecureLoginCompleted: (token: string | null) => void;
   links?: { [provider in MergeProvider]?: () => string | undefined };
@@ -51,32 +47,26 @@ export const useManageConnectWithProvider = ({
         if (result.type === 'cancel') {
           setVWC(
             mergeError,
-            <ErrorBanner>
-              <ErrorBannerText>Merge canceled by user.</ErrorBannerText>
-            </ErrorBanner>
+            new DisplayableError('client', 'merge', 'canceled by user')
           );
         } else if (result.type === 'dismiss') {
           setVWC(
             mergeError,
-            <ErrorBanner>
-              <ErrorBannerText>Merge dismissed by user.</ErrorBannerText>
-            </ErrorBanner>
+            new DisplayableError('client', 'merge', 'dismissed by user')
           );
         } else if (result.type === 'error') {
           setVWC(
             mergeError,
-            <ErrorBanner>
-              <ErrorBannerText>ERR: {result.error}</ErrorBannerText>
-            </ErrorBanner>
+            new DisplayableError('client', 'merge', `${result.error}`)
           );
         } else {
           setVWC(
             mergeError,
-            <ErrorBanner>
-              <ErrorBannerText>
-                Unknown result: {result.rawType}
-              </ErrorBannerText>
-            </ErrorBanner>
+            new DisplayableError(
+              'client',
+              'merge',
+              `unknown type: ${result.type}`
+            )
           );
         }
       }
@@ -119,7 +109,11 @@ export const useManageConnectWithProvider = ({
           console.log(`Link created for ${provider}: ${mergeLink}`);
         }
       } catch (e) {
-        setVWC(mergeError, await describeError(e));
+        const described =
+          e instanceof DisplayableError
+            ? e
+            : new DisplayableError('client', `merge with ${provider}`, `${e}`);
+        setVWC(mergeError, described);
         return;
       }
 
@@ -188,7 +182,10 @@ export const useManageConnectWithProvider = ({
           await handleAuthenticate();
         }
       } catch (e) {
-        const described = await describeError(e);
+        const described =
+          e instanceof DisplayableError
+            ? e
+            : new DisplayableError('client', `passkey ${technique}`, `${e}`);
         setVWC(mergeError, described);
       }
 
@@ -219,11 +216,7 @@ export const useManageConnectWithProvider = ({
           console.log('passkey regstration failed:', e);
           setVWC(
             mergeError,
-            <ErrorBanner>
-              <ErrorBannerText>
-                Passkey creation did not succeed
-              </ErrorBannerText>
-            </ErrorBanner>
+            new DisplayableError('client', 'passkey registration', `${e}`)
           );
           return;
         }
@@ -283,9 +276,7 @@ export const useManageConnectWithProvider = ({
           console.log('passkey authentication failed:', e);
           setVWC(
             mergeError,
-            <ErrorBanner>
-              <ErrorBannerText>Passkey sign-in did not succeed</ErrorBannerText>
-            </ErrorBanner>
+            new DisplayableError('client', 'passkey authentication', `${e}`)
           );
           return;
         }

@@ -32,7 +32,6 @@ import { SimpleBlurView } from '../../components/SimpleBlurView';
 import * as Colors from '../../../styling/colors';
 import Play from './assets/Play';
 import Pause from './assets/Pause';
-import { ErrorBanner, ErrorBannerText } from '../../components/ErrorBanner';
 import { InlineOsehSpinner } from '../../components/InlineOsehSpinner';
 import Unmuted from './assets/Unmuted';
 import Muted from './assets/Muted';
@@ -45,6 +44,7 @@ import { useTopBarHeight } from '../../hooks/useTopBarHeight';
 import { useBotBarHeight } from '../../hooks/useBotBarHeight';
 import { Close } from '../../components/icons/Close';
 import { OsehColors } from '../../OsehColors';
+import { BoxError, DisplayableError } from '../../lib/errors';
 
 export type PlayerCTA = {
   /** The title for the button */
@@ -326,11 +326,11 @@ export const PlayerForeground = ({
                       return status.error;
                     })();
                     return (
-                      <ErrorBanner>
-                        <ErrorBannerText>
-                          {err ?? 'Something went wrong'}
-                        </ErrorBannerText>
-                      </ErrorBanner>
+                      <BoxError
+                        error={
+                          new DisplayableError('client', 'play media', `${err}`)
+                        }
+                      />
                     );
                   }
                   return (
