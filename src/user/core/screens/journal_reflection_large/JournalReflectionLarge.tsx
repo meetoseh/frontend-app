@@ -117,9 +117,7 @@ export const JournalReflectionLarge = ({
   );
 
   const editingVWC = useWritableValueWithCallbacks(() => false);
-  const editedValueVWC = useWritableValueWithCallbacks<string>(
-    () => ''
-  ) as ResizingTextAreaProps['value'];
+  const editedValueVWC = useWritableValueWithCallbacks<string>(() => '');
   const editInputRefVWC = useWritableValueWithCallbacks<TextInput | null>(
     () => null
   );
@@ -136,15 +134,13 @@ export const JournalReflectionLarge = ({
       newValue === (resources.question.get()?.paragraphs ?? []).join('\n\n')
     ) {
       setVWC(editingVWC, false);
-      editedValueVWC.set('');
-      editedValueVWC.callbacks.call({ updateInput: true });
+      setVWC(editedValueVWC, '');
       return;
     }
 
     resources.trySubmitEdit(newValue);
     setVWC(editingVWC, false);
-    editedValueVWC.set('');
-    editedValueVWC.callbacks.call({ updateInput: true });
+    setVWC(editedValueVWC, '');
   };
 
   useValuesWithCallbacksEffect([editingVWC, editInputRefVWC], () => {
@@ -214,15 +210,18 @@ export const JournalReflectionLarge = ({
                     variant="dark"
                     refVWC={editInputRefVWC}
                     value={editedValueVWC}
+                    onValueChanged={(v) => setVWC(editedValueVWC, v)}
                     submit={{
-                      icon: (
-                        <Send
-                          color={OsehColors.v4.primary.light}
-                          color2={OsehColors.v4.primary.dark}
-                          {...RESIZING_TEXT_AREA_ICON_SETTINGS}
-                        />
-                      ),
-                      onClick: onSubmitEdit,
+                      value: {
+                        icon: (
+                          <Send
+                            color={OsehColors.v4.primary.light}
+                            color2={OsehColors.v4.primary.dark}
+                            {...RESIZING_TEXT_AREA_ICON_SETTINGS}
+                          />
+                        ),
+                        onClick: onSubmitEdit,
+                      },
                     }}
                     placeholder="Type the question you want to answer"
                     enterBehavior="submit-unless-shift"
@@ -370,14 +369,12 @@ export const JournalReflectionLarge = ({
                       {screen.parameters.edit !== null && (
                         <Pressable
                           onPress={() => {
-                            editedValueVWC.set(
+                            setVWC(
+                              editedValueVWC,
                               resources.question
                                 .get()
                                 ?.paragraphs?.join('\n\n') ?? ''
                             );
-                            editedValueVWC.callbacks.call({
-                              updateInput: true,
-                            });
                             setVWC(editingVWC, true);
                           }}
                         >
