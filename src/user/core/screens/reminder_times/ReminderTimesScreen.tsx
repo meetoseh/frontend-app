@@ -68,7 +68,7 @@ export const ReminderTimesScreen: OsehScreen<
         : params.nav,
     __mapped: true,
   }),
-  initInstanceResources: (ctx, screen, refreshScreen) => {
+  initInstanceResources: (ctx) => {
     const getChannels = () =>
       createLoginContextRequest({
         ctx,

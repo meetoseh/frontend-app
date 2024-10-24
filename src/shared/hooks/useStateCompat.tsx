@@ -6,7 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
-} from "react";
+} from 'react';
 
 const notSet = Symbol();
 
@@ -71,20 +71,21 @@ export function useStateCompat<T>(
       );
     }
     mounted.current = true;
+    const id = myId.current;
     return () => {
       if (memodSettings?.debug) {
         console.log(
-          `useStateCompat (${myId.current}): ${memodSettings.debugId} unmounted`
+          `useStateCompat (${id}): ${memodSettings.debugId} unmounted`
         );
       }
       mounted.current = false;
     };
-  }, [memodSettings]);
+  }, [memodSettings, state]);
 
   const fixedSetState = useCallback<Dispatch<SetStateAction<T>>>(
     (v) => {
       const val: T =
-        typeof v === "function"
+        typeof v === 'function'
           ? (v as (old: T) => T)(
               settingTo.current !== notSet
                 ? settingTo.current

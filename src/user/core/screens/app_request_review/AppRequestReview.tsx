@@ -4,14 +4,10 @@ import {
   useEntranceTransition,
   useTransitionProp,
 } from '../../../../shared/lib/TransitionProp';
-import {
-  StandardScreenTransition,
-  useStandardTransitionsState,
-} from '../../../../shared/hooks/useStandardTransitions';
+import { StandardScreenTransition } from '../../../../shared/hooks/useStandardTransitions';
 import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { GridFullscreenContainer } from '../../../../shared/components/GridFullscreenContainer';
 import { GridDarkGrayBackground } from '../../../../shared/components/GridDarkGrayBackground';
-import { screenOut } from '../../lib/screenOut';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { AppRequestReviewResources } from './AppRequestReviewResources';
 import { AppRequestReviewMappedParams } from './AppRequestReviewParams';
@@ -35,8 +31,6 @@ export const AppRequestReview = ({
     (): StandardScreenTransition => ({ type: 'none', ms: 0 })
   );
   useEntranceTransition(transition);
-
-  const transitionState = useStandardTransitionsState(transition);
 
   const workingVWC = useWritableValueWithCallbacks(() => false);
 
@@ -84,7 +78,14 @@ export const AppRequestReview = ({
         screen.parameters.trigger
       );
     }
-  }, [handlingVWC]);
+  }, [
+    handlingVWC,
+    screen.parameters.trigger,
+    startPop,
+    trace,
+    transition,
+    workingVWC,
+  ]);
 
   return (
     <GridFullscreenContainer

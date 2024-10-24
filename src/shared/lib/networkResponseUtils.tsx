@@ -1,4 +1,5 @@
 import { ReactElement } from 'react';
+import { Text } from 'react-native';
 
 type NetworkResponseFormatOptions = {
   /**
@@ -32,11 +33,11 @@ export function formatNetworkValue<T>(
   opts?: NetworkResponseFormatOptions
 ): ReactElement {
   if (value === null) {
-    return opts?.nullPlaceholder ?? <>N/A</>;
+    return opts?.nullPlaceholder ?? <Text>N/A</Text>;
   }
 
   if (value === undefined) {
-    return opts?.undefinedPlaceholder ?? <>?</>;
+    return opts?.undefinedPlaceholder ?? <Text>?</Text>;
   }
 
   return formatter(value);
@@ -55,7 +56,7 @@ export function formatNetworkString(
   str: string | null | undefined,
   opts?: NetworkResponseFormatOptions
 ): ReactElement {
-  return formatNetworkValue(str, (s) => <>{s}</>, opts);
+  return formatNetworkValue(str, (s) => <Text>{s}</Text>, opts);
 }
 
 /**
@@ -67,8 +68,9 @@ export function formatNetworkString(
  */
 export const formatNetworkNumber = (
   num: number | null | undefined,
-  opts?: NetworkResponseFormatOptions
-): ReactElement => formatNetworkValue(num, (n) => <>{n.toLocaleString()}</>);
+  _opts?: NetworkResponseFormatOptions
+): ReactElement =>
+  formatNetworkValue(num, (n) => <Text>{n.toLocaleString()}</Text>);
 
 /**
  * Formats the given date retrieved from the network. See `formatNetworkValue`
@@ -79,8 +81,9 @@ export const formatNetworkNumber = (
  */
 export const formatNetworkDate = (
   date: Date | null | undefined,
-  opts?: NetworkResponseFormatOptions
-): ReactElement => formatNetworkValue(date, (d) => <>{d.toLocaleString()}</>);
+  _opts?: NetworkResponseFormatOptions
+): ReactElement =>
+  formatNetworkValue(date, (d) => <Text>{d.toLocaleString()}</Text>);
 
 /**
  * Formats a unix timestamp retrieved from the network as a date. See
@@ -98,7 +101,7 @@ export const formatNetworkUnixTimestamp = (
 
 export const formatNetworkUnixDate = (
   unixDate: number | null | undefined,
-  opts?: NetworkResponseFormatOptions
+  _opts?: NetworkResponseFormatOptions
 ): ReactElement => {
   if (unixDate === null || unixDate === undefined) {
     return formatNetworkValue(unixDate, () => <></>);
@@ -123,25 +126,25 @@ export const formatNetworkUnixDate = (
 export const formatDuration = (seconds: number): ReactElement => {
   if (seconds < 2) {
     const ms = Math.round(seconds * 1000);
-    return <>{ms}ms</>;
+    return <Text>{ms}ms</Text>;
   }
   const minutes = Math.floor(seconds / 60);
   if (minutes < 2) {
-    return <>{Math.round(seconds)}s</>;
+    return <Text>{Math.round(seconds)}s</Text>;
   }
   const hours = Math.floor(minutes / 60);
   if (hours < 2) {
     const extraSeconds = Math.round(seconds - minutes * 60);
     return (
-      <>
+      <Text>
         {minutes}m {extraSeconds}s
-      </>
+      </Text>
     );
   }
   return (
-    <>
+    <Text>
       {hours}h {Math.round(minutes - hours * 60)}m
-    </>
+    </Text>
   );
 };
 
@@ -227,5 +230,5 @@ export const formatDurationClock = (
  */
 export const formatNetworkDuration = (
   seconds: number | null | undefined,
-  opts?: NetworkResponseFormatOptions
+  _opts?: NetworkResponseFormatOptions
 ): ReactElement => formatNetworkValue(seconds, formatDuration);

@@ -48,7 +48,8 @@ export const createFavoritesListRequestHandler = ({
   });
 };
 
-const getRefUid = (ref: FavoritesListRequest): string => 'favoritesListRequest';
+const getRefUid = (_ref: FavoritesListRequest): string =>
+  'favoritesListRequest';
 const getDataFromRef = (
   loginContextRaw: LoginContextValue
 ): ((
@@ -58,7 +59,7 @@ const getDataFromRef = (
     FavoritesListRequest,
     InfiniteListing<MinimalJourney>
   >({
-    inner: async (ref, signal) => {
+    inner: async (_ref, _signal) => {
       const numVisible = 150;
       const result = new NetworkedInfiniteListing<MinimalJourney>(
         '/api/1/users/me/search_history',
@@ -110,6 +111,6 @@ const getDataFromRef = (
     },
   });
 const compareRefs = (
-  a: FavoritesListRequest,
-  b: FavoritesListRequest
+  _a: FavoritesListRequest,
+  _b: FavoritesListRequest
 ): number => 0;

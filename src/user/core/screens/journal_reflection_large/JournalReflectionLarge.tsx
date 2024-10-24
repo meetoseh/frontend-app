@@ -32,7 +32,6 @@ import { setVWC } from '../../../../shared/lib/setVWC';
 import {
   RESIZING_TEXT_AREA_ICON_SETTINGS,
   ResizingTextArea,
-  ResizingTextAreaProps,
 } from '../../../../shared/components/ResizingTextArea';
 import { Send } from '../../../../shared/components/icons/Send';
 import { TextInput, View, Text, Pressable } from 'react-native';

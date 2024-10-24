@@ -114,7 +114,9 @@ export const HoldToContinue = ({
 
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch (e) {}
+      } catch (e) {
+        // failed haptics aren't a big deal
+      }
 
       while (true) {
         if (now >= doneAt) {
@@ -207,7 +209,9 @@ export const HoldToContinue = ({
             shaker.promise.catch(() => {});
             try {
               Haptics.selectionAsync();
-            } catch (e) {}
+            } catch (e) {
+              // failed haptics aren't a big deal
+            }
             await Promise.race([
               holdFinished.promise,
               buttonUp.promise,

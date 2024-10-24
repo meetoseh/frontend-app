@@ -57,7 +57,7 @@ export const storeSecurePaginated = async (
 
   const valSetPromises = [];
 
-  let expectedNumParts = Math.ceil(data.length / 2048);
+  const expectedNumParts = Math.ceil(data.length / 2048);
 
   for (let partIndex = 0; partIndex < expectedNumParts; partIndex++) {
     const dataStartIndex = partIndex * 2048;

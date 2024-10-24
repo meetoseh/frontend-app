@@ -1,11 +1,10 @@
 import {
-  Callbacks,
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../lib/Callbacks";
-import { setVWC } from "../lib/setVWC";
-import { useSingletonEffect } from "../lib/useSingletonEffect";
-import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from "expo-av";
+} from '../lib/Callbacks';
+import { setVWC } from '../lib/setVWC';
+import { useSingletonEffect } from '../lib/useSingletonEffect';
+import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from 'expo-av';
 
 /**
  * Configured expo-av to play audio in the background

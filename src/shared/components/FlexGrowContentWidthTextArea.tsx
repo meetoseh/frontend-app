@@ -1,4 +1,4 @@
-import { Pressable, TextInput, TextStyle, View } from 'react-native';
+import { TextInput, TextStyle, View } from 'react-native';
 import {
   downgradeTypedVWC,
   useWritableValueWithCallbacks,
@@ -6,7 +6,7 @@ import {
   WritableValueWithCallbacks,
   WritableValueWithTypedCallbacks,
 } from '../lib/Callbacks';
-import { ReactElement, useEffect, useMemo } from 'react';
+import { ReactElement, useEffect } from 'react';
 import { createValueWithCallbacksEffect } from '../hooks/createValueWithCallbacksEffect';
 import { setVWC } from '../lib/setVWC';
 import { styles } from './FlexGrowContentWidthTextAreaStyles';
@@ -73,7 +73,7 @@ export const FlexGrowContentWidthTextArea = (
 
   const realTextStyleVWC = useMappedValuesWithCallbacks(
     [containerHeightVWC, props.contentWidth],
-    (height): TextStyle =>
+    (): TextStyle =>
       Object.assign(
         {
           verticalAlign: 'top',
@@ -115,7 +115,7 @@ export const FlexGrowContentWidthTextArea = (
       setVWC(editableVWC, e);
       return undefined;
     });
-  }, [props.editable]);
+  }, [props.editable, editableVWC]);
 
   const textInputProps = useMappedValuesWithCallbacks(
     [editableVWC, downgradeTypedVWC(props.value)],

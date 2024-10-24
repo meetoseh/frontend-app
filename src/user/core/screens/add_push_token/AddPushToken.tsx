@@ -328,7 +328,17 @@ export const AddPushToken = ({
         setVWC(savingVWC, false);
       }
     };
-  }, [timeRangeVWC, daysVWC, timezone, getExistingDays, getExistingTimeRange]);
+  }, [
+    timeRangeVWC,
+    daysVWC,
+    timezone,
+    ctx.login,
+    ctx.resources,
+    resources.settings,
+    savingErrorVWC,
+    savingVWC,
+    screen.parameters.times,
+  ]);
 
   /**
    * Requests permissions using the native dialog, updates our model of the

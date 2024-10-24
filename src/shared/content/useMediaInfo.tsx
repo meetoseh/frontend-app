@@ -246,7 +246,6 @@ export const useMediaInfo = ({
       progressVWC,
       videoPlayPauseStateVWC,
       videoEndedVWC,
-      currentTranscriptPhrasesVWC,
       closedCaptioningPhrasesVWC,
       closedCaptioningAvailableVWC,
       closedCaptioningEnabledVWC,

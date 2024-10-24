@@ -1,10 +1,4 @@
-import {
-  CSSProperties,
-  Fragment,
-  PropsWithChildren,
-  ReactElement,
-  useEffect,
-} from 'react';
+import { Fragment, PropsWithChildren, ReactElement, useEffect } from 'react';
 import {
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
@@ -16,7 +10,6 @@ import { styles } from './EmotionsPickerStyles';
 import { useMappedValueWithCallbacks } from '../../../../../shared/hooks/useMappedValueWithCallbacks';
 import { useMappedValuesWithCallbacks } from '../../../../../shared/hooks/useMappedValuesWithCallbacks';
 import { RenderGuardedComponent } from '../../../../../shared/components/RenderGuardedComponent';
-import { useStyleVWC } from '../../../../../shared/hooks/useStyleVWC';
 import { View, Text, ViewStyle, ScrollView, Pressable } from 'react-native';
 import { VerticalSpacer } from '../../../../../shared/components/VerticalSpacer';
 import { HorizontalSpacer } from '../../../../../shared/components/HorizontalSpacer';

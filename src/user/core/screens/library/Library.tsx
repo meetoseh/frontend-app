@@ -162,7 +162,7 @@ export const Library = ({
         }
       );
     },
-    [screen.parameters, workingVWC, startPop, transition]
+    [screen.parameters, workingVWC, startPop, transition, ctx, trace]
   );
 
   const boundComponent = useMemo<
@@ -190,7 +190,7 @@ export const Library = ({
     [resources.filter, resources.instructors],
     () => {
       const f = resources.filter.get();
-      let result: ReactElement[] = [];
+      const result: ReactElement[] = [];
       if (f.favorites !== 'ignore') {
         result.push(
           f.favorites === 'only' ? (

@@ -224,7 +224,7 @@ export const useScreenQueue = ({
 
     async function initLoading(
       id: number,
-      state: UseScreenQueueStateState & { type: 'loading' }
+      _state: UseScreenQueueStateState & { type: 'loading' }
     ) {
       if (!effectMounted || id !== counter) {
         return;
@@ -438,7 +438,7 @@ export const useScreenQueue = ({
           }
 
           let done = false;
-          let doReject = (e: any) => {};
+          let doReject = (_e: any) => {};
           const result = {
             promise: new Promise<RefreshResult>((resolve, reject) => {
               doReject = reject;
@@ -830,7 +830,7 @@ export const useScreenQueue = ({
             const newPrefetchResources = [
               popResult.data.result.active,
               ...popResult.data.result.prefetch,
-            ].map((prefetchInstance, idx) => {
+            ].map((prefetchInstance) => {
               const screen = screensBySlug.get(prefetchInstance.slug);
               if (screen === undefined) {
                 return null;

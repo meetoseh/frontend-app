@@ -5,39 +5,40 @@ import {
   useEffect,
   useMemo,
   useRef,
-} from "react";
-import { useStateCompat as useState } from "../../../shared/hooks/useStateCompat";
-import { InteractiveNumericPrompt } from "../models/InteractivePrompt";
-import { CountdownText } from "./CountdownText";
-import { styles } from "./NumericPromptStyles";
+} from 'react';
+import { InteractiveNumericPrompt } from '../models/InteractivePrompt';
+import { CountdownText } from './CountdownText';
+import { styles } from './NumericPromptStyles';
 import {
   ValueWithCallbacks,
   WritableValueWithCallbacks,
   createWritableValueWithCallbacks,
   useWritableValueWithCallbacks,
-} from "../../../shared/lib/Callbacks";
-import { useWindowSize } from "../../../shared/hooks/useWindowSize";
-import { PromptTitle } from "./PromptTitle";
+} from '../../../shared/lib/Callbacks';
+import { useWindowSize } from '../../../shared/hooks/useWindowSize';
+import { PromptTitle } from './PromptTitle';
 import {
   CarouselInfo,
   useCarouselInfo,
-} from "../../../shared/hooks/useCarouselInfo";
-import { Carousel } from "../../../shared/components/Carousel";
-import { ProfilePictures } from "./ProfilePictures";
+} from '../../../shared/hooks/useCarouselInfo';
+import { Carousel } from '../../../shared/components/Carousel';
+import { ProfilePictures } from './ProfilePictures';
 import {
   VPFRRProps,
   VerticalPartlyFilledRoundedRect,
-} from "../../../shared/anim/VerticalPartlyFilledRoundedRect";
-import { useMappedValueWithCallbacks } from "../../../shared/hooks/useMappedValueWithCallbacks";
-import { RenderGuardedComponent } from "../../../shared/components/RenderGuardedComponent";
-import { PromptProps } from "../models/PromptProps";
-import { PromptSettings } from "../models/PromptSettings";
-import { usePromptResources } from "../hooks/usePromptResources";
-import { apiFetch } from "../../../shared/lib/apiFetch";
-import { View, Text, TextInput, StyleProp, TextStyle } from "react-native";
-import { CustomButtonProps } from "../../../shared/models/CustomButtonProps";
-import { FilledPrimaryButton } from "../../../shared/components/FilledPrimaryButton";
-import { LinkButton } from "../../../shared/components/LinkButton";
+} from '../../../shared/anim/VerticalPartlyFilledRoundedRect';
+import { useMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValueWithCallbacks';
+import { RenderGuardedComponent } from '../../../shared/components/RenderGuardedComponent';
+import { PromptProps } from '../models/PromptProps';
+import { PromptSettings } from '../models/PromptSettings';
+import { usePromptResources } from '../hooks/usePromptResources';
+import { apiFetch } from '../../../shared/lib/apiFetch';
+import { View, Text, TextInput } from 'react-native';
+import { CustomButtonProps } from '../../../shared/models/CustomButtonProps';
+import { FilledPrimaryButton } from '../../../shared/components/FilledPrimaryButton';
+import { LinkButton } from '../../../shared/components/LinkButton';
+import { TextStyleForwarder } from '../../../shared/components/TextStyleForwarder';
+import { setVWC } from '../../../shared/lib/setVWC';
 
 const optionWidthPx = 75;
 const optionHeightPx = 75;
@@ -87,10 +88,10 @@ const settings: PromptSettings<InteractiveNumericPrompt, number | null> = {
     }
 
     await apiFetch(
-      "/api/1/interactive_prompts/events/respond_numeric_prompt",
+      '/api/1/interactive_prompts/events/respond_numeric_prompt',
       {
-        method: "POST",
-        headers: { "Content-Type": "application/json; charset=utf-8" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({
           interactive_prompt_uid: prompt.uid,
           interactive_prompt_jwt: prompt.jwt,
@@ -129,7 +130,7 @@ export const NumericPrompt = (
   const panningVWC = useWritableValueWithCallbacks<boolean>(() => false);
   const [carouselInfo, selectItemInCarousel, panCarouselTo] = useCarouselInfo({
     settings: {
-      type: "react-rerender",
+      type: 'react-rerender',
       props: {
         visibleWidth: Math.min(screenSize.width, 440),
         itemWidth: optionWidthPx,
@@ -139,7 +140,7 @@ export const NumericPrompt = (
       },
     },
     panning: {
-      type: "callbacks",
+      type: 'callbacks',
       props: panningVWC.get,
       callbacks: panningVWC.callbacks,
     },
@@ -355,7 +356,7 @@ export const NumericPrompt = (
                 <View style={styles.itemBackground}>
                   <VerticalPartlyFilledRoundedRect
                     props={{
-                      type: "callbacks",
+                      type: 'callbacks',
                       props: () => infos[optionIndex].get(),
                       callbacks: infos[optionIndex].callbacks,
                     }}
@@ -386,36 +387,47 @@ export const NumericPrompt = (
                 : { paddingTop: 45, paddingBottom: 60 }),
             }}
           >
-            <RenderGuardedComponent
-              props={hasSelectionVWC}
-              component={(hasSelection) => {
-                const [textStyle, setTextStyle] = useState<
-                  StyleProp<TextStyle>
-                >({});
-                const text = hasSelection
-                  ? finishEarly === true
-                    ? "Continue"
-                    : finishEarly.cta
-                  : "Skip";
-                const props: CustomButtonProps = {
-                  onPress: resources.onSkip,
-                  setTextStyle,
-                };
+            <TextStyleForwarder
+              component={(styleVWC) => (
+                <RenderGuardedComponent
+                  props={hasSelectionVWC}
+                  component={(hasSelection) => {
+                    const text = hasSelection
+                      ? finishEarly === true
+                        ? 'Continue'
+                        : finishEarly.cta
+                      : 'Skip';
+                    const props: CustomButtonProps = {
+                      onPress: resources.onSkip,
+                      setTextStyle: (s) => setVWC(styleVWC, s),
+                    };
 
-                if (hasSelection) {
-                  return (
-                    <FilledPrimaryButton {...props}>
-                      <Text style={textStyle}>{text}</Text>
-                    </FilledPrimaryButton>
-                  );
-                } else {
-                  return (
-                    <LinkButton {...props}>
-                      <Text style={textStyle}>{text}</Text>
-                    </LinkButton>
-                  );
-                }
-              }}
+                    if (hasSelection) {
+                      return (
+                        <FilledPrimaryButton {...props}>
+                          <RenderGuardedComponent
+                            props={styleVWC}
+                            component={(textStyle) => (
+                              <Text style={textStyle}>{text}</Text>
+                            )}
+                          />
+                        </FilledPrimaryButton>
+                      );
+                    } else {
+                      return (
+                        <LinkButton {...props}>
+                          <RenderGuardedComponent
+                            props={styleVWC}
+                            component={(textStyle) => (
+                              <Text style={textStyle}>{text}</Text>
+                            )}
+                          />
+                        </LinkButton>
+                      );
+                    }
+                  }}
+                />
+              )}
             />
           </View>
         )}

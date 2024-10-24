@@ -2,7 +2,6 @@ import { ReactElement, useCallback } from 'react';
 import { Pressable, View, ViewStyle } from 'react-native';
 import { useTopBarHeight } from '../hooks/useTopBarHeight';
 import { styles } from './CloseButtonStyles';
-import * as Colors from '../../styling/colors';
 import { OsehColors } from '../OsehColors';
 import { Close } from './icons/Close';
 
@@ -50,9 +49,14 @@ export const CloseButton = ({
     <View style={styles.container}>
       <Pressable
         onPress={handlePress}
-        style={Object.assign({}, styles.pressable, {
-          paddingTop: styles.pressable.paddingTop + topBarHeight,
-        })}
+        style={Object.assign(
+          {},
+          styles.pressable,
+          {
+            paddingTop: styles.pressable.paddingTop + topBarHeight,
+          },
+          bonusStyle
+        )}
       >
         <Close
           icon={{ width: 14 }}

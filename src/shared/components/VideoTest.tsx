@@ -28,10 +28,8 @@ export const VideoTest = (): ReactElement => {
     const cancelers = new Callbacks<undefined>();
     const controller = new AbortController();
     cancelers.add(() => controller.abort());
-    let running = true;
     fetchPlaybackSource();
     return () => {
-      running = false;
       cancelers.call(undefined);
     };
 

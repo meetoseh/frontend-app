@@ -12,10 +12,7 @@ export type JournalChatSpinnersProps = {
  * Renders the spinner for a journal chat state, if one is needed based on the
  * current transient value
  */
-export const JournalChatSpinners = ({
-  ctx,
-  chat,
-}: JournalChatSpinnersProps) => {
+export const JournalChatSpinners = ({ chat }: JournalChatSpinnersProps) => {
   return (
     <>
       {chat.transient?.type?.startsWith('thinking') ? (

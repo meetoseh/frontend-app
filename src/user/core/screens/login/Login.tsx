@@ -8,7 +8,6 @@ import OsehWordmarkWhite from './icons/OsehWordmarkWhite';
 import { isSilentAuthSupported } from '../../../../shared/contexts/LoginContext';
 import { apiFetch } from '../../../../shared/lib/apiFetch';
 import { URLSearchParams } from 'react-native-url-polyfill';
-import { useUnwrappedValueWithCallbacks } from '../../../../shared/hooks/useUnwrappedValueWithCallbacks';
 import {
   LoginMessage,
   ReadableLoginMessagePipe,
@@ -263,7 +262,7 @@ export const Login = ({ ctx }: { ctx: ScreenContext }) => {
         // ensures no missing cases
         ((() => {}) as (t: 'success') => void)(result.type);
 
-        const { idToken, refreshToken, onboard } = result;
+        const { idToken, refreshToken } = result;
         ctx.login.setAuthTokens.call(undefined, {
           idToken,
           refreshToken: refreshToken ?? null,
@@ -384,6 +383,7 @@ export const Login = ({ ctx }: { ctx: ScreenContext }) => {
     }
   }, []);
 
+  const modals = useWritableValueWithCallbacks<Modals>(() => []);
   const onContinueWithProvider = useCallback(
     async (provider: OauthProvider) => {
       if (provider === 'Passkey') {
@@ -415,6 +415,7 @@ export const Login = ({ ctx }: { ctx: ScreenContext }) => {
           setVWC(errorVWC, described);
         }
 
+        // eslint-disable-next-line no-inner-declarations
         async function handleRegister() {
           const response = await apiFetch(
             '/api/1/oauth/passkeys/register_begin?platform=' +
@@ -480,6 +481,7 @@ export const Login = ({ ctx }: { ctx: ScreenContext }) => {
           });
         }
 
+        // eslint-disable-next-line no-inner-declarations
         async function handleAuthenticate() {
           const response = await apiFetch(
             '/api/1/oauth/passkeys/authenticate_begin?platform=' +
@@ -632,7 +634,7 @@ export const Login = ({ ctx }: { ctx: ScreenContext }) => {
         );
       }
     },
-    [onMessageFromPipe, mountedVWC, errorVWC]
+    [onMessageFromPipe, mountedVWC, errorVWC, ctx.login, modals]
   );
 
   const onLongPressMessage = useCallback(async () => {
@@ -693,18 +695,14 @@ export const Login = ({ ctx }: { ctx: ScreenContext }) => {
     }
   }, [ctx.login, errorVWC]);
 
-  const modals = useWritableValueWithCallbacks<Modals>(() => []);
   useErrorModal(modals, errorVWC, { topBarHeightVWC: ctx.topBarHeight });
 
   const silentAuthSupportedVWC = useWritableValueWithCallbacks(
     (): boolean | null => null
   );
   useEffect(() => {
-    let active = true;
     handle();
-    return () => {
-      active = false;
-    };
+    return undefined;
 
     async function handle() {
       const supported = await isSilentAuthSupported();

@@ -1,9 +1,6 @@
 import { View, ViewStyle } from 'react-native';
 import { useMappedValueWithCallbacks } from '../hooks/useMappedValueWithCallbacks';
-import {
-  ValueWithCallbacks,
-  useWritableValueWithCallbacks,
-} from '../lib/Callbacks';
+import { useWritableValueWithCallbacks } from '../lib/Callbacks';
 import { RenderGuardedComponent } from './RenderGuardedComponent';
 import { useStyleVWC } from '../hooks/useStyleVWC';
 import { SvgLinearGradient } from '../anim/SvgLinearGradient';

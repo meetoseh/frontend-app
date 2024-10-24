@@ -5,10 +5,7 @@ import {
 } from '../../../shared/lib/InfiniteListing';
 import { MinimalJourney, minimalJourneyKeyMap } from '../lib/MinimalJourney';
 import { LoginContextValue } from '../../../shared/contexts/LoginContext';
-import {
-  VariableStrategyProps,
-  useVariableStrategyPropsAsValueWithCallbacks,
-} from '../../../shared/anim/VariableStrategyProps';
+import { VariableStrategyProps } from '../../../shared/anim/VariableStrategyProps';
 
 /**
  * Returns an infinite list, which is reset upon creation, for history

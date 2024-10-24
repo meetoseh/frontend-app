@@ -1,9 +1,6 @@
 import { Dispatch, SetStateAction } from 'react';
 import { apiFetch } from './apiFetch';
-import {
-  LoginContextValue,
-  LoginContextValueLoggedIn,
-} from '../contexts/LoginContext';
+import { LoginContextValueLoggedIn } from '../contexts/LoginContext';
 
 type MappedKey<T> = {
   key: string & keyof T;

@@ -11,7 +11,6 @@ import {
   Callbacks,
   ValueWithCallbacks,
   WritableValueWithCallbacks,
-  createWritableValueWithCallbacks,
   useWritableValueWithCallbacks,
 } from '../lib/Callbacks';
 import { useValueWithCallbacksEffect } from '../hooks/useValueWithCallbacksEffect';
@@ -19,13 +18,7 @@ import { setVWC } from '../lib/setVWC';
 import { useMappedValueWithCallbacks } from '../hooks/useMappedValueWithCallbacks';
 import { RenderGuardedComponent } from './RenderGuardedComponent';
 import { useMappedValuesWithCallbacks } from '../hooks/useMappedValuesWithCallbacks';
-import {
-  View,
-  Text,
-  VirtualizedList,
-  ViewToken,
-  ViewStyle,
-} from 'react-native';
+import { View, Text, VirtualizedList, ViewToken } from 'react-native';
 import { styles } from './InfiniteListStyles';
 
 type InfiniteListProps<T extends object> = {
@@ -273,8 +266,8 @@ export function InfiniteList<T extends object>({
                   style={{ height, flexGrow: 0 }}
                   data={0}
                   refreshing={refreshing}
-                  getItem={(data: any, index: number) => ({ key: index })}
-                  getItemCount={(data: any) => numAvailable}
+                  getItem={(_data: any, index: number) => ({ key: index })}
+                  getItemCount={(_data: any) => numAvailable}
                   renderItem={({ index }: { index: number }): ReactElement => {
                     return (
                       <View

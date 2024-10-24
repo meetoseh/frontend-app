@@ -1,4 +1,4 @@
-import Svg, { G, Path, Defs, ClipPath } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { memo } from 'react';
 import {
   areResizableSvgPropsEqual,

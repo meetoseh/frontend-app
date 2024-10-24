@@ -51,7 +51,7 @@ const getDataFromRef: (
   ref: OsehImageExportCroppedRef
 ) => CancelablePromise<Result<OsehImageExportCropped>> =
   createGetDataFromRefUsingSignal({
-    inner: async (ref, signal): Promise<OsehImageExportCropped> => {
+    inner: async (ref, _signal): Promise<OsehImageExportCropped> => {
       const isVector = ref.export.item.format === 'svg';
       if (
         ref.cropTo.displayWidth !== null &&
@@ -206,7 +206,7 @@ const getDataFromRef: (
         };
       }
 
-      let rescaleTo = convertLogicalSizeToPhysicalSize({
+      const rescaleTo = convertLogicalSizeToPhysicalSize({
         width: targetDisplaySize.displayWidth,
         height: targetDisplaySize.displayHeight,
       });
@@ -229,6 +229,6 @@ const getDataFromRef: (
     },
   });
 const compareRefs = (
-  a: OsehImageExportCroppedRef,
-  b: OsehImageExportCroppedRef
+  _a: OsehImageExportCroppedRef,
+  _b: OsehImageExportCroppedRef
 ): number => 0;

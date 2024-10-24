@@ -100,7 +100,7 @@ export const FavoritesList = ({
     );
     result.reset();
     return result;
-  }, [listHeight]);
+  }, [listHeight, loginContextRaw]);
 
   const loading = useRef<boolean>(false);
   const gotoJourneyByUID = useCallback(

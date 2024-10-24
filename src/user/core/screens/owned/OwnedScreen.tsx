@@ -44,7 +44,7 @@ export const OwnedScreen: OsehScreen<
     series: convertTriggerWithExit(params.series),
     __mapped: true,
   }),
-  initInstanceResources: (ctx, screen, refreshScreen) => {
+  initInstanceResources: (ctx) => {
     const activeVWC = createWritableValueWithCallbacks(true);
     const getList = () =>
       ctx.resources.ownedListHandler.request({

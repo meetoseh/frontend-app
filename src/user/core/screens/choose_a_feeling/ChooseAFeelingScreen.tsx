@@ -32,7 +32,7 @@ export const ChooseAFeelingScreen: OsehScreen<
     ),
     __mapped: true,
   }),
-  initInstanceResources: (ctx, screen, refreshScreen) => {
+  initInstanceResources: (ctx) => {
     const getEmotions = () =>
       createLoginContextRequest({
         ctx,

@@ -3,7 +3,6 @@ import { ScreenComponentProps } from '../../models/Screen';
 import { GridFullscreenContainer } from '../../../../shared/components/GridFullscreenContainer';
 import { GridContentContainer } from '../../../../shared/components/GridContentContainer';
 import {
-  playExitTransition,
   useEntranceTransition,
   useTransitionProp,
 } from '../../../../shared/lib/TransitionProp';
@@ -17,7 +16,6 @@ import {
   createWritableValueWithCallbacks,
   useWritableValueWithCallbacks,
 } from '../../../../shared/lib/Callbacks';
-import { setVWC } from '../../../../shared/lib/setVWC';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
 import {
   PlayerCTA,

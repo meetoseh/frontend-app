@@ -24,7 +24,6 @@ import { ChoicesResources } from './ChoicesResources';
 import { ChoicesMappedParams } from './ChoicesParams';
 import { AutoBold } from '../../../../shared/components/AutoBold';
 import { SurveyCheckboxGroup } from '../../../../shared/components/SurveyCheckboxGroup';
-import { screenOut } from '../../lib/screenOut';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
 import { StyleProp, Text, TextStyle } from 'react-native';
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';

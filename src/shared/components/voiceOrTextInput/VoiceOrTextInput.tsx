@@ -93,6 +93,7 @@ export const VoiceOrTextInput = (props: VoiceOrTextInputProps) => {
             onSubmit={() => {
               props.onSubmit({ type: 'text', value: valueTextVWC.get() });
             }}
+            onFocuser={props.onFocuser}
           />
         ) : (
           <RenderGuardedComponent

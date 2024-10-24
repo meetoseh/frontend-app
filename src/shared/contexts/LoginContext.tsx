@@ -1166,54 +1166,56 @@ export const LoginProvider = ({
               )
             );
 
-            let oldSilentAuthPreference: SilentAuthPreference | null = null;
-            try {
-              oldSilentAuthPreference = await retrieveSilentAuthPreference();
-            } catch (e) {
-              ifDev(() =>
-                console.warn(
-                  `${__logId}: error retrieving silent auth preference; treating as null`,
-                  e
-                )
-              );
-            }
-
-            try {
-              const newPreference = item.silentAuthPreference(
-                valueVWC.get(),
-                oldSilentAuthPreference
-              );
-              if (newPreference === undefined) {
+            {
+              let oldSilentAuthPreference: SilentAuthPreference | null = null;
+              try {
+                oldSilentAuthPreference = await retrieveSilentAuthPreference();
+              } catch (e) {
                 ifDev(() =>
-                  console.debug(
-                    `${__logId}: skipping setSilentAuthPreference (returned undefined)`
+                  console.warn(
+                    `${__logId}: error retrieving silent auth preference; treating as null`,
+                    e
                   )
                 );
-                break;
               }
 
-              if (newPreference === null) {
-                ifDev(() =>
-                  console.debug(`${__logId}: clearing silent auth preference`)
+              try {
+                const newPreference = item.silentAuthPreference(
+                  valueVWC.get(),
+                  oldSilentAuthPreference
                 );
-                await storeSilentAuthPreference(null);
-              } else {
+                if (newPreference === undefined) {
+                  ifDev(() =>
+                    console.debug(
+                      `${__logId}: skipping setSilentAuthPreference (returned undefined)`
+                    )
+                  );
+                  break;
+                }
+
+                if (newPreference === null) {
+                  ifDev(() =>
+                    console.debug(`${__logId}: clearing silent auth preference`)
+                  );
+                  await storeSilentAuthPreference(null);
+                } else {
+                  ifDev(() =>
+                    console.debug(
+                      `${__logId}: setting silent auth preference to ${newPreference.type}`
+                    )
+                  );
+                  await storeSilentAuthPreference(newPreference);
+                }
+
                 ifDev(() =>
                   console.debug(
-                    `${__logId}: setting silent auth preference to ${newPreference.type}`
+                    `${__logId}: since silent auth preference changed, resyncing storage`
                   )
                 );
-                await storeSilentAuthPreference(newPreference);
+                await assignValueFromStorageRefreshingIfNecessaryWithGlobalLock();
+              } finally {
+                item.onDone();
               }
-
-              ifDev(() =>
-                console.debug(
-                  `${__logId}: since silent auth preference changed, resyncing storage`
-                )
-              );
-              await assignValueFromStorageRefreshingIfNecessaryWithGlobalLock();
-            } finally {
-              item.onDone();
             }
             break;
           default:
@@ -1634,7 +1636,7 @@ export const LoginProvider = ({
 
     /** Does NOT update valueVWC, but does update stored */
     async function maybeLoginViaSilentAuthWithGlobalLock(
-      alreadyRegistered?: boolean
+      _alreadyRegistered?: boolean
     ): Promise<[TokenResponseConfig, UserAttributes] | null> {
       if (!(await isSilentAuthSupported())) {
         ifDev(() => console.log(`${__logId}: silentauth is not supported`));

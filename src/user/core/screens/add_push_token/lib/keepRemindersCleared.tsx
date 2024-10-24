@@ -7,7 +7,7 @@ import { dismissAllNotificationsAsync } from 'expo-notifications';
  * Returns a cleanup function. This is currently used as the body of
  * an effect in App.tsx
  */
-export const keepRemindersCleared = (ctx: ScreenContext): (() => void) => {
+export const keepRemindersCleared = (_ctx: ScreenContext): (() => void) => {
   const subscription = AppState.addEventListener('change', listener);
   listener(AppState.currentState);
   return () => {

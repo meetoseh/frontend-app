@@ -35,7 +35,7 @@ export const HomeScreen: OsehScreen<
     goal: convertTriggerWithExit(params.goal),
     __mapped: true,
   }),
-  initInstanceResources: (ctx, screen, refreshScreen) => {
+  initInstanceResources: (ctx) => {
     const getSessionState = () =>
       createLoginContextRequest({
         ctx,

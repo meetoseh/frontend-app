@@ -148,12 +148,7 @@ export const EditReminderTime = ({
         );
         const inputKey = createWritableValueWithCallbacks<number>(0);
 
-        let reportedClose = false;
         const reportClose = () => {
-          if (reportedClose) {
-            return;
-          }
-
           timeRange.callbacks.remove(timeRangeCallback);
           setVWC(timeRange, guardedTimeRange.get(), areRangesEqual);
           onClosedTimeRangeRef.current?.(guardedTimeRange.get());
@@ -225,12 +220,7 @@ export const EditReminderTime = ({
         );
         const inputKey = createWritableValueWithCallbacks<number>(0);
 
-        let reportedClose = false;
         const reportClose = () => {
-          if (reportedClose) {
-            return;
-          }
-
           days.callbacks.remove(daysCallback);
           setVWC(days, guardedDays.get(), areSetsEqual);
           onClosedDaysRef.current?.(guardedDays.get());

@@ -1,4 +1,4 @@
-import { CSSProperties, ReactElement, useEffect } from 'react';
+import { ReactElement, useEffect } from 'react';
 import { styles } from './ThinkingDotsStyles';
 import { useWritableValueWithCallbacks } from '../lib/Callbacks';
 import { ease } from '../lib/Bezier';
@@ -51,7 +51,7 @@ const Dot = ({ offset, frequency }: { offset: number; frequency: number }) => {
 
       scheduled = requestAnimationFrame(tick);
     }
-  }, [opacityVWC]);
+  }, [opacityVWC, frequency, offset]);
 
   const styleVWC = useMappedValueWithCallbacks(
     opacityVWC,

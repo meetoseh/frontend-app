@@ -70,13 +70,13 @@ export const JournalChatParts = ({
   partFilter,
   textualSubPartFilter,
 }: JournalChatPartsProps) => {
-  let parts: ReactElement[] = [];
+  const parts: ReactElement[] = [];
   chat.data.forEach((part, partIndex) => {
     if (partFilter !== undefined && !partFilter(part, partIndex)) {
       return;
     }
 
-    let subparts: ReactElement[] = [];
+    const subparts: ReactElement[] = [];
     if (part.data.type === 'summary') {
       subparts.push(
         <Fragment key={subparts.length}>

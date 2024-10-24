@@ -1,13 +1,13 @@
-import { useMappedValuesWithCallbacks } from "../hooks/useMappedValuesWithCallbacks";
-import { useReactManagedValueAsValueWithCallbacks } from "../hooks/useReactManagedValueAsValueWithCallbacks";
+import { useMappedValuesWithCallbacks } from '../hooks/useMappedValuesWithCallbacks';
+import { useReactManagedValueAsValueWithCallbacks } from '../hooks/useReactManagedValueAsValueWithCallbacks';
 import {
   SinglePassWebGLComponent,
   SinglePassWebGLComponentRenderer,
-} from "./SinglePassWebGLComponent";
+} from './SinglePassWebGLComponent';
 import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
-} from "./VariableStrategyProps";
+} from './VariableStrategyProps';
 
 type GrayscaleProps = {
   strength: VariableStrategyProps<number>;
@@ -16,10 +16,10 @@ type GrayscaleProps = {
   imageUri: string;
 };
 
-type Attributes = "position";
-type Uniforms = "strength" | "imageSampler";
-type Buffers = "position";
-type Textures = "image";
+type Attributes = 'position';
+type Uniforms = 'strength' | 'imageSampler';
+type Buffers = 'position';
+type Textures = 'image';
 type GrayscaledImageState = {
   imageUri: string;
   strength: number;
@@ -38,7 +38,7 @@ const GrayscaledImageRenderer: SinglePassWebGLComponentRenderer<
 
     const vert = gl.createShader(gl.VERTEX_SHADER);
     if (vert === null) {
-      throw new Error("Failed to create vertex shader");
+      throw new Error('Failed to create vertex shader');
     }
     gl.shaderSource(
       vert,
@@ -58,12 +58,12 @@ const GrayscaledImageRenderer: SinglePassWebGLComponentRenderer<
     gl.compileShader(vert);
     const vertMessage = gl.getShaderInfoLog(vert);
     if (vertMessage !== null && vertMessage.length > 0) {
-      throw new Error("Failed to compile vertex shader: " + vertMessage);
+      throw new Error('Failed to compile vertex shader: ' + vertMessage);
     }
 
     const frag = gl.createShader(gl.FRAGMENT_SHADER);
     if (frag === null) {
-      throw new Error("Failed to create fragment shader");
+      throw new Error('Failed to create fragment shader');
     }
     gl.shaderSource(
       frag,
@@ -98,12 +98,12 @@ const GrayscaledImageRenderer: SinglePassWebGLComponentRenderer<
     gl.compileShader(frag);
     const fragMessage = gl.getShaderInfoLog(frag);
     if (fragMessage !== null && fragMessage.length > 0) {
-      throw new Error("Failed to compile fragment shader: " + fragMessage);
+      throw new Error('Failed to compile fragment shader: ' + fragMessage);
     }
 
     const program = gl.createProgram();
     if (program === null) {
-      throw new Error("Failed to create program");
+      throw new Error('Failed to create program');
     }
     gl.attachShader(program, vert);
     gl.attachShader(program, frag);
@@ -113,7 +113,7 @@ const GrayscaledImageRenderer: SinglePassWebGLComponentRenderer<
 
     const positionBuffer = gl.createBuffer();
     if (positionBuffer === null) {
-      throw new Error("Failed to create position buffer");
+      throw new Error('Failed to create position buffer');
     }
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(
@@ -122,15 +122,15 @@ const GrayscaledImageRenderer: SinglePassWebGLComponentRenderer<
       gl.STATIC_DRAW
     );
 
-    const strengthLocation = gl.getUniformLocation(program, "u_strength");
+    const strengthLocation = gl.getUniformLocation(program, 'u_strength');
     if (strengthLocation === null) {
-      throw new Error("Failed to get strength location");
+      throw new Error('Failed to get strength location');
     }
 
     gl.activeTexture(gl.TEXTURE0);
     const imageTexture = gl.createTexture();
     if (imageTexture === null) {
-      throw new Error("Failed to create image texture");
+      throw new Error('Failed to create image texture');
     }
     gl.bindTexture(gl.TEXTURE_2D, imageTexture);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
@@ -141,16 +141,16 @@ const GrayscaledImageRenderer: SinglePassWebGLComponentRenderer<
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 
-    const imageSamplerLocation = gl.getUniformLocation(program, "u_image");
+    const imageSamplerLocation = gl.getUniformLocation(program, 'u_image');
     if (imageSamplerLocation === null) {
-      throw new Error("Failed to get image sampler location");
+      throw new Error('Failed to get image sampler location');
     }
 
     return {
       gl,
       program,
       attributes: {
-        position: gl.getAttribLocation(program, "a_position"),
+        position: gl.getAttribLocation(program, 'a_position'),
       },
       uniforms: {
         strength: strengthLocation,
@@ -168,7 +168,7 @@ const GrayscaledImageRenderer: SinglePassWebGLComponentRenderer<
       },
     };
   },
-  render: (state, props, dpi) => {
+  render: (state, props, _dpi) => {
     const gl = state.gl;
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.useProgram(state.program);

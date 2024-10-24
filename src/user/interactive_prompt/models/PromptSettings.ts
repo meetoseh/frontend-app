@@ -1,7 +1,4 @@
-import {
-  LoginContextValue,
-  LoginContextValueLoggedIn,
-} from '../../../shared/contexts/LoginContext';
+import { LoginContextValueLoggedIn } from '../../../shared/contexts/LoginContext';
 import { InteractivePrompt } from './InteractivePrompt';
 import { Stats } from '../hooks/useStats';
 

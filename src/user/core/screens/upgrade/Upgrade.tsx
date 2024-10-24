@@ -545,21 +545,18 @@ export const Upgrade = ({
                 setTextStyle={(s) => setVWC(styleVWC, s)}
               >
                 <RenderGuardedComponent
-                  props={useMappedValuesWithCallbacks(
-                    [styleVWC, resources.trial],
-                    () => {
-                      const trial = resources.trial.get();
-                      return {
-                        style: styleVWC.get(),
-                        text:
-                          trial === null || trial.count === 0
+                  props={resources.trial}
+                  component={(trial) => (
+                    <RenderGuardedComponent
+                      props={styleVWC}
+                      component={(style) => (
+                        <Text style={style}>
+                          {trial === null || trial.count === 0
                             ? 'Subscribe'
-                            : `Try ${makeTrialPretty(trial)} free`,
-                      };
-                    }
-                  )}
-                  component={({ style, text }) => (
-                    <Text style={style}>{text}</Text>
+                            : `Try ${makeTrialPretty(trial)} free`}
+                        </Text>
+                      )}
+                    />
                   )}
                 />
               </FilledPremiumButton>

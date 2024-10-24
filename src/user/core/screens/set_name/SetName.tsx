@@ -46,7 +46,6 @@ import {
 export const SetName = ({
   ctx,
   screen,
-  resources,
   trace,
   startPop,
 }: ScreenComponentProps<

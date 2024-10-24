@@ -117,7 +117,7 @@ const AndroidCompatBlurView = ({
           }, 100);
         };
       },
-      [captureVWC]
+      [captureVWC, isMountedVWC]
     )
   );
 

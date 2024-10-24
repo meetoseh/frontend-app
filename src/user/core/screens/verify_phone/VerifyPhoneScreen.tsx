@@ -21,7 +21,7 @@ export const VerifyPhoneScreen: OsehScreen<
 > = {
   slug: 'verify_phone',
   paramMapper: (params) => convertUsingMapper(params, verifyPhoneParamsMapper),
-  initInstanceResources: (ctx, screen, refreshScreen) => {
+  initInstanceResources: () => {
     return {
       ready: createWritableValueWithCallbacks(true),
       dispose: () => {},

@@ -29,7 +29,7 @@ export const SettingsScreen: OsehScreen<
 > = {
   slug: 'settings',
   paramMapper: (params) => convertUsingMapper(params, settingsParamsKeyMap),
-  initInstanceResources: (ctx, screen, refreshScreen) => {
+  initInstanceResources: (ctx) => {
     const getIdentities = () =>
       createLoginContextRequest({
         ctx,

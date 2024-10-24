@@ -173,7 +173,7 @@ export const OsehImageBackgroundFromStateValueWithCallbacks = ({
         });
       }
     }
-  }, [style, styleVWC, isTinyScreen, state]);
+  }, [style, styleVWC, isTinyScreen, state, scrollingBottomPadding]);
 
   return (
     <View

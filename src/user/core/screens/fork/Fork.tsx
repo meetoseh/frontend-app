@@ -104,10 +104,6 @@ export const Fork = ({
   );
 };
 
-type BtnState = {
-  lightening: number;
-};
-
 const Btn = ({
   onPress,
   text,

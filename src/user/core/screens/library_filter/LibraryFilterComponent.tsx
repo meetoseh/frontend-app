@@ -38,7 +38,7 @@ import { RenderGuardedComponent } from '../../../../shared/components/RenderGuar
 import { InlineOsehSpinner } from '../../../../shared/components/InlineOsehSpinner';
 import { SearchPublicInstructor } from '../library/lib/SearchPublicInstructor';
 import { setVWC } from '../../../../shared/lib/setVWC';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text } from 'react-native';
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
 
@@ -155,7 +155,9 @@ export const LibraryFilterComponent = ({
           <Text style={styles.label}>Favorites</Text>
           <VerticalSpacer height={8} />
           <SurveyCheckboxGroup
-            choices={[{ slug: 'favorites', element: <>Favorites</> }] as const}
+            choices={
+              [{ slug: 'favorites', element: <Text>Favorites</Text> }] as const
+            }
             checked={favoritesVWC}
             variant="square"
             uncheck
@@ -168,8 +170,8 @@ export const LibraryFilterComponent = ({
           <SurveyCheckboxGroup
             choices={
               [
-                { slug: 'taken', element: <>Taken</> },
-                { slug: 'not-taken', element: <>Not Taken</> },
+                { slug: 'taken', element: <Text>Taken</Text> },
+                { slug: 'not-taken', element: <Text>Not Taken</Text> },
               ] as const
             }
             checked={takenVWC}
@@ -309,7 +311,7 @@ const InstructorCheckboxGroup = ({
       },
       callbacks: new Callbacks(),
     }),
-    [instructorUIDSVWC]
+    [instructorUIDSVWC, instructors]
   );
 
   return (

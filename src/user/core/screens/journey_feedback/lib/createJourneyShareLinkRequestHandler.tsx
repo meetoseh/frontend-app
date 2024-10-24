@@ -65,6 +65,6 @@ const getDataFromRef = (loginContextRaw: LoginContextValue) =>
       const data: { url: string } = await resp.json();
       return { link: data.url };
     },
-    isExpired: (ref, nowServer) => false,
+    isExpired: (_ref, _nowServer) => false,
   });
-const compareRefs = (a: JourneyMinimalRef, b: JourneyMinimalRef): number => 0;
+const compareRefs = (_a: JourneyMinimalRef, _b: JourneyMinimalRef): number => 0;

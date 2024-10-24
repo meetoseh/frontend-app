@@ -1,4 +1,4 @@
-import { MutableRefObject, ReactElement, useCallback, useEffect } from 'react';
+import { MutableRefObject, ReactElement, useCallback } from 'react';
 import { useStateCompat as useState } from '../../../shared/hooks/useStateCompat';
 import { LoginContextValue } from '../../../shared/contexts/LoginContext';
 import { CountdownTextConfig } from '../../interactive_prompt/components/CountdownText';

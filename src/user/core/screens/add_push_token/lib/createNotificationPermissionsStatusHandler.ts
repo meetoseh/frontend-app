@@ -55,12 +55,12 @@ export const createNotificationPermissionsRequestHandler = ({
   });
 };
 
-const getRefUid = (ref: OsehNotificationPermissionsRequest): string =>
+const getRefUid = (_ref: OsehNotificationPermissionsRequest): string =>
   'notificationPermissionsRequest';
 const getDataFromRef = createGetDataFromRefUsingSignal({
   inner: async (
-    ref: OsehNotificationPermissionsRequest,
-    signal
+    _ref: OsehNotificationPermissionsRequest,
+    _signal
   ): Promise<OsehNotificationsPermission> => {
     const newPermissionsStatus = await getPermissionsAsync();
     return {
@@ -71,6 +71,6 @@ const getDataFromRef = createGetDataFromRefUsingSignal({
   },
 });
 const compareRefs = (
-  a: OsehNotificationPermissionsRequest,
-  b: OsehNotificationPermissionsRequest
+  _a: OsehNotificationPermissionsRequest,
+  _b: OsehNotificationPermissionsRequest
 ): number => 0;

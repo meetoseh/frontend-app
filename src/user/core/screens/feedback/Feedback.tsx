@@ -93,7 +93,7 @@ export const Feedback = ({
         return true;
       }
     }
-  }, [screen.parameters.anonymous]);
+  }, [screen.parameters.anonymous, anonymousVWC, trace]);
 
   const disabledVWC = useMappedValueWithCallbacks(
     rawInputValueVWC,

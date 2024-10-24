@@ -217,6 +217,7 @@ export class ConfettiPhysics {
   autoTick(): () => void {
     let active = true;
     requestAnimationFrame(init);
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const me = this;
     return () => {
       active = false;
@@ -292,6 +293,7 @@ export class ConfettiPhysics {
       };
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const me = this;
     return constructCancelablePromise({
       body: async (state, resolve, reject) => {

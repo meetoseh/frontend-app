@@ -13,7 +13,6 @@ import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
 } from '../../../shared/anim/VariableStrategyProps';
-import { useMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValueWithCallbacks';
 import { OsehContentTarget } from '../../../shared/content/OsehContentTarget';
 import { getNativeExport } from '../../../shared/content/useOsehContentTarget';
 import { apiFetch } from '../../../shared/lib/apiFetch';

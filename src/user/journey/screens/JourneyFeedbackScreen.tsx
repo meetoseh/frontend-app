@@ -288,19 +288,19 @@ export const JourneyFeedbackScreen = ({
       await requestReview();
       await onReviewRequested();
     }
-  }, [responseVWC, journey.uid]);
+  }, [responseVWC, journey.uid, loginContextRaw.value]);
 
   const onContinue = useCallback(async () => {
     storeResponse();
     await handleRequestReview();
     onJourneyFinished(false);
-  }, [onJourneyFinished, storeResponse]);
+  }, [onJourneyFinished, storeResponse, handleRequestReview]);
 
   const onTakeAnother = useCallback(async () => {
     storeResponse();
     await handleRequestReview();
     takeAnother?.onTakeAnother();
-  }, [storeResponse, takeAnother]);
+  }, [storeResponse, takeAnother, handleRequestReview]);
 
   const takeAnotherForwardOnLayout = useOnLayout('another', refs);
   const continueTextStyleVWC = useWritableValueWithCallbacks<
@@ -310,13 +310,36 @@ export const JourneyFeedbackScreen = ({
     StyleProp<TextStyle>
   >(() => undefined);
 
+  const blurredImageVWC = useMappedValueWithCallbacks(
+    shared,
+    (s) => s.blurredImage
+  );
+  const topPaddingOnLayout = useOnLayout('topPadding', refs);
+  const feedbackImageStyleVWC = useMappedValueWithCallbacks(
+    appliedVerticalLayout,
+    () => ({
+      ...styles.shareContainer,
+      width: contentWidth,
+      height: appliedVerticalLayout.get().image,
+    })
+  );
+  const imageFeedbackMarginOnLayout = useOnLayout('imageFeedbackMargin', refs);
+  const feedbackOnLayout = useOnLayout('feedback', refs);
+  const feedbackControlsMarginOnLayout = useOnLayout(
+    'feedbackControlsMargin',
+    refs
+  );
+  const finishOnLayout = useOnLayout('finish', refs);
+  const finishAnotherMarginOnLayout = useOnLayout('finishAnotherMargin', refs);
+  const bottomPaddingOnLayout = useOnLayout('bottomPadding', refs);
+
   return (
     <RenderGuardedComponent
       props={fontScale}
       component={(scale) => (
         <View style={styles.container}>
           <OsehImageBackgroundFromStateValueWithCallbacks
-            state={useMappedValueWithCallbacks(shared, (s) => s.blurredImage)}
+            state={blurredImageVWC}
             style={{
               ...styles.innerContainer,
               width: windowSizeVWC.get().width,
@@ -327,7 +350,7 @@ export const JourneyFeedbackScreen = ({
             <View
               ref={(v) => setVWC(refs.topPadding.ref, v)}
               collapsable={false}
-              onLayout={useOnLayout('topPadding', refs)}
+              onLayout={topPaddingOnLayout}
               style={{
                 minHeight: appliedVerticalLayout.get().topPadding,
               }}
@@ -335,14 +358,7 @@ export const JourneyFeedbackScreen = ({
             <View style={styles.shareContainerWrapper}>
               <OsehImageBackgroundFromStateValueWithCallbacks
                 state={feedbackImage}
-                styleVWC={useMappedValueWithCallbacks(
-                  appliedVerticalLayout,
-                  () => ({
-                    ...styles.shareContainer,
-                    width: contentWidth,
-                    height: appliedVerticalLayout.get().image,
-                  })
-                )}
+                styleVWC={feedbackImageStyleVWC}
                 scrolling="disabled"
               >
                 <View
@@ -419,7 +435,7 @@ export const JourneyFeedbackScreen = ({
             <View
               ref={(v) => setVWC(refs.imageFeedbackMargin.ref, v)}
               collapsable={false}
-              onLayout={useOnLayout('imageFeedbackMargin', refs)}
+              onLayout={imageFeedbackMarginOnLayout}
               style={{
                 minHeight: appliedVerticalLayout.get().imageFeedbackMargin,
               }}
@@ -427,7 +443,7 @@ export const JourneyFeedbackScreen = ({
             <View
               ref={(v) => setVWC(refs.feedback.ref, v)}
               collapsable={false}
-              onLayout={useOnLayout('feedback', refs)}
+              onLayout={feedbackOnLayout}
               style={Object.assign({}, styles.feedback, {
                 width: contentWidth,
               })}
@@ -441,7 +457,7 @@ export const JourneyFeedbackScreen = ({
             <View
               ref={(v) => setVWC(refs.feedbackControlsMargin.ref, v)}
               collapsable={false}
-              onLayout={useOnLayout('feedbackControlsMargin', refs)}
+              onLayout={feedbackControlsMarginOnLayout}
               style={{
                 minHeight: appliedVerticalLayout.get().feedbackControlsMargin,
               }}
@@ -451,7 +467,7 @@ export const JourneyFeedbackScreen = ({
               width={contentWidth}
               setTextStyle={(s) => setVWC(continueTextStyleVWC, s)}
               refVWC={refs.finish.ref}
-              onLayout={useOnLayout('finish', refs)}
+              onLayout={finishOnLayout}
             >
               <RenderGuardedComponent
                 props={continueTextStyleVWC}
@@ -460,7 +476,7 @@ export const JourneyFeedbackScreen = ({
             </FilledInvertedButton>
             <View
               ref={(r) => setVWC(refs.finishAnotherMargin.ref, r)}
-              onLayout={useOnLayout('finishAnotherMargin', refs)}
+              onLayout={finishAnotherMarginOnLayout}
               style={{
                 minHeight: appliedVerticalLayout.get().finishAnotherMargin,
               }}
@@ -486,7 +502,7 @@ export const JourneyFeedbackScreen = ({
             <View
               ref={(v) => setVWC(refs.bottomPadding.ref, v)}
               collapsable={false}
-              onLayout={useOnLayout('bottomPadding', refs)}
+              onLayout={bottomPaddingOnLayout}
               style={{
                 minHeight: appliedVerticalLayout.get().bottomPadding,
               }}

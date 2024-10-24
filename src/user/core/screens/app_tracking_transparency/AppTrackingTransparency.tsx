@@ -4,10 +4,7 @@ import {
   useEntranceTransition,
   useTransitionProp,
 } from '../../../../shared/lib/TransitionProp';
-import {
-  StandardScreenTransition,
-  useStandardTransitionsState,
-} from '../../../../shared/hooks/useStandardTransitions';
+import { StandardScreenTransition } from '../../../../shared/hooks/useStandardTransitions';
 import { useWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { AppTrackingTransparencyResources } from './AppTrackingTransparencyResources';
 import { AppTrackingTransparencyMappedParams } from './AppTrackingTransparencyParams';
@@ -35,8 +32,6 @@ export const AppTrackingTransparency = ({
     (): StandardScreenTransition => ({ type: 'none', ms: 0 })
   );
   useEntranceTransition(transition);
-
-  const transitionState = useStandardTransitionsState(transition);
 
   const workingVWC = useWritableValueWithCallbacks(() => false);
 
@@ -90,7 +85,7 @@ export const AppTrackingTransparency = ({
         }
       });
     }
-  }, []);
+  }, [ctx, screen, startPop, trace, transition, workingVWC]);
 
   return (
     <GridFullscreenContainer

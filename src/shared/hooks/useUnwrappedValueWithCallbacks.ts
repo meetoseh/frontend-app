@@ -34,7 +34,7 @@ export const useUnwrappedValueWithCallbacks = <T>(
   const valueRef = useRef<T>(original.get());
   const setRerenderCounter = useState(0)[1];
 
-  let currentValue = useRef<T>(notSet as any) as MutableRefObject<T>;
+  const currentValue = useRef<T>(notSet as any) as MutableRefObject<T>;
 
   // avoid a tick of providing the old vwc value (which may be a different type)
   // if the VWC changes but we do not get remounted

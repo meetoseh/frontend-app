@@ -3,10 +3,7 @@ import {
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
 } from '../lib/Callbacks';
-import {
-  ContentFileNativeExport,
-  OsehContentTarget,
-} from './OsehContentTarget';
+import { ContentFileNativeExport } from './OsehContentTarget';
 import { MediaInfo } from './useMediaInfo';
 import { StyleProp, ViewStyle } from 'react-native';
 import { setVWC } from '../lib/setVWC';
@@ -58,7 +55,7 @@ export const MediaInfoVideo = ({
     function updateStyles() {
       setVWC(styleVWC, Object.assign({}, style, vwc.get()));
     }
-  }, [style, styleVWCRaw]);
+  }, [style, styleVWC, styleVWCRaw]);
 
   useValuesWithCallbacksEffect(
     [mediaInfo.shouldPlay, mediaInfo.playing, videoRefVWC],

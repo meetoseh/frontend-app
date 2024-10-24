@@ -84,7 +84,9 @@ export const manageWebsocketChatLoop = (params: {
           }
           try {
             await Promise.race([canceled.promise, timeout.promise]);
-          } catch {}
+          } catch {
+            // ignore canceled errors
+          }
 
           canceled.cancel();
           timeout.cancel();

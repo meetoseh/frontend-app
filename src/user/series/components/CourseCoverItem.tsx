@@ -18,9 +18,7 @@ import { RenderGuardedComponent } from '../../../shared/components/RenderGuarded
 import { areOsehImageStatesEqual } from '../../../shared/images/OsehImageState';
 import { OsehImageFromState } from '../../../shared/images/OsehImageFromState';
 import { useMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValueWithCallbacks';
-import { largestPhysicalPerLogical } from '../../../shared/images/DisplayRatioHelper';
 import { Pressable, View, Text, ViewStyle } from 'react-native';
-import { useContentWidth } from '../../../shared/lib/useContentWidth';
 import { useValuesWithCallbacksEffect } from '../../../shared/hooks/useValuesWithCallbacksEffect';
 import { setVWC } from '../../../shared/lib/setVWC';
 import { AspectRatioComparer } from '../../../shared/images/LogicalSize';
@@ -75,8 +73,6 @@ const compareAspectRatio: AspectRatioComparer = (a, b) =>
  */
 export const CourseCoverItem = ({
   item,
-  setItem,
-  mapItems,
   imageHandler,
   onClick,
   size,

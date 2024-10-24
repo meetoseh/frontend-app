@@ -82,7 +82,7 @@ export const parseUploadInfoFromResponse = (data: any): UploadInfo => {
     uid: data.uid,
     jwt: data.jwt,
     parts: data.parts.map((part: any) => {
-      if (part.hasOwnProperty('number')) {
+      if (Object.prototype.hasOwnProperty.call(part, 'number')) {
         return {
           number: part.number,
           startByte: part.start_byte,
@@ -111,7 +111,7 @@ export const parseUploadInfoFromResponse = (data: any): UploadInfo => {
 export const convertToRange = (
   part: UploadPart | UploadPartRange
 ): UploadPartRange => {
-  if (part.hasOwnProperty('startNumber')) {
+  if (Object.prototype.hasOwnProperty.call(part, 'startNumber')) {
     return part as UploadPartRange;
   }
 

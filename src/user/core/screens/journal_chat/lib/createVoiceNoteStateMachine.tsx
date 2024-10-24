@@ -1,4 +1,3 @@
-import { ReactElement } from 'react';
 import { OsehContentRefLoadable } from '../../../../../shared/content/OsehContentRef';
 import {
   createWritableValueWithCallbacks,
@@ -109,7 +108,7 @@ export type VoiceNoteStateInitializedForRecording = {
     recorder: Audio.Recording;
 
     /** analysis on the audio for visualization */
-    analysis: {};
+    analysis: Record<string, never>;
 
     playable?: undefined;
   };
@@ -1344,7 +1343,9 @@ async function transitionFromInitializingForRecording(
       if (uri !== null) {
         await FileSystem.deleteAsync(uri);
       }
-    } catch {}
+    } catch {
+      // ignore nested error
+    }
 
     setVWC(
       state,
@@ -1534,8 +1535,12 @@ async function transitionFromRecording(
     }
 
     lastStatusVWC.callbacks.call(undefined);
-    seenStop.callbacks.call(undefined);
-    seenError.callbacks.call(undefined);
+    if (changedStop) {
+      seenStop.callbacks.call(undefined);
+    }
+    if (changedError) {
+      seenError.callbacks.call(undefined);
+    }
   };
 
   current.audio.recorder.setOnRecordingStatusUpdate(onStatusUpdate);

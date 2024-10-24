@@ -562,7 +562,7 @@ export class PrefixedNetworkedInfiniteListing<
     this.delegate.replaceItem(isItem, newItem);
   }
 
-  private onDelegateItemsChanged(items: DataT[] | null): void {
+  private onDelegateItemsChanged(_items: DataT[] | null): void {
     this.itemsChanged.call(this.items);
   }
 
@@ -1082,7 +1082,7 @@ class CachedServerList<T extends object> {
     isItem: (item: T) => boolean,
     newItem: T | ((oldItem: T) => T)
   ): void {
-    for (let arr of [this.before, this.visible, this.after]) {
+    for (const arr of [this.before, this.visible, this.after]) {
       for (let i = 0; i < arr.length; i++) {
         if (isItem(arr[i])) {
           arr[i] = typeof newItem === 'function' ? newItem(arr[i]) : newItem;

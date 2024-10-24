@@ -1,4 +1,4 @@
-import { ReactElement, useMemo } from 'react';
+import { ReactElement } from 'react';
 import { ScreenComponentProps } from '../../models/Screen';
 import {
   useEntranceTransition,
@@ -26,7 +26,6 @@ import { InlineOsehSpinner } from '../../../../shared/components/InlineOsehSpinn
 import { ContentContainer } from '../../../../shared/components/ContentContainer';
 import { HorizontalSpacer } from '../../../../shared/components/HorizontalSpacer';
 import { ThinkingDots } from '../../../../shared/components/ThinkingDots';
-import { JournalEntryViewJournalCard } from '../journal_chat/components/JournalEntryViewJournalCard';
 import { View, Text } from 'react-native';
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';

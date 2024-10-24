@@ -51,7 +51,7 @@ const getDataFromRef: (
   ref: OsehContentNativeRef
 ) => CancelablePromise<Result<ContentFileNativeExport>> =
   createGetDataFromRefUsingSignal({
-    inner: async (ref, signal) => {
+    inner: async (ref, _signal) => {
       return getNativeExport(
         ref.uid,
         ref.jwt,

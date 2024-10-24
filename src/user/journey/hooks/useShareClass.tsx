@@ -1,10 +1,4 @@
-import {
-  ReactElement,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-} from 'react';
+import { useCallback, useContext, useMemo } from 'react';
 import { Platform, Share } from 'react-native';
 import {
   VariableStrategyProps,
@@ -251,7 +245,7 @@ export const useShareClass = ({
         setVWC(working, false);
       }
     }
-  }, []);
+  }, [error, journeyVWC, lastLink, loginContextRaw.value, shareable, working]);
 
   return useMemo(
     () => ({ working, shareClass, error, shareable }),

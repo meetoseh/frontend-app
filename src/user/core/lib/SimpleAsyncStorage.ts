@@ -38,7 +38,7 @@ export type SimpleAsyncStorage = {
  */
 export const createUnencryptedStorageAdapter = (
   key: string,
-  lockId: string
+  _lockId: string
 ): SimpleAsyncStorage => {
   const instanceLock = createWritableValueWithCallbacks<boolean>(false);
 

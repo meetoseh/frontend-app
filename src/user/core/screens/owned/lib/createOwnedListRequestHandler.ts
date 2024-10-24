@@ -5,7 +5,10 @@ import {
   InfiniteListing,
   NetworkedInfiniteListing,
 } from '../../../../../shared/lib/InfiniteListing';
-import { RequestHandler, Result } from '../../../../../shared/requests/RequestHandler';
+import {
+  RequestHandler,
+  Result,
+} from '../../../../../shared/requests/RequestHandler';
 import {
   MinimalCourseJourney,
   minimalCourseJourneyKeyMap,
@@ -30,7 +33,11 @@ export const createOwnedListRequestHandler = ({
   maxStale?: number;
   maxRetries?: number;
   loginContextRaw: LoginContextValue;
-}): RequestHandler<OwnedListRequest, OwnedListRequest, InfiniteListing<MinimalCourseJourney>> => {
+}): RequestHandler<
+  OwnedListRequest,
+  OwnedListRequest,
+  InfiniteListing<MinimalCourseJourney>
+> => {
   return new RequestHandler({
     getRefUid,
     getDataFromRef: getDataFromRef(loginContextRaw),
@@ -41,12 +48,17 @@ export const createOwnedListRequestHandler = ({
   });
 };
 
-const getRefUid = (ref: OwnedListRequest): string => 'ownedListRequest';
+const getRefUid = (_ref: OwnedListRequest): string => 'ownedListRequest';
 const getDataFromRef = (
   loginContextRaw: LoginContextValue
-): ((ref: OwnedListRequest) => CancelablePromise<Result<InfiniteListing<MinimalCourseJourney>>>) =>
-  createGetDataFromRefUsingSignal<OwnedListRequest, InfiniteListing<MinimalCourseJourney>>({
-    inner: async (ref, signal) => {
+): ((
+  ref: OwnedListRequest
+) => CancelablePromise<Result<InfiniteListing<MinimalCourseJourney>>>) =>
+  createGetDataFromRefUsingSignal<
+    OwnedListRequest,
+    InfiniteListing<MinimalCourseJourney>
+  >({
+    inner: async () => {
       const numVisible = 150;
       const result = new NetworkedInfiniteListing<MinimalCourseJourney>(
         '/api/1/users/me/search_course_journeys',
@@ -120,4 +132,4 @@ const getDataFromRef = (
       return result;
     },
   });
-const compareRefs = (a: OwnedListRequest, b: OwnedListRequest): number => 0;
+const compareRefs = (_a: OwnedListRequest, _b: OwnedListRequest): number => 0;

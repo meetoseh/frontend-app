@@ -1,22 +1,22 @@
-import { useCallback, useMemo, useRef } from "react";
-import { useBeforeTime } from "../../../shared/hooks/useBeforeTime";
+import { useCallback, useRef } from 'react';
+import { useBeforeTime } from '../../../shared/hooks/useBeforeTime';
 import {
   Modals,
   addModalWithCallbackToRemove,
-} from "../../../shared/contexts/ModalContext";
-import { styles } from "./useFavoritedModalStyles";
-import { useTimedFade } from "../../../shared/hooks/useTimedFade";
+} from '../../../shared/contexts/ModalContext';
+import { styles } from './useFavoritedModalStyles';
+import { useTimedFade } from '../../../shared/hooks/useTimedFade';
 import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
-} from "../../../shared/anim/VariableStrategyProps";
-import { useValuesWithCallbacksEffect } from "../../../shared/hooks/useValuesWithCallbacksEffect";
-import { useWindowSize } from "../../../shared/hooks/useWindowSize";
-import { View, Text } from "react-native";
-import { WritableValueWithCallbacks } from "../../../shared/lib/Callbacks";
-import { useTopBarHeight } from "../../../shared/hooks/useTopBarHeight";
-import RedX from "../icons/RedX";
-import { useValueWithCallbacksEffect } from "../../../shared/hooks/useValueWithCallbacksEffect";
+} from '../../../shared/anim/VariableStrategyProps';
+import { useValuesWithCallbacksEffect } from '../../../shared/hooks/useValuesWithCallbacksEffect';
+import { useWindowSize } from '../../../shared/hooks/useWindowSize';
+import { View, Text } from 'react-native';
+import { WritableValueWithCallbacks } from '../../../shared/lib/Callbacks';
+import { useTopBarHeight } from '../../../shared/hooks/useTopBarHeight';
+import RedX from '../icons/RedX';
+import { useValueWithCallbacksEffect } from '../../../shared/hooks/useValueWithCallbacksEffect';
 
 /**
  * Shows a basic popup at the top of the screen the a message like

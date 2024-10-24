@@ -186,7 +186,7 @@ export const prepareVerticalLayout = <K extends string>(
 
   let unboundedPriority: number | undefined = undefined;
   let highestBoundedPriority: number | undefined = undefined;
-  let boundedPrioritiesSet: Set<number> = new Set();
+  const boundedPrioritiesSet: Set<number> = new Set();
   let minHeight = 0;
 
   for (let i = 0; i < keys.length; i++) {

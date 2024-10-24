@@ -87,7 +87,7 @@ export const trackClassTaken = (ctx: ScreenContext): void => {
         return { type: 'make-request', data: undefined };
       }
 
-      let streakIncreased = !old.daysOfWeek.includes(nowDayOfWeekName);
+      const streakIncreased = !old.daysOfWeek.includes(nowDayOfWeekName);
 
       return {
         type: 'data',

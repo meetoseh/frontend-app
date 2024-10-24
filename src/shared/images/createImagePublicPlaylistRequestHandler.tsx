@@ -35,4 +35,5 @@ const getDataFromRef: (
   createGetDataFromRefUsingSignal({
     inner: (ref, signal) => fetchPublicPlaylist(ref.uid, signal),
   });
-const compareRefs = (a: OsehPublicImageRef, b: OsehPublicImageRef): number => 0;
+const compareRefs = (_a: OsehPublicImageRef, _b: OsehPublicImageRef): number =>
+  0;

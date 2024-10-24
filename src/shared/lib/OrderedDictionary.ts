@@ -16,7 +16,11 @@
  * ordering; the default Map is guarranteed to be insertion ordered, but due
  * to how the functions are named relying on this is error prone.
  */
-export class OrderedDictionary<T, LookupKey extends keyof T, SortKey extends keyof T> {
+export class OrderedDictionary<
+  T,
+  LookupKey extends keyof T,
+  SortKey extends keyof T
+> {
   private readonly lookupKey: LookupKey;
   private readonly sortKey: SortKey;
   private head: Node<T> | null;
@@ -60,8 +64,8 @@ export class OrderedDictionary<T, LookupKey extends keyof T, SortKey extends key
       return;
     }
 
-    let originalPrevious = node.prev;
-    let originalNext = node.next;
+    const originalPrevious = node.prev;
+    const originalNext = node.next;
 
     if (originalPrevious === null || originalNext === null) {
       throw new Error('node is not in the list');
@@ -301,17 +305,23 @@ export class OrderedDictionary<T, LookupKey extends keyof T, SortKey extends key
       throw new Error('head is not null but tail is');
     }
 
-    let replaced = this.delete(value[this.lookupKey]);
+    const replaced = this.delete(value[this.lookupKey]);
 
     if (hint === 'front') {
       let node = this.head;
-      while (node.next !== null && node.value[this.sortKey] < value[this.sortKey]) {
+      while (
+        node.next !== null &&
+        node.value[this.sortKey] < value[this.sortKey]
+      ) {
         node = node.next;
       }
       this.linkBefore(node, value);
     } else {
       let node = this.tail;
-      while (node.prev !== null && node.value[this.sortKey] > value[this.sortKey]) {
+      while (
+        node.prev !== null &&
+        node.value[this.sortKey] > value[this.sortKey]
+      ) {
         node = node.prev;
       }
       this.linkAfter(node, value);

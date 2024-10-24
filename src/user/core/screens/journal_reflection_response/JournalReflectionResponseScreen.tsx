@@ -507,7 +507,7 @@ export const JournalReflectionResponseScreen: OsehScreen<
       createWritableValueWithCallbacks<JournalReflectionResponseResponse>({
         type: 'loading',
       });
-    let {
+    const {
       onUserChangedResponse,
       ensureSaved,
       dispose: cleanupAutosaveLoop,
@@ -598,7 +598,7 @@ export const JournalReflectionResponseScreen: OsehScreen<
             const inner = refreshScreen();
             return {
               promise: inner.promise.then(
-                (r) =>
+                () =>
                   ({
                     type: 'error',
                     data: undefined,
@@ -708,7 +708,7 @@ export const JournalReflectionResponseScreen: OsehScreen<
               type: 'available',
               data:
                 initialResponse === 'dne'
-                  ? { type: 'text' as 'text', value: '' }
+                  ? ({ type: 'text', value: '' } as const)
                   : initialResponse.value,
             });
           }

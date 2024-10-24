@@ -5,8 +5,14 @@ import {
   InfiniteListing,
   NetworkedInfiniteListing,
 } from '../../../../../shared/lib/InfiniteListing';
-import { RequestHandler, Result } from '../../../../../shared/requests/RequestHandler';
-import { MinimalJourney, minimalJourneyKeyMap } from '../../../../favorites/lib/MinimalJourney';
+import {
+  RequestHandler,
+  Result,
+} from '../../../../../shared/requests/RequestHandler';
+import {
+  MinimalJourney,
+  minimalJourneyKeyMap,
+} from '../../../../favorites/lib/MinimalJourney';
 
 const historyListRequest = Symbol('historyListRequest');
 /** Branded type for history list request, since we dont want to use a plain object for typing */
@@ -27,7 +33,11 @@ export const createHistoryListRequestHandler = ({
   maxStale?: number;
   maxRetries?: number;
   loginContextRaw: LoginContextValue;
-}): RequestHandler<HistoryListRequest, HistoryListRequest, InfiniteListing<MinimalJourney>> => {
+}): RequestHandler<
+  HistoryListRequest,
+  HistoryListRequest,
+  InfiniteListing<MinimalJourney>
+> => {
   return new RequestHandler({
     getRefUid,
     getDataFromRef: getDataFromRef(loginContextRaw),
@@ -38,12 +48,17 @@ export const createHistoryListRequestHandler = ({
   });
 };
 
-const getRefUid = (ref: HistoryListRequest): string => 'historyListRequest';
+const getRefUid = (_ref: HistoryListRequest): string => 'historyListRequest';
 const getDataFromRef = (
   loginContextRaw: LoginContextValue
-): ((ref: HistoryListRequest) => CancelablePromise<Result<InfiniteListing<MinimalJourney>>>) =>
-  createGetDataFromRefUsingSignal<HistoryListRequest, InfiniteListing<MinimalJourney>>({
-    inner: async (ref, signal) => {
+): ((
+  ref: HistoryListRequest
+) => CancelablePromise<Result<InfiniteListing<MinimalJourney>>>) =>
+  createGetDataFromRefUsingSignal<
+    HistoryListRequest,
+    InfiniteListing<MinimalJourney>
+  >({
+    inner: async (_ref, _signal) => {
       const numVisible = 150;
       const result = new NetworkedInfiniteListing<MinimalJourney>(
         '/api/1/users/me/search_history',
@@ -71,7 +86,10 @@ const getDataFromRef = (
               key: 'last_taken_at',
               dir: dir === 'before' ? 'asc' : 'desc',
               before: null,
-              after: item.lastTakenAt === null ? null : item.lastTakenAt.getTime() / 1000,
+              after:
+                item.lastTakenAt === null
+                  ? null
+                  : item.lastTakenAt.getTime() / 1000,
             },
             {
               key: 'uid',
@@ -88,4 +106,5 @@ const getDataFromRef = (
       return result;
     },
   });
-const compareRefs = (a: HistoryListRequest, b: HistoryListRequest): number => 0;
+const compareRefs = (_a: HistoryListRequest, _b: HistoryListRequest): number =>
+  0;

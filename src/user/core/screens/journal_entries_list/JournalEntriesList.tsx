@@ -39,6 +39,7 @@ import { InfiniteList } from '../../../../shared/components/InfiniteList';
 import { View, Text } from 'react-native';
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
+import { RSQUO } from '../../../../shared/lib/HtmlEntities';
 
 type TooltipPlaceholder = { readonly uid: 'tooltip' };
 
@@ -138,7 +139,7 @@ export const JournalEntriesList = ({
         next={next}
       />
     );
-  }, [ctx, screen, gotoJournalEntry]);
+  }, [ctx, screen, gotoJournalEntry, editJournalEntry]);
 
   const listHeight = useMappedValuesWithCallbacks(
     [ctx.windowSizeImmediate, ctx.topBarHeight, ctx.botBarHeight],
@@ -253,7 +254,7 @@ export const JournalEntriesList = ({
                             width: cw,
                           })}
                         >
-                          You haven't completed any journal entries yet.
+                          You haven{RSQUO}t completed any journal entries yet.
                         </Text>
                       </View>
                     )}
@@ -417,7 +418,7 @@ const JournalEntryComponent = ({
     <JournalEntryCard
       onClick={useCallback(
         () => gotoJournalEntryOuter(itemVWC.get()),
-        [itemVWC]
+        [itemVWC, gotoJournalEntryOuter]
       )}
       onEditClick={useCallback(
         () => editJournalEntryOuter(itemVWC.get()),

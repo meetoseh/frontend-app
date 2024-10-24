@@ -7,7 +7,6 @@ import { setVWC } from '../lib/setVWC';
 import { convertLogicalWidthToPhysicalWidth } from '../images/DisplayRatioHelper';
 import { useStyleVWC } from '../hooks/useStyleVWC';
 import { useMappedValuesWithCallbacks } from '../hooks/useMappedValuesWithCallbacks';
-import { useReactManagedValueAsValueWithCallbacks } from '../hooks/useReactManagedValueAsValueWithCallbacks';
 import { ScrollView, View, ViewStyle } from 'react-native';
 import { RenderGuardedComponent } from './RenderGuardedComponent';
 

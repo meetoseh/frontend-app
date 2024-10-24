@@ -20,7 +20,6 @@ import { useMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValu
 import { ModalContext } from '../../../shared/contexts/ModalContext';
 import FullHeartIcon from '../../journey/icons/FullHeartIcon';
 import EmptyHeartIcon from '../../journey/icons/EmptyHeartIcon';
-import { useWindowSize } from '../../../shared/hooks/useWindowSize';
 import { useIsTablet } from '../../../shared/lib/useIsTablet';
 import { useStyleVWC } from '../../../shared/hooks/useStyleVWC';
 import { setVWC } from '../../../shared/lib/setVWC';

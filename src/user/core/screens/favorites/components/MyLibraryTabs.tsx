@@ -4,7 +4,6 @@ import { HorizontalSpacer } from '../../../../../shared/components/HorizontalSpa
 import { ValueWithCallbacks } from '../../../../../shared/lib/Callbacks';
 import { ScrollView, View, Text, Pressable } from 'react-native';
 import { RenderGuardedComponent } from '../../../../../shared/components/RenderGuardedComponent';
-import { debugView } from '../../../../../shared/lib/debugView';
 
 /**
  * Allows the user to click between the given tabs in the My Library screen
@@ -44,15 +43,15 @@ export const MyLibraryTabs = ({
         >
           <View style={styles.content}>
             <Btn onClick={onFavorites} active={active === 'favorites'}>
-              Favorites
+              <Text>Favorites</Text>
             </Btn>
             <HorizontalSpacer width={24} />
             <Btn onClick={onHistory} active={active === 'history'}>
-              History
+              <Text>History</Text>
             </Btn>
             <HorizontalSpacer width={24} />
             <Btn onClick={onOwned} active={active === 'owned'}>
-              Owned
+              <Text>Owned</Text>
             </Btn>
           </View>
         </ScrollView>

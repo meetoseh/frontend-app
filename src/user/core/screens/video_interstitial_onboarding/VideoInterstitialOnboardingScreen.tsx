@@ -37,7 +37,7 @@ export const VideoInterstitialOnboardingScreen: OsehScreen<
     ),
     __mapped: true,
   }),
-  initInstanceResources: (ctx, screen, refreshScreen) => {
+  initInstanceResources: (ctx) => {
     const activeVWC = createWritableValueWithCallbacks(true);
 
     const getVideoRef = () =>

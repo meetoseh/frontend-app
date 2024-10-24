@@ -36,7 +36,7 @@ export const MembershipScreen: OsehScreen<
     series: convertTriggerWithExit(params.series),
     __mapped: true,
   }),
-  initInstanceResources: (ctx, screen, refreshScreen) => {
+  initInstanceResources: (ctx) => {
     const getPro = () =>
       createMappedLoginContextRequest({
         ctx,

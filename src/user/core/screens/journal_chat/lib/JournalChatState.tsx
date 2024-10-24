@@ -429,7 +429,7 @@ export type JournalEntryItemUIConceptualUpgrade = {
 };
 
 const dumpJournalEntryItemUIConceptualUpgradeForIntegrity = (
-  data: JournalEntryItemUIConceptualUpgrade
+  _data: JournalEntryItemUIConceptualUpgrade
 ): string => '{"type": "upgrade"}';
 
 export type JournalEntryItemUIConceptual =

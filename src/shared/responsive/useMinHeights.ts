@@ -1,6 +1,5 @@
 import { MutableRefObject, useRef } from 'react';
 import {
-  Callbacks,
   ValueWithCallbacks,
   WritableValueWithCallbacks,
   createWritableValueWithCallbacks,
@@ -8,7 +7,6 @@ import {
 import { VerticalLayout } from './VerticalLayout';
 import { useValuesWithCallbacksEffect } from '../hooks/useValuesWithCallbacksEffect';
 import { setVWC } from '../lib/setVWC';
-import { View } from 'react-native';
 import { useWindowSizeValueWithCallbacks } from '../hooks/useWindowSize';
 import { useMappedValueWithCallbacks } from '../hooks/useMappedValueWithCallbacks';
 import Constants from 'expo-constants';
@@ -37,8 +35,6 @@ export const useMinHeights = <K extends string>(
   requested: Record<K, ValueWithCallbacks<number>>,
   refs: ResponsiveRefs<K>
 ): Record<K, ValueWithCallbacks<number>> => {
-  const window = undefined;
-
   const keysRef = useRef<K[]>(null) as MutableRefObject<K[]>;
   if (keysRef.current === null) {
     keysRef.current = Object.keys(base.get()) as K[];

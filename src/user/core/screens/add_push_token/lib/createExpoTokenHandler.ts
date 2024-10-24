@@ -37,11 +37,11 @@ export const createExpoTokenRequestHandler = ({
   });
 };
 
-const getRefUid = (ref: { granted: true }): string => 'expoTokenRequest';
+const getRefUid = (_ref: { granted: true }): string => 'expoTokenRequest';
 const getDataFromRef = createGetDataFromRefUsingSignal({
   inner: async (
-    ref: OsehNotificationsPermission & { granted: true },
-    signal
+    _ref: OsehNotificationsPermission & { granted: true },
+    _signal
   ): Promise<OsehExpoToken> => {
     const newExpoToken = await getExpoPushTokenAsync({
       projectId: Constants.expoConfig!.extra!.eas!.projectId,
@@ -51,4 +51,4 @@ const getDataFromRef = createGetDataFromRefUsingSignal({
     };
   },
 });
-const compareRefs = (a: { granted: true }, b: { granted: true }): number => 0;
+const compareRefs = (_a: { granted: true }, _b: { granted: true }): number => 0;

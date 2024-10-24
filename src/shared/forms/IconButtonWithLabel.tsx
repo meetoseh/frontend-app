@@ -1,7 +1,7 @@
 import { ReactElement, useEffect } from 'react';
 import { InlineOsehSpinner } from '../components/InlineOsehSpinner';
 import { styles } from './IconButtonWithLabelStyles';
-import { Pressable, View, Text, StyleProp, ViewStyle } from 'react-native';
+import { Pressable, View, Text, ViewStyle } from 'react-native';
 import { useWindowSizeValueWithCallbacks } from '../hooks/useWindowSize';
 import { useMappedValueWithCallbacks } from '../hooks/useMappedValueWithCallbacks';
 import { RenderGuardedComponent } from '../components/RenderGuardedComponent';

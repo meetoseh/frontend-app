@@ -1,4 +1,4 @@
-import { isValidElement, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useValuesWithCallbacksEffect } from '../hooks/useValuesWithCallbacksEffect';
 import {
   Callbacks,
@@ -80,7 +80,7 @@ export const useOsehContentTargetValueWithCallbacks = ({
         cancelers.call(undefined);
       };
 
-      async function getTargetInner(signal: AbortSignal | undefined) {
+      async function getTargetInner(_signal: AbortSignal | undefined) {
         const response = getNativeExport(
           ref.uid,
           ref.jwt,

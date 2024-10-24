@@ -193,7 +193,7 @@ export const constructCancelablePromise = <T>(
 
   constructor.preamble?.(state);
 
-  let stackInfo = isDevelopment ? new Error().stack : undefined;
+  const stackInfo = isDevelopment ? new Error().stack : undefined;
 
   return {
     done: () => state.done,

@@ -1,8 +1,5 @@
 import { useEffect } from 'react';
-import {
-  LoginContextValue,
-  LoginContextValueLoggedIn,
-} from '../contexts/LoginContext';
+import { LoginContextValueLoggedIn } from '../contexts/LoginContext';
 import { OsehImageState } from '../images/OsehImageState';
 import { OsehImageStateRequestHandler } from '../images/useOsehImageStateRequestHandler';
 import { OsehImageRef } from '../images/OsehImageRef';

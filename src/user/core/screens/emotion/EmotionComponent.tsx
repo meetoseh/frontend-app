@@ -19,7 +19,7 @@ import { EmotionMappedParams } from './EmotionParams';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { trackClassTaken } from '../home/lib/trackClassTaken';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
-import { Pressable, View, Text, StyleProp } from 'react-native';
+import { Pressable, View, Text } from 'react-native';
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
 import { setVWC } from '../../../../shared/lib/setVWC';

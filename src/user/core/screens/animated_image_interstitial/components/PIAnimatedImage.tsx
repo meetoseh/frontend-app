@@ -4,7 +4,6 @@ import {
   createWritableValueWithCallbacks,
   useWritableValueWithCallbacks,
 } from '../../../../../shared/lib/Callbacks';
-import { RenderGuardedComponent } from '../../../../../shared/components/RenderGuardedComponent';
 import { Image, ImageStyle } from 'react-native';
 import { setVWC } from '../../../../../shared/lib/setVWC';
 import {
@@ -18,7 +17,6 @@ import {
   easeOutBack,
 } from '../../../../../shared/lib/Bezier';
 import { useMappedValueWithCallbacks } from '../../../../../shared/hooks/useMappedValueWithCallbacks';
-import { useStyleVWC } from '../../../../../shared/hooks/useStyleVWC';
 import { useValuesWithCallbacksEffect } from '../../../../../shared/hooks/useValuesWithCallbacksEffect';
 
 /**
@@ -255,7 +253,7 @@ export const PIAnimatedImage = ({
       }
       return result * 1000;
     }
-  }, []);
+  }, [animation.parts, easesByIndex, stateVWC]);
 
   const imageRefVWC = useWritableValueWithCallbacks<Image | null>(() => null);
   const imageStyleVWC = useMappedValueWithCallbacks(

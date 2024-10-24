@@ -629,7 +629,9 @@ export const upload = ({
                 canceled.promise,
                 uploading.list.map((v) => v.task.promise),
               ]);
-            } catch {}
+            } catch {
+              // ignore here; we will check later
+            }
             continue;
           }
 
@@ -664,7 +666,9 @@ export const upload = ({
                 canceled.promise,
                 ...uploading.list.map((v) => v.task.promise),
               ]);
-            } catch {}
+            } catch {
+              // ignore here; we will check later
+            }
             continue;
           }
 
@@ -701,7 +705,9 @@ export const upload = ({
               ...acquiringData.list.map((v) => v.task.promise),
               ...(retryHead === undefined ? [] : [retryHead.task.promise]),
             ]);
-          } catch {}
+          } catch {
+            // ignore here; we will check later
+          }
         }
       }
     } finally {
@@ -848,14 +854,14 @@ export const uploadStandardEndpointTryUpload =
             return;
           }
 
-          const body = await response.text();
-
           const retryAfterRaw = response.headers.get('retry-after');
           if (retryAfterRaw !== null) {
             let retryAfter: number = NaN;
             try {
               retryAfter = parseInt(retryAfterRaw, 10);
-            } catch {}
+            } catch {
+              // treat like unset
+            }
 
             if (!isNaN(retryAfter) && retryAfter > 0 && retryAfter <= 180) {
               state.finishing = true;

@@ -44,13 +44,13 @@ import {
 } from '../../../../shared/lib/errors';
 
 const _CHOICES = [
-  { slug: '1', text: '1 day', days: 1, element: <>1 day</> },
-  { slug: '2', text: '2 days', days: 2, element: <>2 days</> },
-  { slug: '3', text: '3 days', days: 3, element: <>3 days</> },
-  { slug: '4', text: '4 days', days: 4, element: <>4 days</> },
-  { slug: '5', text: '5 days', days: 5, element: <>5 days</> },
-  { slug: '6', text: '6 days', days: 6, element: <>6 days</> },
-  { slug: '7', text: '7 days', days: 7, element: <>7 days</> },
+  { slug: '1', text: '1 day', days: 1, element: <Text>1 day</Text> },
+  { slug: '2', text: '2 days', days: 2, element: <Text>2 days</Text> },
+  { slug: '3', text: '3 days', days: 3, element: <Text>3 days</Text> },
+  { slug: '4', text: '4 days', days: 4, element: <Text>4 days</Text> },
+  { slug: '5', text: '5 days', days: 5, element: <Text>5 days</Text> },
+  { slug: '6', text: '6 days', days: 6, element: <Text>6 days</Text> },
+  { slug: '7', text: '7 days', days: 7, element: <Text>7 days</Text> },
 ] as const;
 
 type ChoiceSlug = (typeof _CHOICES)[number]['slug'];

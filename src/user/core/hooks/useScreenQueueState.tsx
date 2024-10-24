@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useContext, useMemo } from 'react';
+import { useCallback, useContext, useMemo } from 'react';
 import { CustomPop, PeekedScreen } from '../models/Screen';
 import {
   ValueWithCallbacks,
@@ -512,7 +512,7 @@ export const useScreenQueueState = (): ScreenQueueState => {
           }),
         prepare()
       ),
-    [prepare, interestsContext.visitor, valueVWC]
+    [prepare, interestsContext.visitor, valueVWC, loginContextRaw]
   );
 
   const peek = useCallback(

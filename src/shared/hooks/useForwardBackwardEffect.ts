@@ -277,6 +277,7 @@ export const useForwardBackwardEffect = ({
     holdTimeVWC,
     playerSizeVWC,
     onAnimationFinished,
+    animationPointsVWC,
   ]);
 
   return useMemo(() => ({ playerStyle: playerSizeVWC }), [playerSizeVWC]);

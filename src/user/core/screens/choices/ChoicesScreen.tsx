@@ -24,7 +24,7 @@ export const ChoicesScreen: OsehScreen<
     includeChoice: params.include_choice,
     __mapped: true,
   }),
-  initInstanceResources: (ctx, screen, refreshScreen) => {
+  initInstanceResources: () => {
     return {
       ready: createWritableValueWithCallbacks(true),
       dispose: () => {},

@@ -1,8 +1,14 @@
 import { LoginContextValue } from '../../../shared/contexts/LoginContext';
 import { createGetDataFromRefUsingSignal } from '../../../shared/images/createGetDataFromRefUsingSignal';
 import { CancelablePromise } from '../../../shared/lib/CancelablePromise';
-import { InfiniteListing, NetworkedInfiniteListing } from '../../../shared/lib/InfiniteListing';
-import { RequestHandler, Result } from '../../../shared/requests/RequestHandler';
+import {
+  InfiniteListing,
+  NetworkedInfiniteListing,
+} from '../../../shared/lib/InfiniteListing';
+import {
+  RequestHandler,
+  Result,
+} from '../../../shared/requests/RequestHandler';
 import { ExternalCourse, externalCourseKeyMap } from './ExternalCourse';
 
 const seriesListRequest = Symbol('seriesListRequest');
@@ -26,7 +32,11 @@ export const createSeriesListRequestHandler = ({
   maxStale?: number;
   maxRetries?: number;
   loginContextRaw: LoginContextValue;
-}): RequestHandler<SeriesListRequest, SeriesListRequest, InfiniteListing<ExternalCourse>> => {
+}): RequestHandler<
+  SeriesListRequest,
+  SeriesListRequest,
+  InfiniteListing<ExternalCourse>
+> => {
   return new RequestHandler({
     getRefUid,
     getDataFromRef: getDataFromRef(loginContextRaw),
@@ -37,12 +47,17 @@ export const createSeriesListRequestHandler = ({
   });
 };
 
-const getRefUid = (ref: SeriesListRequest): string => 'seriesListRequest';
+const getRefUid = (_ref: SeriesListRequest): string => 'seriesListRequest';
 const getDataFromRef = (
   loginContextRaw: LoginContextValue
-): ((ref: SeriesListRequest) => CancelablePromise<Result<InfiniteListing<ExternalCourse>>>) =>
-  createGetDataFromRefUsingSignal<SeriesListRequest, InfiniteListing<ExternalCourse>>({
-    inner: async (ref, signal) => {
+): ((
+  ref: SeriesListRequest
+) => CancelablePromise<Result<InfiniteListing<ExternalCourse>>>) =>
+  createGetDataFromRefUsingSignal<
+    SeriesListRequest,
+    InfiniteListing<ExternalCourse>
+  >({
+    inner: async (_ref, _signal) => {
       const numVisible = 15;
       const result = new NetworkedInfiniteListing<ExternalCourse>(
         '/api/1/courses/search_public?category=list',
@@ -70,7 +85,10 @@ const getDataFromRef = (
               key: 'created_at',
               dir: dir === 'before' ? 'asc' : 'desc',
               before: null,
-              after: item.createdAt === null ? null : item.createdAt.getTime() / 1000,
+              after:
+                item.createdAt === null
+                  ? null
+                  : item.createdAt.getTime() / 1000,
             },
             {
               key: 'uid',
@@ -87,4 +105,4 @@ const getDataFromRef = (
       return result;
     },
   });
-const compareRefs = (a: SeriesListRequest, b: SeriesListRequest): number => 0;
+const compareRefs = (_a: SeriesListRequest, _b: SeriesListRequest): number => 0;

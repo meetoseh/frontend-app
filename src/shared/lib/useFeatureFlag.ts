@@ -43,7 +43,7 @@ export const useFeatureFlag = (
         setVWC(result, flags.has(flag));
         return undefined;
       },
-      [flag]
+      [flag, result]
     )
   );
 

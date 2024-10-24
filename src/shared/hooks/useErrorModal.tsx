@@ -5,11 +5,7 @@ import {
   WritableValueWithCallbacks,
 } from '../lib/Callbacks';
 import { useValueWithCallbacksEffect } from './useValueWithCallbacksEffect';
-import {
-  DisplayableError,
-  SimpleDismissBoxError,
-  SimpleDismissModalBoxError,
-} from '../lib/errors';
+import { DisplayableError, SimpleDismissBoxError } from '../lib/errors';
 import { OsehStyles } from '../OsehStyles';
 import { View } from 'react-native';
 import { RenderGuardedComponent } from '../components/RenderGuardedComponent';
@@ -45,7 +41,7 @@ export const useErrorModal = (
           </View>
         );
       },
-      [modals, errorVWC]
+      [modals, errorVWC, topBarHeightVWC]
     )
   );
 };

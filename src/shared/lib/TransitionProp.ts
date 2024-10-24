@@ -371,7 +371,7 @@ export const useEntranceTransition = <
         vwc.callbacks.remove(handleBlockedChanged);
       }
     }
-  }, [blocked]);
+  }, [blocked, unblocked]);
 
   useValueWithCallbacksEffect(
     unblocked,

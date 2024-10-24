@@ -45,7 +45,7 @@ import { createReminderSettingsRequestHandler } from '../screens/reminder_times/
 import { createOnboardingVideoRequestHandler } from '../screens/video_interstitial_onboarding/lib/createOnboardingVideoRequestHandler';
 import { createTranscriptRequestHandler } from '../screens/video_interstitial/lib/createTranscriptRequestHandler';
 import { createPurchasesOfferingsRequestHandler } from '../screens/upgrade/lib/createPurchasesOfferingsRequestHandler';
-import { Dimensions, Platform, ScaledSize, StatusBar } from 'react-native';
+import { Dimensions, Platform, ScaledSize } from 'react-native';
 import { useMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValueWithCallbacks';
 import Constants from 'expo-constants';
 import { createAudioDataRequestHandler } from '../../../shared/content/createAudioDataHandler';
@@ -128,9 +128,6 @@ export type ScreenContext = {
   usesSvg: boolean;
 };
 
-const areWindowSizesEqual = (a: WindowSize, b: WindowSize): boolean =>
-  a.width === b.width && a.height === b.height;
-
 /**
  * Initializes a new screen context that can be used by screens managed by
  * `useScreenQueue`
@@ -183,7 +180,7 @@ export const useScreenContext = (
         window,
       });
     }
-  }, [windowSizeImmediate]);
+  }, [windowSizeImmediate, sizesVWC]);
 
   const windowSizeDebounced = useDelayedValueWithCallbacks(
     windowSizeImmediate,

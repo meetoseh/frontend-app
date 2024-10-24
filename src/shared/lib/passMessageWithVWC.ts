@@ -1,4 +1,4 @@
-import { ValueWithCallbacks, WritableValueWithCallbacks } from './Callbacks';
+import { WritableValueWithCallbacks } from './Callbacks';
 import { CancelablePromise } from './CancelablePromise';
 import { constructCancelablePromise } from './CancelablePromiseConstructor';
 import { createCancelablePromiseFromCallbacks } from './createCancelablePromiseFromCallbacks';
@@ -12,6 +12,7 @@ import { waitForValueWithCallbacksConditionCancelable } from './waitForValueWith
  * is null again.
  * @see receiveMessageWithVWC
  */
+// eslint-disable-next-line @typescript-eslint/ban-types
 export const passMessageWithVWC = <T extends {} | undefined>(
   messageVWC: WritableValueWithCallbacks<T | null>,
   message: T

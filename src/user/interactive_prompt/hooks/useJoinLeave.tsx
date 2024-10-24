@@ -6,7 +6,6 @@ import {
 } from '../../../shared/lib/Callbacks';
 import {
   LoginContext,
-  LoginContextValue,
   LoginContextValueLoggedIn,
 } from '../../../shared/contexts/LoginContext';
 import { InteractivePrompt } from '../models/InteractivePrompt';
@@ -15,7 +14,6 @@ import {
   VariableStrategyProps,
   useVariableStrategyPropsAsValueWithCallbacks,
 } from '../../../shared/anim/VariableStrategyProps';
-import { useReactManagedValueAsValueWithCallbacks } from '../../../shared/hooks/useReactManagedValueAsValueWithCallbacks';
 import { apiFetch } from '../../../shared/lib/apiFetch';
 import { AppState } from 'react-native';
 

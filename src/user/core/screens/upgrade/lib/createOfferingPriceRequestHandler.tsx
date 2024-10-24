@@ -1,8 +1,4 @@
-import {
-  PurchasesOfferings,
-  PurchasesPackage,
-  PurchasesStoreProduct,
-} from 'react-native-purchases';
+import { PurchasesOfferings, PurchasesPackage } from 'react-native-purchases';
 import { LoginContextValueLoggedIn } from '../../../../../shared/contexts/LoginContext';
 import { createGetDataFromRefUsingSignal } from '../../../../../shared/images/createGetDataFromRefUsingSignal';
 import { CancelablePromise } from '../../../../../shared/lib/CancelablePromise';
@@ -12,7 +8,6 @@ import {
   Result,
 } from '../../../../../shared/requests/RequestHandler';
 import { Platform } from 'react-native';
-import { RevenueCatPackage } from '../models/RevenueCatPackage';
 
 export type OfferingPriceRef = {
   /** The user to fetch offering information for */
@@ -60,7 +55,7 @@ const getDataFromRef: (
   ref: OfferingPriceRef
 ) => CancelablePromise<Result<PurchasesPackage>> =
   createGetDataFromRefUsingSignal({
-    inner: async (ref, signal) => {
+    inner: async (ref) => {
       const offering =
         ref.offerings.current?.identifier === ref.offeringIdentifier
           ? ref.offerings.current

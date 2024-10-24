@@ -6,12 +6,12 @@ export type JoinData = {
 export type LeaveData = {
   name: string;
 };
-export type LikeData = {};
+export type LikeData = Record<string, never>;
 export type NumericPromptResponseData = {
   rating: number;
 };
-export type PressPromptStartResponseData = {};
-export type PressPromptEndResponseData = {};
+export type PressPromptStartResponseData = Record<string, never>;
+export type PressPromptEndResponseData = Record<string, never>;
 export type ColorPromptResponseData = {
   index: number;
 };

@@ -171,9 +171,9 @@ export const thumbHashToRGBA = (
             a += a_ac[j] * fx[cx] * fy2;
 
       // Convert to RGB
-      let b = l - (2 / 3) * p;
-      let r = (3 * l - b + q) / 2;
-      let g = r - q;
+      const b = l - (2 / 3) * p;
+      const r = (3 * l - b + q) / 2;
+      const g = r - q;
       rgba[i] = max(0, 255 * min(1, r));
       rgba[i + 1] = max(0, 255 * min(1, g));
       rgba[i + 2] = max(0, 255 * min(1, b));
@@ -293,7 +293,7 @@ export const rgbaToDataURL = (
     96,
     130
   );
-  for (let [start, end] of [
+  for (const [start, end] of [
     [12, 29],
     [37, 41 + idat],
   ]) {
@@ -324,11 +324,11 @@ export const rgbaToDataURL = (
 export const thumbHashToApproximateAspectRatio = (
   hash: Uint8Array | number[]
 ): number => {
-  let header = hash[3];
-  let hasAlpha = hash[2] & 0x80;
-  let isLandscape = hash[4] & 0x80;
-  let lx = isLandscape ? (hasAlpha ? 5 : 7) : header & 7;
-  let ly = isLandscape ? header & 7 : hasAlpha ? 5 : 7;
+  const header = hash[3];
+  const hasAlpha = hash[2] & 0x80;
+  const isLandscape = hash[4] & 0x80;
+  const lx = isLandscape ? (hasAlpha ? 5 : 7) : header & 7;
+  const ly = isLandscape ? header & 7 : hasAlpha ? 5 : 7;
   return lx / ly;
 };
 

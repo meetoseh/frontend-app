@@ -4,7 +4,6 @@ import { View, Text, TextInput, TextInputProps } from 'react-native';
 import { useReactManagedValueAsValueWithCallbacks } from '../hooks/useReactManagedValueAsValueWithCallbacks';
 import { useWritableValueWithCallbacks } from '../lib/Callbacks';
 import { setVWC } from '../lib/setVWC';
-import { useValuesWithCallbacksEffect } from '../hooks/useValuesWithCallbacksEffect';
 import { useValueWithCallbacksEffect } from '../hooks/useValueWithCallbacksEffect';
 
 type OsehTextInputProps = {
@@ -62,10 +61,8 @@ export const OsehTextInput = ({
   label,
   defaultValue,
   disabled,
-  inputStyle,
   bonusTextInputProps,
   onChange,
-  type = 'text',
   doFocus = null,
 }: OsehTextInputProps): ReactElement => {
   const onChangeVWC = useReactManagedValueAsValueWithCallbacks(onChange);

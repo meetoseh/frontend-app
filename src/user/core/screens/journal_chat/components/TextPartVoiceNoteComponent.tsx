@@ -94,7 +94,7 @@ export const TextPartVoiceNoteComponent = memo(
         },
         refreshRef: () =>
           constructCancelablePromise({
-            body: async (state, resolve, reject) => {
+            body: async (state, resolve, _reject) => {
               const newChat = await refreshChat();
               if (newChat === null || newChat === undefined) {
                 state.finishing = true;

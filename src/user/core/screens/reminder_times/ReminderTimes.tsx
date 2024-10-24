@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useContext } from 'react';
+import { ReactElement, useCallback } from 'react';
 import { ScreenComponentProps } from '../../models/Screen';
 import { GridDarkGrayBackground } from '../../../../shared/components/GridDarkGrayBackground';
 import { GridFullscreenContainer } from '../../../../shared/components/GridFullscreenContainer';
@@ -45,7 +45,7 @@ import { screenWithWorking } from '../../lib/screenWithWorking';
 import { showYesNoModal } from '../../../../shared/lib/showYesNoModal';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
 import { useWorkingModal } from '../../../../shared/hooks/useWorkingModal';
-import { Pressable, View, ViewStyle, Text, TextStyle } from 'react-native';
+import { Pressable, View, Text, TextStyle } from 'react-native';
 import { TextStyleForwarder } from '../../../../shared/components/TextStyleForwarder';
 import { FilledInvertedButton } from '../../../../shared/components/FilledInvertedButton';
 import { ContentContainer } from '../../../../shared/components/ContentContainer';

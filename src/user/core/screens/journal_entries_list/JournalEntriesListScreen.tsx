@@ -31,7 +31,7 @@ export const JournalEntriesListScreen: OsehScreen<
 > = {
   slug: 'journal_entries_list',
   paramMapper: (api) => convertUsingMapper(api, journalEntriesListParamsMapper),
-  initInstanceResources: (ctx, screen, refreshScreen) => {
+  initInstanceResources: (ctx) => {
     const listRequestVWC =
       createWritableValueWithCallbacks<RequestResult<JournalEntryListState> | null>(
         null

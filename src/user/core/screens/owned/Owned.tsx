@@ -17,7 +17,6 @@ import {
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
 } from '../../../../shared/lib/Callbacks';
-import { screenOut } from '../../lib/screenOut';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { MyLibraryTabs } from '../favorites/components/MyLibraryTabs';
 import { useMappedValuesWithCallbacks } from '../../../../shared/hooks/useMappedValuesWithCallbacks';
@@ -126,11 +125,14 @@ export const Owned = ({
         item={item}
         setItem={setItem}
         replaceItem={(isItem, newItem) => {
+          // eslint-disable-next-line react/prop-types
           resources.list.get()?.replaceItem(isItem, newItem);
         }}
+        // eslint-disable-next-line react/prop-types
         imageHandler={resources.imageHandler}
         ctx={ctx}
         screen={screen}
+        // eslint-disable-next-line react/prop-types
         list={resources.list}
         previous={previous}
         trace={trace}
@@ -307,7 +309,6 @@ const HistoryItemComponent = ({
   replaceItem,
   imageHandler,
   ctx,
-  screen,
   trace,
   list: listVWC,
   previous: previousVWC,

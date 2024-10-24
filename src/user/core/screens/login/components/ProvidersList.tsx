@@ -1,14 +1,11 @@
-import { Fragment, ReactElement, useEffect, useRef } from 'react';
-import { useWritableValueWithCallbacks } from '../../../../../shared/lib/Callbacks';
-import { StyleProp, TextStyle, Text, View } from 'react-native';
-import { useValuesWithCallbacksEffect } from '../../../../../shared/hooks/useValuesWithCallbacksEffect';
+import { Fragment, ReactElement } from 'react';
+import { Text, View } from 'react-native';
 import { useContentWidth } from '../../../../../shared/lib/useContentWidth';
 import { RenderGuardedComponent } from '../../../../../shared/components/RenderGuardedComponent';
 import { styles } from './ProvidersListStyles';
 import { setVWC } from '../../../../../shared/lib/setVWC';
 import { FilledInvertedButton } from '../../../../../shared/components/FilledInvertedButton';
 import { TextStyleForwarder } from '../../../../../shared/components/TextStyleForwarder';
-import { LinkButton } from '../../../../../shared/components/LinkButton';
 import { HorizontalSpacer } from '../../../../../shared/components/HorizontalSpacer';
 import { VerticalSpacer } from '../../../../../shared/components/VerticalSpacer';
 import { OutlineWhiteButton } from '../../../../../shared/components/OutlineWhiteButton';

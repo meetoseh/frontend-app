@@ -1,5 +1,5 @@
 import { ReactElement } from 'react';
-import { Svg, Path, SvgProps } from 'react-native-svg';
+import { Svg, Path } from 'react-native-svg';
 import {
   SvgRequestedSize,
   computeSvgSize,

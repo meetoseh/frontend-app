@@ -41,6 +41,7 @@ const getDataFromRef = createGetDataFromRefUsingSignal({
         headers: {
           Authorization: `bearer ${ref.jwt}`,
         },
+        signal,
       }
     );
 

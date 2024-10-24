@@ -69,7 +69,7 @@ export const useOsehContentTarget = ({
       presigned: presign,
       jwt,
     };
-  }, [uid, jwt, presign]);
+  }, [uid, jwt, presign, displayHeight, displayWidth, showAs]);
 };
 
 /**

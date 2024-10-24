@@ -203,7 +203,7 @@ const hkdfExpand = async (
   prk: Uint8Array,
   length: number
 ): Promise<Uint8Array> => {
-  let t = new Uint8Array(0);
+  const t = new Uint8Array(0);
   let okm = new Uint8Array(0);
   let i = 0;
   while (okm.length < length) {

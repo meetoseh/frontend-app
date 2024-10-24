@@ -184,7 +184,7 @@ export const GrayscaledView = ({
             imageUri={img.uri}
           />
         );
-      }, [viewShotWVWC, strengthVWC, styleVWC, childVWC])}
+      }, [viewShotWVWC, strengthVWC, styleVWC, childVWC, imageWVWC])}
     />
   );
 };

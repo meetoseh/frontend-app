@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useContext } from 'react';
+import { useCallback, useContext } from 'react';
 import {
   Callbacks,
   WritableValueWithCallbacks,
@@ -71,7 +71,7 @@ export const useManageConnectWithProvider = ({
         }
       }
     },
-    [mergeError]
+    [mergeError, onSecureLoginCompleted]
   );
 
   const promptMergeUsingModal = usePromptMergeUsingModal(
@@ -144,11 +144,11 @@ export const useManageConnectWithProvider = ({
       const closeModal = addModalWithCallbackToRemove(modals, modal);
       closeModalCallbacks.add(() => closeModal());
     },
-    [loginContextRaw, mergeError, modals, promptMergeUsingModal]
+    [loginContextRaw, mergeError, modals, promptMergeUsingModal, links]
   );
 
   const manageConnectWithPasskey = useCallback(
-    async (provider: 'Passkey', name: string): Promise<void> => {
+    async (_provider: 'Passkey', _name: string): Promise<void> => {
       const loginRaw = loginContextRaw.value.get();
       if (loginRaw.state !== 'logged-in') {
         return;
@@ -310,7 +310,7 @@ export const useManageConnectWithProvider = ({
         onSecureLoginCompleted(mergeResponseJson.merge_token);
       }
     },
-    [loginContextRaw]
+    [loginContextRaw, mergeError, modals, onSecureLoginCompleted, passkeyHint]
   );
 
   const manageConnectWithProvider = useCallback(

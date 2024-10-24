@@ -189,7 +189,7 @@ export const PlayerForeground = ({
     } finally {
       setVWC(handlingCTA, false);
     }
-  }, [cta, handlingCTA]);
+  }, [cta, handlingCTA, mediaInfo.shouldPlay]);
 
   const handlingClose = useWritableValueWithCallbacks(() => false);
   const onCloseClick = useCallback(async () => {
@@ -211,7 +211,7 @@ export const PlayerForeground = ({
     } finally {
       setVWC(handlingClose, false);
     }
-  }, [onClose, handlingClose]);
+  }, [onClose, handlingClose, mediaInfo.shouldPlay]);
 
   const containerRef = useWritableValueWithCallbacks<View | null>(() => null);
   const containerStyle = useMappedValueWithCallbacks(

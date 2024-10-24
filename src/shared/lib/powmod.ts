@@ -5,7 +5,7 @@ export const powmod = (base: bigint, secret: bigint, prime: bigint): bigint => {
 
   let x = base;
   let y = secret;
-  let p = prime;
+  const p = prime;
   let res = one;
 
   while (y > 0) {

@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useMemo, useRef } from 'react';
+import { ReactElement, useCallback, useMemo, useRef } from 'react';
 import {
   ValueWithCallbacks,
   useWritableValueWithCallbacks,

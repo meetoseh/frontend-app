@@ -6,7 +6,6 @@ import {
 } from '../../../../../shared/lib/Callbacks';
 import { Audio } from 'expo-av';
 import { setVWC } from '../../../../../shared/lib/setVWC';
-import { waitForValueWithCallbacksConditionCancelable } from '../../../../../shared/lib/waitForValueWithCallbacksCondition';
 
 type UseIsAudioRecordingSupportedResult = {
   /** pending if the value might change, final if the value is final */
@@ -49,7 +48,7 @@ export const useIsAudioRecordingSupported =
           (a, b) => a.type === b.type && a.value === b.value
         );
       }
-    }, []);
+    }, [result]);
 
     return result;
   };

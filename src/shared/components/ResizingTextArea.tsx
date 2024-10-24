@@ -68,7 +68,7 @@ export const ResizingTextArea = (props: ResizingTextAreaProps) => {
       setVWC(propRef, r);
       return undefined;
     });
-  }, [props.refVWC]);
+  }, [props.refVWC, refVWC]);
 
   const heightVWC = useWritableValueWithCallbacks<number>(() => 22);
   const editableVWC = useWritableValueWithCallbacks<boolean>(() =>

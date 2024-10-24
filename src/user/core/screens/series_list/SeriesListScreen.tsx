@@ -41,7 +41,7 @@ export const SeriesListScreen: OsehScreen<
 > = {
   slug: 'series_list',
   paramMapper: (params) => convertUsingMapper(params, seriesListParamsMapper),
-  initInstanceResources: (ctx, screen, refreshScreen) => {
+  initInstanceResources: (ctx) => {
     const activeVWC = createWritableValueWithCallbacks(true);
     const getList = () =>
       ctx.resources.seriesListHandler.request({

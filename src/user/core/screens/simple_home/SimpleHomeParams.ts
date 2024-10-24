@@ -45,7 +45,7 @@ export type SimpleHomeAPIParams = SimpleHomeParams<
 >;
 export type SimpleHomeMappedParams = SimpleHomeParams<
   ScreenTriggerWithExitMapped,
-  {}
+  Record<string, never>
 > & {
   __mapped: true;
 };

@@ -72,6 +72,7 @@ export type ScreenStartPop = (
 ) => () => void;
 
 export type ScreenComponentProps<
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   SlugT extends string,
   InstanceResourcesT extends ScreenResources,
   MappedParamT extends object

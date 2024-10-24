@@ -1,4 +1,4 @@
-import { CSSProperties, PropsWithChildren, ReactElement } from 'react';
+import { PropsWithChildren, ReactElement } from 'react';
 import {
   ValueWithCallbacks,
   useWritableValueWithCallbacks,

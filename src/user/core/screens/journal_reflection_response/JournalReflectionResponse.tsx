@@ -169,7 +169,12 @@ export const JournalReflectionResponse = ({
       }
       return '';
     }
-  }, [resources.response, responseWrappedVWC, resources.onUserChangedResponse]);
+  }, [
+    resources.response,
+    responseWrappedVWC,
+    resources.onUserChangedResponse,
+    resources,
+  ]);
 
   const responseTypeVWC = useMappedValueWithCallbacks(
     resources.response,

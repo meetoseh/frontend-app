@@ -12,6 +12,10 @@ const generateRandomString = async (
   size: number,
   alphabet: Alphabet
 ): Promise<[Uint8Array, string]> => {
+  if (alphabet !== 'ascii') {
+    throw new Error(`unsupported alphabet: ${alphabet}`);
+  }
+
   // for right now, only ascii, which is just any value 0-127
   const result = await Crypto.getRandomBytesAsync(size);
   for (let i = 0; i < result.length; i++) {

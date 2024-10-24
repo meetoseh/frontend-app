@@ -1,6 +1,5 @@
 import { LayoutChangeEvent, View } from 'react-native';
 import {
-  ValueWithCallbacks,
   WritableValueWithCallbacks,
   createWritableValueWithCallbacks,
 } from '../lib/Callbacks';

@@ -1,29 +1,30 @@
-import { ReactElement, useEffect, useMemo } from "react";
-import { useStateCompat as useState } from "../../../shared/hooks/useStateCompat";
-import { InteractiveWordPrompt } from "../models/InteractivePrompt";
-import { CountdownText } from "./CountdownText";
-import { styles } from "./WordPromptStyles";
+import { ReactElement, useEffect, useMemo } from 'react';
+import { InteractiveWordPrompt } from '../models/InteractivePrompt';
+import { CountdownText } from './CountdownText';
+import { styles } from './WordPromptStyles';
 import {
   ValueWithCallbacks,
   WritableValueWithCallbacks,
   createWritableValueWithCallbacks,
-} from "../../../shared/lib/Callbacks";
-import { useWindowSize } from "../../../shared/hooks/useWindowSize";
-import { ProfilePictures } from "./ProfilePictures";
-import { PromptTitle } from "./PromptTitle";
-import { HorizontalPartlyFilledRoundedRect } from "../../../shared/anim/HorizontalPartlyFilledRoundedRect";
-import { useMappedValueWithCallbacks } from "../../../shared/hooks/useMappedValueWithCallbacks";
-import { RenderGuardedComponent } from "../../../shared/components/RenderGuardedComponent";
-import { PromptProps } from "../models/PromptProps";
-import { PromptSettings } from "../models/PromptSettings";
-import { usePromptResources } from "../hooks/usePromptResources";
-import { apiFetch } from "../../../shared/lib/apiFetch";
-import { Pressable, View, Text, StyleProp, TextStyle } from "react-native";
-import { FilledPrimaryButton } from "../../../shared/components/FilledPrimaryButton";
-import { CustomButtonProps } from "../../../shared/models/CustomButtonProps";
-import { LinkButton } from "../../../shared/components/LinkButton";
-import { useUnwrappedValueWithCallbacks } from "../../../shared/hooks/useUnwrappedValueWithCallbacks";
-import Checked from "../icons/Checked";
+} from '../../../shared/lib/Callbacks';
+import { useWindowSize } from '../../../shared/hooks/useWindowSize';
+import { ProfilePictures } from './ProfilePictures';
+import { PromptTitle } from './PromptTitle';
+import { HorizontalPartlyFilledRoundedRect } from '../../../shared/anim/HorizontalPartlyFilledRoundedRect';
+import { useMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValueWithCallbacks';
+import { RenderGuardedComponent } from '../../../shared/components/RenderGuardedComponent';
+import { PromptProps } from '../models/PromptProps';
+import { PromptSettings } from '../models/PromptSettings';
+import { usePromptResources } from '../hooks/usePromptResources';
+import { apiFetch } from '../../../shared/lib/apiFetch';
+import { Pressable, View, Text } from 'react-native';
+import { FilledPrimaryButton } from '../../../shared/components/FilledPrimaryButton';
+import { CustomButtonProps } from '../../../shared/models/CustomButtonProps';
+import { LinkButton } from '../../../shared/components/LinkButton';
+import { useUnwrappedValueWithCallbacks } from '../../../shared/hooks/useUnwrappedValueWithCallbacks';
+import Checked from '../icons/Checked';
+import { TextStyleForwarder } from '../../../shared/components/TextStyleForwarder';
+import { setVWC } from '../../../shared/lib/setVWC';
 
 type WordPromptProps = PromptProps<InteractiveWordPrompt, string | null>;
 
@@ -51,10 +52,10 @@ const settings: PromptSettings<InteractiveWordPrompt, string | null> = {
     }
 
     await apiFetch(
-      "/api/1/interactive_prompts/events/respond_word_prompt",
+      '/api/1/interactive_prompts/events/respond_word_prompt',
       {
-        method: "POST",
-        headers: { "Content-Type": "application/json; charset=utf-8" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
         body: JSON.stringify({
           interactive_prompt_uid: prompt.uid,
           interactive_prompt_jwt: prompt.jwt,
@@ -155,7 +156,7 @@ export const WordPrompt = (props: WordPromptProps): ReactElement => {
                 <View style={styles.optionBackground}>
                   <HorizontalPartlyFilledRoundedRect
                     props={{
-                      type: "callbacks",
+                      type: 'callbacks',
                       props: () => ({
                         filledWidth: boundFilledWidthGetterSetters[idx].get(),
                         unfilledColor: unfilledColor,
@@ -203,36 +204,47 @@ export const WordPrompt = (props: WordPromptProps): ReactElement => {
                 : { paddingTop: 45, paddingBottom: 60 }),
             }}
           >
-            <RenderGuardedComponent
-              props={hasSelectionVWC}
-              component={(hasSelection) => {
-                const [textStyle, setTextStyle] = useState<
-                  StyleProp<TextStyle>
-                >({});
-                const text = hasSelection
-                  ? finishEarly === true
-                    ? "Continue"
-                    : finishEarly.cta
-                  : "Skip";
-                const props: CustomButtonProps = {
-                  onPress: resources.onSkip,
-                  setTextStyle,
-                };
+            <TextStyleForwarder
+              component={(styleVWC) => (
+                <RenderGuardedComponent
+                  props={hasSelectionVWC}
+                  component={(hasSelection) => {
+                    const text = hasSelection
+                      ? finishEarly === true
+                        ? 'Continue'
+                        : finishEarly.cta
+                      : 'Skip';
+                    const props: CustomButtonProps = {
+                      onPress: resources.onSkip,
+                      setTextStyle: (s) => setVWC(styleVWC, s),
+                    };
 
-                if (hasSelection) {
-                  return (
-                    <FilledPrimaryButton {...props}>
-                      <Text style={textStyle}>{text}</Text>
-                    </FilledPrimaryButton>
-                  );
-                } else {
-                  return (
-                    <LinkButton {...props}>
-                      <Text style={textStyle}>{text}</Text>
-                    </LinkButton>
-                  );
-                }
-              }}
+                    if (hasSelection) {
+                      return (
+                        <FilledPrimaryButton {...props}>
+                          <RenderGuardedComponent
+                            props={styleVWC}
+                            component={(textStyle) => (
+                              <Text style={textStyle}>{text}</Text>
+                            )}
+                          />
+                        </FilledPrimaryButton>
+                      );
+                    } else {
+                      return (
+                        <LinkButton {...props}>
+                          <RenderGuardedComponent
+                            props={styleVWC}
+                            component={(textStyle) => (
+                              <Text style={textStyle}>{text}</Text>
+                            )}
+                          />
+                        </LinkButton>
+                      );
+                    }
+                  }}
+                />
+              )}
             />
           </View>
         )}

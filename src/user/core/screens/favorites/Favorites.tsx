@@ -114,11 +114,14 @@ export const Favorites = ({
         item={item}
         setItem={setItem}
         replaceItem={(isItem, newItem) => {
+          // eslint-disable-next-line react/prop-types
           resources.list.get()?.replaceItem(isItem, newItem);
         }}
+        // eslint-disable-next-line react/prop-types
         imageHandler={resources.imageHandler}
         ctx={ctx}
         screen={screen}
+        // eslint-disable-next-line react/prop-types
         list={resources.list}
       />
     );
@@ -291,10 +294,8 @@ const HistoryItemComponent = ({
   gotoJourney: gotoJourneyOuter,
   item: itemVWC,
   setItem,
-  replaceItem,
   imageHandler,
   ctx,
-  screen,
   list: listVWC,
 }: {
   gotoJourney: (journey: MinimalJourney) => void;

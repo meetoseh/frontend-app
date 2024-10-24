@@ -39,7 +39,7 @@ export const SetGoalScreen: OsehScreen<
     },
     __mapped: true,
   }),
-  initInstanceResources: (ctx, screen, refreshScreen) => {
+  initInstanceResources: (ctx) => {
     const getStreak = () =>
       createLoginContextRequest({ ctx, handler: ctx.resources.streakHandler });
 

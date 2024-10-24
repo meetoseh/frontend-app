@@ -46,7 +46,7 @@ export const GridFullscreenContainer = ({
     if (modals !== true) {
       setVWC(fallbackModalsVWC, []);
     }
-  }, [modals]);
+  }, [modals, fallbackModalsVWC]);
 
   return (
     <View ref={(r) => containerRef.set(r)} style={containerStyleVWC.get()}>

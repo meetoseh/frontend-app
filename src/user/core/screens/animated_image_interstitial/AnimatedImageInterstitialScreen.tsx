@@ -1,4 +1,3 @@
-import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import { Bezier } from '../../../../shared/lib/Bezier';
 import { createWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
 import { convertUsingMapper } from '../../../../shared/lib/CrudFetcher';

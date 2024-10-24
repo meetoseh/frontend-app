@@ -57,7 +57,7 @@ export const LibraryFilterScreen: OsehScreen<
     filter: convertUsingMapper(params.filter, libraryFilterMapper),
     __mapped: true,
   }),
-  initInstanceResources: (ctx, screen, refreshScreen) => {
+  initInstanceResources: (ctx) => {
     const instructorsListRequestVWC =
       createWritableValueWithCallbacks<RequestResult<InstructorListState> | null>(
         null

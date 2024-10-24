@@ -12,6 +12,7 @@ import { CancelablePromise } from './CancelablePromise';
 import { passMessageWithVWC } from './passMessageWithVWC';
 import { DisplayableError } from './errors';
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 export type SmartAPIFetchMapper<T extends {} | null> = (
   response: Response
 ) => Promise<
@@ -34,6 +35,7 @@ export type SmartAPIFetchRequestInit = Omit<RequestInit, 'signal'> & {
   signal?: undefined;
 };
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 export type SmartAPIFetchStateInFlight<T extends {} | null> = {
   /**
    * - `in-flight`: we currently have a request in flight and are waiting for the response
@@ -69,6 +71,7 @@ export type SmartAPIFetchStateInFlight<T extends {} | null> = {
   value?: undefined;
 };
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 export type SmartAPIFetchStateWaiting<T extends {} | null> = {
   /**
    * - `waiting`: we do not have a request in flight but we do intend on making one
@@ -106,6 +109,7 @@ export type SmartAPIFetchStateWaiting<T extends {} | null> = {
   value?: undefined;
 };
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 export type SmartAPIFetchStateSuccess<T extends {} | null> = {
   /**
    * - `success`: the request was successful and we have received the data
@@ -143,6 +147,7 @@ export type SmartAPIFetchStateReleased = {
   value?: undefined;
 };
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 export type SmartAPIFetchState<T extends {} | null> =
   | SmartAPIFetchStateInFlight<T>
   | SmartAPIFetchStateWaiting<T>
@@ -161,6 +166,7 @@ export type SmartAPIFetchMessageRelease = {
 
 export type SmartAPIFetchMessage = SmartAPIFetchMessageRelease;
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 async function manageLoop<T extends {} | null>(
   stateVWC: WritableValueWithCallbacks<SmartAPIFetchState<T>>,
   messageVWC: WritableValueWithCallbacks<SmartAPIFetchMessage | null>
@@ -186,6 +192,7 @@ async function manageLoop<T extends {} | null>(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 async function transitionFromWaiting<T extends {} | null>(
   stateVWC: WritableValueWithCallbacks<SmartAPIFetchState<T>>,
   messageVWC: WritableValueWithCallbacks<SmartAPIFetchMessage | null>
@@ -239,6 +246,7 @@ async function transitionFromWaiting<T extends {} | null>(
   });
 }
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 async function transitionFromInFlight<T extends {} | null>(
   stateVWC: WritableValueWithCallbacks<SmartAPIFetchState<T>>,
   messageVWC: WritableValueWithCallbacks<SmartAPIFetchMessage | null>
@@ -273,7 +281,9 @@ async function transitionFromInFlight<T extends {} | null>(
   );
   try {
     await Promise.race([messageCancelable.promise, responsePromise]);
-  } catch {}
+  } catch {
+    // handle later
+  }
 
   if (messageCancelable.done()) {
     controller.abort();
@@ -385,6 +395,7 @@ async function transitionFromInFlight<T extends {} | null>(
   setVWC(stateVWC, { type: 'success', value: mapped.value });
 }
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 async function transitionFromFinal<T extends {} | null>(
   stateVWC: WritableValueWithCallbacks<SmartAPIFetchState<T>>,
   messageVWC: WritableValueWithCallbacks<SmartAPIFetchMessage | null>
@@ -457,6 +468,7 @@ export const retryerForever5: SmartAPIFetchRetryer = (d) => ({
  * retryable status codes, then interpreting the body as json, then
  * calling the provided mapper
  */
+// eslint-disable-next-line @typescript-eslint/ban-types
 export const createTypicalSmartAPIFetchMapper = <T extends {} | null>({
   mapJSON,
   action,
@@ -496,6 +508,7 @@ export const createTypicalSmartAPIFetchMapper = <T extends {} | null>({
   };
 };
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 export type SmartAPIFetchOptions<T extends {} | null> = {
   /** the path to the endpoint to call */
   path: string;
@@ -521,6 +534,7 @@ export type SmartAPIFetchOptions<T extends {} | null> = {
 };
 
 /** Describes a releasable api fetch with automatic retries and that you can inspect */
+// eslint-disable-next-line @typescript-eslint/ban-types
 export type SmartAPIFetch<T extends {} | null> = {
   /** Allows inspecting the current state of the state machine */
   state: ValueWithCallbacks<SmartAPIFetchState<T>>;
@@ -543,6 +557,7 @@ export type SmartAPIFetch<T extends {} | null> = {
  * state (success or error), the state machine will release itself and raise an
  * uncatchable error
  */
+// eslint-disable-next-line @typescript-eslint/ban-types
 export function createSmartAPIFetch<T extends {} | null>({
   path,
   init,

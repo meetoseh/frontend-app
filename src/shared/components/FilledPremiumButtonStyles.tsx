@@ -5,7 +5,8 @@ import { LinearGradientState } from '../anim/LinearGradientBackground';
 export const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    // @ts-ignore
+    // @ts-expect-error using gradient as a style works only in web; here we are definitely breaking
+    // expectations
     gradient: {
       stops: [
         { color: [90, 214, 173, 1], offset: 0 },

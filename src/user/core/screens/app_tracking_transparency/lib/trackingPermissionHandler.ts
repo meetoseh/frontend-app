@@ -53,12 +53,12 @@ export const createTrackingPermissionRequestHandler = ({
   });
 };
 
-const getRefUid = (ref: OsehTrackingPermissionsRequest): string =>
+const getRefUid = (_ref: OsehTrackingPermissionsRequest): string =>
   'trackingPermissionsRequest';
 const getDataFromRef = createGetDataFromRefUsingSignal({
   inner: async (
-    ref: OsehTrackingPermissionsRequest,
-    signal
+    _ref: OsehTrackingPermissionsRequest,
+    _signal
   ): Promise<OsehTrackingPermission> => {
     const newPermissionsStatus = await getTrackingPermissionsAsync();
     return {
@@ -69,6 +69,6 @@ const getDataFromRef = createGetDataFromRefUsingSignal({
   },
 });
 const compareRefs = (
-  a: OsehTrackingPermissionsRequest,
-  b: OsehTrackingPermissionsRequest
+  _a: OsehTrackingPermissionsRequest,
+  _b: OsehTrackingPermissionsRequest
 ): number => 0;

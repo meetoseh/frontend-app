@@ -1,4 +1,4 @@
-import { ReactElement, useContext, useEffect, useMemo } from 'react';
+import { ReactElement, useEffect, useMemo } from 'react';
 import { ScreenComponentProps } from '../../models/Screen';
 import { GridDarkGrayBackground } from '../../../../shared/components/GridDarkGrayBackground';
 import { GridFullscreenContainer } from '../../../../shared/components/GridFullscreenContainer';
@@ -18,7 +18,6 @@ import {
   WritableValueWithCallbacks,
   useWritableValueWithCallbacks,
 } from '../../../../shared/lib/Callbacks';
-import { screenOut } from '../../lib/screenOut';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { ResolveMergeConflictResources } from './ResolveMergeConflictResources';
 import {
@@ -30,7 +29,6 @@ import {
   ResolveMergeConflictMappedParams,
 } from './ResolveMergeConflictParams';
 import { getJwtExpiration } from '../../../../shared/lib/getJwtExpiration';
-import { screenWithWorking } from '../../lib/screenWithWorking';
 import { getCurrentServerTimeMS } from '../../../../shared/lib/getCurrentServerTimeMS';
 import { setVWC } from '../../../../shared/lib/setVWC';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
@@ -226,17 +224,14 @@ export const ResolveMergeConflict = ({
         )}
 
         <VerticalSpacer height={0} flexGrow={1} />
-        <TextStyleForwarder
-          component={(styleVWC) => (
-            <RenderGuardedComponent
-              props={useMappedValuesWithCallbacks(
-                [readyVWC, workingVWC],
-                () => ({
-                  disabled: !readyVWC.get(),
-                  spinner: workingVWC.get(),
-                })
-              )}
-              component={({ disabled, spinner }) => (
+        <RenderGuardedComponent
+          props={useMappedValuesWithCallbacks([readyVWC, workingVWC], () => ({
+            disabled: !readyVWC.get(),
+            spinner: workingVWC.get(),
+          }))}
+          component={({ disabled, spinner }) => (
+            <TextStyleForwarder
+              component={(styleVWC) => (
                 <FilledInvertedButton
                   onPress={() => {
                     const emailHint = emailHintVWC.get();

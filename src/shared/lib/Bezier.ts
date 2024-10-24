@@ -240,7 +240,7 @@ export class Bezier {
     const res = new Array(1001);
 
     for (let i = 0; i <= 1000; ++i) {
-      res[i] = this._fastCubicYForX(i / 1000);
+      res[i] = this._fastCubicYForX(i / 1000, maxErr);
       const delayed = delayer();
       if (delayed !== undefined) {
         await delayed;

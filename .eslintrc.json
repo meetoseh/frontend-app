@@ -30,6 +30,15 @@
     "no-constant-condition": 0,
     "react-native/no-color-literals": 0,
     "react-native/sort-styles": 0,
-    "@typescript-eslint/no-explicit-any": 0
+    "react/display-name": 0,
+    "@typescript-eslint/no-explicit-any": 0,
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ]
   }
 }

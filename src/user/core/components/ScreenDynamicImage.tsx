@@ -93,7 +93,7 @@ export const ScreenDynamicImage = ({
       cleanupMapper();
       image.dispose();
     };
-  }, [ctx, imgRef, width, height]);
+  }, [ctx, imgRef, width, height, imageUrlVWC]);
 
   return (
     <RenderGuardedComponent

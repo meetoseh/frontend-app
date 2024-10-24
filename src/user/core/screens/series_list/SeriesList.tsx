@@ -118,8 +118,10 @@ export const SeriesList = ({
         item={item}
         setItem={setItem}
         replaceItem={(isItem, newItem) => {
+          // eslint-disable-next-line react/prop-types
           resources.list.get()?.replaceItem(isItem, newItem);
         }}
+        // eslint-disable-next-line react/prop-types
         imageHandler={resources.imageHandler}
         ctx={ctx}
         screen={screen}
@@ -127,7 +129,7 @@ export const SeriesList = ({
         next={next}
       />
     );
-  }, [showCourse, resources.imageHandler, resources.list, ctx, screen]);
+  }, [showCourse, resources.imageHandler, resources.list, ctx, screen, size]);
 
   const listHeight = useMappedValuesWithCallbacks(
     [ctx.windowSizeImmediate, ctx.topBarHeight, ctx.botBarHeight],

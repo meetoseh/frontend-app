@@ -124,7 +124,7 @@ export const CourseJourneysList = ({
     );
     result.reset();
     return result;
-  }, [listHeight]);
+  }, [listHeight, loginContextRaw]);
 
   const loading = useRef<boolean>(false);
   const gotoJourneyInCourse = useCallback(

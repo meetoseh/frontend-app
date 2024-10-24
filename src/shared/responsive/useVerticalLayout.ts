@@ -16,7 +16,6 @@ import { useMappedValuesWithCallbacks } from '../hooks/useMappedValuesWithCallba
 import { useMappedValueWithCallbacks } from '../hooks/useMappedValueWithCallbacks';
 import { useValueWithCallbacksEffect } from '../hooks/useValueWithCallbacksEffect';
 import { setVWC } from '../lib/setVWC';
-import { View } from 'react-native';
 import { ResponsiveRefs } from './useResponsiveRefs';
 
 /**

@@ -68,7 +68,7 @@ export const LibraryScreen: OsehScreen<
     ),
     __mapped: true,
   }),
-  initInstanceResources: (ctx, screen, refreshScreen) => {
+  initInstanceResources: (ctx, screen) => {
     const filterVWC = createWritableValueWithCallbacks<LibraryFilter>(
       screen.parameters.filter
     );

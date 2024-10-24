@@ -8,7 +8,6 @@ import { useToggleFavorited } from '../../journey/hooks/useToggleFavorited';
 import { useMappedValueWithCallbacks } from '../../../shared/hooks/useMappedValueWithCallbacks';
 import {
   ValueWithCallbacks,
-  createWritableValueWithCallbacks,
   useWritableValueWithCallbacks,
 } from '../../../shared/lib/Callbacks';
 import { OsehImageFromStateValueWithCallbacks } from '../../../shared/images/OsehImageFromStateValueWithCallbacks';
@@ -91,7 +90,6 @@ export const CourseJourneyItem = ({
   separator: separatorVWC,
   onClick,
   instructorImages,
-  onDownload: onDownloadCallback,
   toggledFavorited: onToggledFavoritedCallback,
   padBottom: padBottomVWC,
 }: CourseJourneyItemProps) => {

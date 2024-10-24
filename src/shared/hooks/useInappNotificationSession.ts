@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useRef } from 'react';
+import { useCallback, useContext, useRef } from 'react';
 import { LoginContext } from '../contexts/LoginContext';
 import {
   VariableStrategyProps,

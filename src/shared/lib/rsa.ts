@@ -9,8 +9,6 @@ const publicExponent = BigInt(65537);
 const zero = BigInt(0);
 const one = BigInt(1);
 const two = BigInt(2);
-const pqMinDistance = bigIntPow(two, BigInt(1948));
-const minD = bigIntPow(two, BigInt(2048));
 
 export type RSA4096V1PrivateKeyPair = {
   type: 'rsa-4096-v1';
@@ -293,7 +291,7 @@ export async function mgf1(seed: Uint8Array, lengthBytes: number) {
   space.set(seed);
 
   while (true) {
-    let C = bigIntToBytes(counter, 4);
+    const C = bigIntToBytes(counter, 4);
     space.set(C, seed.length);
     const hash = new Uint8Array(
       await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA512, space)

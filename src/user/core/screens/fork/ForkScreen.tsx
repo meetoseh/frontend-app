@@ -31,7 +31,7 @@ export const ForkScreen: OsehScreen<
     })),
     __mapped: true,
   }),
-  initInstanceResources: (ctx, screen, refreshScreen) => {
+  initInstanceResources: () => {
     return {
       ready: createWritableValueWithCallbacks(true),
       dispose: () => {},
