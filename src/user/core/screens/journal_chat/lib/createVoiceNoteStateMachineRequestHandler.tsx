@@ -1,5 +1,8 @@
 import { CancelablePromise } from '../../../../../shared/lib/CancelablePromise';
-import { RequestHandler, Result } from '../../../../../shared/requests/RequestHandler';
+import {
+  RequestHandler,
+  Result,
+} from '../../../../../shared/requests/RequestHandler';
 import { getJwtExpiration } from '../../../../../shared/lib/getJwtExpiration';
 import {
   createVoiceNoteStateMachineForRemoteDownload,
@@ -17,11 +20,15 @@ export type VoiceNoteStateMachineRef = {
   voiceNoteJWT: string;
 };
 
-export type VoiceNoteStateMachineMinimalRef = Pick<VoiceNoteStateMachineRef, 'voiceNoteUID'>;
+export type VoiceNoteStateMachineMinimalRef = Pick<
+  VoiceNoteStateMachineRef,
+  'voiceNoteUID'
+>;
 
 /**
- * Creates a request handler for a journal entry manager, which is an
- * object that can load the state of a journal entry chat
+ * Creates a request handler for a voice note state machine manager, which is an
+ * object that can load the state of a voice note and can receive messages for
+ * mutation in a dedicated coroutine.
  */
 export const createVoiceNoteStateMachineRequestHandler = ({
   logging = 'none',
@@ -60,14 +67,17 @@ export const createVoiceNoteStateMachineRequestHandler = ({
   });
 };
 
-const getRefUid = (ref: VoiceNoteStateMachineMinimalRef): string => ref.voiceNoteUID;
+const getRefUid = (ref: VoiceNoteStateMachineMinimalRef): string =>
+  ref.voiceNoteUID;
 const getDataFromRef =
   (
     resources: VoiceNoteStateRemoteResources,
     loginContext: LoginContextValue,
     interestsContext: InterestsContextProvidedValue
   ) =>
-  (ref: VoiceNoteStateMachineRef): CancelablePromise<Result<VoiceNoteStateMachine>> => {
+  (
+    ref: VoiceNoteStateMachineRef
+  ): CancelablePromise<Result<VoiceNoteStateMachine>> => {
     const state = createVoiceNoteStateMachineForRemoteDownload({
       voiceNote: {
         uid: ref.voiceNoteUID,
@@ -88,5 +98,8 @@ const getDataFromRef =
       cancel: () => {},
     };
   };
-const compareRefs = (a: VoiceNoteStateMachineRef, b: VoiceNoteStateMachineRef): number =>
+const compareRefs = (
+  a: VoiceNoteStateMachineRef,
+  b: VoiceNoteStateMachineRef
+): number =>
   getJwtExpiration(b.voiceNoteJWT) - getJwtExpiration(a.voiceNoteJWT);

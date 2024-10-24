@@ -27,7 +27,9 @@ export const alphaBlend = (
 export const base64URLToByteArray = (
   base64Url: string
 ): Uint8Array | number[] => {
-  return Buffer.from(base64Url.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+  return new Uint8Array(
+    Buffer.from(base64Url.replace(/-/g, '+').replace(/_/g, '/'), 'base64')
+  );
 };
 /**
  * For convenience, the reverse operation of base64URLToByteArray.
@@ -293,7 +295,8 @@ export const rgbaToDataURL = (
     96,
     130
   );
-  for (const [start, end] of [
+  // eslint-disable-next-line prefer-const
+  for (let [start, end] of [
     [12, 29],
     [37, 41 + idat],
   ]) {

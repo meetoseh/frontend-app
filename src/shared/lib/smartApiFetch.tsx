@@ -12,7 +12,6 @@ import { CancelablePromise } from './CancelablePromise';
 import { passMessageWithVWC } from './passMessageWithVWC';
 import { DisplayableError } from './errors';
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 export type SmartAPIFetchMapper<T extends {} | null> = (
   response: Response
 ) => Promise<
@@ -31,11 +30,13 @@ export type SmartAPIFetchRetryer = (
   | { delay: number; error?: undefined }
   | { delay?: undefined; error: DisplayableError };
 
-export type SmartAPIFetchRequestInit = Omit<RequestInit, 'signal'> & {
+export type SmartAPIFetchRequestInit = Omit<
+  RequestInit,
+  'signal' | 'method'
+> & {
   signal?: undefined;
-};
+} & Required<Pick<RequestInit, 'method'>>;
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 export type SmartAPIFetchStateInFlight<T extends {} | null> = {
   /**
    * - `in-flight`: we currently have a request in flight and are waiting for the response
@@ -71,7 +72,6 @@ export type SmartAPIFetchStateInFlight<T extends {} | null> = {
   value?: undefined;
 };
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 export type SmartAPIFetchStateWaiting<T extends {} | null> = {
   /**
    * - `waiting`: we do not have a request in flight but we do intend on making one
@@ -109,7 +109,6 @@ export type SmartAPIFetchStateWaiting<T extends {} | null> = {
   value?: undefined;
 };
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 export type SmartAPIFetchStateSuccess<T extends {} | null> = {
   /**
    * - `success`: the request was successful and we have received the data
@@ -147,7 +146,6 @@ export type SmartAPIFetchStateReleased = {
   value?: undefined;
 };
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 export type SmartAPIFetchState<T extends {} | null> =
   | SmartAPIFetchStateInFlight<T>
   | SmartAPIFetchStateWaiting<T>
@@ -166,7 +164,6 @@ export type SmartAPIFetchMessageRelease = {
 
 export type SmartAPIFetchMessage = SmartAPIFetchMessageRelease;
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 async function manageLoop<T extends {} | null>(
   stateVWC: WritableValueWithCallbacks<SmartAPIFetchState<T>>,
   messageVWC: WritableValueWithCallbacks<SmartAPIFetchMessage | null>
@@ -192,7 +189,6 @@ async function manageLoop<T extends {} | null>(
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 async function transitionFromWaiting<T extends {} | null>(
   stateVWC: WritableValueWithCallbacks<SmartAPIFetchState<T>>,
   messageVWC: WritableValueWithCallbacks<SmartAPIFetchMessage | null>
@@ -246,7 +242,6 @@ async function transitionFromWaiting<T extends {} | null>(
   });
 }
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 async function transitionFromInFlight<T extends {} | null>(
   stateVWC: WritableValueWithCallbacks<SmartAPIFetchState<T>>,
   messageVWC: WritableValueWithCallbacks<SmartAPIFetchMessage | null>
@@ -292,7 +287,7 @@ async function transitionFromInFlight<T extends {} | null>(
   let response: Response;
   try {
     response = await responsePromise;
-  } catch {
+  } catch (e) {
     if (messageCancelable.done()) {
       const msg = (await messageCancelable.promise)();
       setVWC(stateVWC, { type: 'released' });
@@ -304,7 +299,14 @@ async function transitionFromInFlight<T extends {} | null>(
 
     const retry = current.retryer(current.attempt + 1, null);
     if (retry.error !== undefined) {
-      setVWC(stateVWC, { type: 'error', error: retry.error });
+      setVWC(stateVWC, {
+        type: 'error',
+        error: new DisplayableError(
+          retry.error.type,
+          retry.error.action,
+          `last error was failed to connect ${e}; ${retry.error.details}`
+        ),
+      });
       return;
     }
 
@@ -343,7 +345,7 @@ async function transitionFromInFlight<T extends {} | null>(
     const described =
       e instanceof DisplayableError
         ? e
-        : new DisplayableError('client', 'fetch', `${e}`);
+        : new DisplayableError('client', 'smart fetch mapper error', `${e}`);
     setVWC(stateVWC, { type: 'error', error: described });
     return;
   }
@@ -373,7 +375,16 @@ async function transitionFromInFlight<T extends {} | null>(
 
     const retry = current.retryer(current.attempt + 1, retryAfterMS);
     if (retry.error !== undefined) {
-      setVWC(stateVWC, { type: 'error', error: retry.error });
+      setVWC(stateVWC, {
+        type: 'error',
+        error: new DisplayableError(
+          retry.error.type,
+          retry.error.action,
+          `last error was from mapper: ${mapped.error.formatProblem()}; ${
+            retry.error.details
+          }`
+        ),
+      });
       return;
     }
 
@@ -395,7 +406,6 @@ async function transitionFromInFlight<T extends {} | null>(
   setVWC(stateVWC, { type: 'success', value: mapped.value });
 }
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 async function transitionFromFinal<T extends {} | null>(
   stateVWC: WritableValueWithCallbacks<SmartAPIFetchState<T>>,
   messageVWC: WritableValueWithCallbacks<SmartAPIFetchMessage | null>
@@ -468,7 +478,6 @@ export const retryerForever5: SmartAPIFetchRetryer = (d) => ({
  * retryable status codes, then interpreting the body as json, then
  * calling the provided mapper
  */
-// eslint-disable-next-line @typescript-eslint/ban-types
 export const createTypicalSmartAPIFetchMapper = <T extends {} | null>({
   mapJSON,
   action,
@@ -496,6 +505,30 @@ export const createTypicalSmartAPIFetchMapper = <T extends {} | null>({
       };
     }
 
+    if (!r.ok) {
+      try {
+        const txt = await r.text();
+        return {
+          error: new DisplayableError(
+            'server-not-retryable',
+            action,
+            `${r.status}: ${txt}`
+          ),
+          retryable: false,
+        };
+      } catch {
+        // ignore
+      }
+      return {
+        error: new DisplayableError(
+          'server-not-retryable',
+          action,
+          `${r.status}`
+        ),
+        retryable: false,
+      };
+    }
+
     try {
       const data = await r.json();
       return { value: mapJSON(data) };
@@ -508,7 +541,6 @@ export const createTypicalSmartAPIFetchMapper = <T extends {} | null>({
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 export type SmartAPIFetchOptions<T extends {} | null> = {
   /** the path to the endpoint to call */
   path: string;
@@ -525,7 +557,7 @@ export type SmartAPIFetchOptions<T extends {} | null> = {
   /**
    * The retryer function to use or a preset
    */
-  retryer: SmartAPIFetchRetryerPreset | SmartAPIFetchRetryer;
+  retryer: SmartAPIFetchRetryerPreset | SmartAPIFetchRetryer | 'default';
 
   /**
    * The mapper function to use to convert from a response to a value
@@ -534,7 +566,6 @@ export type SmartAPIFetchOptions<T extends {} | null> = {
 };
 
 /** Describes a releasable api fetch with automatic retries and that you can inspect */
-// eslint-disable-next-line @typescript-eslint/ban-types
 export type SmartAPIFetch<T extends {} | null> = {
   /** Allows inspecting the current state of the state machine */
   state: ValueWithCallbacks<SmartAPIFetchState<T>>;
@@ -557,7 +588,6 @@ export type SmartAPIFetch<T extends {} | null> = {
  * state (success or error), the state machine will release itself and raise an
  * uncatchable error
  */
-// eslint-disable-next-line @typescript-eslint/ban-types
 export function createSmartAPIFetch<T extends {} | null>({
   path,
   init,
@@ -568,7 +598,7 @@ export function createSmartAPIFetch<T extends {} | null>({
   if (typeof retryer === 'string') {
     if (retryer === 'never') {
       retryer = retryerNever;
-    } else if (retryer === 'expo-backoff-3') {
+    } else if (retryer === 'expo-backoff-3' || retryer === 'default') {
       retryer = retryerExpoBackoff3;
     } else if (retryer === 'forever-5') {
       retryer = retryerForever5;

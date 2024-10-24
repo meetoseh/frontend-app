@@ -69,16 +69,6 @@ import {
 } from '../screens/app_tracking_transparency/lib/trackingPermissionHandler';
 import { Identity } from '../screens/settings/hooks/useIdentities';
 import {
-  JournalEntryManager,
-  JournalEntryManagerMinimalRef,
-  JournalEntryManagerRef,
-} from '../screens/journal_chat/lib/createJournalEntryManagerHandler';
-import {
-  JournalEntryMetadata,
-  JournalEntryMetadataMinimalRef,
-  JournalEntryMetadataRef,
-} from '../screens/journal_chat/lib/createJournalEntryMetadataRequestHandler';
-import {
   JournalEntryListMinimalRequest,
   JournalEntryListRequest,
   JournalEntryListState,
@@ -98,6 +88,16 @@ import {
   VoiceNoteStateMachineRef,
 } from '../screens/journal_chat/lib/createVoiceNoteStateMachineRequestHandler';
 import { VoiceNoteStateMachine } from '../screens/journal_chat/lib/createVoiceNoteStateMachine';
+import {
+  JournalEntryMetadata,
+  JournalEntryMetadataMinimalRef,
+  JournalEntryMetadataRef,
+} from '../screens/journal_chat/lib/createJournalEntryMetadataRequestHandler';
+import {
+  JournalEntryStateMachineMinimalRef,
+  JournalEntryStateMachineRef,
+} from '../screens/journal_chat/lib/createJournalEntryStateMachineRequestHandler';
+import { JournalEntryStateMachine } from '../screens/journal_chat/lib/createJournalEntryStateMachine';
 
 /**
  * Contains everything that any screen might want to eagerly preload. Generally,
@@ -390,10 +390,10 @@ export type Resources = {
   /**
    * Manages streaming journal entries
    */
-  journalEntryManagerHandler: RequestHandler<
-    JournalEntryManagerMinimalRef,
-    JournalEntryManagerRef,
-    JournalEntryManager
+  journalEntryStateMachineHandler: RequestHandler<
+    JournalEntryStateMachineMinimalRef,
+    JournalEntryStateMachineRef,
+    JournalEntryStateMachine
   >;
 
   /** Manages retrieving metadata on journal entries */

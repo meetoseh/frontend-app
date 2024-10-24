@@ -53,13 +53,13 @@ import { createNotificationPermissionsRequestHandler } from '../screens/add_push
 import { createExpoTokenRequestHandler } from '../screens/add_push_token/lib/createExpoTokenHandler';
 import { createExpoTokenSyncRequestHandler } from '../screens/add_push_token/lib/createExpoTokenSyncHandler';
 import { createTrackingPermissionRequestHandler } from '../screens/app_tracking_transparency/lib/trackingPermissionHandler';
-import { createJournalEntryManagerRequestHandler } from '../screens/journal_chat/lib/createJournalEntryManagerHandler';
 import { createJournalEntryMetadataRequestHandler } from '../screens/journal_chat/lib/createJournalEntryMetadataRequestHandler';
 import { createJournalEntryListRequestHandler } from '../screens/journal_entries_list/lib/createJournalEntryListRequestHandler';
 import { createLibraryListRequestHandler } from '../screens/library/lib/createLibraryListRequestHandler';
 import { createInstructorListRequestHandler } from '../screens/library_filter/lib/createInstructorListRequestHandler';
 import { useMappedValuesWithCallbacks } from '../../../shared/hooks/useMappedValuesWithCallbacks';
 import { createVoiceNoteStateMachineRequestHandler } from '../screens/journal_chat/lib/createVoiceNoteStateMachineRequestHandler';
+import { createJournalEntryStateMachineRequestHandler } from '../screens/journal_chat/lib/createJournalEntryStateMachineRequestHandler';
 
 type WindowSize = {
   width: number;
@@ -353,8 +353,13 @@ export const useScreenContext = (
   const trackingPermissionHandler = useWritableValueWithCallbacks(() =>
     createTrackingPermissionRequestHandler({ logging, maxStale: 2 })
   );
-  const journalEntryManagerHandler = useWritableValueWithCallbacks(() =>
-    createJournalEntryManagerRequestHandler({ logging, maxStale: 100 })
+  const journalEntryStateMachineHandler = useWritableValueWithCallbacks(() =>
+    createJournalEntryStateMachineRequestHandler({
+      logging,
+      maxStale: 100,
+      loginContext,
+      interestsContext,
+    })
   );
   const journalEntryMetadataHandler = useWritableValueWithCallbacks(() =>
     createJournalEntryMetadataRequestHandler({ logging, maxStale: 100 })
@@ -420,7 +425,7 @@ export const useScreenContext = (
       expoTokenHandler: expoTokenHandler.get(),
       expoTokenSyncHandler: expoTokenSyncHandler.get(),
       trackingPermissionHandler: trackingPermissionHandler.get(),
-      journalEntryManagerHandler: journalEntryManagerHandler.get(),
+      journalEntryStateMachineHandler: journalEntryStateMachineHandler.get(),
       journalEntryMetadataHandler: journalEntryMetadataHandler.get(),
       journalEntryListHandler: journalEntryListHandler.get(),
       libraryListHandler: libraryListHandler.get(),
@@ -463,7 +468,7 @@ export const useScreenContext = (
       expoTokenHandler,
       expoTokenSyncHandler,
       trackingPermissionHandler,
-      journalEntryManagerHandler,
+      journalEntryStateMachineHandler,
       journalEntryMetadataHandler,
       journalEntryListHandler,
       libraryListHandler,

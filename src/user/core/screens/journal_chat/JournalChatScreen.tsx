@@ -2,8 +2,12 @@ import { convertUsingMapper } from '../../../../shared/lib/CrudFetcher';
 import { createValuesWithCallbacksEffect } from '../../../../shared/hooks/createValuesWithCallbacksEffect';
 import { createValueWithCallbacksEffect } from '../../../../shared/hooks/createValueWithCallbacksEffect';
 import { createMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
-import { createWritableValueWithCallbacks } from '../../../../shared/lib/Callbacks';
+import {
+  createWritableValueWithCallbacks,
+  ValueWithCallbacks,
+} from '../../../../shared/lib/Callbacks';
 import { CancelablePromise } from '../../../../shared/lib/CancelablePromise';
+import { DisplayableError } from '../../../../shared/lib/errors';
 import { getCurrentServerTimeMS } from '../../../../shared/lib/getCurrentServerTimeMS';
 import { mapCancelable } from '../../../../shared/lib/mapCancelable';
 import { SCREEN_VERSION } from '../../../../shared/lib/screenVersion';
@@ -22,13 +26,15 @@ import {
   JournalChatMappedParams,
 } from './JournalChatParams';
 import { JournalChatResources } from './JournalChatResources';
-import {
-  JournalEntryManager,
-  JournalEntryManagerRef,
-} from './lib/createJournalEntryManagerHandler';
+import * as JEStateMachine from './lib/createJournalEntryStateMachine';
+import { JournalEntryStateMachineRef } from './lib/createJournalEntryStateMachineRequestHandler';
 import { VoiceNoteStateMachine } from './lib/createVoiceNoteStateMachine';
-import { JournalChatState } from './lib/JournalChatState';
-import { DisplayableError } from '../../../../shared/lib/errors';
+import {
+  computeJournalChatStateDataIntegrity,
+  JournalChatState,
+} from './lib/JournalChatState';
+import { createTypicalSmartAPIFetchMapper } from '../../../../shared/lib/smartApiFetch';
+import { VISITOR_SOURCE } from '../../../../shared/lib/visitorSource';
 
 /**
  * Allows the user to chat with the system.
@@ -58,86 +64,89 @@ export const JournalChatScreen: OsehScreen<
   initInstanceResources: (ctx, screen, refreshScreen) => {
     const activeVWC = createWritableValueWithCallbacks(true);
 
-    const getJournalEntryManager = (): RequestResult<JournalEntryManager> => {
-      if (screen.parameters.journalEntry === null) {
-        return {
-          data: createWritableValueWithCallbacks({
-            type: 'error',
-            data: undefined,
-            error: new DisplayableError(
-              'server-refresh-required',
-              'get journal entry',
-              'journal entry not provided'
-            ),
-            retryAt: undefined,
-          }),
-          release: () => {},
-        };
-      }
+    const getJournalEntryManager =
+      (): RequestResult<JEStateMachine.JournalEntryStateMachine> => {
+        if (screen.parameters.journalEntry === null) {
+          return {
+            data: createWritableValueWithCallbacks({
+              type: 'error',
+              data: undefined,
+              error: new DisplayableError(
+                'server-refresh-required',
+                'get journal entry',
+                'journal entry not provided'
+              ),
+              retryAt: undefined,
+            }),
+            release: () => {},
+          };
+        }
 
-      return ctx.resources.journalEntryManagerHandler.request({
-        ref: {
-          journalEntryUID: screen.parameters.journalEntry.uid,
-          journalEntryJWT: screen.parameters.journalEntry.jwt,
-        },
-        refreshRef: (): CancelablePromise<Result<JournalEntryManagerRef>> => {
-          if (!activeVWC.get()) {
-            return {
-              promise: Promise.resolve({
-                type: 'expired',
-                data: undefined,
-                error: new DisplayableError(
-                  'server-refresh-required',
-                  'get journal entry',
-                  'screen is not mounted'
-                ),
-                retryAt: undefined,
-              }),
-              done: () => true,
-              cancel: () => {},
-            };
-          }
+        return ctx.resources.journalEntryStateMachineHandler.request({
+          ref: {
+            journalEntryUID: screen.parameters.journalEntry.uid,
+            journalEntryJWT: screen.parameters.journalEntry.jwt,
+          },
+          refreshRef: (): CancelablePromise<
+            Result<JournalEntryStateMachineRef>
+          > => {
+            if (!activeVWC.get()) {
+              return {
+                promise: Promise.resolve({
+                  type: 'expired',
+                  data: undefined,
+                  error: new DisplayableError(
+                    'server-refresh-required',
+                    'get journal entry',
+                    'screen is not mounted'
+                  ),
+                  retryAt: undefined,
+                }),
+                done: () => true,
+                cancel: () => {},
+              };
+            }
 
-          return mapCancelable(
-            refreshScreen(),
-            (s): Result<JournalEntryManagerRef> =>
-              s.type !== 'success'
-                ? s
-                : s.data.parameters.journalEntry === null
-                ? {
-                    type: 'error',
-                    data: undefined,
-                    error: new DisplayableError(
-                      'server-refresh-required',
-                      'get journal entry',
-                      'journal entry not provided'
-                    ),
-                    retryAt: undefined,
-                  }
-                : {
-                    type: 'success',
-                    data: {
-                      journalEntryUID: s.data.parameters.journalEntry.uid,
-                      journalEntryJWT: s.data.parameters.journalEntry.jwt,
-                    },
-                    error: undefined,
-                    retryAt: undefined,
-                  }
-          );
-        },
-      });
-    };
+            return mapCancelable(
+              refreshScreen(),
+              (s): Result<JournalEntryStateMachineRef> =>
+                s.type !== 'success'
+                  ? s
+                  : s.data.parameters.journalEntry === null
+                  ? {
+                      type: 'error',
+                      data: undefined,
+                      error: new DisplayableError(
+                        'server-refresh-required',
+                        'get journal entry',
+                        'journal entry not provided'
+                      ),
+                      retryAt: undefined,
+                    }
+                  : {
+                      type: 'success',
+                      data: {
+                        journalEntryUID: s.data.parameters.journalEntry.uid,
+                        journalEntryJWT: s.data.parameters.journalEntry.jwt,
+                      },
+                      error: undefined,
+                      retryAt: undefined,
+                    }
+            );
+          },
+        });
+      };
 
     const journalEntryManagerVWC =
-      createWritableValueWithCallbacks<RequestResult<JournalEntryManager> | null>(
+      createWritableValueWithCallbacks<RequestResult<JEStateMachine.JournalEntryStateMachine> | null>(
         null
       );
     const cleanupJournalEntryManagerRequester = (() => {
       const request = getJournalEntryManager();
       setVWC(journalEntryManagerVWC, request);
       return () => {
-        if (Object.is(journalEntryJWTVWC.get(), request)) {
-          setVWC(journalEntryJWTVWC, null);
+        if (Object.is(journalEntryManagerVWC.get(), request)) {
+          setVWC(journalEntryManagerVWC, null);
         }
         request.release();
       };
@@ -151,46 +160,90 @@ export const JournalChatScreen: OsehScreen<
       () => null
     );
 
+    const [journalEntryStateUnwrappedVWC, cleanupJournalEntryStateUnwrapper] =
+      (() => {
+        const result =
+          createWritableValueWithCallbacks<JEStateMachine.State | null>(null);
+        const cleanup = createValueWithCallbacksEffect(
+          journalEntryManagerUnwrappedVWC,
+          (d) => {
+            if (d === null) {
+              setVWC(result, null);
+              return undefined;
+            }
+
+            return createValueWithCallbacksEffect(d.state, (s) => {
+              setVWC(result, s);
+              return undefined;
+            });
+          }
+        );
+        return [result, cleanup];
+      })();
+
     const [journalEntryUIDVWC, cleanupJournalEntryUIDUnwrapper] =
-      createMappedValueWithCallbacks(
-        journalEntryManagerUnwrappedVWC,
-        (d) => d?.journalEntryUID ?? null
+      createMappedValueWithCallbacks(journalEntryStateUnwrappedVWC, (d) =>
+        d !== null && d.type !== 'released' && d.type !== 'error'
+          ? d.journalEntryRef.uid
+          : null
       );
-    const journalEntryJWTVWC = createWritableValueWithCallbacks<string | null>(
-      null
-    );
-    const cleanupJournalEntryJWTUnwrapper = createValueWithCallbacksEffect(
-      journalEntryManagerUnwrappedVWC,
-      (d) => {
+    const [journalEntryJWTVWC, cleanupJournalEntryJWTUnwrapper] =
+      createMappedValueWithCallbacks(journalEntryStateUnwrappedVWC, (d) =>
+        d !== null && d.type !== 'released' && d.type !== 'error'
+          ? d.journalEntryRef.jwt
+          : null
+      );
+    const [chatErrorVWC, cleanupChatErrorUnwrapper] =
+      createMappedValueWithCallbacks(journalEntryStateUnwrappedVWC, (d) => {
         if (d === null) {
-          setVWC(journalEntryJWTVWC, null);
+          return null;
+        }
+        if (d.type === 'error') {
+          return d.error;
+        }
+        return null;
+      });
+    const [chatWrappedVWC, cleanupChatWrappedUnwrapper] =
+      createMappedValueWithCallbacks(
+        journalEntryStateUnwrappedVWC,
+        (d): ValueWithCallbacks<JournalChatState> | null | undefined => {
+          if (d === null) {
+            return null;
+          }
+          if (d.type === 'error' || d.type === 'released') {
+            return undefined;
+          }
+          if (
+            d.type === 'initializing' ||
+            d.type === 'preparing-references' ||
+            d.type === 'preparing-client-key' ||
+            d.type === 'authorizing'
+          ) {
+            return null;
+          }
+          return d.value.displayable;
+        }
+      );
+    const [chatVWC, cleanupChatUnwrapper] = (() => {
+      const result = createWritableValueWithCallbacks<
+        JournalChatState | null | undefined
+      >(null);
+      const cleanup = createValueWithCallbacksEffect(chatWrappedVWC, (d) => {
+        if (d === undefined) {
+          setVWC(result, undefined);
           return undefined;
         }
-
-        return createValueWithCallbacksEffect(d.journalEntryJWT, (jwt) => {
-          setVWC(journalEntryJWTVWC, jwt);
-          return undefined;
-        });
-      }
-    );
-
-    const chatVWC = createWritableValueWithCallbacks<
-      JournalChatState | null | undefined
-    >(null);
-    const cleanupChatUnwrapper = createValueWithCallbacksEffect(
-      journalEntryManagerUnwrappedVWC,
-      (d) => {
         if (d === null) {
-          setVWC(chatVWC, null);
+          setVWC(result, null);
           return undefined;
         }
-
-        return createValueWithCallbacksEffect(d.chat, (chat) => {
-          setVWC(chatVWC, chat);
+        return createValueWithCallbacksEffect(d, (s) => {
+          setVWC(result, s);
           return undefined;
         });
-      }
-    );
+      });
+      return [result, cleanup];
+    })();
     const cleanupJournalEntryManagerRefresher = createValuesWithCallbacksEffect(
       [
         journalEntryManagerVWC,
@@ -225,29 +278,12 @@ export const JournalChatScreen: OsehScreen<
             return;
           }
 
-          if (d.isExpiredOrDisposed(nowServer)) {
+          if (JEStateMachine.isExpiredOrDisposed(d, nowServer)) {
             const raw = request.get();
             if (raw.type === 'success') {
               raw.reportExpired();
             }
             return;
-          }
-
-          const user = ctx.login.value.get();
-          if (user.state !== 'logged-in') {
-            return;
-          }
-
-          const visitor = ctx.interests.visitor.value.get();
-          if (visitor.loading) {
-            return;
-          }
-
-          if (
-            (d.chat.get() === null || d.chat.get() === undefined) &&
-            d.task.get() === null
-          ) {
-            d.refresh(user, ctx.interests.visitor);
           }
         }
       }
@@ -275,6 +311,7 @@ export const JournalChatScreen: OsehScreen<
     return {
       ready: readyVWC,
       chat: chatVWC,
+      chatError: chatErrorVWC,
       journalEntryUID: journalEntryUIDVWC,
       journalEntryJWT: journalEntryJWTVWC,
       trySubmitUserResponse: async (
@@ -287,22 +324,78 @@ export const JournalChatScreen: OsehScreen<
           return;
         }
 
-        const user = ctx.login.value.get();
-        if (user.state !== 'logged-in') {
+        if (journalEntryManager.state.get().type !== 'ready') {
+          return;
+        }
+
+        const chatState = chatVWC.get();
+        if (chatState === null || chatState === undefined) {
           return;
         }
 
         if (userResponse.type === 'text') {
-          await journalEntryManager.refresh(user, ctx.interests.visitor, {
-            endpoint: '/api/1/journals/entries/chat/',
-            bonusParams: async (clientKey) => ({
-              version: SCREEN_VERSION,
-              encrypted_user_message: await clientKey.key.encrypt(
-                userResponse.value,
-                await getCurrentServerTimeMS()
-              ),
-            }),
+          const text = userResponse.value;
+          const paragraphs = text
+            .split('\n')
+            .map((p) => p.trim())
+            .filter((p) => p.length > 0);
+
+          if (paragraphs.length === 0) {
+            return;
+          }
+
+          const anticipated = JEStateMachine.deepClonePrimitives(chatState);
+          anticipated.data.push({
+            type: 'chat',
+            display_author: 'self',
+            data: {
+              type: 'textual',
+              parts: paragraphs.map((p) => ({
+                type: 'paragraph' as const,
+                value: p,
+              })),
+            },
           });
+          anticipated.integrity = await computeJournalChatStateDataIntegrity(
+            anticipated
+          );
+
+          await journalEntryManager.sendMessage({
+            type: 'incremental-refresh',
+            get: async (user, visitor, clientKey, ref) => ({
+              path: '/api/1/journals/entries/chat/',
+              init: {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json; charset=utf-8',
+                  Authorization: `bearer ${user.authTokens.idToken}`,
+                  ...((v) =>
+                    v.loading || v.uid === null
+                      ? {}
+                      : ({
+                          Visitor: v.uid,
+                        } as Record<string, string>))(visitor.value.get()),
+                },
+                body: JSON.stringify({
+                  platform: VISITOR_SOURCE,
+                  version: SCREEN_VERSION,
+                  journal_entry_uid: ref.uid,
+                  journal_entry_jwt: ref.jwt,
+                  journal_client_key_uid: clientKey.uid,
+                  encrypted_user_message: await clientKey.key.encrypt(
+                    userResponse.value,
+                    await getCurrentServerTimeMS()
+                  ),
+                }),
+              },
+              retryer: 'default',
+              mapper: createTypicalSmartAPIFetchMapper({
+                mapJSON: (v) => v,
+                action: 'send chat message',
+              }),
+            }),
+            anticipated,
+          }).promise;
         } else {
           const stateReady = waitForValueWithCallbacksConditionCancelable(
             userResponse.voiceNote.state,
@@ -357,16 +450,65 @@ export const JournalChatScreen: OsehScreen<
             oldReq.release();
           }
 
-          await journalEntryManager.refresh(user, ctx.interests.visitor, {
-            endpoint: '/api/1/journals/entries/chat/voice_note',
-            bonusParams: async (clientKey) => ({
-              version: SCREEN_VERSION,
-              encrypted_voice_note_uid: await clientKey.key.encrypt(
-                state.voiceNote.uid,
-                await getCurrentServerTimeMS()
-              ),
-            }),
+          const anticipated = JEStateMachine.deepClonePrimitives(chatState);
+          anticipated.data.push({
+            type: 'chat',
+            display_author: 'self',
+            data: {
+              type: 'textual',
+              parts: [
+                {
+                  transcription: {
+                    uid: '',
+                    phrases: [],
+                  },
+                  type: 'voice_note',
+                  voice_note_uid: state.voiceNote.uid,
+                  voice_note_jwt: state.voiceNote.jwt,
+                },
+              ],
+            },
           });
+          anticipated.integrity = await computeJournalChatStateDataIntegrity(
+            anticipated
+          );
+
+          await journalEntryManager.sendMessage({
+            type: 'incremental-refresh',
+            get: async (user, visitor, clientKey, ref) => ({
+              path: '/api/1/journals/entries/chat/voice_note',
+              init: {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json; charset=utf-8',
+                  Authorization: `bearer ${user.authTokens.idToken}`,
+                  ...((v) =>
+                    v.loading || v.uid === null
+                      ? {}
+                      : ({
+                          Visitor: v.uid,
+                        } as Record<string, string>))(visitor.value.get()),
+                },
+                body: JSON.stringify({
+                  platform: VISITOR_SOURCE,
+                  version: SCREEN_VERSION,
+                  journal_entry_uid: ref.uid,
+                  journal_entry_jwt: ref.jwt,
+                  journal_client_key_uid: clientKey.uid,
+                  encrypted_voice_note_uid: await clientKey.key.encrypt(
+                    state.voiceNote.uid,
+                    await getCurrentServerTimeMS()
+                  ),
+                }),
+              },
+              retryer: 'default',
+              mapper: createTypicalSmartAPIFetchMapper({
+                mapJSON: (v) => v,
+                action: 'send chat message',
+              }),
+            }),
+            anticipated,
+          }).promise;
         }
         const journalEntryUID = journalEntryUIDVWC.get();
         if (journalEntryUID !== null) {
@@ -381,19 +523,64 @@ export const JournalChatScreen: OsehScreen<
           throw new Error('journal entry manager not initialized');
         }
 
-        const user = ctx.login.value.get();
-        if (user.state !== 'logged-in') {
-          throw new Error('user not logged in');
+        if (journalEntryManager.state.get().type !== 'ready') {
+          throw new Error('journal entry manager not ready');
         }
-        await journalEntryManager.refresh(user, ctx.interests.visitor);
-        return journalEntryManager.chat.get();
+
+        const chat = chatVWC.get();
+        if (chat === null || chat === undefined) {
+          throw new Error('chat not initialized');
+        }
+
+        const anticipated = JEStateMachine.deepClonePrimitives(chat);
+        await journalEntryManager.sendMessage({
+          type: 'incremental-refresh',
+          get: async (user, visitor, clientKey, ref) => ({
+            path: '/api/1/journals/entries/sync',
+            init: {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json; charset=utf-8',
+                Authorization: `bearer ${user.authTokens.idToken}`,
+                ...((v) =>
+                  v.loading || v.uid === null
+                    ? {}
+                    : ({
+                        Visitor: v.uid,
+                      } as Record<string, string>))(visitor.value.get()),
+              },
+              body: JSON.stringify({
+                platform: VISITOR_SOURCE,
+                version: SCREEN_VERSION,
+                journal_entry_uid: ref.uid,
+                journal_entry_jwt: ref.jwt,
+                journal_client_key_uid: clientKey.uid,
+              }),
+            },
+            retryer: 'default',
+            mapper: createTypicalSmartAPIFetchMapper({
+              mapJSON: (v) => v,
+              action: 'refresh chat',
+            }),
+          }),
+          anticipated,
+        }).promise;
+        await waitForValueWithCallbacksConditionCancelable(
+          journalEntryManager.state,
+          (s) =>
+            s.type === 'ready' || s.type === 'error' || s.type === 'released'
+        ).promise;
+        return chatVWC.get();
       },
       dispose: () => {
         setVWC(activeVWC, false);
         cleanupJournalEntryManagerRequester();
         cleanupJournalEntryManagerUnwrapper();
+        cleanupJournalEntryStateUnwrapper();
         cleanupJournalEntryUIDUnwrapper();
         cleanupJournalEntryJWTUnwrapper();
+        cleanupChatErrorUnwrapper();
+        cleanupChatWrappedUnwrapper();
         cleanupChatUnwrapper();
         cleanupJournalEntryManagerRefresher();
         cleanupMostRecentVoiceNoteReq();

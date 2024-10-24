@@ -43,6 +43,7 @@ import { VoiceOrTextInput } from '../../../../shared/components/voiceOrTextInput
 import { JournalChatParts } from './components/JournalChatParts';
 import { JournalChatSpinners } from './components/JournalChatSpinners';
 import { OsehStyles } from '../../../../shared/OsehStyles';
+import { DisplayableError } from '../../../../shared/lib/errors';
 
 const SUGGESTIONS = [
   { text: 'I have a lot of anxiety right now', width: 160 },
@@ -350,15 +351,30 @@ export const JournalChat = ({
                       return (
                         <>
                           <VerticalSpacer height={32} flexGrow={0} />
-                          <Text
-                            style={[
-                              OsehStyles.typography.body,
-                              OsehStyles.colors.v4.experimental.lightError,
-                            ]}
-                          >
-                            An error occurred. Try again or contact support at
-                            hi@oseh.com
-                          </Text>
+                          <RenderGuardedComponent
+                            props={resources.chatError}
+                            component={(chatError) => {
+                              const err =
+                                chatError ??
+                                new DisplayableError(
+                                  'client',
+                                  'show journal entry'
+                                );
+                              return (
+                                <>
+                                  <Text
+                                    style={[
+                                      OsehStyles.typography.body,
+                                      OsehStyles.colors.v4.experimental
+                                        .lightError,
+                                    ]}
+                                  >
+                                    {err.formatProblem()}
+                                  </Text>
+                                </>
+                              );
+                            }}
+                          />
                         </>
                       );
                     }

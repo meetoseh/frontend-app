@@ -17,7 +17,6 @@ import { waitForValueWithCallbacksConditionCancelable } from './waitForValueWith
  *
  * @see passMessageWithVWC
  */
-// eslint-disable-next-line @typescript-eslint/ban-types
 export const receiveMessageWithVWC = <T extends {} | undefined>(
   messageVWC: WritableValueWithCallbacks<T | null>
 ): CancelablePromise<() => T> =>

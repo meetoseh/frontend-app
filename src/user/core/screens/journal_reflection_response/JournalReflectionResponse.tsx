@@ -21,7 +21,6 @@ import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedV
 import { useValueWithCallbacksEffect } from '../../../../shared/hooks/useValueWithCallbacksEffect';
 import { ScreenHeader } from '../../../../shared/components/ScreenHeader';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
-import { configurableScreenOut } from '../../lib/configurableScreenOut';
 import { VerticalSpacer } from '../../../../shared/components/VerticalSpacer';
 import { InlineOsehSpinner } from '../../../../shared/components/InlineOsehSpinner';
 import { styles } from './JournalReflectionResponseStyles';
@@ -57,6 +56,7 @@ import { TextPartVoiceNoteComponent } from '../journal_chat/components/TextPartV
 import { VoiceOrTextInputVoice } from '../../../../shared/components/voiceOrTextInput/VoiceOrTextInputVoice';
 import { Microphone } from '../../../../shared/components/icons/Microphone';
 import { DisplayableError } from '../../../../shared/lib/errors';
+import { ScreenConfigurableTrigger } from '../../models/ScreenConfigurableTrigger';
 
 /**
  * Shows the journal reflection question and gives a large amount of room for
@@ -250,6 +250,43 @@ export const JournalReflectionResponse = ({
 
   const keyboardHeightVWC = useKeyboardHeightValueWithCallbacks();
 
+  const saveAndScreenOut = (
+    type: 'close' | 'cta',
+    trigger: ScreenConfigurableTrigger,
+    exit: StandardScreenTransition
+  ) => {
+    screenWithWorking(workingVWC, async () => {
+      trace({ type, step: 'optimistic setup + ensure saved' });
+      setVWC(transition.animation, await adaptExitTransition(exit));
+      const exitTransitionCancelable = playExitTransition(transition);
+      try {
+        await resources.ensureSaved();
+      } catch (e) {
+        trace({ type, step: 'error saving' });
+        const err =
+          e instanceof DisplayableError
+            ? new DisplayableError(e.type, 'save response', e.details)
+            : new DisplayableError('client', 'save response', `${e}`);
+        setVWC(errorVWC, err);
+        await exitTransitionCancelable.promise;
+        await playEntranceTransition(transition).promise;
+        return;
+      }
+      trace({ type, step: 'saved' });
+      const finishPop = startPop(
+        trigger.type === 'pop'
+          ? null
+          : {
+              slug: trigger.flow,
+              parameters: trigger.parameters,
+            },
+        trigger.endpoint ?? undefined
+      );
+      await exitTransitionCancelable.promise;
+      finishPop();
+    });
+  };
+
   return (
     <GridFullscreenContainer
       windowSizeImmediate={ctx.windowSizeImmediate}
@@ -273,17 +310,13 @@ export const JournalReflectionResponse = ({
           close={{
             variant: screen.parameters.close.variant,
             onClick: () => {
-              configurableScreenOut(
-                workingVWC,
-                startPop,
-                transition,
-                screen.parameters.close.exit,
+              // we can't use beforeDone as we need to store the reflection
+              // response before calling the pop endpoint in case it's going
+              // to reference the reflection response
+              saveAndScreenOut(
+                'close',
                 screen.parameters.close.trigger,
-                {
-                  afterDone: () => {
-                    trace({ type: 'close' });
-                  },
-                }
+                screen.parameters.close.exit
               );
             },
           }}
@@ -576,61 +609,11 @@ export const JournalReflectionResponse = ({
                               if (!isReady) {
                                 return;
                               }
-                              screenWithWorking(workingVWC, async () => {
-                                trace({
-                                  type: 'cta',
-                                  step: 'optimistic setup + ensure saved',
-                                });
-
-                                setVWC(
-                                  transition.animation,
-                                  await adaptExitTransition(
-                                    screen.parameters.cta.exit
-                                  )
-                                );
-                                const exitTransitionCancelable =
-                                  playExitTransition(transition);
-
-                                try {
-                                  await resources.ensureSaved();
-                                } catch (e) {
-                                  trace({ type: 'cta', step: 'error saving' });
-                                  const err =
-                                    e instanceof DisplayableError
-                                      ? new DisplayableError(
-                                          e.type,
-                                          'save response',
-                                          e.details
-                                        )
-                                      : new DisplayableError(
-                                          'client',
-                                          'save response',
-                                          `${e}`
-                                        );
-                                  setVWC(errorVWC, err);
-                                  await exitTransitionCancelable.promise;
-                                  await playEntranceTransition(transition)
-                                    .promise;
-                                  return;
-                                }
-
-                                trace({ type: 'cta', step: 'saved' });
-                                const finishPop = startPop(
-                                  screen.parameters.cta.trigger.type === 'pop'
-                                    ? null
-                                    : {
-                                        slug: screen.parameters.cta.trigger
-                                          .flow,
-                                        parameters:
-                                          screen.parameters.cta.trigger
-                                            .parameters,
-                                      },
-                                  screen.parameters.cta.trigger.endpoint ??
-                                    undefined
-                                );
-                                await exitTransitionCancelable.promise;
-                                finishPop();
-                              });
+                              saveAndScreenOut(
+                                'cta',
+                                screen.parameters.cta.trigger,
+                                screen.parameters.cta.exit
+                              );
                             }}
                             disabled={!isReady}
                             setTextStyle={(s) => setVWC(styleVWC, s)}
