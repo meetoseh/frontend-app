@@ -517,7 +517,7 @@ export const Upgrade = ({
                       );
                       ctx.resources.seriesListHandler.evictAll();
                       ctx.resources.seriesJourneysHandler.evictAll();
-                      ctx.resources.journalEntryManagerHandler.evictAll();
+                      ctx.resources.journalEntryStateMachineHandler.evictAll();
                       ctx.resources.journalEntryMetadataHandler.evictAll();
                       await exitPromise.promise;
                       finishPop();

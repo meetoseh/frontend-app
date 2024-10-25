@@ -136,7 +136,7 @@ export const Settings = ({
           ctx.login.setAuthTokens(null);
           purgeClientKeys();
           ctx.resources.expoTokenSyncHandler.evictAll();
-          ctx.resources.journalEntryManagerHandler.evictAll();
+          ctx.resources.journalEntryStateMachineHandler.evictAll();
           ctx.resources.journalEntryMetadataHandler.evictAll();
         }
         return new Promise(() => {});
