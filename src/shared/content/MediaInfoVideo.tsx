@@ -17,7 +17,9 @@ export type MediaInfoVideoProps = {
   /** The media info to connect */
   mediaInfo: MediaInfo;
   /** The video being connected */
-  video: ValueWithCallbacks<ContentFileNativeExport>;
+  video:
+    | ValueWithCallbacks<ContentFileNativeExport>
+    | ValueWithCallbacks<ContentFileNativeExport | null>;
   /** The style for the video element */
   style?: StyleProp<ViewStyle>;
   /** If specified, included in addition to the style */
@@ -122,26 +124,30 @@ export const MediaInfoVideo = ({
         target: video.get(),
         style: styleVWC.get(),
       }))}
-      component={({ target, style }) => (
-        <Video
-          source={{
-            uri: target.url,
-            headers: { Authorization: `bearer ${target.jwt}` },
-          }}
-          ref={(r) => setVWC(videoRefVWC, r)}
-          resizeMode={ResizeMode.COVER}
-          shouldPlay={mediaInfo.shouldPlay.get()}
-          isLooping={false}
-          onLoadStart={() => setVWC(mediaInfo.readyForDisplay, false)}
-          onReadyForDisplay={() => setVWC(mediaInfo.readyForDisplay, true)}
-          onLoad={(status) => setVWC(mediaInfo.playbackStatus, status)}
-          onPlaybackStatusUpdate={(status) =>
-            setVWC(mediaInfo.playbackStatus, status)
-          }
-          isMuted={mediaInfo.shouldBeMuted.get()}
-          style={style}
-        />
-      )}
+      component={({ target, style }) =>
+        target === null ? (
+          <></>
+        ) : (
+          <Video
+            source={{
+              uri: target.url,
+              headers: { Authorization: `bearer ${target.jwt}` },
+            }}
+            ref={(r) => setVWC(videoRefVWC, r)}
+            resizeMode={ResizeMode.COVER}
+            shouldPlay={mediaInfo.shouldPlay.get()}
+            isLooping={false}
+            onLoadStart={() => setVWC(mediaInfo.readyForDisplay, false)}
+            onReadyForDisplay={() => setVWC(mediaInfo.readyForDisplay, true)}
+            onLoad={(status) => setVWC(mediaInfo.playbackStatus, status)}
+            onPlaybackStatusUpdate={(status) =>
+              setVWC(mediaInfo.playbackStatus, status)
+            }
+            isMuted={mediaInfo.shouldBeMuted.get()}
+            style={style}
+          />
+        )
+      }
     />
   );
 };

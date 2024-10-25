@@ -17,6 +17,10 @@ import { styles } from './sharedStyles';
 import { useRefreshedExternalCourse } from '../hooks/useRefreshedExternalCourse';
 import { largestPhysicalPerLogical } from '../../../shared/images/DisplayRatioHelper';
 import { useTopBarHeight } from '../../../shared/hooks/useTopBarHeight';
+import {
+  useValueWithCallbacksLikeVWC,
+  ValueWithCallbacksLike,
+} from '../../../shared/ValueWithCallbacksLike';
 
 export type CourseCoverItemsListProps = {
   /**
@@ -56,6 +60,16 @@ export const CourseCoverItemsList = ({
   const contentWidth = useContentWidth();
   const topBarHeight = useTopBarHeight();
 
+  const initialComponentHeightVWC = useMappedValueWithCallbacks(
+    windowSizeVWC,
+    () => {
+      return (
+        Math.floor(contentWidth * (427 / 342) * largestPhysicalPerLogical) /
+        largestPhysicalPerLogical
+      );
+    }
+  );
+
   const boundComponent = useMemo<
     (
       item: ValueWithCallbacks<ExternalCourse>,
@@ -69,19 +83,11 @@ export const CourseCoverItemsList = ({
         setItem={setItem}
         replaceItem={infiniteListing.replaceItem.bind(infiniteListing)}
         imageHandler={imageHandler}
+        width={{ value: contentWidth }}
+        height={initialComponentHeightVWC}
       />
     );
   }, [showCourse, imageHandler, infiniteListing]);
-
-  const initialComponentHeightVWC = useMappedValueWithCallbacks(
-    windowSizeVWC,
-    () => {
-      return (
-        Math.floor(contentWidth * (427 / 342) * largestPhysicalPerLogical) /
-        largestPhysicalPerLogical
-      );
-    }
-  );
 
   return (
     <RenderGuardedComponent
@@ -128,6 +134,8 @@ const CourseCoverItemComponent = ({
   setItem,
   replaceItem,
   imageHandler,
+  width,
+  height,
 }: {
   gotoCourse: (course: ExternalCourse) => void;
   item: ValueWithCallbacks<ExternalCourse>;
@@ -137,6 +145,8 @@ const CourseCoverItemComponent = ({
     newItem: (oldItem: ExternalCourse) => ExternalCourse
   ) => void;
   imageHandler: OsehImageStateRequestHandler;
+  width: ValueWithCallbacksLike<number>;
+  height: ValueWithCallbacksLike<number>;
 }): ReactElement => {
   useRefreshedExternalCourse(itemVWC, setItem, 'list');
 
@@ -151,6 +161,13 @@ const CourseCoverItemComponent = ({
     [replaceItem]
   );
 
+  const widthVWC = useValueWithCallbacksLikeVWC(width);
+  const heightVWC = useValueWithCallbacksLikeVWC(height);
+  const sizeVWC = useMappedValuesWithCallbacks([widthVWC, heightVWC], () => ({
+    width: widthVWC.get(),
+    height: heightVWC.get(),
+  }));
+
   return (
     <CourseCoverItem
       item={itemVWC}
@@ -158,6 +175,7 @@ const CourseCoverItemComponent = ({
       mapItems={mapItems}
       onClick={gotoCourse}
       imageHandler={imageHandler}
+      size={sizeVWC}
     />
   );
 };

@@ -31,6 +31,7 @@ import {
 import { OpacityTransitionOverlay } from '../../../shared/components/OpacityTransitionOverlay';
 import { WipeTransitionOverlay } from '../../../shared/components/WipeTransitionOverlay';
 import { useOsehTranscriptValueWithCallbacks } from '../../../shared/transcripts/useOsehTranscriptValueWithCallbacks';
+import { getNativeExport } from '../../../shared/content/useOsehContentTarget';
 
 export type CoursePreviewProps = {
   course: ExternalCoursePreviewable;
@@ -94,6 +95,10 @@ export const CoursePreview = ({
     displaySize: windowSizeVWC,
     presign: false,
   });
+  const videoNativeExportVWC = useMappedValueWithCallbacks(
+    videoTargetVWC,
+    (target) => target.nativeExport
+  );
   const videoStyleVWC = useMappedValuesWithCallbacks(
     [windowSizeVWC],
     () => {
@@ -143,7 +148,7 @@ export const CoursePreview = ({
       <View style={styles.background}>
         <MediaInfoVideo
           mediaInfo={videoInfo}
-          video={videoTargetVWC}
+          video={videoNativeExportVWC}
           styleVWC={videoStyleVWC}
         />
       </View>

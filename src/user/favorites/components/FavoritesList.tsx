@@ -162,6 +162,7 @@ export const FavoritesList = ({
         item={item}
         setItem={setItem}
         instructorImages={imageHandler}
+        width={windowSize.width - 64}
       />
     );
     return MyBoundComponent;
@@ -202,11 +203,13 @@ const HistoryItemComponent = ({
   item,
   setItem,
   instructorImages,
+  width,
 }: {
   gotoJourneyByUid: (uid: string) => void;
   item: ValueWithCallbacks<MinimalJourney>;
   setItem: (item: MinimalJourney) => void;
   instructorImages: OsehImageStateRequestHandler;
+  width: number;
 }): ReactElement => {
   const gotoJourney = useCallback(() => {
     gotoJourneyByUid(item.get().uid);
@@ -220,6 +223,7 @@ const HistoryItemComponent = ({
       separator={separator}
       onClick={gotoJourney}
       instructorImages={instructorImages}
+      width={{ value: width }}
     />
   );
 };

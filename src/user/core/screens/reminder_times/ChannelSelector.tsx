@@ -1,12 +1,12 @@
 import { ReactElement } from 'react';
 import { ValueWithCallbacks } from '../../../../shared/lib/Callbacks';
-import { Channel } from '../../features/requestNotificationTime/RequestNotificationTimeState';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
 import { styles } from './ChannelSelectorStyles';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
 import { ChannelIcon } from './ChannelIcon';
 import { View, Pressable } from 'react-native';
 import { useContentWidth } from '../../../../shared/lib/useContentWidth';
+import { Channel } from './lib/Channel';
 
 /**
  * Renders the specified channels with the given active channel highlighted.

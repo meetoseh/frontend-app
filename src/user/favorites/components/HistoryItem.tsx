@@ -27,6 +27,10 @@ import { createValueWithCallbacksEffect } from '../../../shared/hooks/createValu
 import { VerticalSpacer } from '../../../shared/components/VerticalSpacer';
 import { useReactManagedValueAsValueWithCallbacks } from '../../../shared/hooks/useReactManagedValueAsValueWithCallbacks';
 import { useTopBarHeight } from '../../../shared/hooks/useTopBarHeight';
+import {
+  useValueWithCallbacksLikeVWC,
+  ValueWithCallbacksLike,
+} from '../../../shared/ValueWithCallbacksLike';
 
 type HistoryItemProps = {
   /**
@@ -67,7 +71,7 @@ type HistoryItemProps = {
   padBottom?: ValueWithCallbacks<number>;
 
   /** The width to render at; usually ctx.contentWidth */
-  width: ValueWithCallbacks<number>;
+  width: ValueWithCallbacksLike<number>;
 };
 
 /**
@@ -81,7 +85,7 @@ export const HistoryItem = ({
   instructorImages,
   toggledFavorited: onToggledFavoritedCallback,
   padBottom: padBottomVWC,
-  width,
+  width: widthRaw,
 }: HistoryItemProps) => {
   const errorVWC = useWritableValueWithCallbacks<ReactElement | null>(
     () => null
@@ -174,6 +178,7 @@ export const HistoryItem = ({
     });
   }, [padBottomVWC, padBottomAlwaysAvailableVWC]);
 
+  const width = useValueWithCallbacksLikeVWC(widthRaw);
   const containerRef = useWritableValueWithCallbacks<View | null>(() => null);
   const containerStyleVWC = useMappedValueWithCallbacks(
     width,

@@ -3,7 +3,6 @@ import {
   ValueWithCallbacks,
   useWritableValueWithCallbacks,
 } from '../../../../shared/lib/Callbacks';
-import { Channel } from '../../features/requestNotificationTime/RequestNotificationTimeState';
 import { useAnimatedValueWithCallbacks } from '../../../../shared/anim/useAnimatedValueWithCallbacks';
 import {
   BezierAnimator,
@@ -25,6 +24,7 @@ import * as SVG from 'react-native-svg';
 import { View, Text } from 'react-native';
 import { useMappedValueWithCallbacks } from '../../../../shared/hooks/useMappedValueWithCallbacks';
 import { RenderGuardedComponent } from '../../../../shared/components/RenderGuardedComponent';
+import { Channel } from './lib/Channel';
 
 /**
  * The configurable properties when rendering an icon for a channel.

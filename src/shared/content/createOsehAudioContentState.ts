@@ -8,6 +8,7 @@ import { createCancelablePromiseFromCallbacks } from '../lib/createCancelablePro
 import { setVWC } from '../lib/setVWC';
 import { ContentFileNativeExport } from './OsehContentTarget';
 import { Audio, AVPlaybackStatus } from 'expo-av';
+import { DisplayableError } from '../lib/errors';
 
 export type OsehAudioContentStateLoading = {
   /**
@@ -27,7 +28,7 @@ export type OsehAudioContentStateError = {
   type: 'error';
   play: null;
   stop: null;
-  error: ReactElement;
+  error: DisplayableError;
   audio: null;
 };
 

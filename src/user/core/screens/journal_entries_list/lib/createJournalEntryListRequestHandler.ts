@@ -163,6 +163,11 @@ const getDataFromRef = createGetDataFromRefUsingSignal<
           'JournalEntryListRequestHandler#listing#setUserAttributes: not safe to do that'
         );
       },
+      setSilentAuthPreference: () => {
+        throw new Error(
+          'JournalEntryListRequestHandler#listing#setSilentAuthPreference: not safe to do that'
+        );
+      },
     };
 
     const listing = new NetworkedInfiniteListing<JournalEntry>(

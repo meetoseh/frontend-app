@@ -61,24 +61,33 @@ export const SimpleHomeScreen: OsehScreen<
   SimpleHomeMappedParams
 > = {
   slug: 'simple_home',
-  paramMapper: (params) => ({
-    entrance: params.entrance,
-    settings: convertTriggerWithExit(params.settings),
-    goal: convertTriggerWithExit(params.goal),
-    favorites: convertTriggerWithExit(params.favorites),
-    cta: {
-      ...convertTriggerWithExitAndEndpoint(params.cta),
-      text: params.cta.text,
-    },
-    cta2:
+  paramMapper: (params) => {
+    const ctaCore = convertTriggerWithExitAndEndpoint(params.cta);
+    const cta2Core =
       params.cta2 === null || params.cta2 === undefined
         ? null
-        : {
-            ...convertTriggerWithExitAndEndpoint(params.cta2),
-            text: params.cta2.text,
-          },
-    __mapped: true,
-  }),
+        : convertTriggerWithExitAndEndpoint(params.cta2);
+    return {
+      entrance: params.entrance,
+      settings: convertTriggerWithExit(params.settings),
+      goal: convertTriggerWithExit(params.goal),
+      favorites: convertTriggerWithExit(params.favorites),
+      cta: {
+        trigger: ctaCore.trigger,
+        exit: ctaCore.exit,
+        text: params.cta.text,
+      },
+      cta2:
+        params.cta2 === null || params.cta2 === undefined || cta2Core === null
+          ? null
+          : {
+              trigger: cta2Core.trigger,
+              exit: cta2Core.exit,
+              text: params.cta2.text,
+            },
+      __mapped: true,
+    };
+  },
   initInstanceResources: (ctx) => {
     const getSessionState = () =>
       createLoginContextRequest({

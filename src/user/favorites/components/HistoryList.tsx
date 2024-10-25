@@ -15,6 +15,7 @@ import { View, Text } from 'react-native';
 import { adaptValueWithCallbacksAsVariableStrategyProps } from '../../../shared/lib/adaptValueWithCallbacksAsVariableStrategyProps';
 import { useMappedValuesWithCallbacks } from '../../../shared/hooks/useMappedValuesWithCallbacks';
 import { useHistoryList } from '../hooks/useHistoryList';
+import { ValueWithCallbacksLike } from '../../../shared/ValueWithCallbacksLike';
 
 export type HistoryListProps = {
   /**
@@ -112,6 +113,7 @@ export const HistoryList = ({
         setItem={setItem}
         previous={previous}
         instructorImages={imageHandler}
+        width={{ value: windowSize.width - 64 }}
       />
     );
   }, [gotoJourneyByUID, imageHandler]);
@@ -150,12 +152,14 @@ const HistoryItemComponent = ({
   setItem,
   previous,
   instructorImages,
+  width,
 }: {
   gotoJourneyByUid: (uid: string) => void;
   item: ValueWithCallbacks<MinimalJourney>;
   setItem: (item: MinimalJourney) => void;
   previous: ValueWithCallbacks<MinimalJourney | null>;
   instructorImages: OsehImageStateRequestHandler;
+  width: ValueWithCallbacksLike<number>;
 }): ReactElement => {
   const gotoJourney = useCallback(() => {
     gotoJourneyByUid(item.get().uid);
@@ -179,6 +183,7 @@ const HistoryItemComponent = ({
       separator={separator}
       onClick={gotoJourney}
       instructorImages={instructorImages}
+      width={width}
     />
   );
 };

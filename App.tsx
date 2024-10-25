@@ -79,6 +79,7 @@ import { LibraryScreen } from './src/user/core/screens/library/LibraryScreen';
 import { LibraryFilterScreen } from './src/user/core/screens/library_filter/LibraryFilterScreen';
 import { HomeV4Screen } from './src/user/core/screens/homev4/HomeV4Screen';
 import { HoldToContinueScreen } from './src/user/core/screens/hold_to_continue/HoldToContinueScreen';
+import { BoxError, DisplayableError } from './src/shared/lib/errors';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
@@ -320,13 +321,14 @@ const AppInner = () => {
                   return (
                     <RenderGuardedComponent
                       props={screenQueue.value}
-                      component={(sq) =>
-                        sq.error ?? (
-                          <Text>
-                            An error has occurred. Try restarting the app.
-                          </Text>
-                        )
-                      }
+                      component={(sq) => (
+                        <BoxError
+                          error={
+                            sq.error ??
+                            new DisplayableError('client', 'screen queue error')
+                          }
+                        />
+                      )}
                     />
                   );
                 }
