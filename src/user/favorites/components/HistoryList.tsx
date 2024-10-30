@@ -116,7 +116,7 @@ export const HistoryList = ({
         width={{ value: windowSize.width - 64 }}
       />
     );
-  }, [gotoJourneyByUID, imageHandler]);
+  }, [gotoJourneyByUID, imageHandler, windowSize.width]);
 
   return (
     <RenderGuardedComponent

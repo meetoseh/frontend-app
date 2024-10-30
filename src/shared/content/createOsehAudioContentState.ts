@@ -1,4 +1,3 @@
-import { ReactElement } from 'react';
 import {
   Callbacks,
   ValueWithCallbacks,

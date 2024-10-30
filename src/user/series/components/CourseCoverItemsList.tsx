@@ -87,7 +87,13 @@ export const CourseCoverItemsList = ({
         height={initialComponentHeightVWC}
       />
     );
-  }, [showCourse, imageHandler, infiniteListing]);
+  }, [
+    showCourse,
+    imageHandler,
+    infiniteListing,
+    contentWidth,
+    initialComponentHeightVWC,
+  ]);
 
   return (
     <RenderGuardedComponent

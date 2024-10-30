@@ -15,6 +15,7 @@ web-build/
 /build-android-preview.bat
 /build-production.bat
 /ios.bat
+/analyse.bat
 /android
 /*.apks
 /ios

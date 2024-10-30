@@ -166,7 +166,7 @@ export const FavoritesList = ({
       />
     );
     return MyBoundComponent;
-  }, [gotoJourneyByUID, imageHandler]);
+  }, [gotoJourneyByUID, imageHandler, windowSize.width]);
 
   return (
     <RenderGuardedComponent
