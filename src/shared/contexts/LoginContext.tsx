@@ -318,35 +318,43 @@ export const extractUserAttributes = (
 };
 
 const waitForKeychain = async () => {
-  try {
-    await SecureStore.setItemAsync('test', 'test');
-    await SecureStore.getItemAsync('test');
-    await SecureStore.deleteItemAsync('test');
-    return;
-  } catch (e) {
-    // SecureStore may throw an error if the phone is locked; let's try to
-    // test if the phone is currently locked
-    const strE = `${e}`;
-    // if `No keychain is available' is in the error message, we can assume
-    // the phone is locked
-    if (strE.toLowerCase().includes('no keychain is available')) {
-      // in this case we DON'T want to error - we want to wait until the keystore
-      // is available
-      await trackAuthError(
-        'retrieveAuthTokens',
-        `no keychain available (known error message: ${strE.substring(0, 100)})`
-      );
-    } else {
-      await trackAuthError(
-        'retrieveAuthTokens',
-        `no keychain available (unknown error message: ${strE.substring(
-          0,
-          100
-        )})`
-      );
+  while (true) {
+    try {
+      await SecureStore.setItemAsync('test', 'test');
+      const val = await SecureStore.getItemAsync('test');
+      await SecureStore.deleteItemAsync('test');
+      if (val !== 'test') {
+        throw new Error('keychain set/get does not match');
+      }
+      return;
+    } catch (e) {
+      // SecureStore may throw an error if the phone is locked; let's try to
+      // test if the phone is currently locked
+      const strE = `${e}`;
+      // if `No keychain is available' is in the error message, we can assume
+      // the phone is locked
+      if (strE.toLowerCase().includes('no keychain is available')) {
+        // in this case we DON'T want to error - we want to wait until the keystore
+        // is available
+        await trackAuthError(
+          'retrieveAuthTokens',
+          `no keychain available (known error message: ${strE.substring(
+            0,
+            100
+          )})`
+        );
+      } else {
+        await trackAuthError(
+          'retrieveAuthTokens',
+          `no keychain available (unknown error message: ${strE.substring(
+            0,
+            100
+          )})`
+        );
+      }
+      console.log('waiting for keychain to be available');
+      await new Promise((r) => setTimeout(r, 1000));
     }
-    console.log('waiting for keychain to be available');
-    await new Promise((r) => setTimeout(r, 1000));
   }
 };
 
