@@ -33,6 +33,11 @@ import {
   createNestableProgress,
   NestableProgress,
 } from '../lib/createNestableProgress';
+import {
+  createSmartAPIFetch,
+  createTypicalSmartAPIFetchMapper,
+} from '../lib/smartApiFetch';
+import * as SecureStore from 'expo-secure-store';
 
 /**
  * The user attributes that are available when a user is logged in. When
@@ -312,6 +317,39 @@ export const extractUserAttributes = (
   };
 };
 
+const waitForKeychain = async () => {
+  try {
+    await SecureStore.setItemAsync('test', 'test');
+    await SecureStore.getItemAsync('test');
+    await SecureStore.deleteItemAsync('test');
+    return;
+  } catch (e) {
+    // SecureStore may throw an error if the phone is locked; let's try to
+    // test if the phone is currently locked
+    const strE = `${e}`;
+    // if `No keychain is available' is in the error message, we can assume
+    // the phone is locked
+    if (strE.toLowerCase().includes('no keychain is available')) {
+      // in this case we DON'T want to error - we want to wait until the keystore
+      // is available
+      await trackAuthError(
+        'retrieveAuthTokens',
+        `no keychain available (known error message: ${strE.substring(0, 100)})`
+      );
+    } else {
+      await trackAuthError(
+        'retrieveAuthTokens',
+        `no keychain available (unknown error message: ${strE.substring(
+          0,
+          100
+        )})`
+      );
+    }
+    console.log('waiting for keychain to be available');
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+};
+
 /**
  * Stores the given auth tokens in the appropriate store.
  *
@@ -320,6 +358,7 @@ export const extractUserAttributes = (
 export const storeAuthTokens = async (
   authTokens: TokenResponseConfig | null
 ) => {
+  await waitForKeychain();
   if (authTokens === null) {
     await Promise.all([
       deleteSecurePaginated('id_token'),
@@ -336,13 +375,13 @@ export const storeAuthTokens = async (
 
   await Promise.all([idTokenPromise, refreshTokenPromise]);
 };
-
 /**
  * Retrieves the auth tokens from the appropriate store, stored via storeAuthTokens
  *
  * @returns The auth tokens from the appropriate store
  */
 const retrieveAuthTokens = async (): Promise<TokenResponseConfig | null> => {
+  await waitForKeychain();
   const idToken = await retrieveSecurePaginated('id_token');
   if (idToken === null) {
     return null;
@@ -809,6 +848,30 @@ const ifDev =
       }
     : (_fn: () => void): void => {};
 
+const trackAuthError = async (category: string, extra: string) => {
+  const reportProgress = createSmartAPIFetch({
+    path: '/api/1/onboarding/track_auth_errors',
+    init: {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
+      body: JSON.stringify({ category, extra }),
+    },
+    retryer: 'expo-backoff-3',
+    mapper: createTypicalSmartAPIFetchMapper({
+      mapJSON: (v) => v,
+      action: 'track auth errors',
+    }),
+  });
+  await waitForValueWithCallbacksConditionCancelable(
+    reportProgress.state,
+    (s) => s.type === 'success' || s.type === 'error' || s.type === 'released'
+  ).promise;
+  if (reportProgress.state.get().type !== 'released') {
+    await reportProgress.sendMessage({ type: 'release' }).promise;
+  }
+};
 /**
  * A provider for the LoginContext. This is responsible for loading the auth
  * tokens. The auth tokens will only be provided if they are reasonably fresh;
@@ -1021,6 +1084,7 @@ export const LoginProvider = ({
             );
             return 'continue';
           } else {
+            await trackAuthError('checkQueue', 'failed to acquire lock');
             ifDev(() =>
               console.log(
                 `${__logId}: check queue: global lock canceled, but still active: unexpected but not dangerous`
@@ -1227,6 +1291,7 @@ export const LoginProvider = ({
         return 'continue';
       } catch (e) {
         ifDev(() => console.warn(`${__logId}: error processing queue item`, e));
+        await trackAuthError('checkQueue', 'error processing queue item');
         return 'continue';
       } finally {
         ifDev(() =>
@@ -1420,6 +1485,10 @@ export const LoginProvider = ({
             e
           )
         );
+        await trackAuthError(
+          'acquireGlobalLockAndSyncState',
+          'failed to acquire lock'
+        );
         const wait = createCancelableTimeout(1000);
         wait.promise.catch(() => {});
         await Promise.race([wait.promise, inactive.promise]);
@@ -1434,6 +1503,7 @@ export const LoginProvider = ({
         await assignValueFromStorageRefreshingIfNecessaryWithGlobalLock();
       } catch (e) {
         ifDev(() => console.warn(`${__logId}: error syncing state`, e));
+        await trackAuthError('acquireGlobalLockAndSyncState', 'error syncing');
         return 'continue';
       } finally {
         ifDev(() => console.log(`${__logId}: releasing global lock`));
@@ -1463,6 +1533,10 @@ export const LoginProvider = ({
         ifDev(() =>
           console.error(`${__logId}: error loading state; trying to clear`, e)
         );
+        await trackAuthError(
+          'assignValueFromStorageRefreshingIfNecessaryWithGlobalLock',
+          'error retrieving tokens or attributes'
+        );
         try {
           ifDev(() => console.log(`${__logId}: trying to clear auth tokens`));
           await storeAuthTokens(null);
@@ -1472,6 +1546,10 @@ export const LoginProvider = ({
         } catch (e2) {
           ifDev(() =>
             console.error(`${__logId}: error clearing auth tokens`, e2)
+          );
+          await trackAuthError(
+            'assignValueFromStorageRefreshingIfNecessaryWithGlobalLock',
+            'error clearing tokens after loading'
           );
         }
         try {
@@ -1485,6 +1563,10 @@ export const LoginProvider = ({
         } catch (e2) {
           ifDev(() =>
             console.error(`${__logId}: error clearing user attributes`, e2)
+          );
+          await trackAuthError(
+            'assignValueFromStorageRefreshingIfNecessaryWithGlobalLock',
+            'error clearing attributes after loading'
           );
         }
 
@@ -1512,6 +1594,10 @@ export const LoginProvider = ({
           ifDev(() =>
             console.error(`${__logId}: error clearing user attributes`, e)
           );
+          await trackAuthError(
+            'assignValueFromStorageRefreshingIfNecessaryWithGlobalLock',
+            'error clearing attributes (inconsistent)'
+          );
         }
         userAttributes = null;
       }
@@ -1530,6 +1616,10 @@ export const LoginProvider = ({
         } catch (e) {
           ifDev(() =>
             console.error(`${__logId}: error clearing auth tokens`, e)
+          );
+          await trackAuthError(
+            'assignValueFromStorageRefreshingIfNecessaryWithGlobalLock',
+            'error clearing tokens (inconsistent)'
           );
         }
         authTokens = null;
@@ -1611,6 +1701,10 @@ export const LoginProvider = ({
         );
       } catch (e) {
         ifDev(() => console.error(`${__logId}: error clearing auth tokens`, e));
+        await trackAuthError(
+          'assignValueFromStorageRefreshingIfNecessaryWithGlobalLock',
+          'error clearing tokens (stale)'
+        );
       }
 
       try {
@@ -1622,6 +1716,10 @@ export const LoginProvider = ({
       } catch (e) {
         ifDev(() =>
           console.error(`${__logId}: error clearing user attributes`, e)
+        );
+        await trackAuthError(
+          'assignValueFromStorageRefreshingIfNecessaryWithGlobalLock',
+          'error clearing attributes (stale)'
         );
       }
 
@@ -1655,6 +1753,10 @@ export const LoginProvider = ({
             e
           )
         );
+        await trackAuthError(
+          'maybeLoginViaSilentAuthWithGlobalLock',
+          'error loading silent auth preference'
+        );
         try {
           await storeSilentAuthPreference(null);
           ifDev(() =>
@@ -1668,6 +1770,10 @@ export const LoginProvider = ({
               `${__logId}: error clearing silent auth preference`,
               e2
             )
+          );
+          await trackAuthError(
+            'maybeLoginViaSilentAuthWithGlobalLock',
+            'error clearing silent auth preference after error loading'
           );
         }
         silentAuthPreference = null;
@@ -1729,7 +1835,21 @@ export const LoginProvider = ({
               `${__logId}: created silent auth option, storing @ ${Date.now()}`
             )
           );
-          await storeSilentAuthOptions(silentAuthOptions);
+          try {
+            await storeSilentAuthOptions(silentAuthOptions);
+          } catch (e) {
+            ifDev(() =>
+              console.error(
+                `${__logId}: error storing silent auth options,treating as null`,
+                e
+              )
+            );
+            await trackAuthError(
+              'maybeLoginViaSilentAuthWithGlobalLock',
+              'error storing silent auth options'
+            );
+            return null;
+          }
         }
         const option = silentAuthOptions[0];
         ifDev(() =>
@@ -1759,6 +1879,16 @@ export const LoginProvider = ({
             )
         );
         if (!challengeApiResponse.ok) {
+          ifDev(() =>
+            console.error(
+              `${__logId}: error requesting challenge for ${option.publicModulusB64URL}`,
+              challengeApiResponse
+            )
+          );
+          await trackAuthError(
+            'maybeLoginViaSilentAuthWithGlobalLock',
+            `error requesting challenge: ${challengeApiResponse.status}`
+          );
           throw challengeApiResponse;
         }
         const challengeApiData: {
@@ -1770,10 +1900,25 @@ export const LoginProvider = ({
             `${__logId}: successfully retrieved challenge, solving @ ${Date.now()}`
           )
         );
-        const solution = await solveSilentAuthChallenge(
-          option,
-          challengeApiData.challenge_b64url
-        );
+        let solution;
+        try {
+          solution = await solveSilentAuthChallenge(
+            option,
+            challengeApiData.challenge_b64url
+          );
+        } catch (e) {
+          ifDev(() =>
+            console.error(
+              `${__logId}: error solving challenge for ${option.publicModulusB64URL}`,
+              e
+            )
+          );
+          await trackAuthError(
+            'maybeLoginViaSilentAuthWithGlobalLock',
+            'error solving challenge'
+          );
+          throw e;
+        }
         ifDev(() =>
           console.log(
             `${__logId}: successfully solved challenge, logging in @ ${Date.now()}`
@@ -1799,6 +1944,16 @@ export const LoginProvider = ({
             )
         );
         if (!loginApiResponse.ok) {
+          ifDev(() =>
+            console.error(
+              `${__logId}: error logging in via silent auth`,
+              loginApiResponse
+            )
+          );
+          await trackAuthError(
+            'maybeLoginViaSilentAuthWithGlobalLock',
+            `error logging in via silent auth: ${loginApiResponse.status}`
+          );
           throw loginApiResponse;
         }
         const loginApiData: {
@@ -1830,6 +1985,10 @@ export const LoginProvider = ({
         ifDev(() =>
           console.error(`${__logId}: error using silent auth signin`, e)
         );
+        await trackAuthError(
+          'maybeLoginViaSilentAuthWithGlobalLock',
+          'error using silent auth signin'
+        );
         try {
           await storeSilentAuthPreference({ type: 'never' });
         } catch (e2) {
@@ -1838,6 +1997,10 @@ export const LoginProvider = ({
               `${__logId}: error storing silent auth preference to never`,
               e2
             )
+          );
+          await trackAuthError(
+            'maybeLoginViaSilentAuthWithGlobalLock',
+            'error storing silent auth preference to never after error'
           );
         }
         return null;
@@ -1879,6 +2042,10 @@ export const LoginProvider = ({
           ifDev(() =>
             console.error(`${__logId}: error clearing auth tokens`, e)
           );
+          await trackAuthError(
+            'refreshWithGlobalLock',
+            'error clearing tokens (not refreshable)'
+          );
         }
         try {
           ifDev(() =>
@@ -1891,6 +2058,10 @@ export const LoginProvider = ({
         } catch (e) {
           ifDev(() =>
             console.error(`${__logId}: error clearing user attributes`, e)
+          );
+          await trackAuthError(
+            'refreshWithGlobalLock',
+            'error clearing attributes (not refreshable)'
           );
         }
         setVWC(valueVWC, { state: 'logged-out' }, () => false);
@@ -1927,19 +2098,32 @@ export const LoginProvider = ({
               `${__logId}: error was not a response; likely a network error. Retrying in 5-10 seconds`
             )
           );
+          const waitPromise = new Promise((r) =>
+            setTimeout(r, 5000 + Math.random() * 5000)
+          );
+          await trackAuthError(
+            'refreshWithGlobalLock',
+            'error refreshing tokens (network error suspected)'
+          );
           setVWC(
             valueVWC,
             { state: 'loading', hint: undefined },
             (a, b) => a.state === b.state
           );
-          await new Promise((r) => setTimeout(r, 5000 + Math.random() * 5000));
+          await waitPromise;
           return 'retry';
         }
+
+        await trackAuthError(
+          'refreshWithGlobalLock',
+          `error refreshing tokens (${e.status})`
+        );
 
         if (e.status === 429) {
           ifDev(() =>
             console.log(`${__logId}: error was a 429, checking for Retry-After`)
           );
+
           let retryAfterSeconds: number | null = null;
           try {
             const retryAfterStr = e.headers.get('Retry-After');
@@ -2018,6 +2202,10 @@ export const LoginProvider = ({
           ifDev(() =>
             console.error(`${__logId}: error clearing auth tokens`, e2)
           );
+          await trackAuthError(
+            'refreshWithGlobalLock',
+            'error clearing tokens (non-retryable)'
+          );
         }
         try {
           ifDev(() =>
@@ -2030,6 +2218,10 @@ export const LoginProvider = ({
         } catch (e2) {
           ifDev(() =>
             console.error(`${__logId}: error clearing user attributes`, e2)
+          );
+          await trackAuthError(
+            'refreshWithGlobalLock',
+            'error clearing attributes (non-retryable)'
           );
         }
         setVWC(valueVWC, { state: 'logged-out' }, () => false);
@@ -2047,6 +2239,10 @@ export const LoginProvider = ({
       } catch (e) {
         ifDev(() =>
           console.error(`${__logId}: error extracting user attributes`, e)
+        );
+        await trackAuthError(
+          'refreshWithGlobalLock',
+          'error extracting user attributes'
         );
         ifDev(() =>
           console.log(
@@ -2075,6 +2271,7 @@ export const LoginProvider = ({
         ifDev(() => console.log(`${__logId}: successfully stored tokens`));
       } catch (e) {
         ifDev(() => console.error(`${__logId}: error storing tokens`, e));
+        await trackAuthError('refreshWithGlobalLock', 'error storing tokens');
         throw new Error('unrecoverable error');
       }
 
@@ -2087,6 +2284,10 @@ export const LoginProvider = ({
       } catch (e) {
         ifDev(() =>
           console.error(`${__logId}: error storing user attributes`, e)
+        );
+        await trackAuthError(
+          'refreshWithGlobalLock',
+          'error storing user attributes'
         );
         throw new Error('unrecoverable error');
       }
