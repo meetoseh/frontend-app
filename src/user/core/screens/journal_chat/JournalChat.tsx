@@ -45,15 +45,6 @@ import { JournalChatSpinners } from './components/JournalChatSpinners';
 import { OsehStyles } from '../../../../shared/OsehStyles';
 import { DisplayableError } from '../../../../shared/lib/errors';
 
-const SUGGESTIONS = [
-  { text: 'I have a lot of anxiety right now', width: 160 },
-  { text: 'I feel scattered and need to focus', width: 160 },
-  { text: 'I’m feeling disconnected', width: 130 },
-  { text: 'I’m having trouble sleeping and need to calm my mind', width: 240 },
-  { text: 'I’m feeling a bit down and need encouragement', width: 238 },
-  { text: 'I’m feeling happy and want to cherish this moment', width: 220 },
-];
-
 const CHAT_AREA_TO_HINT_HEIGHT = 12;
 const HINT_TO_SUGGESTIONS_HEIGHT = 16;
 const SUGGESTIONS_TO_INPUT_HEIGHT = 16;
@@ -410,83 +401,124 @@ export const JournalChat = ({
               </>
             ) : (
               <>
-                <VerticalSpacer height={CHAT_AREA_TO_HINT_HEIGHT} />
-                <Text style={styles.hint}>
-                  Type a message below or tap a suggestion to get started
-                </Text>
-                <VerticalSpacer height={HINT_TO_SUGGESTIONS_HEIGHT} />
-                <RenderGuardedComponent
-                  props={suggestionsSizeVWC}
-                  component={(size) => (
-                    <ScrollView
-                      style={Object.assign({}, styles.suggestions, size)}
-                      contentContainerStyle={styles.suggestionsContent}
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                    >
-                      {SUGGESTIONS.map((suggestion, i) => (
-                        <Fragment key={i}>
-                          <HorizontalSpacer width={i === 0 ? 16 : 12} />
-                          <View
-                            style={Object.assign({}, styles.suggestionWrapper, {
-                              width: suggestion.width,
-                              flexBasis: suggestion.width,
-                            })}
-                          >
-                            <Pressable
-                              style={Object.assign({}, styles.suggestion, {
-                                width: suggestion.width,
-                                flexBasis: suggestion.width,
-                              })}
-                              onLayout={
-                                i !== 0
-                                  ? undefined
-                                  : (e) => {
-                                      const height =
-                                        e?.nativeEvent?.layout?.height;
-                                      if (
-                                        height !== undefined &&
-                                        !isNaN(height) &&
-                                        height > 0
-                                      ) {
-                                        const old = suggestionsHeightVWC.get();
-                                        if (
-                                          old === height ||
-                                          (old > height &&
-                                            Math.abs(old - height) < 1e-3)
-                                        ) {
-                                          return;
-                                        }
-                                        suggestionsHeightVWC.set(height);
-                                        suggestionsHeightVWC.callbacks.call(
-                                          undefined
-                                        );
-                                      }
-                                    }
-                              }
-                              onPress={() => {
-                                const ele = inputVWC.get();
-                                if (ele === null) {
-                                  return;
-                                }
-
-                                setVWC(rawInputValueVWC, suggestion.text);
-                                ele.focus();
-                              }}
+                {screen.parameters.suggestions.length > 0 && (
+                  <RenderGuardedComponent
+                    props={ctx.fontScale}
+                    component={(fontScale) => (
+                      <>
+                        <VerticalSpacer height={CHAT_AREA_TO_HINT_HEIGHT} />
+                        <Text style={styles.hint}>
+                          Type a message below or tap a suggestion to get
+                          started
+                        </Text>
+                        <VerticalSpacer height={HINT_TO_SUGGESTIONS_HEIGHT} />
+                        <RenderGuardedComponent
+                          props={suggestionsSizeVWC}
+                          component={(size) => (
+                            <ScrollView
+                              style={Object.assign(
+                                {},
+                                styles.suggestions,
+                                size
+                              )}
+                              contentContainerStyle={styles.suggestionsContent}
+                              horizontal
+                              showsHorizontalScrollIndicator={false}
                             >
-                              <Text style={styles.suggestionText}>
-                                {suggestion.text}
-                              </Text>
-                            </Pressable>
-                          </View>
-                          <HorizontalSpacer
-                            width={i === SUGGESTIONS.length - 1 ? 16 : 0}
-                          />
-                        </Fragment>
-                      ))}
-                    </ScrollView>
-                  )}
-                />
+                              {screen.parameters.suggestions.map(
+                                (suggestion, i) => (
+                                  <Fragment key={i}>
+                                    <HorizontalSpacer
+                                      width={i === 0 ? 16 : 12}
+                                    />
+                                    <View
+                                      style={Object.assign(
+                                        {},
+                                        styles.suggestionWrapper,
+                                        {
+                                          width: suggestion.width * fontScale,
+                                          flexBasis:
+                                            suggestion.width * fontScale,
+                                        }
+                                      )}
+                                    >
+                                      <Pressable
+                                        style={Object.assign(
+                                          {},
+                                          styles.suggestion,
+                                          {
+                                            width: suggestion.width * fontScale,
+                                            flexBasis:
+                                              suggestion.width * fontScale,
+                                          }
+                                        )}
+                                        onLayout={
+                                          i !== 0
+                                            ? undefined
+                                            : (e) => {
+                                                const height =
+                                                  e?.nativeEvent?.layout
+                                                    ?.height;
+                                                if (
+                                                  height !== undefined &&
+                                                  !isNaN(height) &&
+                                                  height > 0
+                                                ) {
+                                                  const old =
+                                                    suggestionsHeightVWC.get();
+                                                  if (
+                                                    old === height ||
+                                                    (old > height &&
+                                                      Math.abs(old - height) <
+                                                        1e-3)
+                                                  ) {
+                                                    return;
+                                                  }
+                                                  suggestionsHeightVWC.set(
+                                                    height
+                                                  );
+                                                  suggestionsHeightVWC.callbacks.call(
+                                                    undefined
+                                                  );
+                                                }
+                                              }
+                                        }
+                                        onPress={() => {
+                                          const ele = inputVWC.get();
+                                          if (ele === null) {
+                                            return;
+                                          }
+
+                                          setVWC(
+                                            rawInputValueVWC,
+                                            suggestion.text
+                                          );
+                                          ele.focus();
+                                        }}
+                                      >
+                                        <Text style={styles.suggestionText}>
+                                          {suggestion.text}
+                                        </Text>
+                                      </Pressable>
+                                    </View>
+                                    <HorizontalSpacer
+                                      width={
+                                        i ===
+                                        screen.parameters.suggestions.length - 1
+                                          ? 16
+                                          : 0
+                                      }
+                                    />
+                                  </Fragment>
+                                )
+                              )}
+                            </ScrollView>
+                          )}
+                        />
+                      </>
+                    )}
+                  />
+                )}
                 <VerticalSpacer height={SUGGESTIONS_TO_INPUT_HEIGHT} />
                 <ContentContainer contentWidthVWC={ctx.contentWidth}>
                   <VoiceOrTextInput
