@@ -80,6 +80,7 @@ import { LibraryFilterScreen } from './src/user/core/screens/library_filter/Libr
 import { HomeV4Screen } from './src/user/core/screens/homev4/HomeV4Screen';
 import { HoldToContinueScreen } from './src/user/core/screens/hold_to_continue/HoldToContinueScreen';
 import { BoxError, DisplayableError } from './src/shared/lib/errors';
+import { TextInterstitialScreen } from './src/user/core/screens/text_interstitial/TextInterstitialScreen';
 
 export default function App() {
   // We don't want to load the features at all while the cache cannot be read.
@@ -148,6 +149,7 @@ const screens = [
   LibraryFilterScreen,
   HomeV4Screen,
   HoldToContinueScreen,
+  TextInterstitialScreen,
 ] as any[] as readonly OsehScreen<
   string,
   ScreenResources,

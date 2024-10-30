@@ -20,4 +20,8 @@ export const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     alignItems: 'center',
   },
+  checkBody: {
+    flexBasis: 0,
+    flexGrow: 1,
+  },
 });

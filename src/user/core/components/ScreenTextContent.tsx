@@ -54,7 +54,9 @@ export const ScreenTextContent = ({
                   color={OsehColors.v4.primary.light}
                 />
                 <HorizontalSpacer width={16} />
-                <Text style={styles.body}>{part.message}</Text>
+                <Text style={[styles.body, styles.checkBody]}>
+                  {part.message}
+                </Text>
               </View>
             );
           case 'spacer':
