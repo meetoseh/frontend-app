@@ -164,6 +164,9 @@ export const Choices = ({
                   screen.parameters.exit,
                   screen.parameters.trigger,
                   {
+                    parameters: screen.parameters.includeChoice
+                      ? { checked: checkedVWC.get() }
+                      : undefined,
                     beforeDone: async () => {
                       trace({
                         type: 'cta',

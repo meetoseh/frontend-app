@@ -24,6 +24,8 @@ web-build/
 *.pem
 /start-proxy.bat
 *.pyc
+/eas.json
+/google-services.json
 
 # macOS
 .DS_Store
